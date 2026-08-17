@@ -16,6 +16,10 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
 
 object VitalsComponent {
   val MaxValue: Float = 100f
+
+  // NBT keys
+  val HealthKey = "health"
+  val ConsciousnessKey = "consciousness"
 }
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
@@ -31,12 +35,12 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 
   override def writeData(out: ValueOutput): Unit = {
-    out.putFloat("health", health)
-    out.putFloat("consciousness", consciousness)
+    out.putFloat(VitalsComponent.HealthKey, health)
+    out.putFloat(VitalsComponent.ConsciousnessKey, consciousness)
   }
 
   override def readData(in: ValueInput): Unit = {
-    health = in.getFloatOr("health", VitalsComponent.MaxValue)
-    consciousness = in.getFloatOr("consciousness", VitalsComponent.MaxValue)
+    health = in.getFloatOr(VitalsComponent.HealthKey, VitalsComponent.MaxValue)
+    consciousness = in.getFloatOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
   }
 }

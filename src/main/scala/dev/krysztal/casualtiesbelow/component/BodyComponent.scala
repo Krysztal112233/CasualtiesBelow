@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.component
 
+import scala.collection.mutable.Map;
 import net.minecraft.core.HolderLookup
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
@@ -14,6 +15,10 @@ final case class LimbStats(
 
 object LimbStats {
   val MaxValue: Float = 100f
+
+  // NBT keys
+  val MuscleHealthKey = "muscle_health"
+  val SkinIntegrityKey = "skin_integrity"
 }
 
 /** Per-limb body condition (muscle health + skin integrity) attached to every player.
@@ -26,7 +31,7 @@ trait BodyComponent extends CopyableComponent[BodyComponent] with AutoSyncedComp
 
 final class BodyComponentImpl(val player: Player) extends BodyComponent {
   private val limbs =
-    scala.collection.mutable.Map.from(BodyPart.values.map(_ -> LimbStats()))
+    Map.from(BodyPart.values.map(_ -> LimbStats()))
 
   override def stats(part: BodyPart): LimbStats = limbs(part)
 
@@ -45,8 +50,8 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       val child = out.child(part.id)
       val s = limbs(part)
-      child.putFloat("muscle_health", s.muscleHealth)
-      child.putFloat("skin_integrity", s.skinIntegrity)
+      child.putFloat(LimbStats.MuscleHealthKey, s.muscleHealth)
+      child.putFloat(LimbStats.SkinIntegrityKey, s.skinIntegrity)
     }
   }
 
@@ -54,8 +59,8 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       in.child(part.id).ifPresent { child =>
         val s = limbs(part)
-        s.muscleHealth = child.getFloatOr("muscle_health", LimbStats.MaxValue)
-        s.skinIntegrity = child.getFloatOr("skin_integrity", LimbStats.MaxValue)
+        s.muscleHealth = child.getFloatOr(LimbStats.MuscleHealthKey, LimbStats.MaxValue)
+        s.skinIntegrity = child.getFloatOr(LimbStats.SkinIntegrityKey, LimbStats.MaxValue)
       }
     }
   }
