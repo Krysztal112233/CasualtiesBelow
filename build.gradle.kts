@@ -1,6 +1,7 @@
 plugins {
     scala
     id("net.fabricmc.fabric-loom") version "1.17-SNAPSHOT"
+    id("com.diffplug.spotless") version "7.2.1"
 }
 
 // `./gradlew sources`: extract readable Minecraft + Fabric API sources (see AGENTS.md).
@@ -17,6 +18,9 @@ repositories {
     // Loom adds the Fabric and Mojang repositories automatically.
     maven("https://api.modrinth.com/maven") { name = "Modrinth" }
     maven("https://maven.ladysnake.org/releases") { name = "Ladysnake" }
+    // Aliyun mirror of Maven Central: repo.maven.apache.org returns 403 from this network.
+    maven("https://maven.aliyun.com/repository/central") { name = "AliyunCentral" }
+    mavenCentral()
 }
 
 dependencies {
@@ -58,6 +62,20 @@ tasks.withType<ScalaCompile>().configureEach {
     options.release = 25
     // Enforce the project's brace style: reject significant-indentation syntax.
     scalaCompileOptions.additionalParameters.add("-no-indent")
+}
+
+spotless {
+    scala {
+        scalafmt("3.11.5").configFile(".scalafmt.conf")
+    }
+    kotlinGradle {
+        ktlint()
+    }
+    format("misc") {
+        target("*.md", ".gitignore", "gradle.properties", "src/main/resources/*.json")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
 
 tasks.processResources {

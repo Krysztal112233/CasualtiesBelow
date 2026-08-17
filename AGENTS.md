@@ -11,6 +11,7 @@ single source of truth for version numbers.
 ./gradlew runClient    # Launch a dev client
 ./gradlew runServer    # Launch a dev server
 ./gradlew sources      # Generate and extract dependency sources into sources/ (see below)
+./gradlew spotlessApply # Format all sources (scalafmt for Scala, ktlint for *.gradle.kts)
 ```
 
 ## Where to read source code (important)
@@ -63,7 +64,8 @@ Commit messages follow Conventional Commits: `type(scope): description`.
 
 - Scala 3 with brace-delimited bodies: multi-statement definitions must use `{ ... }`
   after `=` — do not use significant-indentation bodies (enforced by the `-no-indent`
-  compiler flag). `scala_version` must stay in sync with
+  compiler flag). Formatting is enforced by Spotless (`spotlessCheck` runs as part of
+  `build`; fix with `spotlessApply`). `scala_version` must stay in sync with
   the Scala version bundled at runtime by krysztal-language-scala (see the comments in
   `gradle.properties`).
 - Since the game is unobfuscated, dependencies are declared with plain
