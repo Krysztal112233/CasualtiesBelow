@@ -3,7 +3,7 @@
   "id": "casualtiesbelow",
   "version": "${version}",
   "name": "Casualties: Below",
-  "description": "CasualtiesBelow",
+  "description": "Down, down, down.",
   "environment": "*",
   "license": "MIT",
   "entrypoints": {
