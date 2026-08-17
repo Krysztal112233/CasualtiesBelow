@@ -18,6 +18,7 @@ repositories {
     // Loom adds the Fabric and Mojang repositories automatically.
     maven("https://api.modrinth.com/maven") { name = "Modrinth" }
     maven("https://maven.ladysnake.org/releases") { name = "Ladysnake" }
+    maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/") { name = "Fuzs" }
     // Aliyun mirror of Maven Central: repo.maven.apache.org returns 403 from this network.
     maven("https://maven.aliyun.com/repository/central") { name = "AliyunCentral" }
     mavenCentral()
@@ -43,6 +44,14 @@ dependencies {
     implementation("org.ladysnake.cardinal-components-api:cardinal-components-entity:${property("cca_version")}")
     add("include", "org.ladysnake.cardinal-components-api:cardinal-components-base:${property("cca_version")}")
     add("include", "org.ladysnake.cardinal-components-api:cardinal-components-entity:${property("cca_version")}")
+
+    // Forge Config API Port: NeoForge-style config system on Fabric. External dependency
+    // (Fuzs ecosystem convention): declared in fabric.mod.json `depends`, users install it
+    // separately — do NOT bundle it jar-in-jar.
+    implementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${property("forge_config_api_port_version")}")
+    // NightConfig: bundled inside Forge Config API Port at runtime, needed on the compile classpath.
+    compileOnly("com.electronwill.night-config:core:3.8.4")
+    compileOnly("com.electronwill.night-config:toml:3.8.4")
 
     // Compile-time Scala 3 library; kept in sync with the version bundled by krysztal-language-scala,
     // which provides it at runtime.

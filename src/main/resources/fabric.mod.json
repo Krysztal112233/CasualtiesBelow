@@ -39,6 +39,7 @@
     "fabric-api": "*",
     "krysztal-language-scala": ">=3.3.2",
     "cardinal-components-base": ">=8.0.0",
-    "cardinal-components-entity": ">=8.0.0"
+    "cardinal-components-entity": ">=8.0.0",
+    "forgeconfigapiport": ">=26.2.1"
   }
 }
