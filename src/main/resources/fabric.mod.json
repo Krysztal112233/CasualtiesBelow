@@ -18,6 +18,18 @@
         "adapter": "scala",
         "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowClient"
       }
+    ],
+    "cardinal-components-entity": [
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowComponents"
+      }
+    ]
+  },
+  "custom": {
+    "cardinal-components": [
+      "casualtiesbelow:body",
+      "casualtiesbelow:vitals"
     ]
   },
   "depends": {
@@ -25,6 +37,8 @@
     "minecraft": ">=26.2",
     "java": ">=25",
     "fabric-api": "*",
-    "krysztal-language-scala": ">=3.3.2"
+    "krysztal-language-scala": ">=3.3.2",
+    "cardinal-components-base": ">=8.0.0",
+    "cardinal-components-entity": ">=8.0.0"
   }
 }

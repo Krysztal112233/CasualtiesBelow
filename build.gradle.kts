@@ -16,6 +16,7 @@ base {
 repositories {
     // Loom adds the Fabric and Mojang repositories automatically.
     maven("https://api.modrinth.com/maven") { name = "Modrinth" }
+    maven("https://maven.ladysnake.org/releases") { name = "Ladysnake" }
 }
 
 dependencies {
@@ -30,6 +31,14 @@ dependencies {
 
     // Scala 3 language support (Fabric language adapter + Scala runtime, bundled at runtime by this mod).
     implementation("maven.modrinth:krysztal-language-scala:${property("krysztal_scala_version")}")
+
+    // Cardinal Components API: base module + entity module, bundled jar-in-jar
+    // so players do not need to install CCA separately.
+    // (Unobfuscated game: no remapping, plain `implementation` like the other deps.)
+    implementation("org.ladysnake.cardinal-components-api:cardinal-components-base:${property("cca_version")}")
+    implementation("org.ladysnake.cardinal-components-api:cardinal-components-entity:${property("cca_version")}")
+    add("include", "org.ladysnake.cardinal-components-api:cardinal-components-base:${property("cca_version")}")
+    add("include", "org.ladysnake.cardinal-components-api:cardinal-components-entity:${property("cca_version")}")
 
     // Compile-time Scala 3 library; kept in sync with the version bundled by krysztal-language-scala,
     // which provides it at runtime.
