@@ -7,6 +7,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig
 import net.neoforged.neoforge.common.ModConfigSpec
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
 
 /** Common (server-authoritative) configuration, backed by Forge Config API Port. Values are written
   * to `config/casualtiesbelow-common.toml` and can be edited in-game via the ModMenu integration
@@ -15,29 +16,39 @@ import net.neoforged.neoforge.common.ModConfigSpec
 object CasualtiesBelowConfig {
   private val Builder = new ModConfigSpec.Builder()
 
-  {
+  object Vitals {
     Builder.push("vitals")
-    val StartingHealth: ModConfigSpec.ConfigValue[Double] = Builder
+    val StartingHealth: ConfigValue[Double] = Builder
       .comment("Overall health a player starts with.")
+      .gameRestart()
       .defineInRange("startingHealth", 100.0, 0.0, 100.0, classOf[Double])
-    val StartingConsciousness: ModConfigSpec.ConfigValue[Double] = Builder
+    val StartingConsciousness: ConfigValue[Double] = Builder
       .comment("Consciousness a player starts with.")
+      .gameRestart()
       .defineInRange("startingConsciousness", 100.0, 0.0, 100.0, classOf[Double])
     Builder.pop()
   }
 
-  {
+  object Limbs {
     Builder.push("limbs")
-    val StartingMuscleHealth: ModConfigSpec.ConfigValue[Double] = Builder
+    val StartingMuscleHealth: ConfigValue[Double] = Builder
       .comment("Muscle health each limb starts with.")
+      .gameRestart()
       .defineInRange("startingMuscleHealth", 100.0, 0.0, 100.0, classOf[Double])
-    val StartingSkinIntegrity: ModConfigSpec.ConfigValue[Double] = Builder
+    val StartingSkinIntegrity: ConfigValue[Double] = Builder
       .comment("Skin integrity each limb starts with.")
+      .gameRestart()
       .defineInRange("startingSkinIntegrity", 100.0, 0.0, 100.0, classOf[Double])
     Builder.pop()
   }
 
-  private val Spec = Builder.build()
+  private lazy val Spec = {
+    // Force initialization of the nested objects so their values are defined on the Builder
+    // before the spec is built (nested objects are lazily initialized in Scala).
+    Vitals
+    Limbs
+    Builder.build()
+  }
 
   def register(): Unit = {
     ConfigRegistry.INSTANCE.register(CasualtiesBelow.ModId, ModConfig.Type.COMMON, Spec)
