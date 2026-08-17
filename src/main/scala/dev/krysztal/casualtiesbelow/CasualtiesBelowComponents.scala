@@ -14,23 +14,16 @@ import org.ladysnake.cca.api.v3.entity.{
   EntityComponentInitializer,
   RespawnCopyStrategy
 }
+import scala.reflect.ClassTag
+import org.ladysnake.cca.api.v8.component.CardinalComponent
 
 /** Registers the mod's Cardinal Components on players. Declared as the `cardinal-components-entity`
   * entrypoint in fabric.mod.json.
   */
 object CasualtiesBelowComponents extends EntityComponentInitializer {
 
-  val Body: ComponentKey[BodyComponent] =
-    ComponentRegistryV3.INSTANCE.getOrCreate(
-      Identifier.fromNamespaceAndPath("casualtiesbelow", "body"),
-      classOf[BodyComponent]
-    )
-
-  val Vitals: ComponentKey[VitalsComponent] =
-    ComponentRegistryV3.INSTANCE.getOrCreate(
-      Identifier.fromNamespaceAndPath("casualtiesbelow", "vitals"),
-      classOf[VitalsComponent]
-    )
+  val Body: ComponentKey[BodyComponent] = ofComponent("body")
+  val Vitals: ComponentKey[VitalsComponent] = ofComponent("vitals")
 
   override def registerEntityComponentFactories(
       registry: EntityComponentFactoryRegistry
@@ -46,4 +39,16 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
       RespawnCopyStrategy.ALWAYS_COPY
     )
   }
+}
+
+private def ofComponent[T <: CardinalComponent](
+    path: String
+)(using c: ClassTag[T]): ComponentKey[T] = {
+  // ClassTag.runtimeClass is typed Class[?]; safe to narrow: the tag of a component
+  // trait carries that exact interface class.
+  val componentClass = c.runtimeClass.asInstanceOf[Class[T]]
+  ComponentRegistryV3.INSTANCE.getOrCreate(
+    CasualtiesBelow.ofIdentifier(path),
+    componentClass
+  )
 }
