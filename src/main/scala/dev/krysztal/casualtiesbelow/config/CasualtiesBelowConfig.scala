@@ -42,11 +42,29 @@ object CasualtiesBelowConfig {
     Builder.pop()
   }
 
+  object Movement {
+    Builder.push("movement")
+    val DislocationSpeedReduction: ConfigValue[Double] = Builder
+      .comment(
+        "Movement speed multiplier reduction per dislocated leg, as a fraction (e.g. 0.3 = 30% slower)."
+      )
+      .gameRestart()
+      .defineInRange("dislocationSpeedReduction", 0.3, 0.0, 1.0, classOf[Double])
+    val DislocationJumpReduction: ConfigValue[Double] = Builder
+      .comment(
+        "Jump strength multiplier reduction per dislocated leg, as a fraction (e.g. 0.5 = 50% lower jumps)."
+      )
+      .gameRestart()
+      .defineInRange("dislocationJumpReduction", 0.5, 0.0, 1.0, classOf[Double])
+    Builder.pop()
+  }
+
   private lazy val Spec = {
     // Force initialization of the nested objects so their values are defined on the Builder
     // before the spec is built (nested objects are lazily initialized in Scala).
     Vitals
     Limbs
+    Movement
     Builder.build()
   }
 

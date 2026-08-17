@@ -14,4 +14,7 @@ enum BodyPart(val id: String) {
 
 object BodyPart {
   val byId: Map[String, BodyPart] = values.map(p => p.id -> p).toMap
+
+  val Legs: List[BodyPart] = List(LegLeft, LegRight)
+  val Arms: List[BodyPart] = List(ArmLeft, ArmRight)
 }

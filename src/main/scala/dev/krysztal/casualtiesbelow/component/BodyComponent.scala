@@ -4,9 +4,18 @@ import scala.collection.mutable.Map
 import scala.jdk.OptionConverters.*
 
 import com.mojang.serialization.Codec
+import net.minecraft.core.Holder
 import net.minecraft.core.HolderLookup
+import net.minecraft.resources.Identifier
+import net.minecraft.world.entity.ai.attributes.Attribute
+import net.minecraft.world.entity.ai.attributes.AttributeModifier
+import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
+
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
@@ -58,6 +67,7 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
 
   override def setStats(part: BodyPart, stats: LimbStats): Unit = {
     limbs(part) = stats
+    reconcileMovementModifiers()
   }
 
   override def copyFrom(
@@ -98,5 +108,47 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
         s.externalBleedingRate = child.getDoubleOr(LimbStats.ExternalBleedingRateKey, 0.0)
       }
     }
+    reconcileMovementModifiers()
   }
+
+  /** Recomputes the transient attribute modifiers derived from limb conditions (currently:
+    * dislocated legs slow movement and weaken jumps, per leg, using the configured fractions).
+    * Remove-then-add with fixed modifier ids keeps repeated calls idempotent, mirroring how vanilla
+    * applies the sprinting modifier.
+    */
+  private def reconcileMovementModifiers(): Unit = {
+    val dislocatedLegs = BodyPart.Legs.count { p => limbs(p).dislocated }
+    reconcileAttribute(
+      Attributes.MOVEMENT_SPEED,
+      BodyComponentImpl.DislocationSpeedPenaltyId,
+      -dislocatedLegs * CasualtiesBelowConfig.Movement.DislocationSpeedReduction.get()
+    )
+    reconcileAttribute(
+      Attributes.JUMP_STRENGTH,
+      BodyComponentImpl.DislocationJumpPenaltyId,
+      -dislocatedLegs * CasualtiesBelowConfig.Movement.DislocationJumpReduction.get()
+    )
+  }
+
+  private def reconcileAttribute(
+      attribute: Holder[Attribute],
+      id: Identifier,
+      amount: Double
+  ): Unit = {
+    Option(player.getAttribute(attribute)).foreach { instance =>
+      instance.removeModifier(id)
+      if (amount != 0.0) {
+        instance.addTransientModifier(
+          new AttributeModifier(id, amount, Operation.ADD_MULTIPLIED_TOTAL)
+        )
+      }
+    }
+  }
+}
+
+object BodyComponentImpl {
+  val DislocationSpeedPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("dislocation_speed_penalty")
+  val DislocationJumpPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("dislocation_jump_penalty")
 }
