@@ -6,6 +6,9 @@ build/
 run/
 remappedSrc/
 
+# Extracted dependency sources (./gradlew sources)
+sources/
+
 # IDE
 .idea/
 *.iml

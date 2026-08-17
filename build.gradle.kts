@@ -3,6 +3,9 @@ plugins {
     id("net.fabricmc.fabric-loom") version "1.17-SNAPSHOT"
 }
 
+// `./gradlew sources`: extract readable Minecraft + Fabric API sources (see AGENTS.md).
+apply(from = "gradle/sources.gradle.kts")
+
 version = property("mod_version") as String
 group = property("maven_group") as String
 
