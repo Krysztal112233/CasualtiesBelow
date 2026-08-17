@@ -13,6 +13,7 @@ object CasualtiesBelow extends ModInitializer {
 
   override def onInitialize(): Unit = {
     CasualtiesBelowConfig.register()
+    CasualtiesBelowCommands.register()
     Logger.info("CasualtiesBelow initialized")
   }
 
