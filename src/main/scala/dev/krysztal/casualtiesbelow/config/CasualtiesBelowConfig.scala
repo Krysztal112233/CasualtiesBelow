@@ -50,7 +50,7 @@ object CasualtiesBelowConfig {
       "Jump strength multiplier reduction per dislocated leg, as a fraction (e.g. 0.5 = 50% lower jumps)."
     )
     .gameRestart()
-    .defineInRange("dislocationJumpReduction", 0.5, 0.0, 1.0, classOf[Double])
+    .defineInRange("dislocationJumpReduction", 0.2, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   private val Spec = Builder.build()
