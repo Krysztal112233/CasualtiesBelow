@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.component.VitalsComponent
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
@@ -32,6 +33,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
   *   - `/casualtiesbelow body <targets> set <part> <stat> <value>`
   *   - `/casualtiesbelow body <targets> set <part> <fracture_recovery_ticks|infection_progress>
   *     clear`
+  *   - `/casualtiesbelow recover <targets>`
   */
 object CasualtiesBelowCommands {
   private val UnknownPart =
@@ -73,11 +75,20 @@ object CasualtiesBelowCommands {
           Commands.argument("targets", EntityArgument.players()).`then`(get).`then`(set)
         )
 
+      val recover = Commands
+        .literal("recover")
+        .`then`(
+          Commands
+            .argument("targets", EntityArgument.players())
+            .executes(recoverTargets)
+        )
+
       dispatcher.register(
         Commands
           .literal("casualtiesbelow")
           .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
           .`then`(body)
+          .`then`(recover)
       )
     }
   }
@@ -211,6 +222,26 @@ object CasualtiesBelowCommands {
     val part = getPart(ctx)
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     players.foreach { player => action(player, CasualtiesBelowComponents.Body.get(player), part) }
+    players.size
+  }
+
+  private def recoverTargets(ctx: CommandContext[CommandSourceStack]): Int = {
+    val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
+    players.foreach { player =>
+      val body = CasualtiesBelowComponents.Body.get(player)
+      BodyPart.values.foreach { part => body.setStats(part, LimbStats()) }
+
+      val vitals = CasualtiesBelowComponents.Vitals.get(player)
+      vitals.immuneHealth = VitalsComponent.MaxValue
+      vitals.consciousness = VitalsComponent.MaxValue
+
+      CasualtiesBelowComponents.Body.sync(player)
+      CasualtiesBelowComponents.Vitals.sync(player)
+      ctx.getSource.sendSuccess(
+        () => Component.literal(s"Fully recovered ${player.getName.getString}"),
+        false
+      )
+    }
     players.size
   }
 
