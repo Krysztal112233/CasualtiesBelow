@@ -1,20 +1,23 @@
 package dev.krysztal.casualtiesbelow
 
+import scala.reflect.ClassTag
+
+import net.minecraft.resources.Identifier
+import net.minecraft.world.entity.player.Player
+
 import dev.krysztal.casualtiesbelow.component.{
   BodyComponent,
   BodyComponentImpl,
   VitalsComponent,
   VitalsComponentImpl
 }
-import net.minecraft.resources.Identifier
-import net.minecraft.world.entity.player.Player
+
 import org.ladysnake.cca.api.v3.component.{ComponentFactory, ComponentKey, ComponentRegistryV3}
 import org.ladysnake.cca.api.v3.entity.{
   EntityComponentFactoryRegistry,
   EntityComponentInitializer,
   RespawnCopyStrategy
 }
-import scala.reflect.ClassTag
 import org.ladysnake.cca.api.v8.component.CardinalComponent
 
 /** Registers the mod's Cardinal Components on players. Declared as the `cardinal-components-entity`

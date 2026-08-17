@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.component
 import net.minecraft.core.HolderLookup
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
+
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
