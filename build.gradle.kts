@@ -56,6 +56,8 @@ java {
 
 tasks.withType<ScalaCompile>().configureEach {
     options.release = 25
+    // Enforce the project's brace style: reject significant-indentation syntax.
+    scalaCompileOptions.additionalParameters.add("-no-indent")
 }
 
 tasks.processResources {

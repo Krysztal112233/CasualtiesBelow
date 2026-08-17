@@ -61,7 +61,9 @@ Commit messages follow Conventional Commits: `type(scope): description`.
 
 ## Notes
 
-- Scala 3 with significant-indentation syntax; `scala_version` must stay in sync with
+- Scala 3 with brace-delimited bodies: multi-statement definitions must use `{ ... }`
+  after `=` — do not use significant-indentation bodies (enforced by the `-no-indent`
+  compiler flag). `scala_version` must stay in sync with
   the Scala version bundled at runtime by krysztal-language-scala (see the comments in
   `gradle.properties`).
 - Since the game is unobfuscated, dependencies are declared with plain
