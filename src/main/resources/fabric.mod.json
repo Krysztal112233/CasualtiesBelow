@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "casualtiesbelow",
+  "version": "${version}",
+  "name": "Casualties: Below",
+  "description": "CasualtiesBelow",
+  "environment": "*",
+  "license": "MIT",
+  "entrypoints": {
+    "main": [
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.CasualtiesBelow"
+      }
+    ],
+    "client": [
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowClient"
+      }
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": ">=26.2",
+    "java": ">=25",
+    "fabric-api": "*",
+    "krysztal-language-scala": ">=3.3.2"
+  }
+}
