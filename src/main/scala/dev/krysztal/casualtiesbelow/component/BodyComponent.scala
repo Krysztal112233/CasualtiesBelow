@@ -121,12 +121,12 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.DislocationSpeedPenaltyId,
-      -dislocatedLegs * CasualtiesBelowConfig.Movement.DislocationSpeedReduction.get()
+      -dislocatedLegs * CasualtiesBelowConfig.DislocationSpeedReduction.get()
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.DislocationJumpPenaltyId,
-      -dislocatedLegs * CasualtiesBelowConfig.Movement.DislocationJumpReduction.get()
+      -dislocatedLegs * CasualtiesBelowConfig.DislocationJumpReduction.get()
     )
   }
 
