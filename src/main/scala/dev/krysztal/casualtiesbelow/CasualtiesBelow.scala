@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow
 import net.minecraft.resources.Identifier
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.damage.LimbDamage
 
 import net.fabricmc.api.ModInitializer
 import org.slf4j.LoggerFactory
@@ -14,6 +15,7 @@ object CasualtiesBelow extends ModInitializer {
   override def onInitialize(): Unit = {
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
+    LimbDamage.register()
     Logger.info("CasualtiesBelow initialized")
   }
 
