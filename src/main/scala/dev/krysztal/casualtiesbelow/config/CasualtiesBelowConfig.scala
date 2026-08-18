@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.config
 
+import java.lang.Boolean
 import java.lang.Double
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
@@ -51,6 +52,23 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("dislocationJumpReduction", 0.2, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("fall")
+  val FallDamageExponent: ConfigValue[Double] = Builder
+    .comment("Exponent applied to fall distance beyond the entity's safe fall distance.")
+    .gameRestart()
+    .defineInRange("damageExponent", 1.5, 0.1, 10.0, classOf[Double])
+  val FallDamageScale: ConfigValue[Double] = Builder
+    .comment("Scale applied after the fall damage power curve.")
+    .gameRestart()
+    .defineInRange("damageScale", 0.5, 0.0, 100.0, classOf[Double])
+  val AffectAllLivingEntities: ConfigValue[Boolean] = Builder
+    .comment(
+      "Whether the custom fall damage formula applies to all living entities, not just players."
+    )
+    .gameRestart()
+    .define("affectAllLivingEntities", false)
   Builder.pop()
 
   private val Spec = Builder.build()

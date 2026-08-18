@@ -6,6 +6,9 @@
   "description": "Down, down, down.",
   "environment": "*",
   "license": "MIT",
+  "mixins": [
+    "casualtiesbelow.mixins.json"
+  ],
   "entrypoints": {
     "main": [
       {
