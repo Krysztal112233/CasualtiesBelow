@@ -7,6 +7,9 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.event.LimbInjuryCallback
+import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
+import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
 
@@ -50,13 +53,14 @@ object LimbDamage {
     if (!isEligibleFall) return
 
     val player = entity.asInstanceOf[Player]
+
     // Players always use the custom formula (see FallDamageFormula.appliesTo), so the
     // severity can be recomputed deterministically from the same inputs.
     val damage = FallDamageFormula
       .calculateCustom(player, fallDistance, damageModifier)
       .toDouble
     if (damage > 0.0) {
-      attributeFallDamage(player, damage)
+      attributeFallDamage(player, source, damage)
       CasualtiesBelowComponents.Body.sync(player)
     }
 
@@ -94,35 +98,74 @@ object LimbDamage {
     * The constants are balancing placeholders; expect them to become config values or EvalEx
     * formulas (like [[FallDamageFormula]]) once playtesting starts.
     */
-  private def attributeFallDamage(player: Player, damage: Double): Unit = {
+  private def attributeFallDamage(player: Player, source: DamageSource, damage: Double): Unit = {
     val body = CasualtiesBelowComponents.Body.get(player)
     val severeLeg =
       if (player.getRandom.nextBoolean()) BodyPart.LegLeft else BodyPart.LegRight
 
+    // General impact on both legs, then the severe injury on the randomly picked leg — the severe
+    // leg effectively suffers two injuries, each cancellable on its own.
     BodyPart.Legs.foreach { leg =>
-      val stats = body.stats(leg).copy()
-      stats.muscleHealth = (stats.muscleHealth - damage * MuscleDamagePerPoint).max(0.0)
-      stats.pain = (stats.pain + damage * PainPerPoint).min(LimbStats.MaxValue)
-
-      if (damage >= ScrapeThreshold) {
-        stats.skinIntegrity =
-          (stats.skinIntegrity - (damage - ScrapeThreshold) * ScrapePerPoint).max(0.0)
-        if (stats.skinIntegrity <= 0.0) {
-          stats.externalBleedingRate += BleedingRateOnSkinBreak
-        }
-      }
-
-      if (leg == severeLeg && stats.fractureRecoveryTicks.isEmpty) {
-        if (damage >= FractureThreshold) {
-          stats.fractureRecoveryTicks =
-            Some((FractureBaseRecoveryTicks * damage / FractureThreshold).toInt)
-        } else if (damage >= DislocationThreshold) {
-          stats.dislocated = true
-        }
-      }
-
-      body.setStats(leg, stats)
+      applyFallInjury(body, player, leg, source, damage)
     }
+    applySevereFallInjury(body, player, severeLeg, source, damage)
+  }
+
+  /** Applies the general fall impact (muscle health, pain, skin scrape, bleeding) to one leg;
+    * cancelled injuries (see [[LimbInjuryCallback.EVENT]]) return early.
+    */
+  private def applyFallInjury(
+      body: BodyComponent,
+      player: Player,
+      leg: BodyPart,
+      source: DamageSource,
+      damage: Double
+  ): Unit = {
+    val context = LimbInjuryContext(player, leg, source, damage)
+    if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
+
+    val stats = body.stats(leg).copy()
+    stats.muscleHealth = (stats.muscleHealth - damage * MuscleDamagePerPoint).max(0.0)
+    stats.pain = (stats.pain + damage * PainPerPoint).min(LimbStats.MaxValue)
+
+    if (damage >= ScrapeThreshold) {
+      stats.skinIntegrity =
+        (stats.skinIntegrity - (damage - ScrapeThreshold) * ScrapePerPoint).max(0.0)
+      if (stats.skinIntegrity <= 0.0) {
+        stats.externalBleedingRate += BleedingRateOnSkinBreak
+      }
+    }
+
+    body.setStats(leg, stats)
+  }
+
+  /** Applies the severe fall injury (fracture above [[FractureThreshold]], dislocation above
+    * [[DislocationThreshold]]) to the picked leg; cancelled injuries return early.
+    */
+  private def applySevereFallInjury(
+      body: BodyComponent,
+      player: Player,
+      leg: BodyPart,
+      source: DamageSource,
+      damage: Double
+  ): Unit = {
+    if (damage < DislocationThreshold) return
+
+    val stats = body.stats(leg).copy()
+    if (stats.fractureRecoveryTicks.isDefined) return
+
+    val context = LimbInjuryContext(player, leg, source, damage)
+    if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
+
+    if (damage >= FractureThreshold) {
+      stats.fractureRecoveryTicks = Some(
+        (FractureBaseRecoveryTicks * damage / FractureThreshold).toInt
+      )
+    } else {
+      stats.dislocated = true
+    }
+
+    body.setStats(leg, stats)
   }
 
   /** Muscle health lost per half-heart of fall damage. */
