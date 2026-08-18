@@ -3,6 +3,7 @@
   "package": "dev.krysztal.casualtiesbelow.mixin",
   "compatibilityLevel": "JAVA_25",
   "mixins": [
+    "BiomeInvoker",
     "LivingEntityMixin"
   ]
 }
