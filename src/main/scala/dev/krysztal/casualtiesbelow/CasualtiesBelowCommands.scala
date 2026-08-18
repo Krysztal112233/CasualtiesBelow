@@ -1,13 +1,10 @@
 package dev.krysztal.casualtiesbelow
 
-import java.lang.Float
-
 import scala.jdk.CollectionConverters.*
 
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.BoolArgumentType
 import com.mojang.brigadier.arguments.DoubleArgumentType
-import com.mojang.brigadier.arguments.FloatArgumentType
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
@@ -47,7 +44,8 @@ object CasualtiesBelowCommands {
     "dislocated",
     "fracture_recovery_ticks",
     "infection_progress",
-    "external_bleeding_rate"
+    "external_bleeding_rate",
+    "pain"
   )
 
   def register(): Unit = {
@@ -104,13 +102,13 @@ object CasualtiesBelowCommands {
   private def setBranches(): List[LiteralArgumentBuilder[CommandSourceStack]] = List(
     valueBranch(
       "muscle_health",
-      FloatArgumentType.floatArg(0f, LimbStats.MaxValue),
-      classOf[Float]
+      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      classOf[java.lang.Double]
     ) { (s, v) => s.muscleHealth = v },
     valueBranch(
       "skin_integrity",
-      FloatArgumentType.floatArg(0f, LimbStats.MaxValue),
-      classOf[Float]
+      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      classOf[java.lang.Double]
     ) { (s, v) => s.skinIntegrity = v },
     valueBranch("dislocated", BoolArgumentType.bool(), classOf[java.lang.Boolean]) { (s, v) =>
       s.dislocated = v
@@ -125,17 +123,22 @@ object CasualtiesBelowCommands {
     ),
     clearableBranch(
       "infection_progress",
-      FloatArgumentType.floatArg(0f, LimbStats.MaxValue),
-      classOf[Float]
+      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      classOf[java.lang.Double]
     )(
-      { (s, v) => s.infectionProgress = Some(v.toFloat) },
+      { (s, v) => s.infectionProgress = Some(v.doubleValue) },
       { s => s.infectionProgress = None }
     ),
     valueBranch(
       "external_bleeding_rate",
       DoubleArgumentType.doubleArg(0.0),
       classOf[java.lang.Double]
-    ) { (s, v) => s.externalBleedingRate = v }
+    ) { (s, v) => s.externalBleedingRate = v },
+    valueBranch(
+      "pain",
+      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      classOf[java.lang.Double]
+    ) { (s, v) => s.pain = v }
   )
 
   private def valueBranch[V](
@@ -259,6 +262,7 @@ object CasualtiesBelowCommands {
     case "infection_progress" =>
       stats.infectionProgress.map(p => f"$p%.1f").getOrElse("none")
     case "external_bleeding_rate" => f"${stats.externalBleedingRate}%.2f mL/tick"
+    case "pain"                   => f"${stats.pain}%.1f"
     case _                        => throw UnknownStat.create()
   }
 }

@@ -8,15 +8,16 @@ import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
 /** Whole-player vitals: immune health value and consciousness. Both range from 0 to
-  * [[VitalsComponent.MaxValue]].
+  * [[VitalsComponent.MaxValue]]. `Double` rather than `Float` for the same reason as
+  * [[dev.krysztal.casualtiesbelow.component.LimbStats]]: per-tick accumulation precision.
   */
 trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
-  var immuneHealth: Float
-  var consciousness: Float
+  var immuneHealth: Double
+  var consciousness: Double
 }
 
 object VitalsComponent {
-  val MaxValue: Float = 100f
+  val MaxValue: Double = 100.0
 
   // NBT keys
   val ImmuneHealthKey = "immune_health"
@@ -24,8 +25,8 @@ object VitalsComponent {
 }
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
-  var immuneHealth: Float = VitalsComponent.MaxValue
-  var consciousness: Float = VitalsComponent.MaxValue
+  var immuneHealth: Double = VitalsComponent.MaxValue
+  var consciousness: Double = VitalsComponent.MaxValue
 
   override def copyFrom(
       other: VitalsComponent,
@@ -36,12 +37,12 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 
   override def writeData(out: ValueOutput): Unit = {
-    out.putFloat(VitalsComponent.ImmuneHealthKey, immuneHealth)
-    out.putFloat(VitalsComponent.ConsciousnessKey, consciousness)
+    out.putDouble(VitalsComponent.ImmuneHealthKey, immuneHealth)
+    out.putDouble(VitalsComponent.ConsciousnessKey, consciousness)
   }
 
   override def readData(in: ValueInput): Unit = {
-    immuneHealth = in.getFloatOr(VitalsComponent.ImmuneHealthKey, VitalsComponent.MaxValue)
-    consciousness = in.getFloatOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
+    immuneHealth = in.getDoubleOr(VitalsComponent.ImmuneHealthKey, VitalsComponent.MaxValue)
+    consciousness = in.getDoubleOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
   }
 }

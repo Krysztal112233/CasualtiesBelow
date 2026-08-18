@@ -22,7 +22,9 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
 /** Per-limb stats.
   *
-  * `muscleHealth` and `skinIntegrity` range from 0 to [[LimbStats.MaxValue]].
+  * `muscleHealth`, `skinIntegrity` and `pain` range from 0 to [[LimbStats.MaxValue]]. All numeric
+  * stats are `Double`: they evolve continuously (per-tick accumulation), where `Float`'s 24-bit
+  * mantissa would eventually swallow small deltas.
   *
   * `fractureRecoveryTicks` is `None` when the limb is not fractured; a value is the number of ticks
   * remaining until the fracture heals. `infectionProgress` is `None` when the limb is not infected;
@@ -30,16 +32,17 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
   * the amount of blood lost per tick in mL and has no upper bound.
   */
 final case class LimbStats(
-    var muscleHealth: Float = LimbStats.MaxValue,
-    var skinIntegrity: Float = LimbStats.MaxValue,
+    var muscleHealth: Double = LimbStats.MaxValue,
+    var skinIntegrity: Double = LimbStats.MaxValue,
     var fractureRecoveryTicks: Option[Int] = None,
-    var infectionProgress: Option[Float] = None,
+    var infectionProgress: Option[Double] = None,
     var dislocated: Boolean = false,
-    var externalBleedingRate: Double = 0.0
+    var externalBleedingRate: Double = 0.0,
+    var pain: Double = 0.0
 )
 
 object LimbStats {
-  val MaxValue: Float = 100f
+  val MaxValue: Double = 100.0
 
   // NBT keys
   val MuscleHealthKey = "muscle_health"
@@ -48,6 +51,7 @@ object LimbStats {
   val InfectionProgressKey = "infection_progress"
   val DislocatedKey = "dislocated"
   val ExternalBleedingRateKey = "external_bleeding_rate"
+  val PainKey = "pain"
 }
 
 /** Per-limb body condition (muscle health, skin integrity, fracture, infection, dislocation and
@@ -81,16 +85,17 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       val child = out.child(part.id)
       val s = limbs(part)
-      child.putFloat(LimbStats.MuscleHealthKey, s.muscleHealth)
-      child.putFloat(LimbStats.SkinIntegrityKey, s.skinIntegrity)
+      child.putDouble(LimbStats.MuscleHealthKey, s.muscleHealth)
+      child.putDouble(LimbStats.SkinIntegrityKey, s.skinIntegrity)
       s.fractureRecoveryTicks.foreach { t =>
         child.putInt(LimbStats.FractureRecoveryTicksKey, t)
       }
       s.infectionProgress.foreach { p =>
-        child.putFloat(LimbStats.InfectionProgressKey, p)
+        child.putDouble(LimbStats.InfectionProgressKey, p)
       }
       child.putBoolean(LimbStats.DislocatedKey, s.dislocated)
       child.putDouble(LimbStats.ExternalBleedingRateKey, s.externalBleedingRate)
+      child.putDouble(LimbStats.PainKey, s.pain)
     }
   }
 
@@ -98,14 +103,15 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       in.child(part.id).ifPresent { child =>
         val s = limbs(part)
-        s.muscleHealth = child.getFloatOr(LimbStats.MuscleHealthKey, LimbStats.MaxValue)
-        s.skinIntegrity = child.getFloatOr(LimbStats.SkinIntegrityKey, LimbStats.MaxValue)
+        s.muscleHealth = child.getDoubleOr(LimbStats.MuscleHealthKey, LimbStats.MaxValue)
+        s.skinIntegrity = child.getDoubleOr(LimbStats.SkinIntegrityKey, LimbStats.MaxValue)
         s.fractureRecoveryTicks =
           child.getInt(LimbStats.FractureRecoveryTicksKey).toScala.map(_.intValue)
         s.infectionProgress =
-          child.read(LimbStats.InfectionProgressKey, Codec.FLOAT).toScala.map(_.floatValue)
+          child.read(LimbStats.InfectionProgressKey, Codec.DOUBLE).toScala.map(_.doubleValue)
         s.dislocated = child.getBooleanOr(LimbStats.DislocatedKey, false)
         s.externalBleedingRate = child.getDoubleOr(LimbStats.ExternalBleedingRateKey, 0.0)
+        s.pain = child.getDoubleOr(LimbStats.PainKey, 0.0)
       }
     }
     reconcileMovementModifiers()
