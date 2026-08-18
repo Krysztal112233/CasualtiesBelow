@@ -14,6 +14,14 @@ base {
     archivesName = property("archives_base_name") as String
 }
 
+loom {
+    runs.configureEach {
+        // Export transformed classes for mixin inspection and retain failed targets for diagnosis.
+        systemProperties.put("mixin.debug.export", "true")
+        systemProperties.put("mixin.dumpTargetOnFailure", "true")
+    }
+}
+
 repositories {
     // Loom adds the Fabric and Mojang repositories automatically.
     maven("https://api.modrinth.com/maven") { name = "Modrinth" }
