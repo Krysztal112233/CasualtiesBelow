@@ -28,11 +28,13 @@ exploration instead of reading them into the main context yourself.
 | `src/main/scala/`              | The mod itself                           | Entrypoints are declared in `src/main/resources/fabric.mod.json` (`scala` language adapter, provided by krysztal-language-scala)                                                                                                                              |
 | `sources/minecraft/`           | Decompiled Minecraft 26.2 sources (Java) | Produced by Fabric Loom `genSources` (Vineflower); package roots are `net.minecraft.*` and `com.mojang.*`. Decompiled code may differ from the real implementation (especially generics and control flow), but class names and method signatures are reliable |
 | `sources/fabric-api/<module>/` | Official Fabric API sources              | One directory per module (e.g. `fabric-lifecycle-events-v1`, `fabric-networking-api-v1`)                                                                                                                                                                      |
+| `sources/mods/<mod>/`          | Sources of other mod dependencies        | ModMenu, Forge Config API Port, Cardinal Components... Mods without a published sources jar are skipped. Add more in `gradle/sources.gradle.kts` (`modSources` dependencies)                                                                                  |
 
 `sources/` is gitignored — it is a regenerable local cache. If it is missing or stale
 after a version bump, regenerate it with `./gradlew sources`: this runs Loom
-`genSources` to decompile and extract Minecraft, and resolves the official Fabric API
-sources jars, extracting them per module. Takes a few minutes.
+`genSources` to decompile and extract Minecraft, resolves the official Fabric API
+sources jars (extracting them per module), and extracts the sources jars of other
+mod dependencies. Takes a few minutes.
 The task implementation lives in `gradle/sources.gradle.kts`.
 
 ### Searching
