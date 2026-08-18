@@ -1,7 +1,5 @@
 package dev.krysztal.casualtiesbelow
 
-import java.util.function.BiFunction
-
 import net.minecraft.client.gui.screens.Screen
 
 import net.fabricmc.api.ClientModInitializer
