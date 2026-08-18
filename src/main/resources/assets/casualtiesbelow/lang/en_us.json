@@ -2,5 +2,10 @@
   "key.casualtiesbelow.open_screen": "Open Body Status",
   "key.category.casualtiesbelow.main": "Casualties: Below",
   "screen.casualtiesbelow.body_status": "Body Status",
-  "screen.casualtiesbelow.body_status.placeholder": "Work in progress"
+  "bodypart.casualtiesbelow.head": "Head",
+  "bodypart.casualtiesbelow.torso": "Torso",
+  "bodypart.casualtiesbelow.arm_left": "Left Arm",
+  "bodypart.casualtiesbelow.arm_right": "Right Arm",
+  "bodypart.casualtiesbelow.leg_left": "Left Leg",
+  "bodypart.casualtiesbelow.leg_right": "Right Leg"
 }

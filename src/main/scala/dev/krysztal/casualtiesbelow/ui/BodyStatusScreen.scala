@@ -8,6 +8,9 @@ import net.minecraft.util.Mth
 import net.minecraft.util.Util
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
+import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.component.LimbStats
 
 /** Body status screen, summoned by the open-screen keybind (default: R). Pressing the keybind again
   * or Esc closes it.
@@ -19,7 +22,13 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
   * vanilla's binary `blurBeforeThisStratum` — 26.2 has no progressive blur API, so only the dim
   * overlay follows the animation progress.
   *
-  * Content is a placeholder for now.
+  * Content is a front-view T-pose outline of the player's body, one block per [[BodyPart]], laid
+  * out from the player model's front silhouette (32×32 in model/skin pixels with the arms raised
+  * horizontal, see `HumanoidModel.createMesh`).
+  *
+  * Each part reflects its synced [[LimbStats]]: the outline reddens as skin integrity drops, the
+  * fill reddens as muscle health drops, and the block trembles while the limb is in pain (amplitude
+  * scales with pain). The hovered part is brightened and shows its localized name as a tooltip.
   */
 class BodyStatusScreen
     extends Screen(Component.translatable("screen.casualtiesbelow.body_status")) {
@@ -102,15 +111,83 @@ class BodyStatusScreen
       BodyStatusScreen.TitleColor,
       true
     )
-    val placeholder = Component.translatable("screen.casualtiesbelow.body_status.placeholder")
-    graphics.text(
-      this.font,
-      placeholder,
-      x + (panelWidth - this.font.width(placeholder)) / 2,
-      y + panelHeight / 2,
-      BodyStatusScreen.PlaceholderColor,
-      false
+
+    extractBody(
+      graphics,
+      x + (panelWidth - BodyStatusScreen.BodyWidth) / 2,
+      y + BodyStatusScreen.BodyTopPadding,
+      mouseX,
+      mouseY
     )
+  }
+
+  /** Draws the body outline: each part is a solid block with a 1px outline (adjacent parts share
+    * outline edges, giving 1px visual separation). The outline maps skin integrity and the fill
+    * maps muscle health, both lerping gray → red as the stat drops; a limb in pain trembles with an
+    * amplitude proportional to its pain. The hovered part (hit-tested against the un-trembled base
+    * rect, so the highlight stays stable under trembling) is brightened and shows its localized
+    * name as a tooltip.
+    */
+  private def extractBody(
+      graphics: GuiGraphicsExtractor,
+      originX: Int,
+      originY: Int,
+      mouseX: Int,
+      mouseY: Int
+  ): Unit = {
+    val scale = BodyStatusScreen.BodyScale
+    // ComponentKey.get is null when the provider has no such component; Option wraps that.
+    val body = Option(CasualtiesBelowComponents.Body.get(this.minecraft.player))
+    val hovered = BodyStatusScreen.PartLayout.find { rect =>
+      mouseX >= originX + rect.x * scale && mouseX < originX + (rect.x + rect.width) * scale &&
+      mouseY >= originY + rect.y * scale && mouseY < originY + (rect.y + rect.height) * scale
+    }
+
+    BodyStatusScreen.PartLayout.foreach { rect =>
+      val stats = body.map(_.stats(rect.part))
+      val (offsetX, offsetY) = stats match {
+        case Some(s) if s.pain > 0.0 => BodyStatusScreen.trembleOffset(rect.part, s.pain)
+        case _                       => (0, 0)
+      }
+      val px = originX + rect.x * scale + offsetX
+      val py = originY + rect.y * scale + offsetY
+      val pw = rect.width * scale
+      val ph = rect.height * scale
+
+      val outlineColor = stats match {
+        case Some(s) =>
+          BodyStatusScreen.lerpArgb(
+            BodyStatusScreen.PartOutlineColor,
+            BodyStatusScreen.SkinDamagedOutlineColor,
+            1.0 - s.skinIntegrity / LimbStats.MaxValue
+          )
+        case None => BodyStatusScreen.PartOutlineColor
+      }
+      graphics.fill(px, py, px + pw, py + ph, outlineColor)
+
+      val baseFillColor = stats match {
+        case Some(s) =>
+          BodyStatusScreen.lerpArgb(
+            BodyStatusScreen.PartFillColor,
+            BodyStatusScreen.MuscleDamagedFillColor,
+            1.0 - s.muscleHealth / LimbStats.MaxValue
+          )
+        case None => BodyStatusScreen.PartFillColor
+      }
+      val fillColor =
+        if (hovered.contains(rect)) {
+          BodyStatusScreen.lerpArgb(baseFillColor, 0xffffffff, BodyStatusScreen.HoverBrighten)
+        } else baseFillColor
+      graphics.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, fillColor)
+    }
+
+    hovered.foreach { rect =>
+      graphics.setTooltipForNextFrame(
+        Component.translatable(s"bodypart.casualtiesbelow.${rect.part.id}"),
+        mouseX,
+        mouseY
+      )
+    }
   }
 
   /** Starts the closing animation instead of closing immediately; the screen removes itself in
@@ -148,8 +225,18 @@ class BodyStatusScreen
 }
 
 object BodyStatusScreen {
-  private val PanelWidth = 240
-  private val PanelHeight = 120
+  private val PanelWidth = 176
+  private val PanelHeight = 164
+
+  /** Scale of the body diagram relative to model pixels (the T-pose silhouette is 32×32 model
+    * pixels).
+    */
+  private val BodyScale = 4
+  private val BodyWidth = 32 * BodyScale
+  private val BodyHeight = 32 * BodyScale
+
+  /** Padding between the top of the panel and the top of the body diagram. */
+  private val BodyTopPadding = 26
 
   private val OpenDurationMs = 280
   private val CloseDurationMs = 200
@@ -162,5 +249,60 @@ object BodyStatusScreen {
   private val PanelBorderColor = 0xff3a3a3a // opaque dark gray
   private val PanelFillColor = 0xc0181818 // 75%-opaque near-black
   private val TitleColor = 0xffffffff // opaque white
-  private val PlaceholderColor = 0xffa0a0a0 // opaque light gray
+  private val PartOutlineColor = 0xff3a3a3a // opaque dark gray (healthy skin)
+  private val PartFillColor = 0xff8a8a8a // opaque mid gray (healthy muscle)
+  private val SkinDamagedOutlineColor = 0xffe74c3c // opaque bright red
+  private val MuscleDamagedFillColor = 0xffb03a30 // opaque deep red
+
+  /** How much a hovered part's fill is lerped toward white. */
+  private val HoverBrighten = 0.3
+
+  /** Tremble amplitude at maximum pain, in screen pixels. */
+  private val MaxTremblePixels = 1.4
+
+  /** Tremble angular frequency in radians per millisecond (period ≈ 126ms). */
+  private val TrembleFrequency = 0.1f
+
+  /** Per-channel ARGB lerp; `progress` is clamped to [0, 1]. */
+  private def lerpArgb(from: Int, to: Int, progress: Double): Int = {
+    val p = Mth.clamp(progress, 0.0, 1.0)
+    def channel(shift: Int): Int = {
+      val a = (from >> shift) & 0xff
+      val b = (to >> shift) & 0xff
+      (a + ((b - a) * p).toInt) & 0xff
+    }
+    (channel(24) << 24) | (channel(16) << 16) | (channel(8) << 8) | channel(0)
+  }
+
+  /** Pixel offset for a limb in pain: two detuned sines per axis give an irregular jitter; the
+    * per-part phase keeps limbs from shaking in lockstep. Wall-clock driven, so it keeps animating
+    * while the game is paused (matching the open/close animation).
+    */
+  private def trembleOffset(part: BodyPart, pain: Double): (Int, Int) = {
+    val amplitude = pain / LimbStats.MaxValue * MaxTremblePixels
+    val t = Util.getMillis().toFloat * TrembleFrequency
+    val phase = part.ordinal * 1.37f
+    val dx = Mth.sin(t + phase) * amplitude +
+      Mth.sin(t * 2.7f + phase * 2f) * amplitude * 0.4
+    val dy = Mth.cos(t * 1.3f + phase) * amplitude * 0.6
+    (Math.round(dx).toInt, Math.round(dy).toInt)
+  }
+
+  /** One part's rectangle within the 32×32 T-pose silhouette, in model pixels.
+    *
+    * Front view (as if facing the player): the player's right side is on the viewer's left, so
+    * [[BodyPart.ArmRight]]/[[BodyPart.LegRight]] are the left-hand blocks. Arms are raised
+    * horizontal at shoulder height: each 4×12 arm becomes a 12×4 block aligned with the torso's top
+    * edge.
+    */
+  private final case class PartRect(part: BodyPart, x: Int, y: Int, width: Int, height: Int)
+
+  private val PartLayout: List[PartRect] = List(
+    PartRect(BodyPart.Head, 12, 0, 8, 8),
+    PartRect(BodyPart.Torso, 12, 8, 8, 12),
+    PartRect(BodyPart.ArmRight, 0, 8, 12, 4),
+    PartRect(BodyPart.ArmLeft, 20, 8, 12, 4),
+    PartRect(BodyPart.LegRight, 12, 20, 4, 12),
+    PartRect(BodyPart.LegLeft, 16, 20, 4, 12)
+  )
 }
