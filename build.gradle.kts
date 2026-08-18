@@ -53,6 +53,11 @@ dependencies {
     add("include", "org.ladysnake.cardinal-components-api:cardinal-components-base:${property("cca_version")}")
     add("include", "org.ladysnake.cardinal-components-api:cardinal-components-entity:${property("cca_version")}")
 
+    // EvalEx: math expression compiler for user-configurable formulas. Pure Java library
+    // with no transitive dependencies; bundled jar-in-jar.
+    implementation("com.ezylang:EvalEx:${property("evalex_version")}")
+    add("include", "com.ezylang:EvalEx:${property("evalex_version")}")
+
     // Forge Config API Port: NeoForge-style config system on Fabric. External dependency
     // (Fuzs ecosystem convention): declared in fabric.mod.json `depends`, users install it
     // separately — do NOT bundle it jar-in-jar.

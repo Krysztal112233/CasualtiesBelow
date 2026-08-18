@@ -15,6 +15,7 @@ import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
   * provided by Forge Config API Port.
   */
 object CasualtiesBelowConfig {
+
   private val Builder = new ModConfigSpec.Builder()
 
   Builder.push("vitals")
@@ -55,14 +56,18 @@ object CasualtiesBelowConfig {
   Builder.pop()
 
   Builder.push("fall")
-  val FallDamageExponent: ConfigValue[Double] = Builder
-    .comment("Exponent applied to fall distance beyond the entity's safe fall distance.")
-    .gameRestart()
-    .defineInRange("damageExponent", 1.5, 0.1, 10.0, classOf[Double])
-  val FallDamageScale: ConfigValue[Double] = Builder
-    .comment("Scale applied after the fall damage power curve.")
-    .gameRestart()
-    .defineInRange("damageScale", 0.5, 0.0, 100.0, classOf[Double])
+  val FallDamageFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "damageFormula",
+    "max(0, distance - safeDistance)^1.5 * 0.5 * modifier * multiplier",
+    List("distance", "safeDistance", "modifier", "multiplier"),
+    comment = Seq(
+      "Fall damage formula, compiled with EvalEx (https://github.com/ezylang/EvalEx).",
+      "Available variables: distance (fall distance), safeDistance (safe fall distance attribute),",
+      "modifier (vanilla damage modifier), multiplier (fall damage multiplier attribute).",
+      "Invalid formulas are rejected and corrected to the default. Hot-reloaded on file change."
+    )
+  )
   val AffectAllLivingEntities: ConfigValue[Boolean] = Builder
     .comment(
       "Whether the custom fall damage formula applies to all living entities, not just players."
