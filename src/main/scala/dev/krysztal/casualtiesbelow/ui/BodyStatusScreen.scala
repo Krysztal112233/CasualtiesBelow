@@ -28,7 +28,8 @@ import dev.krysztal.casualtiesbelow.component.LimbStats
   *
   * Each part reflects its synced [[LimbStats]]: the outline reddens as skin integrity drops, the
   * fill reddens as muscle health drops, and the block trembles while the limb is in pain (amplitude
-  * scales with pain). The hovered part is brightened and shows its localized name as a tooltip.
+  * scales with pain). The hovered part is brightened, and its stats are shown in the
+  * [[MedicalPanel]] docked to the left screen edge.
   */
 class BodyStatusScreen
     extends Screen(Component.translatable("screen.casualtiesbelow.body_status")) {
@@ -112,36 +113,50 @@ class BodyStatusScreen
       true
     )
 
-    extractBody(
+    val bodyOriginX = x + (panelWidth - BodyStatusScreen.BodyWidth) / 2
+    val bodyOriginY = y + BodyStatusScreen.BodyTopPadding
+    val hovered = hoveredPart(bodyOriginX, bodyOriginY, mouseX, mouseY)
+    extractBody(graphics, bodyOriginX, bodyOriginY, hovered)
+    MedicalPanel.extract(
       graphics,
-      x + (panelWidth - BodyStatusScreen.BodyWidth) / 2,
-      y + BodyStatusScreen.BodyTopPadding,
-      mouseX,
-      mouseY
+      this.font,
+      this.minecraft.player,
+      hovered.map(_.part),
+      easedProgress,
+      this.height
     )
+  }
+
+  /** The part under the mouse, hit-tested against the un-trembled base rects so the highlight and
+    * the side panel stay stable under trembling.
+    */
+  private def hoveredPart(
+      originX: Int,
+      originY: Int,
+      mouseX: Int,
+      mouseY: Int
+  ): Option[BodyStatusScreen.PartRect] = {
+    val scale = BodyStatusScreen.BodyScale
+    BodyStatusScreen.PartLayout.find { rect =>
+      mouseX >= originX + rect.x * scale && mouseX < originX + (rect.x + rect.width) * scale &&
+      mouseY >= originY + rect.y * scale && mouseY < originY + (rect.y + rect.height) * scale
+    }
   }
 
   /** Draws the body outline: each part is a solid block with a 1px outline (adjacent parts share
     * outline edges, giving 1px visual separation). The outline maps skin integrity and the fill
     * maps muscle health, both lerping gray → red as the stat drops; a limb in pain trembles with an
-    * amplitude proportional to its pain. The hovered part (hit-tested against the un-trembled base
-    * rect, so the highlight stays stable under trembling) is brightened and shows its localized
-    * name as a tooltip.
+    * amplitude proportional to its pain. The hovered part is brightened.
     */
   private def extractBody(
       graphics: GuiGraphicsExtractor,
       originX: Int,
       originY: Int,
-      mouseX: Int,
-      mouseY: Int
+      hovered: Option[BodyStatusScreen.PartRect]
   ): Unit = {
     val scale = BodyStatusScreen.BodyScale
     // ComponentKey.get is null when the provider has no such component; Option wraps that.
     val body = Option(CasualtiesBelowComponents.Body.get(this.minecraft.player))
-    val hovered = BodyStatusScreen.PartLayout.find { rect =>
-      mouseX >= originX + rect.x * scale && mouseX < originX + (rect.x + rect.width) * scale &&
-      mouseY >= originY + rect.y * scale && mouseY < originY + (rect.y + rect.height) * scale
-    }
 
     BodyStatusScreen.PartLayout.foreach { rect =>
       val stats = body.map(_.stats(rect.part))
@@ -179,14 +194,6 @@ class BodyStatusScreen
           BodyStatusScreen.lerpArgb(baseFillColor, 0xffffffff, BodyStatusScreen.HoverBrighten)
         } else baseFillColor
       graphics.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, fillColor)
-    }
-
-    hovered.foreach { rect =>
-      graphics.setTooltipForNextFrame(
-        Component.translatable(s"bodypart.casualtiesbelow.${rect.part.id}"),
-        mouseX,
-        mouseY
-      )
     }
   }
 
@@ -264,15 +271,8 @@ object BodyStatusScreen {
   private val TrembleFrequency = 0.1f
 
   /** Per-channel ARGB lerp; `progress` is clamped to [0, 1]. */
-  private def lerpArgb(from: Int, to: Int, progress: Double): Int = {
-    val p = Mth.clamp(progress, 0.0, 1.0)
-    def channel(shift: Int): Int = {
-      val a = (from >> shift) & 0xff
-      val b = (to >> shift) & 0xff
-      (a + ((b - a) * p).toInt) & 0xff
-    }
-    (channel(24) << 24) | (channel(16) << 16) | (channel(8) << 8) | channel(0)
-  }
+  private def lerpArgb(from: Int, to: Int, progress: Double): Int =
+    Argb.lerp(from, to, progress)
 
   /** Pixel offset for a limb in pain: two detuned sines per axis give an irregular jitter; the
     * per-part phase keeps limbs from shaking in lockstep. Wall-clock driven, so it keeps animating
