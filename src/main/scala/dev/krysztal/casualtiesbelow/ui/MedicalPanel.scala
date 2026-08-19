@@ -9,7 +9,7 @@ import net.minecraft.world.entity.player.Player
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
-import dev.krysztal.casualtiesbelow.pain.TotalPain
+import dev.krysztal.casualtiesbelow.pain.PainCalc
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
   * panel: an always-visible vitals section (consciousness, immune health) on top and a limb section
@@ -111,10 +111,10 @@ object MedicalPanel {
         ImmuneBadThreshold
       )
     }
-    // Whole-body pain is derived from limb pain on the spot (see TotalPain); "higher is worse",
+    // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",
     // so it is a plain row (red above the threshold) rather than a depletion bar.
     body.foreach { b =>
-      val totalPain = TotalPain.of(b)
+      val totalPain = PainCalc.total(b)
       y = extractStatRow(
         graphics,
         font,

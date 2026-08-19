@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbCondition
 import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.pain.PainCalc
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
@@ -113,8 +114,8 @@ object LimbDamage {
   }
 
   /** Applies the general fall impact (muscle health, impact pain, skin scrape, bleeding) to one
-    * leg; cancelled injuries (see [[LimbInjuryCallback.EVENT]]) return early. Impact pain scales
-    * with the damage via the context and can be adjusted by listeners.
+    * leg; cancelled injuries (see [[LimbInjuryCallback.EVENT]]) return early. Impact pain comes
+    * from [[PainCalc.onFall]] via the context and can be adjusted by listeners.
     */
   private def applyFallInjury(
       body: BodyComponent,
@@ -124,7 +125,7 @@ object LimbDamage {
       damage: Double
   ): Unit = {
     val context =
-      LimbInjuryContext(player, leg, source, damage, None, damage * PainPerPoint)
+      LimbInjuryContext(player, leg, source, damage, None, PainCalc.onFall(damage))
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
 
     val stats = body.stats(leg).copy()
@@ -146,11 +147,11 @@ object LimbDamage {
     * [[DislocationThreshold]]) to the picked leg; cancelled injuries return early.
     *
     * Fracture and dislocation are discrete condition onsets: each fires the injury event with its
-    * [[LimbCondition]] set and grants a fixed one-time pain injection ([[FracturePain]] /
-    * [[DislocationPain]]), independent of the continuous impact pain from [[applyFallInjury]].
-    * Onset guards prevent re-granting: an already-fractured leg takes no new condition, and an
-    * already-dislocated leg is not re-dislocated (a dislocated leg can still progress to a
-    * fracture).
+    * [[LimbCondition]] set and grants a fixed one-time pain injection (see
+    * [[PainCalc.onConditionOnset]]), independent of the continuous impact pain from
+    * [[applyFallInjury]]. Onset guards prevent re-granting: an already-fractured leg takes no new
+    * condition, and an already-dislocated leg is not re-dislocated (a dislocated leg can still
+    * progress to a fracture).
     */
   private def applySevereFallInjury(
       body: BodyComponent,
@@ -164,16 +165,22 @@ object LimbDamage {
     val current = body.stats(leg)
     if (current.fractureRecoveryTicks.isDefined) return
 
-    val (condition, onsetPain) =
+    val condition =
       if (damage >= FractureThreshold) {
-        (LimbCondition.Fracture, FracturePain)
+        LimbCondition.Fracture
       } else {
         if (current.dislocated) return
-        (LimbCondition.Dislocation, DislocationPain)
+        LimbCondition.Dislocation
       }
 
-    val context =
-      LimbInjuryContext(player, leg, source, damage, Some(condition), onsetPain)
+    val context = LimbInjuryContext(
+      player,
+      leg,
+      source,
+      damage,
+      Some(condition),
+      PainCalc.onConditionOnset(condition)
+    )
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
 
     val stats = current.copy()
@@ -191,15 +198,6 @@ object LimbDamage {
 
   /** Muscle health lost per half-heart of fall damage. */
   private val MuscleDamagePerPoint = 4.0
-
-  /** Pain gained per half-heart of fall damage (capped at [[LimbStats.MaxValue]]). */
-  private val PainPerPoint = 6.0
-
-  /** One-time pain granted when a leg fractures. */
-  private val FracturePain = 50.0
-
-  /** One-time pain granted when a leg is dislocated. */
-  private val DislocationPain = 30.0
 
   /** Fall damage (half-hearts) at which the landing also scrapes the skin. */
   private val ScrapeThreshold = 6.0
