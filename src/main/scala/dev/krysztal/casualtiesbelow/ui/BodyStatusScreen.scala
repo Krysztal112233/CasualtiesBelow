@@ -11,6 +11,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
 
 /** Body status screen, summoned by the open-screen keybind (default: R). Pressing the keybind again
   * or Esc closes it.
@@ -24,12 +25,13 @@ import dev.krysztal.casualtiesbelow.component.LimbStats
   *
   * Content is a front-view T-pose outline of the player's body, one block per [[BodyPart]], laid
   * out from the player model's front silhouette (32×32 in model/skin pixels with the arms raised
-  * horizontal, see `HumanoidModel.createMesh`).
+  * horizontal, see `HumanoidModel.createMesh`). Each part is drawn from the matching region of the
+  * player's skin texture (falling back to solid blocks when the skin can't be used).
   *
-  * Each part reflects its synced [[LimbStats]]: the outline reddens as skin integrity drops, the
-  * fill reddens as muscle health drops, and the block trembles while the limb is in pain (amplitude
-  * scales with pain). The hovered part is brightened, and its stats are shown in the
-  * [[MedicalPanel]] docked to the left screen edge.
+  * Each part reflects its synced [[LimbStats]]: damage tints the part red (block rendering maps
+  * outline → skin integrity, fill → muscle health), and the block trembles while the limb is in
+  * pain (amplitude scales with pain). The hovered part is brightened, and its stats are shown in
+  * the [[MedicalPanel]] docked to the left screen edge.
   */
 class BodyStatusScreen
     extends Screen(Component.translatable("screen.casualtiesbelow.body_status")) {
@@ -143,10 +145,10 @@ class BodyStatusScreen
     }
   }
 
-  /** Draws the body outline: each part is a solid block with a 1px outline (adjacent parts share
-    * outline edges, giving 1px visual separation). The outline maps skin integrity and the fill
-    * maps muscle health, both lerping gray → red as the stat drops; a limb in pain trembles with an
-    * amplitude proportional to its pain. The hovered part is brightened.
+  /** Draws the body diagram, one block per part at the 32×32 T-pose layout positions, delegating
+    * the actual part rendering to the [[BodyPartRenderer]] selected by
+    * [[BodyPartRenderer.forPlayer]] (skin texture by default, solid-color blocks as fallback). A
+    * limb in pain trembles with an amplitude proportional to its pain.
     */
   private def extractBody(
       graphics: GuiGraphicsExtractor,
@@ -157,6 +159,7 @@ class BodyStatusScreen
     val scale = BodyStatusScreen.BodyScale
     // ComponentKey.get is null when the provider has no such component; Option wraps that.
     val body = Option(CasualtiesBelowComponents.Body.get(this.minecraft.player))
+    val renderer = BodyPartRenderer.forPlayer(this.minecraft.player)
 
     BodyStatusScreen.PartLayout.foreach { rect =>
       val stats = body.map(_.stats(rect.part))
@@ -164,36 +167,17 @@ class BodyStatusScreen
         case Some(s) if s.pain > 0.0 => BodyStatusScreen.trembleOffset(rect.part, s.pain)
         case _                       => (0, 0)
       }
-      val px = originX + rect.x * scale + offsetX
-      val py = originY + rect.y * scale + offsetY
-      val pw = rect.width * scale
-      val ph = rect.height * scale
-
-      val outlineColor = stats match {
-        case Some(s) =>
-          BodyStatusScreen.lerpArgb(
-            BodyStatusScreen.PartOutlineColor,
-            BodyStatusScreen.SkinDamagedOutlineColor,
-            1.0 - s.skinIntegrity / LimbStats.MaxValue
-          )
-        case None => BodyStatusScreen.PartOutlineColor
-      }
-      graphics.fill(px, py, px + pw, py + ph, outlineColor)
-
-      val baseFillColor = stats match {
-        case Some(s) =>
-          BodyStatusScreen.lerpArgb(
-            BodyStatusScreen.PartFillColor,
-            BodyStatusScreen.MuscleDamagedFillColor,
-            1.0 - s.muscleHealth / LimbStats.MaxValue
-          )
-        case None => BodyStatusScreen.PartFillColor
-      }
-      val fillColor =
-        if (hovered.contains(rect)) {
-          BodyStatusScreen.lerpArgb(baseFillColor, 0xffffffff, BodyStatusScreen.HoverBrighten)
-        } else baseFillColor
-      graphics.fill(px + 1, py + 1, px + pw - 1, py + ph - 1, fillColor)
+      renderer.extractPart(
+        graphics,
+        this.minecraft.player,
+        rect.part,
+        stats,
+        hovered.contains(rect),
+        originX + rect.x * scale + offsetX,
+        originY + rect.y * scale + offsetY,
+        rect.width * scale,
+        rect.height * scale
+      )
     }
   }
 
@@ -256,23 +240,12 @@ object BodyStatusScreen {
   private val PanelBorderColor = 0xff3a3a3a // opaque dark gray
   private val PanelFillColor = 0xc0181818 // 75%-opaque near-black
   private val TitleColor = 0xffffffff // opaque white
-  private val PartOutlineColor = 0xff3a3a3a // opaque dark gray (healthy skin)
-  private val PartFillColor = 0xff8a8a8a // opaque mid gray (healthy muscle)
-  private val SkinDamagedOutlineColor = 0xffe74c3c // opaque bright red
-  private val MuscleDamagedFillColor = 0xffb03a30 // opaque deep red
-
-  /** How much a hovered part's fill is lerped toward white. */
-  private val HoverBrighten = 0.3
 
   /** Tremble amplitude at maximum pain, in screen pixels. */
   private val MaxTremblePixels = 1.4
 
   /** Tremble angular frequency in radians per millisecond (period ≈ 126ms). */
   private val TrembleFrequency = 0.1f
-
-  /** Per-channel ARGB lerp; `progress` is clamped to [0, 1]. */
-  private def lerpArgb(from: Int, to: Int, progress: Double): Int =
-    Argb.lerp(from, to, progress)
 
   /** Pixel offset for a limb in pain: two detuned sines per axis give an irregular jitter; the
     * per-part phase keeps limbs from shaking in lockstep. Wall-clock driven, so it keeps animating
