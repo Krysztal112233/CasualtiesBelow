@@ -4,6 +4,7 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.component.LimbCondition
 
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
@@ -19,12 +20,22 @@ import net.fabricmc.fabric.api.event.EventFactory
   *   the vanilla damage source (e.g. fall); listeners can filter by type/tags
   * @param damage
   *   the severity in half-hearts, as computed by the mod's damage formula
+  * @param condition
+  *   the discrete condition this injury onset applies, or `None` for a plain impact injury (no
+  *   condition onset). Fracture/dislocation onsets are injuries of their own and fire this event
+  *   with their condition set.
+  * @param pain
+  *   the pain this injury application will grant the limb (capped at the limb maximum on
+  *   application). Listeners may adjust it before returning — including to zero. Defaults: impact
+  *   injuries scale with the damage; condition onsets grant a fixed one-time amount.
   */
 final case class LimbInjuryContext(
     player: Player,
     part: BodyPart,
     source: DamageSource,
-    damage: Double
+    damage: Double,
+    condition: Option[LimbCondition],
+    var pain: Double
 )
 
 /** Fired before an injury is applied to a limb, once per affected limb. Return `false` to cancel

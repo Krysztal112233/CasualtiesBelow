@@ -11,6 +11,7 @@ import dev.krysztal.casualtiesbelow.api.event.LimbInjuryCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
 import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.component.LimbCondition
 import dev.krysztal.casualtiesbelow.component.LimbStats
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
@@ -111,8 +112,9 @@ object LimbDamage {
     applySevereFallInjury(body, player, severeLeg, source, damage)
   }
 
-  /** Applies the general fall impact (muscle health, pain, skin scrape, bleeding) to one leg;
-    * cancelled injuries (see [[LimbInjuryCallback.EVENT]]) return early.
+  /** Applies the general fall impact (muscle health, impact pain, skin scrape, bleeding) to one
+    * leg; cancelled injuries (see [[LimbInjuryCallback.EVENT]]) return early. Impact pain scales
+    * with the damage via the context and can be adjusted by listeners.
     */
   private def applyFallInjury(
       body: BodyComponent,
@@ -121,12 +123,13 @@ object LimbDamage {
       source: DamageSource,
       damage: Double
   ): Unit = {
-    val context = LimbInjuryContext(player, leg, source, damage)
+    val context =
+      LimbInjuryContext(player, leg, source, damage, None, damage * PainPerPoint)
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
 
     val stats = body.stats(leg).copy()
     stats.muscleHealth = (stats.muscleHealth - damage * MuscleDamagePerPoint).max(0.0)
-    stats.pain = (stats.pain + damage * PainPerPoint).min(LimbStats.MaxValue)
+    stats.pain = (stats.pain + context.pain).min(LimbStats.MaxValue)
 
     if (damage >= ScrapeThreshold) {
       stats.skinIntegrity =
@@ -141,6 +144,13 @@ object LimbDamage {
 
   /** Applies the severe fall injury (fracture above [[FractureThreshold]], dislocation above
     * [[DislocationThreshold]]) to the picked leg; cancelled injuries return early.
+    *
+    * Fracture and dislocation are discrete condition onsets: each fires the injury event with its
+    * [[LimbCondition]] set and grants a fixed one-time pain injection ([[FracturePain]] /
+    * [[DislocationPain]]), independent of the continuous impact pain from [[applyFallInjury]].
+    * Onset guards prevent re-granting: an already-fractured leg takes no new condition, and an
+    * already-dislocated leg is not re-dislocated (a dislocated leg can still progress to a
+    * fracture).
     */
   private def applySevereFallInjury(
       body: BodyComponent,
@@ -151,13 +161,24 @@ object LimbDamage {
   ): Unit = {
     if (damage < DislocationThreshold) return
 
-    val stats = body.stats(leg).copy()
-    if (stats.fractureRecoveryTicks.isDefined) return
+    val current = body.stats(leg)
+    if (current.fractureRecoveryTicks.isDefined) return
 
-    val context = LimbInjuryContext(player, leg, source, damage)
+    val (condition, onsetPain) =
+      if (damage >= FractureThreshold) {
+        (LimbCondition.Fracture, FracturePain)
+      } else {
+        if (current.dislocated) return
+        (LimbCondition.Dislocation, DislocationPain)
+      }
+
+    val context =
+      LimbInjuryContext(player, leg, source, damage, Some(condition), onsetPain)
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return
 
-    if (damage >= FractureThreshold) {
+    val stats = current.copy()
+    stats.pain = (stats.pain + context.pain).min(LimbStats.MaxValue)
+    if (condition == LimbCondition.Fracture) {
       stats.fractureRecoveryTicks = Some(
         (FractureBaseRecoveryTicks * damage / FractureThreshold).toInt
       )
@@ -173,6 +194,12 @@ object LimbDamage {
 
   /** Pain gained per half-heart of fall damage (capped at [[LimbStats.MaxValue]]). */
   private val PainPerPoint = 6.0
+
+  /** One-time pain granted when a leg fractures. */
+  private val FracturePain = 50.0
+
+  /** One-time pain granted when a leg is dislocated. */
+  private val DislocationPain = 30.0
 
   /** Fall damage (half-hearts) at which the landing also scrapes the skin. */
   private val ScrapeThreshold = 6.0
