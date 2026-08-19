@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.damage
 
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.DamageTypeTags
+import net.minecraft.tags.ItemTags
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
@@ -17,11 +18,10 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 /** Attributes incoming damage to body parts.
   *
   * Fall damage is attributed in [[onFallDamage]] (hooked from `LivingEntity.causeFallDamage`, where
-  * the impact context — fall distance, damage modifier, formula output — is available).
-  *
-  * TODO: [[afterDamage]] sees them via Fabric's [[ServerLivingEntityEvents.AFTER_DAMAGE]], but
-  * vanilla's [[DamageSource]] carries no hit-location information, so the rules for picking the
-  * affected part are still to be decided.
+  * the impact context — fall distance, damage modifier, formula output — is available). Other
+  * damage goes through [[afterDamage]] (Fabric's `ServerLivingEntityEvents.AFTER_DAMAGE`), which
+  * carries no hit-location information: the affected part is guessed from hit geometry (see
+  * [[HitLocation]]). Only melee is attributed so far.
   */
 object LimbDamage {
 
@@ -69,23 +69,69 @@ object LimbDamage {
   /** Invoked after a living entity takes damage, before armor/enchantment reduction, and only when
     * the entity survives. Server-side only (`LivingEntity.hurtServer`).
     *
-    * TODO: attribute non-fall damage to a body part (muscle health, skin integrity, bleeding, pain)
-    * once the hit-location rules are decided. Fall damage is skipped here: it is already attributed
-    * with richer context in [[onFallDamage]].
+    * Fall damage is skipped here: it is already attributed with richer context in [[onFallDamage]].
     */
   private val afterDamage: ServerLivingEntityEvents.AfterDamage =
-    (entity, source, baseDamageTaken, damageTaken, blocked) => {
-      if (isFallDamage(source)) {
-        () // Already handled by onFallDamage.
-      }
-      // TODO: non-fall damage attribution.
-    }
+    (entity, source, _, damageTaken, blocked) => onAfterDamage(entity, source, damageTaken, blocked)
+
+  private def onAfterDamage(
+      entity: LivingEntity,
+      source: DamageSource,
+      damageTaken: Float,
+      blocked: Boolean
+  ): Unit = {
+    if (!entity.isInstanceOf[Player]) return // The body component exists on players only.
+    if (isFallDamage(source)) return
+    if (blocked) return
+    if (damageTaken <= 0) return
+    if (!isMelee(source)) return
+
+    attributeMeleeDamage(entity.asInstanceOf[Player], source, damageTaken.toDouble)
+  }
 
   /** Whether the source is fall damage. Vanilla's `IS_FALL` tag also covers ender pearls and
     * stalagmites.
     */
   def isFallDamage(source: DamageSource): Boolean =
     source.is(DamageTypeTags.IS_FALL)
+
+  /** Whether the source is a melee hit: direct damage dealt by a living attacker (mob attacks,
+    * player attacks, stings, ...).
+    */
+  def isMelee(source: DamageSource): Boolean =
+    source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
+
+  /** Maps melee damage (in half-hearts, post-shield/pre-armor) to limb injuries:
+    *
+    *   - any hit: the located part ([[HitLocation]]) loses muscle health and gains pain
+    *     ([[PainCalc.onMelee]] via the injury context)
+    *   - sharp weapons (swords/axes): the skin is also cut, bleeding once skin integrity reaches
+    *     zero
+    *
+    * The constants are balancing placeholders, like the fall ones below.
+    */
+  private def attributeMeleeDamage(player: Player, source: DamageSource, damage: Double): Unit = {
+    val part = HitLocation.pick(player, source)
+    // TODO: distinguish weapon kinds with a dedicated item tag (e.g. `casualtiesbelow:sharp`)
+    // instead of hardcoding the vanilla swords/axes tags.
+    val isSharp = Option(source.getWeaponItem).exists { weapon =>
+      weapon.is(ItemTags.SWORDS) || weapon.is(ItemTags.AXES)
+    }
+
+    LimbInjuries(player, part, source, damage, pain = PainCalc.onMelee(damage)) {
+      (stats, effectiveDamage) =>
+        stats.muscleHealth =
+          (stats.muscleHealth - effectiveDamage * MeleeMuscleDamagePerPoint).max(0.0)
+
+        if (isSharp) {
+          stats.skinIntegrity =
+            (stats.skinIntegrity - effectiveDamage * SharpSkinDamagePerPoint).max(0.0)
+          if (stats.skinIntegrity <= 0.0) {
+            stats.externalBleedingRate += MeleeBleedingRateOnSkinBreak
+          }
+        }
+    }
+  }
 
   /** Maps fall damage (in half-hearts, as produced by [[FallDamageFormula]]) to leg injuries:
     *
@@ -178,6 +224,15 @@ object LimbDamage {
       }
     }
   }
+
+  /** Muscle health lost per half-heart of melee damage. */
+  private val MeleeMuscleDamagePerPoint = 3.0
+
+  /** Skin integrity lost per half-heart of sharp-weapon melee damage. */
+  private val SharpSkinDamagePerPoint = 2.0
+
+  /** External bleeding rate (mL/tick) added when a cut reduces skin integrity to zero. */
+  private val MeleeBleedingRateOnSkinBreak = 0.2
 
   /** Muscle health lost per half-heart of fall damage. */
   private val MuscleDamagePerPoint = 4.0
