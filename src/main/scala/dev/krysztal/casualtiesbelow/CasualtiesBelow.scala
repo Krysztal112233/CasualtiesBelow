@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow
 
 import net.minecraft.resources.Identifier
 
+import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 
@@ -16,6 +17,7 @@ object CasualtiesBelow extends ModInitializer {
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()
+    LimbInjuries.register()
     Logger.info("CasualtiesBelow initialized")
   }
 
