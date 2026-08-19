@@ -4,6 +4,7 @@ import java.lang.Boolean
 import java.lang.Double
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig
@@ -53,6 +54,28 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("dislocationJumpReduction", 0.2, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("pain")
+  val PainStrategy: ModConfigSpec.EnumValue[TotalPainStrategy] = Builder
+    .comment(
+      "How per-limb pains are aggregated into whole-body pain.",
+      "Max: only the worst injury counts. Sum: all pains add up.",
+      "Geometric: descending-sorted pains weighted d^0, d^1, d^2, ... (see totalPainDecay)."
+    )
+    .defineEnum("totalPainStrategy", TotalPainStrategy.Geometric)
+  val TotalPainDecay: ConfigValue[Double] = Builder
+    .comment(
+      "Geometric strategy decay factor: limb pains sorted descending are weighted d^0, d^1, d^2, ...",
+      "Lower values mean additional injuries beyond the worst count less."
+    )
+    .defineInRange("totalPainDecay", 0.3, 0.0, 1.0, classOf[Double])
+  val TotalPainFilterThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Geometric strategy: limb pains below this value do not contribute (0 = no filtering).",
+      "If every pain is filtered out, the worst single pain still counts."
+    )
+    .defineInRange("totalPainFilterThreshold", 0.0, 0.0, 100.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")
