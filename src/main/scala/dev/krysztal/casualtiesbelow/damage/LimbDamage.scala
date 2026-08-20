@@ -10,6 +10,7 @@ import net.minecraft.world.entity.projectile.Projectile
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
+import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbCondition
 import dev.krysztal.casualtiesbelow.pain.PainCalc
@@ -118,8 +119,8 @@ object LimbDamage {
     *
     *   - any hit: the located part ([[HitLocation]]) loses muscle health and gains pain
     *     ([[PainCalc.onMelee]] via the injury context)
-    *   - sharp weapons (swords/axes): the skin is also cut, bleeding once skin integrity reaches
-    *     zero
+    *   - sharp weapons (swords/axes): the skin is also cut; the resulting bleeding is capped
+    *     linearly by the post-hit skin integrity
     *
     * The constants are balancing placeholders, like the fall ones below.
     */
@@ -137,19 +138,19 @@ object LimbDamage {
           (stats.muscleHealth - effectiveDamage * MeleeMuscleDamagePerPoint).max(0.0)
 
         if (isSharp) {
-          stats.skinIntegrity =
-            (stats.skinIntegrity - effectiveDamage * SharpSkinDamagePerPoint).max(0.0)
-          if (stats.skinIntegrity <= 0.0) {
-            stats.externalBleedingRate += MeleeBleedingRateOnSkinBreak
-          }
+          BleedingCalc.applyWound(
+            stats,
+            effectiveDamage * SharpSkinDamagePerPoint,
+            MeleeBleedingRatePerWound
+          )
         }
     }
   }
 
   /** Maps projectile damage (in half-hearts, post-shield/pre-armor) to limb injuries: a piercing
     * wound on the located part ([[HitLocation]]) — the skin is always punctured, the muscle takes
-    * the rest, bleeding once skin integrity reaches zero. Pain: [[PainCalc.onProjectile]] via the
-    * injury context.
+    * the rest, and bleeding is capped linearly by the post-hit skin integrity. Pain:
+    * [[PainCalc.onProjectile]] via the injury context.
     *
     * The constants are balancing placeholders, like the melee ones above.
     */
@@ -162,20 +163,20 @@ object LimbDamage {
 
     LimbInjuries(player, part, source, damage, pain = PainCalc.onProjectile(damage)) {
       (stats, effectiveDamage) =>
-        stats.skinIntegrity =
-          (stats.skinIntegrity - effectiveDamage * ProjectileSkinDamagePerPoint).max(0.0)
+        BleedingCalc.applyWound(
+          stats,
+          effectiveDamage * ProjectileSkinDamagePerPoint,
+          ProjectileBleedingRatePerWound
+        )
         stats.muscleHealth =
           (stats.muscleHealth - effectiveDamage * ProjectileMuscleDamagePerPoint).max(0.0)
-        if (stats.skinIntegrity <= 0.0) {
-          stats.externalBleedingRate += ProjectileBleedingRateOnSkinBreak
-        }
     }
   }
 
   /** Maps fall damage (in half-hearts, as produced by [[FallDamageFormula]]) to leg injuries:
     *
     *   - any damage: both legs lose muscle health and gain pain
-    *   - ≥ [[ScrapeThreshold]]: skin scrape, bleeding once skin integrity reaches zero
+    *   - ≥ [[ScrapeThreshold]]: skin scrape and external bleeding capped by skin damage
     *   - ≥ [[DislocationThreshold]]: one random leg is dislocated
     *   - ≥ [[FractureThreshold]]: one random leg fractures instead, with recovery time scaling with
     *     the damage
@@ -196,8 +197,8 @@ object LimbDamage {
   }
 
   /** Fall impact rules for one leg: muscle health, impact pain ([[PainCalc.onFall]] via the injury
-    * context), skin scrape, and bleeding once skin integrity reaches zero. Application mechanics
-    * (context, event, commit) live in [[LimbInjuries.apply]].
+    * context), skin scrape, and bleeding capped linearly by the post-impact skin integrity.
+    * Application mechanics (context, event, commit) live in [[LimbInjuries.apply]].
     */
   private def applyFallInjury(
       player: Player,
@@ -210,11 +211,11 @@ object LimbDamage {
         stats.muscleHealth = (stats.muscleHealth - effectiveDamage * MuscleDamagePerPoint).max(0.0)
 
         if (effectiveDamage >= ScrapeThreshold) {
-          stats.skinIntegrity =
-            (stats.skinIntegrity - (effectiveDamage - ScrapeThreshold) * ScrapePerPoint).max(0.0)
-          if (stats.skinIntegrity <= 0.0) {
-            stats.externalBleedingRate += BleedingRateOnSkinBreak
-          }
+          BleedingCalc.applyWound(
+            stats,
+            (effectiveDamage - ScrapeThreshold) * ScrapePerPoint,
+            FallBleedingRatePerWound
+          )
         }
     }
   }
@@ -270,8 +271,8 @@ object LimbDamage {
   /** Muscle health lost per half-heart of projectile damage. */
   private val ProjectileMuscleDamagePerPoint = 2.0
 
-  /** External bleeding rate (mL/tick) added when a puncture reduces skin integrity to zero. */
-  private val ProjectileBleedingRateOnSkinBreak = 0.15
+  /** External bleeding rate (mL/tick) granted by one projectile wound, before the skin cap. */
+  private val ProjectileBleedingRatePerWound = 0.15
 
   /** Muscle health lost per half-heart of melee damage. */
   private val MeleeMuscleDamagePerPoint = 3.0
@@ -279,8 +280,8 @@ object LimbDamage {
   /** Skin integrity lost per half-heart of sharp-weapon melee damage. */
   private val SharpSkinDamagePerPoint = 2.0
 
-  /** External bleeding rate (mL/tick) added when a cut reduces skin integrity to zero. */
-  private val MeleeBleedingRateOnSkinBreak = 0.2
+  /** External bleeding rate (mL/tick) granted by one sharp melee wound, before the skin cap. */
+  private val MeleeBleedingRatePerWound = 0.2
 
   /** Muscle health lost per half-heart of fall damage. */
   private val MuscleDamagePerPoint = 4.0
@@ -302,6 +303,6 @@ object LimbDamage {
     */
   private val FractureBaseRecoveryTicks = 24000
 
-  /** External bleeding rate (mL/tick) added when a scrape reduces skin integrity to zero. */
-  private val BleedingRateOnSkinBreak = 0.5
+  /** External bleeding rate (mL/tick) granted by one fall scrape, before the skin cap. */
+  private val FallBleedingRatePerWound = 0.5
 }

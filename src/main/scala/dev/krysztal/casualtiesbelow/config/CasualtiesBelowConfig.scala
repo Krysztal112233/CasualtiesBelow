@@ -98,6 +98,20 @@ object CasualtiesBelowConfig {
       "If every pain is filtered out, the worst single pain still counts."
     )
     .defineInRange("totalPainFilterThreshold", 0.0, 0.0, 100.0, classOf[Double])
+  val PainDecayPerTick: ConfigValue[Double] = Builder
+    .comment("Pain faded per tick on every limb (0.05 = a full limb's pain fades in ~100 s).")
+    .defineInRange("painDecayPerTick", 0.05, 0.0, 10.0, classOf[Double])
+  val FracturedWalkingPainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Pain granted per tick while walking on a fractured leg, at full tissue damage (muscle and",
+      "skin both at zero); scales linearly with the leg's average tissue damage."
+    )
+    .defineInRange("fracturedWalkingPainPerTick", 0.5, 0.0, 10.0, classOf[Double])
+  val DislocatedWalkingPainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Same as fracturedWalkingPainPerTick, but for walking on a dislocated leg."
+    )
+    .defineInRange("dislocatedWalkingPainPerTick", 0.3, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")
