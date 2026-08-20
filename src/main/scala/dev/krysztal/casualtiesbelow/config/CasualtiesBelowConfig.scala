@@ -51,9 +51,9 @@ object CasualtiesBelowConfig {
   val ClottingRatePerTick: ConfigValue[Double] = Builder
     .comment(
       "External bleeding clots linearly: this many mL/tick of bleeding rate are sealed per tick.",
-      "At the default, a fresh sword cut (0.2 mL/tick) clots shut in 10 seconds."
+      "At the default, a fresh sword cut (0.2 mL/tick) clots shut in 20 seconds."
     )
-    .defineInRange("clottingRatePerTick", 0.001, 0.0, 1.0, classOf[Double])
+    .defineInRange("clottingRatePerTick", 0.0005, 0.0, 1.0, classOf[Double])
   val MaxExternalBleedingRate: ConfigValue[Double] = Builder
     .comment(
       "Upper bound of a limb's external bleeding rate (mL/tick) when its skin integrity is zero.",
@@ -99,8 +99,8 @@ object CasualtiesBelowConfig {
     )
     .defineInRange("totalPainFilterThreshold", 0.0, 0.0, 100.0, classOf[Double])
   val PainDecayPerTick: ConfigValue[Double] = Builder
-    .comment("Pain faded per tick on every limb (0.05 = a full limb's pain fades in ~100 s).")
-    .defineInRange("painDecayPerTick", 0.05, 0.0, 10.0, classOf[Double])
+    .comment("Pain faded per tick on every limb (0.025 = a full limb's pain fades in ~200 s).")
+    .defineInRange("painDecayPerTick", 0.025, 0.0, 10.0, classOf[Double])
   val FracturedWalkingPainPerTick: ConfigValue[Double] = Builder
     .comment(
       "Pain granted per tick while walking on a fractured leg, at full tissue damage (muscle and",

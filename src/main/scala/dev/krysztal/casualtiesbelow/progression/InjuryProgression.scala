@@ -115,6 +115,7 @@ object InjuryProgression {
   /** Counts down the fracture recovery time; returns true when the fracture healed this tick. */
   private def tickFracture(stats: LimbStats): Boolean = {
     if (stats.fractureRecoveryTicks.isEmpty) return false
+
     val remaining = stats.fractureRecoveryTicks.get
     if (remaining <= 1) {
       stats.fractureRecoveryTicks = None
@@ -130,6 +131,7 @@ object InjuryProgression {
     */
   private def tickBleeding(stats: LimbStats): Boolean = {
     if (stats.externalBleedingRate <= 0.0) return false
+
     val capped = stats.externalBleedingRate.min(BleedingCalc.cap(stats.skinIntegrity))
     val clotted = (capped - CasualtiesBelowConfig.ClottingRatePerTick.get()).max(0.0)
     stats.externalBleedingRate = clotted
@@ -140,18 +142,21 @@ object InjuryProgression {
   private def tickSkinRegen(stats: LimbStats): Unit = {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= LimbStats.MaxValue) return
+
     stats.skinIntegrity = (stats.skinIntegrity + SkinRegenPerTick).min(LimbStats.MaxValue)
   }
 
   /** Muscle regrows regardless of bleeding (slower than skin). */
   private def tickMuscleRegen(stats: LimbStats): Unit = {
     if (stats.muscleHealth >= LimbStats.MaxValue) return
+
     stats.muscleHealth = (stats.muscleHealth + MuscleRegenPerTick).min(LimbStats.MaxValue)
   }
 
   /** Pain decays linearly at the configured rate. */
   private def tickPainDecay(stats: LimbStats): Unit = {
     if (stats.pain <= 0.0) return
+
     stats.pain = (stats.pain - CasualtiesBelowConfig.PainDecayPerTick.get()).max(0.0)
   }
 
@@ -160,6 +165,7 @@ object InjuryProgression {
     */
   private def tickWalkingStrain(stats: LimbStats, strainPainRate: Double): Unit = {
     if (strainPainRate <= 0.0) return
+
     val tissueDamage =
       (2.0 - stats.muscleHealth / LimbStats.MaxValue -
         stats.skinIntegrity / LimbStats.MaxValue) / 2.0
@@ -174,6 +180,7 @@ object InjuryProgression {
     */
   private def walkingStrainRate(part: BodyPart, stats: LimbStats, walking: Boolean): Double = {
     if (!walking || !BodyPart.Legs.contains(part)) return 0.0
+
     if (stats.fractureRecoveryTicks.isDefined) {
       CasualtiesBelowConfig.FracturedWalkingPainPerTick.get()
     } else if (stats.dislocated) {
@@ -183,31 +190,27 @@ object InjuryProgression {
     }
   }
 
-  /** Whether the player is moving horizontally on the ground this tick (walking, sprinting,
-    * sneaking — not swimming, flying, or riding knockback). `xo`/`zo` are the previous tick's
-    * position, the same displacement vanilla uses for movement statistics.
+  /** Whether the player is trying to walk on the ground this tick (walking, sprinting, sneaking —
+    * not swimming, flying, or being passively pushed). Uses vanilla's last client input packet
+    * rather than measured displacement, so pressing a move key while stuck against a wall still
+    * counts as bearing weight, while water/knockback movement without input does not.
     */
   private def isWalking(player: ServerPlayer): Boolean = {
     if (!player.onGround()) return false
-    val dx = player.getX - player.xo
-    val dz = player.getZ - player.zo
-    dx * dx + dz * dz > WalkingEpsilon * WalkingEpsilon
+
+    val input = player.getLastClientInput
+    input.forward() || input.backward() || input.left() || input.right()
   }
 
   private var ticks = 0
 
   /** Ticks between throttled syncs of continuous changes (20 = once per second). */
-  private val SyncIntervalTicks = 20
+  private final val SyncIntervalTicks = 20
 
-  /** Skin integrity regrown per tick once the wound is sealed (100 over ~8 min). */
-  private val SkinRegenPerTick = 0.01
+  /** Skin integrity regrown per tick once the wound is sealed (100 over ~17 min). */
+  private final val SkinRegenPerTick = 0.005
 
-  /** Muscle health regrown per tick (100 over ~17 min). */
-  private val MuscleRegenPerTick = 0.005
-
-  /** Horizontal displacement per tick (blocks) above which the player counts as walking. Sneaking
-    * is ~0.065, walking ~0.215.
-    */
-  private val WalkingEpsilon = 0.01
+  /** Muscle health regrown per tick (100 over ~33 min). */
+  private final val MuscleRegenPerTick = 0.0025
 
 }
