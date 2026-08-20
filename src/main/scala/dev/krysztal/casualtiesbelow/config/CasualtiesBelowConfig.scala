@@ -51,9 +51,9 @@ object CasualtiesBelowConfig {
   val ClottingRatePerTick: ConfigValue[Double] = Builder
     .comment(
       "External bleeding clots linearly: this many mL/tick of bleeding rate are sealed per tick.",
-      "At the default, a fresh sword cut (0.2 mL/tick) clots shut in 20 seconds."
+      "At the default, a fresh sword cut (0.2 mL/tick) clots shut in 50 seconds."
     )
-    .defineInRange("clottingRatePerTick", 0.0005, 0.0, 1.0, classOf[Double])
+    .defineInRange("clottingRatePerTick", 0.0002, 0.0, 1.0, classOf[Double])
   val MaxExternalBleedingRate: ConfigValue[Double] = Builder
     .comment(
       "Upper bound of a limb's external bleeding rate (mL/tick) when its skin integrity is zero.",
