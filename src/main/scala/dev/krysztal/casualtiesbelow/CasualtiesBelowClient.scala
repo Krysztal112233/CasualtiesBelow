@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.gui.screens.Screen
 
+import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 
 import net.fabricmc.api.ClientModInitializer
@@ -41,9 +42,10 @@ object CasualtiesBelowClient extends ClientModInitializer {
     ClientTickEvents.END_CLIENT_TICK.register { client =>
       while (OpenScreenKey.consumeClick()) {
         if (client.gui.screen() == null) {
-          client.gui.setScreen(new BodyStatusScreen())
+          client.gui.setScreen(BodyStatusScreen())
         }
       }
     }
+    BleedingParticles.register()
   }
 }
