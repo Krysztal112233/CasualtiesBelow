@@ -6,6 +6,7 @@ import net.minecraft.tags.ItemTags
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.entity.projectile.Projectile
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
@@ -21,7 +22,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
   * the impact context — fall distance, damage modifier, formula output — is available). Other
   * damage goes through [[afterDamage]] (Fabric's `ServerLivingEntityEvents.AFTER_DAMAGE`), which
   * carries no hit-location information: the affected part is guessed from hit geometry (see
-  * [[HitLocation]]). Only melee is attributed so far.
+  * [[HitLocation]]). Melee and projectile damage are attributed so far.
   */
 object LimbDamage {
 
@@ -84,9 +85,14 @@ object LimbDamage {
     if (isFallDamage(source)) return
     if (blocked) return
     if (damageTaken <= 0) return
-    if (!isMelee(source)) return
 
-    attributeMeleeDamage(entity.asInstanceOf[Player], source, damageTaken.toDouble)
+    val player = entity.asInstanceOf[Player]
+    val damage = damageTaken.toDouble
+    source match {
+      case s if isMelee(s)      => attributeMeleeDamage(player, s, damage)
+      case s if isProjectile(s) => attributeProjectileDamage(player, s, damage)
+      case _                    => ()
+    }
   }
 
   /** Whether the source is fall damage. Vanilla's `IS_FALL` tag also covers ender pearls and
@@ -100,6 +106,13 @@ object LimbDamage {
     */
   def isMelee(source: DamageSource): Boolean =
     source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
+
+  /** Whether the source is a projectile hit: the direct entity is a projectile (arrows, tridents,
+    * fireballs, shulker bullets, ...). Instance-based rather than tag-based, so it holds for every
+    * projectile entity regardless of damage type.
+    */
+  def isProjectile(source: DamageSource): Boolean =
+    source.getDirectEntity.isInstanceOf[Projectile]
 
   /** Maps melee damage (in half-hearts, post-shield/pre-armor) to limb injuries:
     *
@@ -129,6 +142,32 @@ object LimbDamage {
           if (stats.skinIntegrity <= 0.0) {
             stats.externalBleedingRate += MeleeBleedingRateOnSkinBreak
           }
+        }
+    }
+  }
+
+  /** Maps projectile damage (in half-hearts, post-shield/pre-armor) to limb injuries: a piercing
+    * wound on the located part ([[HitLocation]]) — the skin is always punctured, the muscle takes
+    * the rest, bleeding once skin integrity reaches zero. Pain: [[PainCalc.onProjectile]] via the
+    * injury context.
+    *
+    * The constants are balancing placeholders, like the melee ones above.
+    */
+  private def attributeProjectileDamage(
+      player: Player,
+      source: DamageSource,
+      damage: Double
+  ): Unit = {
+    val part = HitLocation.pick(player, source)
+
+    LimbInjuries(player, part, source, damage, pain = PainCalc.onProjectile(damage)) {
+      (stats, effectiveDamage) =>
+        stats.skinIntegrity =
+          (stats.skinIntegrity - effectiveDamage * ProjectileSkinDamagePerPoint).max(0.0)
+        stats.muscleHealth =
+          (stats.muscleHealth - effectiveDamage * ProjectileMuscleDamagePerPoint).max(0.0)
+        if (stats.skinIntegrity <= 0.0) {
+          stats.externalBleedingRate += ProjectileBleedingRateOnSkinBreak
         }
     }
   }
@@ -224,6 +263,15 @@ object LimbDamage {
       }
     }
   }
+
+  /** Skin integrity lost per half-heart of projectile damage. */
+  private val ProjectileSkinDamagePerPoint = 3.0
+
+  /** Muscle health lost per half-heart of projectile damage. */
+  private val ProjectileMuscleDamagePerPoint = 2.0
+
+  /** External bleeding rate (mL/tick) added when a puncture reduces skin integrity to zero. */
+  private val ProjectileBleedingRateOnSkinBreak = 0.15
 
   /** Muscle health lost per half-heart of melee damage. */
   private val MeleeMuscleDamagePerPoint = 3.0

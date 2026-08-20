@@ -29,10 +29,10 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   * Two kinds of pain exist:
   *
   *   - '''grants''' — pain injected into one limb by an injury: impact pain ([[onFall]],
-  *     [[onMelee]]; scales with the damage) and discrete condition onsets ([[onConditionOnset]],
-  *     fixed one-time amounts). Grants flow through the limb injury event context
-  *     (`LimbInjuryContext.pain`) so listeners can adjust them; capping at the limb maximum happens
-  *     at the application site.
+  *     [[onMelee]], [[onProjectile]]; scales with the damage) and discrete condition onsets
+  *     ([[onConditionOnset]], fixed one-time amounts). Grants flow through the limb injury event
+  *     context (`LimbInjuryContext.pain`) so listeners can adjust them; capping at the limb maximum
+  *     happens at the application site.
   *   - '''derivations''' — whole-body pain ([[total]]), computed on demand from per-limb pain and
   *     never stored. The limbs are the single source of truth (already synced to clients), so both
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it
@@ -48,6 +48,9 @@ object PainCalc {
 
   /** Impact pain granted to one limb by a melee hit, per half-heart of taken damage. */
   def onMelee(damage: Double): Double = damage * MeleePainPerPoint
+
+  /** Impact pain granted to one limb by a projectile hit, per half-heart of taken damage. */
+  def onProjectile(damage: Double): Double = damage * ProjectilePainPerPoint
 
   /** One-time pain granted when a discrete condition onsets on a limb. */
   def onConditionOnset(condition: LimbCondition): Double =
@@ -94,6 +97,9 @@ object PainCalc {
 
   /** Impact pain per half-heart of melee damage. */
   private val MeleePainPerPoint = 4.0
+
+  /** Impact pain per half-heart of projectile damage. */
+  private val ProjectilePainPerPoint = 5.0
 
   /** One-time pain granted when a limb fractures. */
   private val FracturePain = 50.0
