@@ -174,20 +174,22 @@ object InjuryProgression {
     }
   }
 
-  /** Pain rate for walking strain on the given limb: the configured fractured/dislocated rate for a
-    * leg bearing the walking player, zero for everything else. A fractured leg ignores the
-    * dislocation rate (fracture is the worse condition).
+  /** Pain rate for walking strain on the given limb: zero unless a leg bears the walking player.
+    * Fracture and dislocation are independent conditions and their configured rates stack, so a leg
+    * with both suffers both rates at once.
     */
   private def walkingStrainRate(part: BodyPart, stats: LimbStats, walking: Boolean): Double = {
     if (!walking || !BodyPart.Legs.contains(part)) return 0.0
 
-    if (stats.fractureRecoveryTicks.isDefined) {
-      CasualtiesBelowConfig.FracturedWalkingPainPerTick.get()
-    } else if (stats.dislocated) {
-      CasualtiesBelowConfig.DislocatedWalkingPainPerTick.get()
-    } else {
-      0.0
-    }
+    val fractureRate: Double =
+      if (stats.fractureRecoveryTicks.isDefined) {
+        CasualtiesBelowConfig.FracturedWalkingPainPerTick.get()
+      } else {
+        0.0
+      }
+    val dislocationRate: Double =
+      if (stats.dislocated) CasualtiesBelowConfig.DislocatedWalkingPainPerTick.get() else 0.0
+    fractureRate + dislocationRate
   }
 
   /** Whether the player is trying to walk on the ground this tick (walking, sprinting, sneaking —
@@ -205,12 +207,12 @@ object InjuryProgression {
   private var ticks = 0
 
   /** Ticks between throttled syncs of continuous changes (20 = once per second). */
-  private final val SyncIntervalTicks = 20
+  private val SyncIntervalTicks = 20
 
   /** Skin integrity regrown per tick once the wound is sealed (100 over ~17 min). */
-  private final val SkinRegenPerTick = 0.005
+  private val SkinRegenPerTick = 0.005
 
   /** Muscle health regrown per tick (100 over ~33 min). */
-  private final val MuscleRegenPerTick = 0.0025
+  private val MuscleRegenPerTick = 0.0025
 
 }

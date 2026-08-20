@@ -66,13 +66,15 @@ object CasualtiesBelowConfig {
   Builder.push("movement")
   val DislocationSpeedReduction: ConfigValue[Double] = Builder
     .comment(
-      "Movement speed multiplier reduction per dislocated leg, as a fraction (e.g. 0.3 = 30% slower)."
+      "Movement speed multiplier reduction per dislocated leg, as a fraction (e.g. 0.3 = 30% slower).",
+      "A fractured leg counts as 1.5 dislocated legs."
     )
     .gameRestart()
     .defineInRange("dislocationSpeedReduction", 0.3, 0.0, 1.0, classOf[Double])
   val DislocationJumpReduction: ConfigValue[Double] = Builder
     .comment(
-      "Jump strength multiplier reduction per dislocated leg, as a fraction (e.g. 0.5 = 50% lower jumps)."
+      "Jump strength multiplier reduction per dislocated leg, as a fraction (e.g. 0.5 = 50% lower jumps).",
+      "A fractured leg counts as 1.5 dislocated legs."
     )
     .gameRestart()
     .defineInRange("dislocationJumpReduction", 0.2, 0.0, 1.0, classOf[Double])

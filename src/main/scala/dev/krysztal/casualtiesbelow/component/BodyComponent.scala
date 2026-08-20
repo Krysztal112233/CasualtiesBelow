@@ -118,22 +118,30 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     reconcileMovementModifiers()
   }
 
-  /** Recomputes the transient attribute modifiers derived from limb conditions (currently:
-    * dislocated legs slow movement and weaken jumps, per leg, using the configured fractions).
-    * Remove-then-add with fixed modifier ids keeps repeated calls idempotent, mirroring how vanilla
-    * applies the sprinting modifier.
+  /** Recomputes the transient attribute modifiers derived from leg conditions. Fracture and
+    * dislocation are independent conditions and their penalties stack: a dislocated leg counts as
+    * one share of the configured fractions, a fractured leg as
+    * [[BodyComponentImpl.FracturePenaltyMultiplier]] shares (fracture is the worse condition), and
+    * a leg with both contributes both shares. Remove-then-add with fixed modifier ids keeps
+    * repeated calls idempotent, mirroring how vanilla applies the sprinting modifier.
     */
   private def reconcileMovementModifiers(): Unit = {
-    val dislocatedLegs = BodyPart.Legs.count { p => limbs(p).dislocated }
+    val legSeverity = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+      val s = limbs(p)
+      val fractureShare =
+        if (s.fractureRecoveryTicks.isDefined) BodyComponentImpl.FracturePenaltyMultiplier else 0.0
+      val dislocationShare = if (s.dislocated) 1.0 else 0.0
+      total + fractureShare + dislocationShare
+    }
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
-      BodyComponentImpl.DislocationSpeedPenaltyId,
-      -dislocatedLegs * CasualtiesBelowConfig.DislocationSpeedReduction.get()
+      BodyComponentImpl.LegSpeedPenaltyId,
+      -legSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.get()
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
-      BodyComponentImpl.DislocationJumpPenaltyId,
-      -dislocatedLegs * CasualtiesBelowConfig.DislocationJumpReduction.get()
+      BodyComponentImpl.LegJumpPenaltyId,
+      -legSeverity * CasualtiesBelowConfig.DislocationJumpReduction.get()
     )
   }
 
@@ -154,8 +162,15 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
 }
 
 object BodyComponentImpl {
-  val DislocationSpeedPenaltyId: Identifier =
-    CasualtiesBelow.ofIdentifier("dislocation_speed_penalty")
-  val DislocationJumpPenaltyId: Identifier =
-    CasualtiesBelow.ofIdentifier("dislocation_jump_penalty")
+
+  /** How many dislocated-leg shares a fractured leg contributes to the movement/jump penalties:
+    * fracture is the worse condition, so it reuses the dislocation config fractions scaled up by
+    * this fixed structural factor.
+    */
+  private val FracturePenaltyMultiplier = 1.5
+
+  val LegSpeedPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("leg_speed_penalty")
+  val LegJumpPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("leg_jump_penalty")
 }
