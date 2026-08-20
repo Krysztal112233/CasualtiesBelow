@@ -61,6 +61,13 @@ object CasualtiesBelowConfig {
       "bleeds at most half this rate."
     )
     .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[Double])
+  val BleedingRateJitter: ConfigValue[Double] = Builder
+    .comment(
+      "Random fluctuation of the bleeding rate granted by each wound, as a fraction of the rate",
+      "(0.3 = rolled as rate × (1 ± 30%)); proportional, so larger wounds fluctuate more.",
+      "0 disables fluctuation."
+    )
+    .defineInRange("bleedingRateJitter", 0.3, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("movement")

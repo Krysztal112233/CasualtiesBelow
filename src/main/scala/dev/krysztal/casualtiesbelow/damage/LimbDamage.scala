@@ -141,7 +141,8 @@ object LimbDamage {
           BleedingCalc.applyWound(
             stats,
             effectiveDamage * SharpSkinDamagePerPoint,
-            MeleeBleedingRatePerWound
+            MeleeBleedingRatePerWound,
+            player.getRandom
           )
         }
     }
@@ -166,7 +167,8 @@ object LimbDamage {
         BleedingCalc.applyWound(
           stats,
           effectiveDamage * ProjectileSkinDamagePerPoint,
-          ProjectileBleedingRatePerWound
+          ProjectileBleedingRatePerWound,
+          player.getRandom
         )
         stats.muscleHealth =
           (stats.muscleHealth - effectiveDamage * ProjectileMuscleDamagePerPoint).max(0.0)
@@ -214,7 +216,8 @@ object LimbDamage {
           BleedingCalc.applyWound(
             stats,
             (effectiveDamage - ScrapeThreshold) * ScrapePerPoint,
-            FallBleedingRatePerWound
+            FallBleedingRatePerWound,
+            player.getRandom
           )
         }
     }
