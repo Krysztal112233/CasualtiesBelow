@@ -36,8 +36,14 @@ import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
 class BodyStatusScreen
     extends Screen(Component.translatable("screen.casualtiesbelow.body_status")) {
 
-  /** Wall-clock open timestamp; keeps animating even while the game is paused. */
+  /** Wall-clock open timestamp; animation stays independent of game tick rate. */
   private var openedAtMs = Util.getMillis()
+
+  /** A status observer must not freeze the state it displays. In singleplayer, the default
+    * [[Screen.isPauseScreen]] (`true`) pauses the integrated server and therefore all injury
+    * progression; keep the world ticking while this screen is open, like inventory screens do.
+    */
+  override def isPauseScreen(): Boolean = false
 
   /** Close-animation state: when the close was requested and the progress at that moment. */
   private var closedAtMs = 0L
@@ -248,8 +254,8 @@ object BodyStatusScreen {
   private val TrembleFrequency = 0.1f
 
   /** Pixel offset for a limb in pain: two detuned sines per axis give an irregular jitter; the
-    * per-part phase keeps limbs from shaking in lockstep. Wall-clock driven, so it keeps animating
-    * while the game is paused (matching the open/close animation).
+    * per-part phase keeps limbs from shaking in lockstep. Wall-clock driven, so animation remains
+    * smooth independently of game tick rate.
     */
   private def trembleOffset(part: BodyPart, pain: Double): (Int, Int) = {
     val amplitude = pain / LimbStats.MaxValue * MaxTremblePixels
