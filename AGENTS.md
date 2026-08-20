@@ -11,6 +11,7 @@ single source of truth for version numbers.
 ./gradlew runClient    # Launch a dev client
 ./gradlew runServer    # Launch a dev server
 ./gradlew sources      # Generate and extract dependency sources into sources/ (see below)
+./gradlew runDatagen   # Regenerate datapack JSON (damage types, tags) into src/main/generated/
 ./gradlew spotlessApply # Format all sources (scalafmt for Scala, ktlint for *.gradle.kts)
 ```
 

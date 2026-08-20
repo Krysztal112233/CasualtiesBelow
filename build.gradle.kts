@@ -20,6 +20,12 @@ loom {
         systemProperties.put("mixin.debug.export", "true")
         systemProperties.put("mixin.dumpTargetOnFailure", "true")
     }
+
+    // `./gradlew runDatagen` (entrypoint: datagen/CasualtiesBelowDataGenerator).
+    // Output lands in src/main/generated and is packaged automatically.
+    fabricApi {
+        configureDataGeneration()
+    }
 }
 
 repositories {

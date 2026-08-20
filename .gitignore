@@ -9,6 +9,9 @@ remappedSrc/
 # Extracted dependency sources (./gradlew sources)
 sources/
 
+# DataGen output is committed, but its hash cache is not (./gradlew runDatagen)
+src/main/generated/.cache/
+
 # IDE
 .idea/
 *.iml
