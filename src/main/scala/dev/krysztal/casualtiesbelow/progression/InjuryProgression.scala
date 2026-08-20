@@ -18,7 +18,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
   * Per server tick and per player (skipped in creative/spectator):
   *
   *   - fractures count down their recovery time and heal when it runs out
-  *   - bleeding drains the blood volume and slowly clots; reaching zero blood is fatal
+  *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
+  *     proportionally to the skin damage (see [[bleedingCap]]); reaching zero blood is fatal
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
   *   - skin regrows only once the wound has clotted shut; muscle regrows regardless (slower)
   *   - pain decays linearly
@@ -31,8 +32,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
   * immediately. Registration order matters: this pipeline must run before `LimbInjuries.register`'s
   * flush so its dirty marks ship in the same tick.
   *
-  * The numeric constants are balancing placeholders; expect them to become config values once
-  * playtesting starts.
+  * The numeric constants other than the bleeding ones are balancing placeholders; expect them to
+  * become config values once playtesting starts.
   */
 object InjuryProgression {
 
@@ -104,8 +105,9 @@ object InjuryProgression {
     }
 
     if (stats.externalBleedingRate > 0.0) {
-      val clotted = stats.externalBleedingRate * ClottingFactorPerTick
-      if (clotted < BleedingStopThreshold) {
+      val capped = stats.externalBleedingRate.min(bleedingCap(stats.skinIntegrity))
+      val clotted = (capped - CasualtiesBelowConfig.ClottingRatePerTick.get()).max(0.0)
+      if (clotted == 0.0) {
         stats.externalBleedingRate = 0.0
         discrete = true
       } else {
@@ -141,9 +143,10 @@ object InjuryProgression {
   /** Muscle health regrown per tick (100 over ~17 min). */
   private val MuscleRegenPerTick = 0.005
 
-  /** Fraction of the bleeding rate remaining after each tick (half-life ~6 min). */
-  private val ClottingFactorPerTick = 0.9999
-
-  /** Bleeding rate below which the wound is considered clotted shut. */
-  private val BleedingStopThreshold = 0.01
+  /** The most a limb can bleed given its skin state: linear in the skin damage, from zero on intact
+    * skin up to `MaxExternalBleedingRate` on fully destroyed skin.
+    */
+  private def bleedingCap(skinIntegrity: Double): Double =
+    CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
+      (1.0 - skinIntegrity / LimbStats.MaxValue)
 }

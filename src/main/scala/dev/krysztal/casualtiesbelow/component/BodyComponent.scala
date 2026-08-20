@@ -29,7 +29,8 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
   * `fractureRecoveryTicks` is `None` when the limb is not fractured; a value is the number of ticks
   * remaining until the fracture heals. `infectionProgress` is `None` when the limb is not infected;
   * a value is the infection progress from 0 to [[LimbStats.MaxValue]]. `externalBleedingRate` is
-  * the amount of blood lost per tick in mL and has no upper bound.
+  * the amount of blood lost per tick in mL, capped proportionally to the skin damage (see
+  * `InjuryProgression`).
   */
 final case class LimbStats(
     var muscleHealth: Double = LimbStats.MaxValue,

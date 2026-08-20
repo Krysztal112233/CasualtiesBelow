@@ -47,6 +47,22 @@ object CasualtiesBelowConfig {
     .defineInRange("startingSkinIntegrity", 100.0, 0.0, 100.0, classOf[Double])
   Builder.pop()
 
+  Builder.push("bleeding")
+  val ClottingRatePerTick: ConfigValue[Double] = Builder
+    .comment(
+      "External bleeding clots linearly: this many mL/tick of bleeding rate are sealed per tick.",
+      "At the default, a fresh sword cut (0.2 mL/tick) clots shut in 10 seconds."
+    )
+    .defineInRange("clottingRatePerTick", 0.001, 0.0, 1.0, classOf[Double])
+  val MaxExternalBleedingRate: ConfigValue[Double] = Builder
+    .comment(
+      "Upper bound of a limb's external bleeding rate (mL/tick) when its skin integrity is zero.",
+      "The bound scales linearly with skin integrity: intact skin cannot bleed, half-intact skin",
+      "bleeds at most half this rate."
+    )
+    .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[Double])
+  Builder.pop()
+
   Builder.push("movement")
   val DislocationSpeedReduction: ConfigValue[Double] = Builder
     .comment(
