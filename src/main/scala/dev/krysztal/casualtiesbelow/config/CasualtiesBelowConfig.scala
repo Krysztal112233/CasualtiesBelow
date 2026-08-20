@@ -28,6 +28,12 @@ object CasualtiesBelowConfig {
     .comment("Consciousness a player starts with.")
     .gameRestart()
     .defineInRange("startingConsciousness", 100.0, 0.0, 100.0, classOf[Double])
+  val MaxBloodVolume: ConfigValue[Double] = Builder
+    .comment(
+      "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
+    )
+    .gameRestart()
+    .defineInRange("maxBloodVolume", 5000.0, 100.0, 100000.0, classOf[Double])
   Builder.pop()
 
   Builder.push("limbs")

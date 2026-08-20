@@ -4,16 +4,20 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
 
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
-/** Whole-player vitals: immune health value and consciousness. Both range from 0 to
-  * [[VitalsComponent.MaxValue]]. `Double` rather than `Float` for the same reason as
+/** Whole-player vitals: immune health value, consciousness, and blood volume. Immune health and
+  * consciousness range from 0 to [[VitalsComponent.MaxValue]]; blood volume is in mL, up to the
+  * configured maximum. `Double` rather than `Float` for the same reason as
   * [[dev.krysztal.casualtiesbelow.component.LimbStats]]: per-tick accumulation precision.
   */
 trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
   var immuneHealth: Double
   var consciousness: Double
+  var bloodVolume: Double
 }
 
 object VitalsComponent {
@@ -22,11 +26,13 @@ object VitalsComponent {
   // NBT keys
   val ImmuneHealthKey = "immune_health"
   val ConsciousnessKey = "consciousness"
+  val BloodVolumeKey = "blood_volume"
 }
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var immuneHealth: Double = VitalsComponent.MaxValue
   var consciousness: Double = VitalsComponent.MaxValue
+  var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
 
   override def copyFrom(
       other: VitalsComponent,
@@ -34,15 +40,19 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   ): Unit = {
     immuneHealth = other.immuneHealth
     consciousness = other.consciousness
+    bloodVolume = other.bloodVolume
   }
 
   override def writeData(out: ValueOutput): Unit = {
     out.putDouble(VitalsComponent.ImmuneHealthKey, immuneHealth)
     out.putDouble(VitalsComponent.ConsciousnessKey, consciousness)
+    out.putDouble(VitalsComponent.BloodVolumeKey, bloodVolume)
   }
 
   override def readData(in: ValueInput): Unit = {
     immuneHealth = in.getDoubleOr(VitalsComponent.ImmuneHealthKey, VitalsComponent.MaxValue)
     consciousness = in.getDoubleOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
+    bloodVolume =
+      in.getDoubleOr(VitalsComponent.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
   }
 }

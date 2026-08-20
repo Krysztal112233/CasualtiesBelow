@@ -51,6 +51,12 @@ object LimbInjuries {
       }
     }
 
+  /** Marks a player's body for the end-of-tick sync flush. Injuries applied through [[apply]] are
+    * marked automatically; direct component mutations (e.g. `InjuryProgression`'s healing) must
+    * call this themselves.
+    */
+  def markDirty(player: Player): Unit = DirtyPlayers.add(player)
+
   /** Applies one injury to one limb. Returns `false` when a listener cancelled it.
     *
     * @param pain

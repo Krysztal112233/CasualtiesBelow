@@ -5,6 +5,7 @@ import net.minecraft.resources.Identifier
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
+import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 
 import net.fabricmc.api.ModInitializer
 import org.slf4j.LoggerFactory
@@ -17,6 +18,9 @@ object CasualtiesBelow extends ModInitializer {
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()
+    // InjuryProgression must run before LimbInjuries' end-of-tick flush (registration order =
+    // event order) so its dirty marks ship in the same tick.
+    InjuryProgression.register()
     LimbInjuries.register()
     Logger.info("CasualtiesBelow initialized")
   }

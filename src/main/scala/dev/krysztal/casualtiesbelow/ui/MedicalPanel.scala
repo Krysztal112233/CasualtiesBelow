@@ -9,6 +9,7 @@ import net.minecraft.world.entity.player.Player
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
@@ -55,6 +56,7 @@ object MedicalPanel {
   private val PainBadThreshold = 50.0
   private val ConsciousnessBadThreshold = 50.0
   private val ImmuneBadThreshold = 25.0
+  private val BloodBadThreshold = 70.0
 
   /** Renders the panel spanning the full screen height at the left edge.
     *
@@ -109,6 +111,16 @@ object MedicalPanel {
         Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
         v.immuneHealth,
         ImmuneBadThreshold
+      )
+      // Blood volume as a fraction of the configured maximum (mL is not meaningful to show raw).
+      y = extractStatBar(
+        graphics,
+        font,
+        contentX,
+        y,
+        Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
+        v.bloodVolume / CasualtiesBelowConfig.MaxBloodVolume.get() * 100.0,
+        BloodBadThreshold
       )
     }
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",

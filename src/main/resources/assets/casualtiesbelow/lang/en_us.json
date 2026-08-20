@@ -5,6 +5,8 @@
   "screen.casualtiesbelow.body_status.section.vitals": "Vitals",
   "screen.casualtiesbelow.body_status.stat.consciousness": "Consciousness",
   "screen.casualtiesbelow.body_status.stat.immune_health": "Immune Health",
+  "screen.casualtiesbelow.body_status.stat.blood": "Blood",
+  "death.attack.blood_loss": "%1$s bled out",
   "screen.casualtiesbelow.body_status.stat.muscle_health": "Muscle Health",
   "screen.casualtiesbelow.body_status.stat.skin_integrity": "Skin Integrity",
   "screen.casualtiesbelow.body_status.stat.pain": "Pain",
