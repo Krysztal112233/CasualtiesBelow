@@ -31,7 +31,7 @@
     "fabric-datagen": [
       {
         "adapter": "scala",
-        "value": "dev.krysztal.casualtiesbelow.datagen.CasualtiesBelowDataGenerator"
+        "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowDataGenerator"
       }
     ]
   },

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.datagen
+package dev.krysztal.casualtiesbelow
 
 import net.minecraft.core.RegistrySetBuilder
 import net.minecraft.core.registries.Registries
@@ -8,6 +8,8 @@ import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.damagesource.DeathMessageType
 
 import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
+import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
