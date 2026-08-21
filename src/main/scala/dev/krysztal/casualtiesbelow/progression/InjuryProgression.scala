@@ -7,6 +7,7 @@ import net.minecraft.util.RandomSource
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
+import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
 import dev.krysztal.casualtiesbelow.component.VitalsComponent
@@ -26,9 +27,11 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
   *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
   *     proportionally to the skin damage (see [[BleedingCalc.cap]]); reaching zero blood is fatal
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
-  *   - wounds with meaningful skin damage can get infected; the immune system fights the infection
-  *     at a rate proportional to its health against a spread rate proportional to its complement,
-  *     and also scales skin regrowth (see [[tickInfection]], [[tickSkinRegen]])
+  *   - wounds with meaningful skin damage can get infected; the immune system fights infections
+  *     with its total capacity split across all infected limbs, against per-limb spread rates
+  *     proportional to its complement; past a progress ramp an infection can also seed adjacent
+  *     limbs (see [[tickInfection]], [[tickContagion]]), and it scales skin regrowth (see
+  *     [[tickSkinRegen]])
   *   - immune health is a lifestyle stat decoupled from infection: a full stomach restores it,
   *     hunger drains it (see [[tickImmune]])
   *   - skin regrows only once the wound has clotted shut; muscle regrows regardless (slower)
@@ -73,6 +76,11 @@ object InjuryProgression {
     val walking = isWalking(player)
     var totalBleeding = 0.0
 
+    // The immune system splits its fight capacity across all infected limbs: one infection is
+    // containable, several at once overwhelm a marginal immune system.
+    val infectedCount = BodyPart.values.count(p => body.stats(p).infectionProgress.isDefined)
+    val fightShare = 1.0 / infectedCount.max(1)
+
     BodyPart.values.foreach { part =>
       val current = body.stats(part)
       val updated = current.copy()
@@ -80,6 +88,7 @@ object InjuryProgression {
         updated,
         walkingStrainRate(part, current, walking),
         vitals.immuneHealth,
+        fightShare,
         player.getRandom
       )
       totalBleeding += updated.externalBleedingRate
@@ -90,6 +99,8 @@ object InjuryProgression {
         }
       }
     }
+
+    tickContagion(player, body)
 
     var vitalsChanged = tickImmune(vitals, player)
 
@@ -150,11 +161,12 @@ object InjuryProgression {
       stats: LimbStats,
       strainPainRate: Double,
       immuneHealth: Double,
+      fightShare: Double,
       random: RandomSource
   ): Boolean = {
     val fractureHealed = tickFracture(stats)
     val bleedingStopped = tickBleeding(stats)
-    val infectionTransition = tickInfection(stats, immuneHealth, random)
+    val infectionTransition = tickInfection(stats, immuneHealth, fightShare, random)
     tickInfectionEffects(stats)
     tickSkinRegen(stats, immuneHealth)
     tickMuscleRegen(stats)
@@ -193,21 +205,24 @@ object InjuryProgression {
     * wound (at least [[InfectionSkinDamageThreshold]] skin damage), with probability scaled by the
     * skin damage fraction; an onset seeds a small progress value so a strong immune system gets a
     * visible suppression window instead of an instant flicker. While infected, the immune system
-    * fights the infection at a rate proportional to immune health against a spread rate
-    * proportional to its complement — with the defaults, the break-even point is an immune health
-    * of 120 out of 200 (see [[CasualtiesBelowConfig.immuneBreakEven]]). Returns true on the
-    * discrete transitions (onset, cleared).
+    * fights the infection with its share of the total immune capacity (`fightShare` splits it
+    * across all infected limbs) against a spread rate proportional to the immune complement — with
+    * the defaults and a single infection, the break-even point is an immune health of 120 out of
+    * 200 (see [[CasualtiesBelowConfig.immuneBreakEven]]). Returns true on the discrete transitions
+    * (onset, cleared).
     */
   private def tickInfection(
       stats: LimbStats,
       immuneHealth: Double,
+      fightShare: Double,
       random: RandomSource
   ): Boolean = {
     val immuneFraction = immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
     stats.infectionProgress match {
       case Some(progress) =>
         val spread = CasualtiesBelowConfig.InfectionSpreadPerTick.get() * (1.0 - immuneFraction)
-        val fight = CasualtiesBelowConfig.InfectionFightPerTick.get() * immuneFraction
+        val fight =
+          CasualtiesBelowConfig.InfectionFightPerTick.get() * immuneFraction * fightShare
         val next = (progress + spread - fight).min(LimbStats.MaxValue)
         if (next <= 0.0) {
           stats.infectionProgress = None
@@ -228,6 +243,38 @@ object InjuryProgression {
         } else {
           false
         }
+    }
+  }
+
+  /** Contagion: a limb whose infection progress is past the ramp start can seed an anatomically
+    * adjacent, not-yet-infected limb (see [[BodyPart.Adjacent]] — a star with the torso as the
+    * hub). The per-tick chance ramps linearly from zero at the start progress to the configured
+    * maximum at the full progress. The target does not need a wound: this models septic spread
+    * through the body, not wound-to-wound contact. Seeds use the same onset value as wound
+    * infections, so a strong immune system visibly suppresses the spread.
+    */
+  private def tickContagion(player: ServerPlayer, body: BodyComponent): Unit = {
+    val start = CasualtiesBelowConfig.InfectionContagionStartProgress.get()
+    val full = CasualtiesBelowConfig.InfectionContagionFullProgress.get()
+    val ramp = (full - start).max(1.0)
+    val maxChance = CasualtiesBelowConfig.InfectionContagionMaxChancePerTick.get()
+
+    BodyPart.values.foreach { part =>
+      val stats = body.stats(part)
+      stats.infectionProgress.foreach { progress =>
+        val chance = maxChance * ((progress - start) / ramp).max(0.0).min(1.0)
+        if (chance > 0.0 && player.getRandom.nextFloat() < chance) {
+          val targets =
+            BodyPart.Adjacent(part).filter(p => body.stats(p).infectionProgress.isEmpty)
+          if (targets.nonEmpty) {
+            val target = targets(player.getRandom.nextInt(targets.size))
+            val seeded = body.stats(target).copy()
+            seeded.infectionProgress = Some(InfectionOnsetSeed)
+            body.setStats(target, seeded)
+            LimbInjuries.markDirty(player)
+          }
+        }
+      }
     }
   }
 

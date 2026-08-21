@@ -135,6 +135,25 @@ object CasualtiesBelowConfig {
       "full-strength infection wastes the limb away in about half an hour."
     )
     .defineInRange("infectionMuscleDecayPerTick", 0.005, 0.0, 10.0, classOf[Double])
+  val InfectionContagionStartProgress: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress at which a limb can start seeding infections into anatomically",
+      "adjacent limbs; below this it never spreads."
+    )
+    .defineInRange("infectionContagionStartProgress", 60.0, 0.0, 100.0, classOf[Double])
+  val InfectionContagionFullProgress: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress at which the contagion chance reaches its maximum; between the",
+      "start and this value the per-tick chance ramps up linearly."
+    )
+    .defineInRange("infectionContagionFullProgress", 80.0, 0.0, 100.0, classOf[Double])
+  val InfectionContagionMaxChancePerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Per-tick probability of seeding a random uninfected adjacent limb at full ramp",
+      "(0.05 = on average one spread per second); the seeded limb starts with a small",
+      "infection progress, like a fresh wound onset."
+    )
+    .defineInRange("infectionContagionMaxChancePerTick", 0.05, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("immune")
@@ -253,8 +272,10 @@ object CasualtiesBelowConfig {
 
   private val Spec = Builder.build()
 
-  /** Immune health at which infection spread and immune fight exactly cancel out:
-    * `max × spread / (spread + fight)`. Below it infections spread, above it they recede.
+  /** Immune health at which infection spread and immune fight exactly cancel out for a single
+    * infection: `max × spread / (spread + fight)`. Below it infections spread, above it they
+    * recede. With several infected limbs the fight capacity is split, so the effective break-even
+    * rises with the infection count.
     */
   def immuneBreakEven: Double = {
     val spread = InfectionSpreadPerTick.get()

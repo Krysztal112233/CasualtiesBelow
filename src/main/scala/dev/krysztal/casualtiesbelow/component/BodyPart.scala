@@ -17,4 +17,16 @@ object BodyPart {
 
   val Legs: List[BodyPart] = List(LegLeft, LegRight)
   val Arms: List[BodyPart] = List(ArmLeft, ArmRight)
+
+  /** Anatomical adjacency for infection contagion: a star with the torso as the hub, so an
+    * infection in an extremity must pass through the torso to reach another extremity.
+    */
+  val Adjacent: Map[BodyPart, List[BodyPart]] = Map(
+    Head -> List(Torso),
+    Torso -> List(Head, ArmLeft, ArmRight, LegLeft, LegRight),
+    ArmLeft -> List(Torso),
+    ArmRight -> List(Torso),
+    LegLeft -> List(Torso),
+    LegRight -> List(Torso)
+  )
 }
