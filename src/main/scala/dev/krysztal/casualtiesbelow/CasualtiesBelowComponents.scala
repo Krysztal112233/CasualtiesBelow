@@ -7,8 +7,11 @@ import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyComponentImpl
+import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.component.LimbStats
 import dev.krysztal.casualtiesbelow.component.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 import org.ladysnake.cca.api.v3.component.ComponentFactory
 import org.ladysnake.cca.api.v3.component.ComponentKey
@@ -25,6 +28,23 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
 
   val Body: ComponentKey[BodyComponent] = ofComponent("body")
   val Vitals: ComponentKey[VitalsComponent] = ofComponent("vitals")
+
+  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no sepsis. Used by the
+    * debug `recover` command and by death respawns (dimension-change respawns keep their copied
+    * state and never pass through here).
+    */
+  def reset(player: Player): Unit = {
+    val body = Body.get(player)
+    BodyPart.values.foreach { part => body.setStats(part, LimbStats()) }
+
+    val vitals = Vitals.get(player)
+    vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
+    vitals.consciousness = VitalsComponent.MaxValue
+    vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
+
+    Body.sync(player)
+    Vitals.sync(player)
+  }
 
   override def registerEntityComponentFactories(
       registry: EntityComponentFactoryRegistry

@@ -271,15 +271,7 @@ object CasualtiesBelowCommands {
   private def recoverTargets(ctx: CommandContext[CommandSourceStack]): Int = {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     players.foreach { player =>
-      val body = CasualtiesBelowComponents.Body.get(player)
-      BodyPart.values.foreach { part => body.setStats(part, LimbStats()) }
-
-      val vitals = CasualtiesBelowComponents.Vitals.get(player)
-      vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
-      vitals.consciousness = VitalsComponent.MaxValue
-
-      CasualtiesBelowComponents.Body.sync(player)
-      CasualtiesBelowComponents.Vitals.sync(player)
+      CasualtiesBelowComponents.reset(player)
       ctx.getSource.sendSuccess(
         () => Component.literal(s"Fully recovered ${player.getName.getString}"),
         false

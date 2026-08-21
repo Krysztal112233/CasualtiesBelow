@@ -52,11 +52,13 @@ object InjuryProgression {
 
   def register(): Unit = {
     ServerTickEvents.END_SERVER_TICK.register(tickServer)
-    // Components persist through death (RespawnCopyStrategy.ALWAYS_COPY); without a refill a
-    // bled-out player would die again on the spot after respawning.
-    ServerPlayerEvents.AFTER_RESPAWN.register { (_, newPlayer, _) =>
-      CasualtiesBelowComponents.Vitals.get(newPlayer).bloodVolume =
-        CasualtiesBelowConfig.MaxBloodVolume.get()
+    // Components persist through respawn (RespawnCopyStrategy.ALWAYS_COPY) so dimension changes
+    // keep the player's condition; a death respawn (alive = false) is a fresh start and resets
+    // everything — dying of sepsis must not respawn you still infected.
+    ServerPlayerEvents.AFTER_RESPAWN.register { (_, newPlayer, alive) =>
+      if (!alive) {
+        CasualtiesBelowComponents.reset(newPlayer)
+      }
     }
   }
 
