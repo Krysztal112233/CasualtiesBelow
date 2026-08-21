@@ -146,6 +146,6 @@ object SkinBodyPartRenderer extends BodyPartRenderer {
     BodyPart.ArmRight -> SkinRegion(44, 20, 44, 36, 4, 12, rotated = true),
     BodyPart.ArmLeft -> SkinRegion(36, 52, 52, 52, 4, 12, rotated = true),
     BodyPart.LegRight -> SkinRegion(4, 20, 4, 36, 4, 12),
-    BodyPart.LegLeft -> SkinRegion(20, 52, 36, 52, 4, 12)
+    BodyPart.LegLeft -> SkinRegion(20, 52, 4, 52, 4, 12)
   )
 }
