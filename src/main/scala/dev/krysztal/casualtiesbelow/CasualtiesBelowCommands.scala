@@ -21,15 +21,18 @@ import dev.krysztal.casualtiesbelow.component.BodyComponent
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
 import dev.krysztal.casualtiesbelow.component.VitalsComponent
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
-/** Debug/admin commands for inspecting and editing per-limb body state:
+/** Debug/admin commands for inspecting and editing body and vitals state:
   *
   *   - `/casualtiesbelow body <targets> get <part> [stat]`
   *   - `/casualtiesbelow body <targets> set <part> <stat> <value>`
   *   - `/casualtiesbelow body <targets> set <part> <fracture_recovery_ticks|infection_progress>
   *     clear`
+  *   - `/casualtiesbelow vitals <targets> get [stat]`
+  *   - `/casualtiesbelow vitals <targets> set <stat> <value>`
   *   - `/casualtiesbelow recover <targets>`
   */
 object CasualtiesBelowCommands {
@@ -47,6 +50,8 @@ object CasualtiesBelowCommands {
     "external_bleeding_rate",
     "pain"
   )
+
+  private val VitalsStatNames = List("immune_health", "consciousness", "blood_volume")
 
   def register(): Unit = {
     CommandRegistrationCallback.EVENT.register { (dispatcher, _, _) =>
@@ -73,6 +78,40 @@ object CasualtiesBelowCommands {
           Commands.argument("targets", EntityArgument.players()).`then`(get).`then`(set)
         )
 
+      val vitalsStat = Commands
+        .argument("stat", StringArgumentType.word())
+        .suggests((_, b) => SharedSuggestionProvider.suggest(VitalsStatNames.asJava, b))
+      val vitals = Commands
+        .literal("vitals")
+        .`then`(
+          Commands
+            .argument("targets", EntityArgument.players())
+            .`then`(
+              Commands
+                .literal("get")
+                .executes(ctx => getVitals(ctx, None))
+                .`then`(
+                  vitalsStat.executes(ctx =>
+                    getVitals(ctx, Some(StringArgumentType.getString(ctx, "stat")))
+                  )
+                )
+            )
+            .`then`(
+              Commands
+                .literal("set")
+                .`then`(
+                  Commands
+                    .argument("stat", StringArgumentType.word())
+                    .suggests((_, b) => SharedSuggestionProvider.suggest(VitalsStatNames.asJava, b))
+                    .`then`(
+                      Commands
+                        .argument("value", DoubleArgumentType.doubleArg(0.0))
+                        .executes(setVitals)
+                    )
+                )
+            )
+        )
+
       val recover = Commands
         .literal("recover")
         .`then`(
@@ -86,6 +125,7 @@ object CasualtiesBelowCommands {
           .literal("casualtiesbelow")
           .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
           .`then`(body)
+          .`then`(vitals)
           .`then`(recover)
       )
     }
@@ -235,7 +275,7 @@ object CasualtiesBelowCommands {
       BodyPart.values.foreach { part => body.setStats(part, LimbStats()) }
 
       val vitals = CasualtiesBelowComponents.Vitals.get(player)
-      vitals.immuneHealth = VitalsComponent.MaxValue
+      vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
       vitals.consciousness = VitalsComponent.MaxValue
 
       CasualtiesBelowComponents.Body.sync(player)
@@ -246,6 +286,68 @@ object CasualtiesBelowCommands {
       )
     }
     players.size
+  }
+
+  private def getVitals(ctx: CommandContext[CommandSourceStack], stat: Option[String]): Int = {
+    stat.foreach { name =>
+      if (!VitalsStatNames.contains(name)) throw UnknownStat.create()
+    }
+    val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
+    val src = ctx.getSource
+    players.foreach { player =>
+      val vitals = CasualtiesBelowComponents.Vitals.get(player)
+      val name = player.getName.getString
+      stat match {
+        case Some(s) =>
+          src.sendSuccess(
+            () => Component.literal(s"$name $s = ${vitalsValue(vitals, s)}"),
+            false
+          )
+        case None =>
+          src.sendSuccess(() => Component.literal(s"$name vitals:"), false)
+          VitalsStatNames.foreach { s =>
+            src.sendSuccess(
+              () => Component.literal(s"  $s = ${vitalsValue(vitals, s)}"),
+              false
+            )
+          }
+      }
+    }
+    players.size
+  }
+
+  private def setVitals(ctx: CommandContext[CommandSourceStack]): Int = {
+    val name = StringArgumentType.getString(ctx, "stat")
+    if (!VitalsStatNames.contains(name)) throw UnknownStat.create()
+
+    val value = DoubleArgumentType.getDouble(ctx, "value")
+    val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
+    val src = ctx.getSource
+    players.foreach { player =>
+      val vitals = CasualtiesBelowComponents.Vitals.get(player)
+      name match {
+        case "immune_health" =>
+          vitals.immuneHealth = value.min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+        case "consciousness" =>
+          vitals.consciousness = value.min(VitalsComponent.MaxValue)
+        case "blood_volume" =>
+          vitals.bloodVolume = value.min(CasualtiesBelowConfig.MaxBloodVolume.get())
+      }
+      CasualtiesBelowComponents.Vitals.sync(player)
+      src.sendSuccess(
+        () =>
+          Component.literal(s"${player.getName.getString} $name = ${vitalsValue(vitals, name)}"),
+        false
+      )
+    }
+    players.size
+  }
+
+  private def vitalsValue(vitals: VitalsComponent, stat: String): String = stat match {
+    case "immune_health" => f"${vitals.immuneHealth}%.1f"
+    case "consciousness" => f"${vitals.consciousness}%.1f"
+    case "blood_volume"  => f"${vitals.bloodVolume}%.1f mL"
+    case _               => throw UnknownStat.create()
   }
 
   private def getPart(ctx: CommandContext[CommandSourceStack]): BodyPart = {
