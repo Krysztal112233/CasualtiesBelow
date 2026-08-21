@@ -81,9 +81,12 @@ object InjuryProgression {
     if (totalBleeding > 0.0) {
       val vitals = CasualtiesBelowComponents.Vitals.get(player)
       vitals.bloodVolume = (vitals.bloodVolume - totalBleeding).max(0.0)
-      if (syncTick) {
-        CasualtiesBelowComponents.Vitals.sync(player)
-      }
+
+      // Sync on every draining tick, not just SyncIntervalTicks boundaries: clotting can stop the
+      // bleeding between two periodic syncs, and a skipped final value would only reach the client
+      // when the player bleeds again.
+      CasualtiesBelowComponents.Vitals.sync(player)
+
       if (vitals.bloodVolume <= 0.0) {
         player.hurtServer(
           player.level(),
