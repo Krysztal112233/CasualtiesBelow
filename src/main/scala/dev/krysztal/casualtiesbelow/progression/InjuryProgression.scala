@@ -155,6 +155,7 @@ object InjuryProgression {
     val fractureHealed = tickFracture(stats)
     val bleedingStopped = tickBleeding(stats)
     val infectionTransition = tickInfection(stats, immuneHealth, random)
+    tickInfectionEffects(stats)
     tickSkinRegen(stats, immuneHealth)
     tickMuscleRegen(stats)
     tickPainDecay(stats)
@@ -228,6 +229,29 @@ object InjuryProgression {
           false
         }
     }
+  }
+
+  /** Consequences of an active infection. The effect strength ramps linearly from zero at
+    * [[CasualtiesBelowConfig.InfectionEffectStartProgress]] to full at
+    * [[CasualtiesBelowConfig.InfectionEffectFullProgress]] — a mild infection is asymptomatic, then
+    * the limb starts hurting and wasting away: pain (which at full strength outruns natural decay
+    * and persists until the infection recedes) and muscle decay (at full strength double the muscle
+    * regrowth rate, so the limb loses muscle net).
+    */
+  private def tickInfectionEffects(stats: LimbStats): Unit = {
+    if (stats.infectionProgress.isEmpty) return
+
+    val start = CasualtiesBelowConfig.InfectionEffectStartProgress.get()
+    val full = CasualtiesBelowConfig.InfectionEffectFullProgress.get()
+    val ramp = (full - start).max(1.0)
+    val severity = ((stats.infectionProgress.get - start) / ramp).max(0.0).min(1.0)
+    if (severity <= 0.0) return
+
+    stats.pain = (stats.pain + CasualtiesBelowConfig.InfectionPainPerTick.get() * severity)
+      .min(LimbStats.MaxValue)
+    stats.muscleHealth =
+      (stats.muscleHealth - CasualtiesBelowConfig.InfectionMuscleDecayPerTick.get() * severity)
+        .max(0.0)
   }
 
   /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the

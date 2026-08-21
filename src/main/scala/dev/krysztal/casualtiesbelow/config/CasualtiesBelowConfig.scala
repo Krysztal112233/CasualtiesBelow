@@ -109,6 +109,32 @@ object CasualtiesBelowConfig {
       "dying player is not soft-locked out of healing."
     )
     .defineInRange("skinRegenMinImmuneMultiplier", 0.25, 0.0, 1.0, classOf[Double])
+  val InfectionEffectStartProgress: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress at which local consequences (pain, muscle decay) begin; below this",
+      "an infection is asymptomatic."
+    )
+    .defineInRange("infectionEffectStartProgress", 20.0, 0.0, 100.0, classOf[Double])
+  val InfectionEffectFullProgress: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress at which local consequences reach full strength; between the start",
+      "and this value the effect strength ramps up linearly."
+    )
+    .defineInRange("infectionEffectFullProgress", 40.0, 0.0, 100.0, classOf[Double])
+  val InfectionPainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Pain granted per tick by an infection at full effect strength (see",
+      "infectionEffectFullProgress). At the default, a full-strength infection outruns natural",
+      "pain decay, so the limb keeps hurting until the infection recedes."
+    )
+    .defineInRange("infectionPainPerTick", 0.05, 0.0, 10.0, classOf[Double])
+  val InfectionMuscleDecayPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Muscle health destroyed per tick by an infection at full effect strength (see",
+      "infectionEffectFullProgress). At the default (double the muscle regrowth rate), a",
+      "full-strength infection wastes the limb away in about half an hour."
+    )
+    .defineInRange("infectionMuscleDecayPerTick", 0.005, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
   Builder.push("immune")
