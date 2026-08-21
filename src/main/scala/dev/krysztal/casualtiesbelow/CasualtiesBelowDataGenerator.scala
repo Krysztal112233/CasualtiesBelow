@@ -32,7 +32,10 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
   override def buildRegistry(registryBuilder: RegistrySetBuilder): Unit = {
     registryBuilder.add(
       Registries.DAMAGE_TYPE,
-      bootstrap => bootstrap.register(CasualtiesBelowDamageTypes.BloodLoss, BloodLossDamageType)
+      bootstrap => {
+        bootstrap.register(CasualtiesBelowDamageTypes.BloodLoss, BloodLossDamageType)
+        bootstrap.register(CasualtiesBelowDamageTypes.Sepsis, SepsisDamageType)
+      }
     )
   }
 
@@ -41,6 +44,15 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
     */
   private val BloodLossDamageType = new DamageType(
     "blood_loss",
+    DamageScaling.NEVER,
+    0.0f,
+    DamageEffects.HURT,
+    DeathMessageType.DEFAULT
+  )
+
+  /** Fatal sepsis, dealt when sepsis compresses the effective blood volume cap to zero. */
+  private val SepsisDamageType = new DamageType(
+    "sepsis",
     DamageScaling.NEVER,
     0.0f,
     DamageEffects.HURT,

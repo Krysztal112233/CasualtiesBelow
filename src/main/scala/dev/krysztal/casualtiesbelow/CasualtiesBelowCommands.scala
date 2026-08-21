@@ -51,7 +51,7 @@ object CasualtiesBelowCommands {
     "pain"
   )
 
-  private val VitalsStatNames = List("immune_health", "consciousness", "blood_volume")
+  private val VitalsStatNames = List("immune_health", "consciousness", "blood_volume", "sepsis")
 
   def register(): Unit = {
     CommandRegistrationCallback.EVENT.register { (dispatcher, _, _) =>
@@ -324,6 +324,8 @@ object CasualtiesBelowCommands {
           vitals.consciousness = value.min(VitalsComponent.MaxValue)
         case "blood_volume" =>
           vitals.bloodVolume = value.min(CasualtiesBelowConfig.MaxBloodVolume.get())
+        case "sepsis" =>
+          vitals.sepsis = value.min(CasualtiesBelowConfig.MaxSepsis.get())
       }
       CasualtiesBelowComponents.Vitals.sync(player)
       src.sendSuccess(
@@ -339,6 +341,7 @@ object CasualtiesBelowCommands {
     case "immune_health" => f"${vitals.immuneHealth}%.1f"
     case "consciousness" => f"${vitals.consciousness}%.1f"
     case "blood_volume"  => f"${vitals.bloodVolume}%.1f mL"
+    case "sepsis"        => f"${vitals.sepsis}%.1f"
     case _               => throw UnknownStat.create()
   }
 

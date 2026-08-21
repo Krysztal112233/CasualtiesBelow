@@ -117,15 +117,32 @@ object MedicalPanel {
         v.immuneHealth / maxImmune * 100.0,
         CasualtiesBelowConfig.immuneBreakEven / maxImmune * 100.0
       )
-      // Blood volume as a fraction of the configured maximum (mL is not meaningful to show raw).
+      // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
+      // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
+      // room, not the configured base maximum.
+      val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(v.sepsis)
+
       y = extractStatBar(
         graphics,
         font,
         contentX,
         y,
         Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
-        v.bloodVolume / CasualtiesBelowConfig.MaxBloodVolume.get() * 100.0,
+        if (effectiveMaxBlood > 0.0) v.bloodVolume / effectiveMaxBlood * 100.0 else 0.0,
         BloodBadThreshold
+      )
+      // Sepsis is a "higher is worse" meter, so it is a plain row like pain rather than a
+      // depletion bar; any sepsis at all is bad news.
+      y = extractStatRow(
+        graphics,
+        font,
+        contentX,
+        y,
+        Component.translatable("screen.casualtiesbelow.body_status.stat.sepsis"),
+        Component.literal(
+          (v.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
+        ),
+        v.sepsis > 0.0
       )
     }
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",

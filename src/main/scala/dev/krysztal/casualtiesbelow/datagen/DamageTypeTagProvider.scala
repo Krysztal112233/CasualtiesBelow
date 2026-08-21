@@ -19,11 +19,12 @@ final class DamageTypeTagProvider(
 ) extends FabricTagsProvider[DamageType](output, Registries.DAMAGE_TYPE, registries) {
 
   override protected def addTags(registries: HolderLookup.Provider): Unit = {
-    // Bleeding out is not preventable by gear or effects.
+    // Bleeding out and sepsis are not preventable by gear or effects.
     val bloodLoss = CasualtiesBelowDamageTypes.BloodLoss
-    builder(DamageTypeTags.BYPASSES_ARMOR).add(bloodLoss)
-    builder(DamageTypeTags.BYPASSES_EFFECTS).add(bloodLoss)
-    builder(DamageTypeTags.BYPASSES_ENCHANTMENTS).add(bloodLoss)
-    builder(DamageTypeTags.BYPASSES_RESISTANCE).add(bloodLoss)
+    val sepsis = CasualtiesBelowDamageTypes.Sepsis
+    builder(DamageTypeTags.BYPASSES_ARMOR).add(bloodLoss, sepsis)
+    builder(DamageTypeTags.BYPASSES_EFFECTS).add(bloodLoss, sepsis)
+    builder(DamageTypeTags.BYPASSES_ENCHANTMENTS).add(bloodLoss, sepsis)
+    builder(DamageTypeTags.BYPASSES_RESISTANCE).add(bloodLoss, sepsis)
   }
 }

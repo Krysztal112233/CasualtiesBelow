@@ -1,5 +1,6 @@
 {
   "values": [
-    "casualtiesbelow:blood_loss"
+    "casualtiesbelow:blood_loss",
+    "casualtiesbelow:sepsis"
   ]
 }

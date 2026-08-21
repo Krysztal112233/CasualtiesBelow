@@ -35,6 +35,13 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("maxBloodVolume", 5000.0, 100.0, 100000.0, classOf[Double])
+  val FedBloodRegenPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Blood volume regenerated per tick while well-fed (same food threshold as immune",
+      "regeneration), capped by the effective maximum blood volume. A survivor of sepsis or",
+      "heavy bleeding has to eat well to recover."
+    )
+    .defineInRange("fedBloodRegenPerTick", 0.5, 0.0, 100.0, classOf[Double])
   val MaxImmuneHealth: ConfigValue[Double] = Builder
     .comment(
       "Maximum (and starting) immune health. With the default infection rates, the break-even",
@@ -154,6 +161,27 @@ object CasualtiesBelowConfig {
       "infection progress, like a fresh wound onset."
     )
     .defineInRange("infectionContagionMaxChancePerTick", 0.05, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("sepsis")
+  val MaxSepsis: ConfigValue[Double] = Builder
+    .comment(
+      "The maximum sepsis value; reaching it reduces the effective blood volume cap to zero."
+    )
+    .defineInRange("maxSepsis", 100.0, 1.0, 10000.0, classOf[Double])
+  val SepsisGainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Sepsis gained per tick when the whole body is maximally infected (infection load 600),",
+      "scaled linearly with the load fraction."
+    )
+    .defineInRange("sepsisGainPerTick", 0.05, 0.0, 10.0, classOf[Double])
+  val SepsisDecayPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Sepsis recovered per tick regardless of the infection load. With the defaults the",
+      "break-even infection load is 360 out of 600: a single maxed-out limb infection cannot",
+      "kill, but an infection spreading across the body does."
+    )
+    .defineInRange("sepsisDecayPerTick", 0.03, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
   Builder.push("immune")
@@ -285,6 +313,14 @@ object CasualtiesBelowConfig {
     } else {
       MaxImmuneHealth.get() * spread / (spread + fight)
     }
+  }
+
+  /** The effective blood volume cap: sepsis compresses it linearly, down to zero at full sepsis
+    * (which is fatal). Blood over the cap is lost — recovering requires eating well (see
+    * [[FedBloodRegenPerTick]]).
+    */
+  def effectiveMaxBloodVolume(sepsis: Double): Double = {
+    MaxBloodVolume.get() * (1.0 - (sepsis / MaxSepsis.get()).min(1.0))
   }
 
   def register(): Unit =

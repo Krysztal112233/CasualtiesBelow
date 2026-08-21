@@ -82,6 +82,7 @@ object InjuryProgression {
     // containable, several at once overwhelm a marginal immune system.
     val infectedCount = BodyPart.values.count(p => body.stats(p).infectionProgress.isDefined)
     val fightShare = 1.0 / infectedCount.max(1)
+    var infectionLoad = 0.0
 
     BodyPart.values.foreach { part =>
       val current = body.stats(part)
@@ -94,6 +95,7 @@ object InjuryProgression {
         player.getRandom
       )
       totalBleeding += updated.externalBleedingRate
+      infectionLoad += updated.infectionProgress.getOrElse(0.0)
       if (updated != current) {
         body.setStats(part, updated)
         if (discrete || syncTick) {
@@ -104,18 +106,35 @@ object InjuryProgression {
 
     tickContagion(player, body)
 
-    var vitalsChanged = tickImmune(vitals, player)
+    var vitalsChanged = tickSepsis(vitals, infectionLoad)
+    vitalsChanged = tickImmune(vitals, player) || vitalsChanged
+
+    // Sepsis compresses the effective blood cap; well-fed players regenerate blood up to it.
+    // Blood over the cap is lost outright: surviving sepsis leaves the body drained, and
+    // recovery means eating well.
+    val maxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis)
+    if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.get()) {
+      val regenerated =
+        (vitals.bloodVolume + CasualtiesBelowConfig.FedBloodRegenPerTick.get()).min(maxBlood)
+      if (regenerated != vitals.bloodVolume) {
+        vitals.bloodVolume = regenerated
+        vitalsChanged = true
+      }
+    }
+    if (vitals.bloodVolume > maxBlood) {
+      vitals.bloodVolume = maxBlood
+      vitalsChanged = true
+    }
 
     if (totalBleeding > 0.0) {
       vitals.bloodVolume = (vitals.bloodVolume - totalBleeding).max(0.0)
       vitalsChanged = true
-      if (vitals.bloodVolume <= 0.0) {
-        player.hurtServer(
-          player.level(),
-          CasualtiesBelowDamageTypes.bloodLoss(player.level()),
-          Float.MaxValue
-        )
-      }
+    }
+    if (vitals.bloodVolume <= 0.0) {
+      val fatal =
+        if (maxBlood <= 0.0) CasualtiesBelowDamageTypes.sepsis(player.level())
+        else CasualtiesBelowDamageTypes.bloodLoss(player.level())
+      player.hurtServer(player.level(), fatal, Float.MaxValue)
     }
 
     // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery
@@ -124,6 +143,25 @@ object InjuryProgression {
     if (vitalsChanged) {
       CasualtiesBelowComponents.Vitals.sync(player)
     }
+  }
+
+  /** Sepsis is the whole-body consequence of infection: it builds in proportion to the total
+    * infection load (the sum of all limbs' infection progress) and recovers at a fixed rate, so
+    * below the break-even load it drains away on its own. Its effect is applied where blood is
+    * handled: the effective blood volume cap is compressed linearly with sepsis (see
+    * [[CasualtiesBelowConfig.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis.
+    * Returns whether the value changed.
+    */
+  private def tickSepsis(vitals: VitalsComponent, infectionLoad: Double): Boolean = {
+    val maxLoad = LimbStats.MaxValue * BodyPart.values.length
+    val gain = CasualtiesBelowConfig.SepsisGainPerTick.get() * infectionLoad / maxLoad
+    val next = (vitals.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
+      .max(0.0)
+      .min(CasualtiesBelowConfig.MaxSepsis.get())
+    if (next == vitals.sepsis) return false
+
+    vitals.sepsis = next
+    true
   }
 
   /** Immune health is a lifestyle stat driven by diet, deliberately decoupled from infection load:

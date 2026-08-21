@@ -20,9 +20,21 @@ object CasualtiesBelowDamageTypes {
   val BloodLoss: ResourceKey[DamageType] =
     ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("blood_loss"))
 
+  /** Fatal sepsis, dealt when sepsis compresses the effective blood volume cap to zero. Same
+    * bypasses tags as [[BloodLoss]].
+    */
+  val Sepsis: ResourceKey[DamageType] =
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("sepsis"))
+
   /** A sourceless blood-loss damage instance. */
   def bloodLoss(level: Level): DamageSource =
     new DamageSource(
       level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(BloodLoss)
+    )
+
+  /** A sourceless sepsis damage instance. */
+  def sepsis(level: Level): DamageSource =
+    new DamageSource(
+      level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(Sepsis)
     )
 }

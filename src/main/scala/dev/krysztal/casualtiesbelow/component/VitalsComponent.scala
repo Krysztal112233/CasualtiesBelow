@@ -20,6 +20,7 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
   var immuneHealth: Double
   var consciousness: Double
   var bloodVolume: Double
+  var sepsis: Double
 }
 
 object VitalsComponent {
@@ -29,12 +30,14 @@ object VitalsComponent {
   val ImmuneHealthKey = "immune_health"
   val ConsciousnessKey = "consciousness"
   val BloodVolumeKey = "blood_volume"
+  val SepsisKey = "sepsis"
 }
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
   var consciousness: Double = VitalsComponent.MaxValue
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
+  var sepsis: Double = 0.0
 
   override def copyFrom(
       other: VitalsComponent,
@@ -43,12 +46,14 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     immuneHealth = other.immuneHealth
     consciousness = other.consciousness
     bloodVolume = other.bloodVolume
+    sepsis = other.sepsis
   }
 
   override def writeData(out: ValueOutput): Unit = {
     out.putDouble(VitalsComponent.ImmuneHealthKey, immuneHealth)
     out.putDouble(VitalsComponent.ConsciousnessKey, consciousness)
     out.putDouble(VitalsComponent.BloodVolumeKey, bloodVolume)
+    out.putDouble(VitalsComponent.SepsisKey, sepsis)
   }
 
   override def readData(in: ValueInput): Unit = {
@@ -57,5 +62,6 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     consciousness = in.getDoubleOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
     bloodVolume =
       in.getDoubleOr(VitalsComponent.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
+    sepsis = in.getDoubleOr(VitalsComponent.SepsisKey, 0.0)
   }
 }

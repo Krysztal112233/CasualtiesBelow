@@ -26,6 +26,10 @@ final class DamageTypeProvider(
       registries.lookupOrThrow(Registries.DAMAGE_TYPE),
       CasualtiesBelowDamageTypes.BloodLoss
     )
+    entries.add(
+      registries.lookupOrThrow(Registries.DAMAGE_TYPE),
+      CasualtiesBelowDamageTypes.Sepsis
+    )
   }
 
   override def getName(): String = "Damage Types"
