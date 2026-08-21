@@ -135,6 +135,20 @@ object CasualtiesBelowConfig {
       "cutoff (vanilla requires food > 6 to sprint, so at 6 the player is already exhausted)."
     )
     .defineInRange("hungryFoodLevelThreshold", 7, 0, 20, classOf[Integer])
+  val ZombieHitImmuneDrain: ConfigValue[Double] = Builder
+    .comment(
+      "Immune health lost per zombie-family hit (entity type tag minecraft:zombies), rolled",
+      "with zombieHitImmuneDrainJitter fluctuation. One-way feedback: only external attacks",
+      "drain immune health; infections never do."
+    )
+    .defineInRange("zombieHitImmuneDrain", 5.0, 0.0, 1000.0, classOf[Double])
+  val ZombieHitImmuneDrainJitter: ConfigValue[Double] = Builder
+    .comment(
+      "Random fluctuation of the per-hit immune drain, as a fraction of the drain (0.3 =",
+      "rolled as drain × (1 ± 30%)); proportional, so a larger drain fluctuates more. 0",
+      "disables fluctuation."
+    )
+    .defineInRange("zombieHitImmuneDrainJitter", 0.3, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("movement")

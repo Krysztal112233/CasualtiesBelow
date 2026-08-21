@@ -5,6 +5,7 @@ import net.minecraft.resources.Identifier
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
+import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 
 import net.fabricmc.api.ModInitializer
@@ -22,6 +23,7 @@ object CasualtiesBelow extends ModInitializer {
     // event order) so its dirty marks ship in the same tick.
     InjuryProgression.register()
     LimbInjuries.register()
+    ZombieAttackImmuneDrain.register()
     Logger.info("CasualtiesBelow initialized")
   }
 
