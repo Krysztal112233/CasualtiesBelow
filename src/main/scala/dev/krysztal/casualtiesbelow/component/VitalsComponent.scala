@@ -2,7 +2,8 @@ package dev.krysztal.casualtiesbelow.component
 
 import net.minecraft.core.HolderLookup
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 

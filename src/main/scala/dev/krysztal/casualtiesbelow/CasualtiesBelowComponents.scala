@@ -5,19 +5,17 @@ import scala.reflect.ClassTag
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.component.{
-  BodyComponent,
-  BodyComponentImpl,
-  VitalsComponent,
-  VitalsComponentImpl
-}
+import dev.krysztal.casualtiesbelow.component.BodyComponent
+import dev.krysztal.casualtiesbelow.component.BodyComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsComponent
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 
-import org.ladysnake.cca.api.v3.component.{ComponentFactory, ComponentKey, ComponentRegistryV3}
-import org.ladysnake.cca.api.v3.entity.{
-  EntityComponentFactoryRegistry,
-  EntityComponentInitializer,
-  RespawnCopyStrategy
-}
+import org.ladysnake.cca.api.v3.component.ComponentFactory
+import org.ladysnake.cca.api.v3.component.ComponentKey
+import org.ladysnake.cca.api.v3.component.ComponentRegistryV3
+import org.ladysnake.cca.api.v3.entity.EntityComponentFactoryRegistry
+import org.ladysnake.cca.api.v3.entity.EntityComponentInitializer
+import org.ladysnake.cca.api.v3.entity.RespawnCopyStrategy
 import org.ladysnake.cca.api.v8.component.CardinalComponent
 
 /** Registers the mod's Cardinal Components on players. Declared as the `cardinal-components-entity`

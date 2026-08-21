@@ -12,7 +12,8 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier
 import net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.level.storage.{ValueInput, ValueOutput}
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
