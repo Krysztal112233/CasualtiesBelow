@@ -2,12 +2,14 @@ package dev.krysztal.casualtiesbelow.progression
 
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.util.RandomSource
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.component.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
 
@@ -24,6 +26,11 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
   *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
   *     proportionally to the skin damage (see [[BleedingCalc.cap]]); reaching zero blood is fatal
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
+  *   - wounds with meaningful skin damage can get infected; the immune system fights the infection
+  *     at a rate proportional to its health against a spread rate proportional to its complement,
+  *     and also scales skin regrowth (see [[tickInfection]], [[tickSkinRegen]])
+  *   - immune health is a lifestyle stat decoupled from infection: a full stomach restores it,
+  *     hunger drains it (see [[tickImmune]])
   *   - skin regrows only once the wound has clotted shut; muscle regrows regardless (slower)
   *   - pain decays linearly at the configured rate
   *
@@ -62,13 +69,19 @@ object InjuryProgression {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
     val body = CasualtiesBelowComponents.Body.get(player)
+    val vitals = CasualtiesBelowComponents.Vitals.get(player)
     val walking = isWalking(player)
     var totalBleeding = 0.0
 
     BodyPart.values.foreach { part =>
       val current = body.stats(part)
       val updated = current.copy()
-      val discrete = tickLimb(updated, walkingStrainRate(part, current, walking))
+      val discrete = tickLimb(
+        updated,
+        walkingStrainRate(part, current, walking),
+        vitals.immuneHealth,
+        player.getRandom
+      )
       totalBleeding += updated.externalBleedingRate
       if (updated != current) {
         body.setStats(part, updated)
@@ -78,15 +91,11 @@ object InjuryProgression {
       }
     }
 
+    var vitalsChanged = tickImmune(vitals, player)
+
     if (totalBleeding > 0.0) {
-      val vitals = CasualtiesBelowComponents.Vitals.get(player)
       vitals.bloodVolume = (vitals.bloodVolume - totalBleeding).max(0.0)
-
-      // Sync on every draining tick, not just SyncIntervalTicks boundaries: clotting can stop the
-      // bleeding between two periodic syncs, and a skipped final value would only reach the client
-      // when the player bleeds again.
-      CasualtiesBelowComponents.Vitals.sync(player)
-
+      vitalsChanged = true
       if (vitals.bloodVolume <= 0.0) {
         player.hurtServer(
           player.level(),
@@ -95,24 +104,62 @@ object InjuryProgression {
         )
       }
     }
+
+    // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery
+    // can stop the drain between two periodic syncs, and a skipped final value would only reach
+    // the client when the vitals change again.
+    if (vitalsChanged) {
+      CasualtiesBelowComponents.Vitals.sync(player)
+    }
+  }
+
+  /** Immune health is a lifestyle stat driven by diet, deliberately decoupled from infection load:
+    * being well-fed restores it slowly and hunger drains it (thresholds mirror vanilla's
+    * regeneration/sprinting cutoffs). Returns whether the value changed.
+    */
+  private def tickImmune(vitals: VitalsComponent, player: ServerPlayer): Boolean = {
+    val food = player.getFoodData.getFoodLevel
+    val delta: Double =
+      if (food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue) {
+        CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
+      } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
+        -CasualtiesBelowConfig.HungryImmuneDrainPerTick.get()
+      } else {
+        0.0
+      }
+    if (delta == 0.0) return false
+
+    val next =
+      (vitals.immuneHealth + delta).max(0.0).min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+    if (next == vitals.immuneHealth) return false
+
+    vitals.immuneHealth = next
+    true
   }
 
   /** One tick of evolution for one limb, mutating the given copy in place. `strainPainRate` is the
     * walking-strain pain rate when the limb is a fractured/dislocated leg currently bearing the
-    * walking player, zero otherwise. Returns whether a discrete transition occurred (fracture
-    * healed, bleeding stopped).
+    * walking player, zero otherwise. `immuneHealth` modulates infection spread and skin regrowth.
+    * Returns whether a discrete transition occurred (fracture healed, bleeding stopped, infection
+    * started or cleared).
     *
     * Ordering matters: bleeding clots before skin regrowth is considered, so a wound that seals
     * this tick starts regrowing skin immediately.
     */
-  private def tickLimb(stats: LimbStats, strainPainRate: Double): Boolean = {
+  private def tickLimb(
+      stats: LimbStats,
+      strainPainRate: Double,
+      immuneHealth: Double,
+      random: RandomSource
+  ): Boolean = {
     val fractureHealed = tickFracture(stats)
     val bleedingStopped = tickBleeding(stats)
-    tickSkinRegen(stats)
+    val infectionTransition = tickInfection(stats, immuneHealth, random)
+    tickSkinRegen(stats, immuneHealth)
     tickMuscleRegen(stats)
     tickPainDecay(stats)
     tickWalkingStrain(stats, strainPainRate)
-    fractureHealed || bleedingStopped
+    fractureHealed || bleedingStopped || infectionTransition
   }
 
   /** Counts down the fracture recovery time; returns true when the fracture healed this tick. */
@@ -141,12 +188,61 @@ object InjuryProgression {
     clotted == 0.0
   }
 
-  /** Skin regrows only once the wound has clotted shut. */
-  private def tickSkinRegen(stats: LimbStats): Unit = {
+  /** Infection onset and progression. Onset is a per-tick Bernoulli roll gated on a meaningful
+    * wound (at least [[InfectionSkinDamageThreshold]] skin damage), with probability scaled by the
+    * skin damage fraction; an onset seeds a small progress value so a strong immune system gets a
+    * visible suppression window instead of an instant flicker. While infected, the immune system
+    * fights the infection at a rate proportional to immune health against a spread rate
+    * proportional to its complement — with the defaults, the break-even point is an immune health
+    * of 120 out of 200 (see [[CasualtiesBelowConfig.immuneBreakEven]]). Returns true on the
+    * discrete transitions (onset, cleared).
+    */
+  private def tickInfection(
+      stats: LimbStats,
+      immuneHealth: Double,
+      random: RandomSource
+  ): Boolean = {
+    val immuneFraction = immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
+    stats.infectionProgress match {
+      case Some(progress) =>
+        val spread = CasualtiesBelowConfig.InfectionSpreadPerTick.get() * (1.0 - immuneFraction)
+        val fight = CasualtiesBelowConfig.InfectionFightPerTick.get() * immuneFraction
+        val next = (progress + spread - fight).min(LimbStats.MaxValue)
+        if (next <= 0.0) {
+          stats.infectionProgress = None
+          true
+        } else {
+          stats.infectionProgress = Some(next)
+          false
+        }
+      case None =>
+        val skinDamage = LimbStats.MaxValue - stats.skinIntegrity
+        if (skinDamage < InfectionSkinDamageThreshold) return false
+
+        val chance =
+          CasualtiesBelowConfig.InfectionChancePerTick.get() * skinDamage / LimbStats.MaxValue
+        if (random.nextFloat() < chance) {
+          stats.infectionProgress = Some(InfectionOnsetSeed)
+          true
+        } else {
+          false
+        }
+    }
+  }
+
+  /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the
+    * configured minimum multiplier (zero immune) and the full base rate (full immune).
+    */
+  private def tickSkinRegen(stats: LimbStats, immuneHealth: Double): Unit = {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= LimbStats.MaxValue) return
 
-    stats.skinIntegrity = (stats.skinIntegrity + SkinRegenPerTick).min(LimbStats.MaxValue)
+    val minMultiplier = CasualtiesBelowConfig.SkinRegenMinImmuneMultiplier.get()
+    val multiplier =
+      minMultiplier +
+        (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
+    stats.skinIntegrity =
+      (stats.skinIntegrity + SkinRegenPerTick * multiplier).min(LimbStats.MaxValue)
   }
 
   /** Muscle regrows regardless of bleeding (slower than skin). */
@@ -212,8 +308,18 @@ object InjuryProgression {
   /** Ticks between throttled syncs of continuous changes (20 = once per second). */
   private val SyncIntervalTicks = 20
 
-  /** Skin integrity regrown per tick once the wound is sealed (100 over ~17 min). */
+  /** Skin integrity regrown per tick once the wound is sealed (100 over ~17 min), before the immune
+    * multiplier.
+    */
   private val SkinRegenPerTick = 0.005
+
+  /** Minimum skin damage (from full integrity) before a wound can get infected. */
+  private val InfectionSkinDamageThreshold = 20.0
+
+  /** Infection progress a fresh onset starts with: gives the immune system a visible suppression
+    * window instead of an instant onset→cleared flicker.
+    */
+  private val InfectionOnsetSeed = 5.0
 
   /** Muscle health regrown per tick (100 over ~33 min). */
   private val MuscleRegenPerTick = 0.0025

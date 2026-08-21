@@ -55,7 +55,6 @@ object MedicalPanel {
   private val SkinBadThreshold = 10.0
   private val PainBadThreshold = 50.0
   private val ConsciousnessBadThreshold = 50.0
-  private val ImmuneBadThreshold = 25.0
   private val BloodBadThreshold = 70.0
 
   /** Renders the panel spanning the full screen height at the left edge.
@@ -103,14 +102,20 @@ object MedicalPanel {
         v.consciousness,
         ConsciousnessBadThreshold
       )
+
+      // Immune health as a percentage of the configured maximum; red below the infection
+      // break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the immune system
+      // can no longer outpace infections.
+      val maxImmune = CasualtiesBelowConfig.MaxImmuneHealth.get()
+
       y = extractStatBar(
         graphics,
         font,
         contentX,
         y,
         Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
-        v.immuneHealth,
-        ImmuneBadThreshold
+        v.immuneHealth / maxImmune * 100.0,
+        CasualtiesBelowConfig.immuneBreakEven / maxImmune * 100.0
       )
       // Blood volume as a fraction of the configured maximum (mL is not meaningful to show raw).
       y = extractStatBar(

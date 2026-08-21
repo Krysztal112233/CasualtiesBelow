@@ -9,10 +9,11 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
-/** Whole-player vitals: immune health value, consciousness, and blood volume. Immune health and
-  * consciousness range from 0 to [[VitalsComponent.MaxValue]]; blood volume is in mL, up to the
-  * configured maximum. `Double` rather than `Float` for the same reason as
-  * [[dev.krysztal.casualtiesbelow.component.LimbStats]]: per-tick accumulation precision.
+/** Whole-player vitals: immune health value, consciousness, and blood volume. Immune health ranges
+  * from 0 to the configured maximum (`maxImmuneHealth`, default 200), consciousness from 0 to
+  * [[VitalsComponent.MaxValue]]; blood volume is in mL, up to the configured maximum. `Double`
+  * rather than `Float` for the same reason as [[dev.krysztal.casualtiesbelow.component.LimbStats]]:
+  * per-tick accumulation precision.
   */
 trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
   var immuneHealth: Double
@@ -30,7 +31,7 @@ object VitalsComponent {
 }
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
-  var immuneHealth: Double = VitalsComponent.MaxValue
+  var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
   var consciousness: Double = VitalsComponent.MaxValue
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
 
@@ -50,7 +51,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 
   override def readData(in: ValueInput): Unit = {
-    immuneHealth = in.getDoubleOr(VitalsComponent.ImmuneHealthKey, VitalsComponent.MaxValue)
+    immuneHealth =
+      in.getDoubleOr(VitalsComponent.ImmuneHealthKey, CasualtiesBelowConfig.MaxImmuneHealth.get())
     consciousness = in.getDoubleOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
     bloodVolume =
       in.getDoubleOr(VitalsComponent.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())

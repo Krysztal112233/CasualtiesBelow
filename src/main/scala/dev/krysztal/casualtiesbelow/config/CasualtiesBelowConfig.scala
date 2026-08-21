@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.config
 
 import java.lang.Boolean
 import java.lang.Double
+import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
@@ -34,6 +35,13 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("maxBloodVolume", 5000.0, 100.0, 100000.0, classOf[Double])
+  val MaxImmuneHealth: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum (and starting) immune health. With the default infection rates, the break-even",
+      "point where the immune system exactly matches infection spread is 120 out of 200."
+    )
+    .gameRestart()
+    .defineInRange("maxImmuneHealth", 200.0, 1.0, 10000.0, classOf[Double])
   Builder.pop()
 
   Builder.push("limbs")
@@ -68,6 +76,65 @@ object CasualtiesBelowConfig {
       "0 disables fluctuation."
     )
     .defineInRange("bleedingRateJitter", 0.3, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("infection")
+  val InfectionChancePerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Per-tick probability that a wound starts an infection, at zero skin integrity; scales",
+      "linearly with the skin damage (half-intact skin: half the chance). Only wounds below",
+      "the skin integrity threshold (20 damage, i.e. under 80) can get infected at all.",
+      "0 disables infections."
+    )
+    .defineInRange("infectionChancePerTick", 0.0005, 0.0, 1.0, classOf[Double])
+  val InfectionSpreadPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress gained per tick at zero immune health; scales down linearly and",
+      "reaches zero at full immune health. 0.03 = an unchecked infection runs 0 to 100 in",
+      "~2.8 min."
+    )
+    .defineInRange("infectionSpreadPerTick", 0.03, 0.0, 10.0, classOf[Double])
+  val InfectionFightPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Infection progress removed per tick at full immune health; scales down linearly and",
+      "reaches zero at zero immune health. With the defaults (spread 0.03, fight 0.02, max",
+      "immune health 200), the break-even immune health is 120: above it infections recede,",
+      "below it they spread."
+    )
+    .defineInRange("infectionFightPerTick", 0.02, 0.0, 10.0, classOf[Double])
+  val SkinRegenMinImmuneMultiplier: ConfigValue[Double] = Builder
+    .comment(
+      "Skin regrowth multiplier at zero immune health, as a fraction of the base rate (0.25 =",
+      "quarter speed); at full immune health skin regrows at the base rate. Never zero, so a",
+      "dying player is not soft-locked out of healing."
+    )
+    .defineInRange("skinRegenMinImmuneMultiplier", 0.25, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("immune")
+  val FedImmuneRegenPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Immune health regained per tick while awake and fed (food level at or above",
+      "fedFoodLevelThreshold)."
+    )
+    .defineInRange("fedImmuneRegenPerTick", 0.005, 0.0, 10.0, classOf[Double])
+  val HungryImmuneDrainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Immune health lost per tick while hungry (food level below hungryFoodLevelThreshold)."
+    )
+    .defineInRange("hungryImmuneDrainPerTick", 0.01, 0.0, 10.0, classOf[Double])
+  val FedFoodLevelThreshold: ConfigValue[Integer] = Builder
+    .comment(
+      "Food level (0-20) at or above which immune health regenerates while awake; 18 matches",
+      "vanilla's natural-regeneration threshold."
+    )
+    .defineInRange("fedFoodLevelThreshold", 18, 0, 20, classOf[Integer])
+  val HungryFoodLevelThreshold: ConfigValue[Integer] = Builder
+    .comment(
+      "Food level (0-20) below which immune health drains; 7 matches vanilla's sprinting",
+      "cutoff (vanilla requires food > 6 to sprint, so at 6 the player is already exhausted)."
+    )
+    .defineInRange("hungryFoodLevelThreshold", 7, 0, 20, classOf[Integer])
   Builder.pop()
 
   Builder.push("movement")
@@ -145,6 +212,19 @@ object CasualtiesBelowConfig {
   Builder.pop()
 
   private val Spec = Builder.build()
+
+  /** Immune health at which infection spread and immune fight exactly cancel out:
+    * `max × spread / (spread + fight)`. Below it infections spread, above it they recede.
+    */
+  def immuneBreakEven: Double = {
+    val spread = InfectionSpreadPerTick.get()
+    val fight = InfectionFightPerTick.get()
+    if (spread + fight <= 0.0) {
+      0.0
+    } else {
+      MaxImmuneHealth.get() * spread / (spread + fight)
+    }
+  }
 
   def register(): Unit =
     ConfigRegistry.INSTANCE.register(CasualtiesBelow.ModId, ModConfig.Type.COMMON, Spec)
