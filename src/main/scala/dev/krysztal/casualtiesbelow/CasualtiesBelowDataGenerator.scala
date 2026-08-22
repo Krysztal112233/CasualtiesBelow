@@ -8,8 +8,10 @@ import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.damagesource.DeathMessageType
 
 import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
+import dev.krysztal.casualtiesbelow.datagen.SharpMeleeTagProvider
 
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
@@ -22,10 +24,16 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
   override def onInitializeDataGenerator(generator: FabricDataGenerator): Unit = {
     val pack = generator.createPack()
     pack.addProvider[DamageTypeProvider]((output, registries) =>
-      new DamageTypeProvider(output, registries)
+      DamageTypeProvider(output, registries)
     )
     pack.addProvider[DamageTypeTagProvider]((output, registries) =>
-      new DamageTypeTagProvider(output, registries)
+      DamageTypeTagProvider(output, registries)
+    )
+    pack.addProvider[SharpMeleeTagProvider]((output, registries) =>
+      SharpMeleeTagProvider(output, registries)
+    )
+    pack.addProvider[BluntMeleeTagProvider]((output, registries) =>
+      BluntMeleeTagProvider(output, registries)
     )
   }
 

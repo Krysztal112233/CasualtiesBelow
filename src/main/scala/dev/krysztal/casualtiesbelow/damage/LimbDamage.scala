@@ -2,11 +2,9 @@ package dev.krysztal.casualtiesbelow.damage
 
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.DamageTypeTags
-import net.minecraft.tags.ItemTags
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
-import net.minecraft.world.entity.projectile.Projectile
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
@@ -23,7 +21,9 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
   * the impact context — fall distance, damage modifier, formula output — is available). Other
   * damage goes through [[afterDamage]] (Fabric's `ServerLivingEntityEvents.AFTER_DAMAGE`), which
   * carries no hit-location information: the affected part is guessed from hit geometry (see
-  * [[HitLocation]]). Melee and projectile damage are attributed so far.
+  * [[HitLocation]]). What kind of wound a hit inflicts — bite, cut, blunt, pierce, burn, blast — is
+  * classified from the damage source by [[WoundProfiles]] (tag-driven; see
+  * [[CasualtiesBelowTags]]).
   */
 object LimbDamage {
 
@@ -89,10 +89,12 @@ object LimbDamage {
 
     val player = entity.asInstanceOf[Player]
     val damage = damageTaken.toDouble
-    source match {
-      case s if isMelee(s)      => attributeMeleeDamage(player, s, damage)
-      case s if isProjectile(s) => attributeProjectileDamage(player, s, damage)
-      case _                    => ()
+    WoundProfiles.classify(source) match {
+      case None                         => ()
+      case Some(wound) if wound.scatter =>
+        applyScatter(player, source, damage, wound.profile)
+      case Some(wound) =>
+        applyWound(player, HitLocation.pick(player, source), source, damage, wound.profile)
     }
   }
 
@@ -102,76 +104,53 @@ object LimbDamage {
   def isFallDamage(source: DamageSource): Boolean =
     source.is(DamageTypeTags.IS_FALL)
 
-  /** Whether the source is a melee hit: direct damage dealt by a living attacker (mob attacks,
-    * player attacks, stings, ...).
+  /** Applies a wound profile to one located part: skin loss (with bleeding if the profile bleeds,
+    * capped linearly by the post-hit skin integrity), muscle loss, and pain proportional to the
+    * damage. Sync is automatic: applied injuries mark the player dirty, flushed at tick end (see
+    * [[LimbInjuries.register]]).
     */
-  def isMelee(source: DamageSource): Boolean =
-    source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
-
-  /** Whether the source is a projectile hit: the direct entity is a projectile (arrows, tridents,
-    * fireballs, shulker bullets, ...). Instance-based rather than tag-based, so it holds for every
-    * projectile entity regardless of damage type.
-    */
-  def isProjectile(source: DamageSource): Boolean =
-    source.getDirectEntity.isInstanceOf[Projectile]
-
-  /** Maps melee damage (in half-hearts, post-shield/pre-armor) to limb injuries:
-    *
-    *   - any hit: the located part ([[HitLocation]]) loses muscle health and gains pain
-    *     ([[PainCalc.onMelee]] via the injury context)
-    *   - sharp weapons (swords/axes): the skin is also cut; the resulting bleeding is capped
-    *     linearly by the post-hit skin integrity
-    *
-    * The constants are balancing placeholders, like the fall ones below.
-    */
-  private def attributeMeleeDamage(player: Player, source: DamageSource, damage: Double): Unit = {
-    val part = HitLocation.pick(player, source)
-    // TODO: distinguish weapon kinds with a dedicated item tag (e.g. `casualtiesbelow:sharp`)
-    // instead of hardcoding the vanilla swords/axes tags.
-    val isSharp = Option(source.getWeaponItem).exists { weapon =>
-      weapon.is(ItemTags.SWORDS) || weapon.is(ItemTags.AXES)
-    }
-
-    LimbInjuries(player, part, source, damage, pain = PainCalc.onMelee(damage)) {
+  private def applyWound(
+      player: Player,
+      part: BodyPart,
+      source: DamageSource,
+      damage: Double,
+      profile: WoundProfile
+  ): Unit = {
+    LimbInjuries(player, part, source, damage, pain = damage * profile.painPerPoint) {
       (stats, effectiveDamage) =>
-        stats.muscleHealth =
-          (stats.muscleHealth - effectiveDamage * MeleeMuscleDamagePerPoint).max(0.0)
-
-        if (isSharp) {
+        if (profile.bleedRatePerWound > 0.0) {
           BleedingCalc.applyWound(
             stats,
-            effectiveDamage * SharpSkinDamagePerPoint,
-            MeleeBleedingRatePerWound,
+            effectiveDamage * profile.skinPerPoint,
+            profile.bleedRatePerWound,
             player.getRandom
           )
+        } else if (profile.skinPerPoint > 0.0) {
+          stats.skinIntegrity =
+            (stats.skinIntegrity - effectiveDamage * profile.skinPerPoint).max(0.0)
         }
+        stats.muscleHealth =
+          (stats.muscleHealth - effectiveDamage * profile.musclePerPoint).max(0.0)
     }
   }
 
-  /** Maps projectile damage (in half-hearts, post-shield/pre-armor) to limb injuries: a piercing
-    * wound on the located part ([[HitLocation]]) — the skin is always punctured, the muscle takes
-    * the rest, and bleeding is capped linearly by the post-hit skin integrity. Pain:
-    * [[PainCalc.onProjectile]] via the injury context.
-    *
-    * The constants are balancing placeholders, like the melee ones above.
+  /** Explosion shrapnel: the damage is split evenly across 2–3 random body parts, each taking a
+    * full wound of its own (each cancellable via the injury event on its own).
     */
-  private def attributeProjectileDamage(
+  private def applyScatter(
       player: Player,
       source: DamageSource,
-      damage: Double
+      damage: Double,
+      profile: WoundProfile
   ): Unit = {
-    val part = HitLocation.pick(player, source)
+    val count = 2 + player.getRandom.nextInt(2)
+    val picked = scala.collection.mutable.LinkedHashSet.empty[BodyPart]
+    while (picked.size < count) {
+      picked += BodyPart.values(player.getRandom.nextInt(BodyPart.values.length))
+    }
 
-    LimbInjuries(player, part, source, damage, pain = PainCalc.onProjectile(damage)) {
-      (stats, effectiveDamage) =>
-        BleedingCalc.applyWound(
-          stats,
-          effectiveDamage * ProjectileSkinDamagePerPoint,
-          ProjectileBleedingRatePerWound,
-          player.getRandom
-        )
-        stats.muscleHealth =
-          (stats.muscleHealth - effectiveDamage * ProjectileMuscleDamagePerPoint).max(0.0)
+    picked.foreach { part =>
+      applyWound(player, part, source, damage / count, profile)
     }
   }
 
@@ -267,24 +246,6 @@ object LimbDamage {
       }
     }
   }
-
-  /** Skin integrity lost per half-heart of projectile damage. */
-  private val ProjectileSkinDamagePerPoint = 3.0
-
-  /** Muscle health lost per half-heart of projectile damage. */
-  private val ProjectileMuscleDamagePerPoint = 2.0
-
-  /** External bleeding rate (mL/tick) granted by one projectile wound, before the skin cap. */
-  private val ProjectileBleedingRatePerWound = 0.15
-
-  /** Muscle health lost per half-heart of melee damage. */
-  private val MeleeMuscleDamagePerPoint = 3.0
-
-  /** Skin integrity lost per half-heart of sharp-weapon melee damage. */
-  private val SharpSkinDamagePerPoint = 2.0
-
-  /** External bleeding rate (mL/tick) granted by one sharp melee wound, before the skin cap. */
-  private val MeleeBleedingRatePerWound = 0.2
 
   /** Muscle health lost per half-heart of fall damage. */
   private val MuscleDamagePerPoint = 4.0
