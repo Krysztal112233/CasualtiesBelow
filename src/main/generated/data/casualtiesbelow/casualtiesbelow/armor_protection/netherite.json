@@ -1,0 +1,9 @@
+{
+  "items": [
+    "minecraft:netherite_helmet",
+    "minecraft:netherite_chestplate",
+    "minecraft:netherite_leggings"
+  ],
+  "muscle_factor": "1 - (1-skinFactor)*0.65",
+  "skin_factor": "max(0.05, 1 - armor*0.12 - toughness*0.03)"
+}

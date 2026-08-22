@@ -1,0 +1,9 @@
+{
+  "items": [
+    "minecraft:diamond_helmet",
+    "minecraft:diamond_chestplate",
+    "minecraft:diamond_leggings"
+  ],
+  "muscle_factor": "1 - (1-skinFactor)*0.55",
+  "skin_factor": "max(0.05, 1 - armor*0.11 - toughness*0.02)"
+}

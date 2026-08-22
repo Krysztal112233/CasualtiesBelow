@@ -1,0 +1,9 @@
+{
+  "items": [
+    "minecraft:leather_helmet",
+    "minecraft:leather_chestplate",
+    "minecraft:leather_leggings"
+  ],
+  "muscle_factor": "1 - (1-skinFactor)*0.9",
+  "skin_factor": "max(0.05, 1 - armor*0.05)"
+}
