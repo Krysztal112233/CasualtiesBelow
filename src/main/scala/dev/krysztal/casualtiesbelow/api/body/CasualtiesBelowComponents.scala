@@ -39,6 +39,7 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
     vitals.consciousness = VitalsComponent.MaxValue
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
     vitals.sepsis = 0.0
+    vitals.discomfort = 0.0
 
     Body.sync(player)
     Vitals.sync(player)

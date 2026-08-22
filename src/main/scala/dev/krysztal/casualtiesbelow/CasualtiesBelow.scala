@@ -9,6 +9,8 @@ import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.ArmorProtectionOverrides
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
+import dev.krysztal.casualtiesbelow.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.discomfort.DiscomfortOverrides
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 
@@ -25,6 +27,8 @@ object CasualtiesBelow extends ModInitializer {
     // InjuryProgression must run before LimbInjuries' end-of-tick flush (registration order =
     // event order) so its dirty marks ship in the same tick.
     InjuryProgression.register()
+    // Same tick-ordering constraint as InjuryProgression: before LimbInjuries' flush.
+    Discomfort.register()
     LimbInjuries.register()
     ZombieAttackImmuneDrain.register()
     DataResourceLoader
@@ -32,6 +36,12 @@ object CasualtiesBelow extends ModInitializer {
       .registerReloadListener(
         Identifier.fromNamespaceAndPath(ModId, "armor_protection"),
         ArmorProtectionOverrides
+      )
+    DataResourceLoader
+      .get()
+      .registerReloadListener(
+        Identifier.fromNamespaceAndPath(ModId, "discomfort"),
+        DiscomfortOverrides
       )
     Logger.info("Casualties: Below initialized")
   }

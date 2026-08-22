@@ -8,9 +8,9 @@ import net.minecraft.world.item.Item
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 
 /** The mod's own vanilla-registry tags, used for wound classification (see
-  * [[dev.krysztal.casualtiesbelow.api.wound.WoundProfiles]]). Being datapack tags, both the
-  * sharp-weapon set and the blunt-attacker exceptions are overridable/extendable by datapacks and
-  * other mods.
+  * [[dev.krysztal.casualtiesbelow.api.wound.WoundProfiles]]) and food discomfort tiers (see
+  * `discomfort.Discomfort`). Being datapack tags, all of them are overridable/extendable by
+  * datapacks and other mods.
   */
 object CasualtiesBelowTags {
 
@@ -23,4 +23,17 @@ object CasualtiesBelowTags {
     */
   val BluntMeleeEntities: TagKey[EntityType[?]] =
     TagKey.create(Registries.ENTITY_TYPE, CasualtiesBelow.ofIdentifier("blunt_melee"))
+
+  /** Tier-1 discomfort food: edible but raw/starchy/sickly-sweet (raw fish, honey by the bottle).
+    */
+  val Discomfort1Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelow.ofIdentifier("discomfort_1"))
+
+  /** Tier-2 discomfort food: clearly hard to swallow (raw meat, dried kelp, chorus fruit). */
+  val Discomfort2Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelow.ofIdentifier("discomfort_2"))
+
+  /** Tier-3 discomfort food: rotten, poisonous or not human food (rotten flesh, pufferfish). */
+  val Discomfort3Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelow.ofIdentifier("discomfort_3"))
 }

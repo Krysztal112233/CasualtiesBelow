@@ -144,6 +144,19 @@ object MedicalPanel {
         ),
         v.sepsis > 0.0
       )
+      // Discomfort is another "higher is worse" meter (see Discomfort); red once nausea
+      // territory is reached.
+      y = extractStatRow(
+        graphics,
+        font,
+        contentX,
+        y,
+        Component.translatable("screen.casualtiesbelow.body_status.stat.discomfort"),
+        Component.literal(
+          (v.discomfort / CasualtiesBelowConfig.MaxDiscomfort.get() * 100.0).toInt.toString
+        ),
+        v.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()
+      )
     }
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",
     // so it is a plain row (red above the threshold) rather than a depletion bar.

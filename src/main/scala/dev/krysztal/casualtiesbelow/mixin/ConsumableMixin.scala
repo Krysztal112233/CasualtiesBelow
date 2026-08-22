@@ -1,0 +1,60 @@
+package dev.krysztal.casualtiesbelow.mixin
+
+import net.minecraft.core.component.DataComponents
+import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.component.Consumable
+import net.minecraft.world.level.Level
+
+import dev.krysztal.casualtiesbelow.discomfort.Discomfort
+
+import org.spongepowered.asm.mixin.Mixin
+import org.spongepowered.asm.mixin.injection.At
+import org.spongepowered.asm.mixin.injection.Inject
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
+
+/** Wires food discomfort into the vanilla consumption flow: refusing to start eating while sick
+  * (`canConsume`, both sides so the prediction matches) and applying the dose once consumption
+  * completes (`onConsume`, server only).
+  */
+@Mixin(value = Array(classOf[Consumable]), remap = false)
+abstract class ConsumableMixin {
+
+  @Inject(method = Array("canConsume"), at = Array(new At(value = "HEAD")), cancellable = true)
+  private def casualtiesbelow$refuseWhenSick(
+      user: LivingEntity,
+      stack: ItemStack,
+      cir: CallbackInfoReturnable[Boolean]
+  ): Unit = {
+    user match {
+      case player: Player if !Discomfort.allowsEating(player, stack) =>
+        player match {
+          case serverPlayer: ServerPlayer =>
+            serverPlayer.sendSystemMessage(
+              Component.translatable("message.casualtiesbelow.discomfort.refused"),
+              true
+            )
+          case _ => ()
+        }
+        cir.setReturnValue(false)
+      case _ => ()
+    }
+  }
+
+  @Inject(method = Array("onConsume"), at = Array(new At(value = "HEAD")))
+  private def casualtiesbelow$discomfortOnConsume(
+      level: Level,
+      user: LivingEntity,
+      stack: ItemStack,
+      cir: CallbackInfoReturnable[ItemStack]
+  ): Unit = {
+    (user, level.isClientSide()) match {
+      case (player: ServerPlayer, false) if stack.has(DataComponents.FOOD) =>
+        Discomfort.onFoodEaten(player, stack)
+      case _ => ()
+    }
+  }
+}

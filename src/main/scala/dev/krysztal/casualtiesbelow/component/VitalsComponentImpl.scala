@@ -13,6 +13,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var consciousness: Double = VitalsComponent.MaxValue
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
   var sepsis: Double = 0.0
+  var discomfort: Double = 0.0
 
   override def copyFrom(
       other: VitalsComponent,
@@ -22,6 +23,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     consciousness = other.consciousness
     bloodVolume = other.bloodVolume
     sepsis = other.sepsis
+    discomfort = other.discomfort
   }
 
   override def writeData(out: ValueOutput): Unit = {
@@ -29,6 +31,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousness)
     out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolume)
     out.putDouble(VitalsComponentImpl.SepsisKey, sepsis)
+    out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
   }
 
   override def readData(in: ValueInput): Unit = {
@@ -40,6 +43,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     bloodVolume =
       in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
     sepsis = in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0)
+    discomfort = in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0)
   }
 }
 
@@ -50,4 +54,5 @@ object VitalsComponentImpl {
   private val ConsciousnessKey = "consciousness"
   private val BloodVolumeKey = "blood_volume"
   private val SepsisKey = "sepsis"
+  private val DiscomfortKey = "discomfort"
 }
