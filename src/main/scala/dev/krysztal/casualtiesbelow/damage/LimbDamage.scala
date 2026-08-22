@@ -8,11 +8,14 @@ import net.minecraft.world.entity.player.Player
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.wound.HitLocation
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbCondition
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 
 /** Attributes incoming damage to body parts.

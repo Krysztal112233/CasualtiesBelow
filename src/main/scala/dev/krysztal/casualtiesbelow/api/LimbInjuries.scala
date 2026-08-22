@@ -10,12 +10,12 @@ import net.minecraft.world.entity.player.Player
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbCondition
-import dev.krysztal.casualtiesbelow.component.LimbStats
 
 /** Central application point for limb injuries — the single path through which an injury reaches a
   * limb, for the mod's own damage attribution and for other mods alike.

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.component
+package dev.krysztal.casualtiesbelow.api.body
 
 /** Player body parts tracked by the mod. Vanilla has no hit-location concept; damage is attributed
   * to a part by our own logic.

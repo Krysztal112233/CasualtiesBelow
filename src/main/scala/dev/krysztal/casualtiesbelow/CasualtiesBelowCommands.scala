@@ -23,10 +23,11 @@ import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
-import dev.krysztal.casualtiesbelow.component.BodyComponent
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbStats
-import dev.krysztal.casualtiesbelow.component.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.BodyComponent
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Debug/admin commands for inspecting and editing body and vitals state:

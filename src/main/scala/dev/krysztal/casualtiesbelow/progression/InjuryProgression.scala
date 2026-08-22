@@ -7,15 +7,15 @@ import net.minecraft.util.RandomSource
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
+import dev.krysztal.casualtiesbelow.api.body.BodyComponent
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
-import dev.krysztal.casualtiesbelow.component.BodyComponent
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbStats
-import dev.krysztal.casualtiesbelow.component.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *

@@ -25,7 +25,7 @@
     "cardinal-components-entity": [
       {
         "adapter": "scala",
-        "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowComponents"
+        "value": "dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents"
       }
     ],
     "fabric-datagen": [

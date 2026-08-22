@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.damage
+package dev.krysztal.casualtiesbelow.api.wound
 
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.world.damagesource.DamageSource
@@ -7,7 +7,8 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.projectile.EvokerFangs
 import net.minecraft.world.entity.projectile.Projectile
 
-import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig.WoundProfileConfig
 

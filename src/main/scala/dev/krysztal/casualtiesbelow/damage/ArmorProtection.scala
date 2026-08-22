@@ -8,7 +8,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 
-import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Armor as a wound barrier: armor covering the struck body part transforms the wound profile —

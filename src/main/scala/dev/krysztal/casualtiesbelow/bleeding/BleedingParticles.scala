@@ -9,8 +9,8 @@ import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 
 /** Client-side blood droplets for actively bleeding limbs.
   *

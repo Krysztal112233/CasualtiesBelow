@@ -1,9 +1,9 @@
 package dev.krysztal.casualtiesbelow.pain
 
-import dev.krysztal.casualtiesbelow.component.BodyComponent
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbCondition
-import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.BodyComponent
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]

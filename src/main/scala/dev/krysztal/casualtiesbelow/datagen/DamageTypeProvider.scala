@@ -8,7 +8,7 @@ import net.minecraft.core.registries.Registries
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 
 /** Emits the mod's dynamic-registry entries (currently: damage types) registered in
   * [[CasualtiesBelowDataGenerator.buildRegistry]].

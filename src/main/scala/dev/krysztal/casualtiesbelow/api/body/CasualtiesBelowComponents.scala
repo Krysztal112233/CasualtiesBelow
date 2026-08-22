@@ -1,15 +1,12 @@
-package dev.krysztal.casualtiesbelow
+package dev.krysztal.casualtiesbelow.api.body
 
 import scala.reflect.ClassTag
 
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.component.BodyComponent
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.component.BodyComponentImpl
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbStats
-import dev.krysztal.casualtiesbelow.component.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 

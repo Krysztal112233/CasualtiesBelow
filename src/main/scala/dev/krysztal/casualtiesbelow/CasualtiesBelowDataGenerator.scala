@@ -10,7 +10,7 @@ import net.minecraft.world.damagesource.DeathMessageType
 import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.datagen.ArmorProtectionOverrideProvider
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider

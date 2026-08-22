@@ -5,33 +5,8 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-
-import org.ladysnake.cca.api.v3.component.CopyableComponent
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
-
-/** Whole-player vitals: immune health value, consciousness, and blood volume. Immune health ranges
-  * from 0 to the configured maximum (`maxImmuneHealth`, default 200), consciousness from 0 to
-  * [[VitalsComponent.MaxValue]]; blood volume is in mL, up to the configured maximum. `Double`
-  * rather than `Float` for the same reason as [[dev.krysztal.casualtiesbelow.component.LimbStats]]:
-  * per-tick accumulation precision.
-  */
-trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
-  var immuneHealth: Double
-  var consciousness: Double
-  var bloodVolume: Double
-  var sepsis: Double
-}
-
-object VitalsComponent {
-  val MaxValue: Double = 100.0
-
-  // NBT keys
-  val ImmuneHealthKey = "immune_health"
-  val ConsciousnessKey = "consciousness"
-  val BloodVolumeKey = "blood_volume"
-  val SepsisKey = "sepsis"
-}
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()

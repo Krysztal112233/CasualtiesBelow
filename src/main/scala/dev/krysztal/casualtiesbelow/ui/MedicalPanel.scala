@@ -6,9 +6,9 @@ import net.minecraft.network.chat.Component
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 

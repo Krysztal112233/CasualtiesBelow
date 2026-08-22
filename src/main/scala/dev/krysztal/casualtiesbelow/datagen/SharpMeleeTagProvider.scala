@@ -10,7 +10,7 @@ import net.minecraft.world.item.Item
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 
 /** Generates the mod's item tags used for wound classification. */
 final class SharpMeleeTagProvider(

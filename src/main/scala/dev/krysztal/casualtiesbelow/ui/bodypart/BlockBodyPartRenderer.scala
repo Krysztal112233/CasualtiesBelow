@@ -3,8 +3,8 @@ package dev.krysztal.casualtiesbelow.ui.bodypart
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.player.LocalPlayer
 
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.ui.Argb
 
 /** Fallback [[BodyPartRenderer]]: each part is a solid block with a 1px outline (adjacent parts

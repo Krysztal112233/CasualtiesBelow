@@ -1,10 +1,10 @@
-package dev.krysztal.casualtiesbelow.damage
+package dev.krysztal.casualtiesbelow.api.wound
 
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.phys.Vec3
 
-import dev.krysztal.casualtiesbelow.component.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
 
 /** Guesses the body part a hit landed on from hit geometry — vanilla damage carries no hit-location
   * information.

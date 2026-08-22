@@ -6,8 +6,8 @@ import net.minecraft.world.entity.player.Player
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
 
-import dev.krysztal.casualtiesbelow.component.BodyPart
-import dev.krysztal.casualtiesbelow.component.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 
 /** Context of a single limb injury about to be applied. Carried as one object so new fields can be
   * added without breaking listener signatures.

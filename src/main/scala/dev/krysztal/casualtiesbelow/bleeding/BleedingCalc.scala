@@ -2,7 +2,7 @@ package dev.krysztal.casualtiesbelow.bleeding
 
 import net.minecraft.util.RandomSource
 
-import dev.krysztal.casualtiesbelow.component.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** External-wound and bleeding calculations shared by damage attribution and injury progression.

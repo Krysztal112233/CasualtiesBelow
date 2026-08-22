@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.immune
 import net.minecraft.tags.EntityTypeTags
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryCallback
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 

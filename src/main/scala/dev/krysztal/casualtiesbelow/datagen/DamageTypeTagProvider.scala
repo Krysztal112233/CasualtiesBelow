@@ -10,7 +10,7 @@ import net.minecraft.world.damagesource.DamageType
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 
 /** Generates the vanilla damage-type tags for the mod's own damage types. */
 final class DamageTypeTagProvider(
