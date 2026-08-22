@@ -230,6 +230,15 @@ object CasualtiesBelowConfig {
     "Fire damage (standing in fire/lava, fireballs): burns wreck the skin but cauterize —",
     "no bleeding; the damaged skin is an infection gateway"
   )
+  val PrickWound: WoundProfileConfig = woundProfile(
+    "prick",
+    skin = 1.5,
+    muscle = 0.0,
+    bleed = 0.05,
+    pain = 1.0,
+    "Environmental pricks (cactus, sweet berry bushes): thorns scratch skin but never reach",
+    "muscle — zero muscle damage so contact spam cannot melt it"
+  )
   val BlastWound: WoundProfileConfig = woundProfile(
     "blast",
     skin = 2.0,

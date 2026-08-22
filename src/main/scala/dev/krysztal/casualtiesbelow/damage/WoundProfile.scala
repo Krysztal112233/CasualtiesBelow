@@ -40,6 +40,8 @@ final case class Wound(
   *   1. explosions (`IS_EXPLOSION`, plus wither skulls): blasts, scattered
   *   1. projectiles: piercing types (arrow/trident/mob projectile) wound; spit, wind charges and
   *      other harmless projectiles are ignored
+  *   1. falling objects (anvils, blocks, stalactites): crush or pierce, forced onto the head
+  *   1. environmental pricks (cactus, sweet berry bushes): skin scratches only
   *   1. sonic boom: blunt shockwave
   *   1. indirect magic: evoker fangs pierce (they erupt from the ground, so hit geometry locates
   *      them on the legs); witch potions and guardian beams leave no physical wound
@@ -58,10 +60,12 @@ object WoundProfiles {
       Some(Wound(of(CasualtiesBelowConfig.BlastWound), scatter = true))
     case s if s.getDirectEntity.isInstanceOf[Projectile] => projectileProfile(s)
     case s if isFallingObject(s)                         => fallingObjectProfile(s)
-    case s if s.is(DamageTypes.SONIC_BOOM)               => wound(CasualtiesBelowConfig.BluntWound)
-    case s if s.is(DamageTypes.INDIRECT_MAGIC)           => magicProfile(s)
-    case s if isMelee(s) => Some(Wound(meleeProfile(s), scatter = false))
-    case _               => None
+    case s if s.is(DamageTypes.CACTUS) || s.is(DamageTypes.SWEET_BERRY_BUSH) =>
+      wound(CasualtiesBelowConfig.PrickWound)
+    case s if s.is(DamageTypes.SONIC_BOOM)     => wound(CasualtiesBelowConfig.BluntWound)
+    case s if s.is(DamageTypes.INDIRECT_MAGIC) => magicProfile(s)
+    case s if isMelee(s)                       => Some(Wound(meleeProfile(s), scatter = false))
+    case _                                     => None
   }
 
   private def wound(config: WoundProfileConfig): Option[Wound] = {
