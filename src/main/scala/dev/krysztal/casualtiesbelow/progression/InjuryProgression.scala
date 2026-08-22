@@ -308,7 +308,7 @@ object InjuryProgression {
             BodyPart.Adjacent(part).filter(p => body.stats(p).infectionProgress.isEmpty)
           if (targets.nonEmpty) {
             val target = targets(player.getRandom.nextInt(targets.size))
-            val seeded = body.stats(target).copy()
+            val seeded = body.stats(target)
             seeded.infectionProgress = Some(InfectionOnsetSeed)
             body.setStats(target, seeded)
             LimbInjuries.markDirty(player)

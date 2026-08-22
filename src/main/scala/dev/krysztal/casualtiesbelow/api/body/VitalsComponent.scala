@@ -17,10 +17,4 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
 
 object VitalsComponent {
   val MaxValue: Double = 100.0
-
-  // NBT keys
-  val ImmuneHealthKey = "immune_health"
-  val ConsciousnessKey = "consciousness"
-  val BloodVolumeKey = "blood_volume"
-  val SepsisKey = "sepsis"
 }

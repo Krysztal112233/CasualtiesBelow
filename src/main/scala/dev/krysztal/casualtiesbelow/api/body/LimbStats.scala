@@ -24,13 +24,4 @@ final case class LimbStats(
 
 object LimbStats {
   val MaxValue: Double = 100.0
-
-  // NBT keys
-  val MuscleHealthKey = "muscle_health"
-  val SkinIntegrityKey = "skin_integrity"
-  val FractureRecoveryTicksKey = "fracture_recovery_ticks"
-  val InfectionProgressKey = "infection_progress"
-  val DislocatedKey = "dislocated"
-  val ExternalBleedingRateKey = "external_bleeding_rate"
-  val PainKey = "pain"
 }

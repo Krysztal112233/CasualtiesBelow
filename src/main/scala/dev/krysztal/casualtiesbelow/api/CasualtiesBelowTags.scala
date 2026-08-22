@@ -7,9 +7,10 @@ import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 
-/** The mod's own vanilla-registry tags, used for wound classification (see [[WoundProfiles]]).
-  * Being datapack tags, both the sharp-weapon set and the blunt-attacker exceptions are
-  * overridable/extendable by datapacks and other mods.
+/** The mod's own vanilla-registry tags, used for wound classification (see
+  * [[dev.krysztal.casualtiesbelow.api.wound.WoundProfiles]]). Being datapack tags, both the
+  * sharp-weapon set and the blunt-attacker exceptions are overridable/extendable by datapacks and
+  * other mods.
   */
 object CasualtiesBelowTags {
 

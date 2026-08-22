@@ -25,18 +25,29 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 
   override def writeData(out: ValueOutput): Unit = {
-    out.putDouble(VitalsComponent.ImmuneHealthKey, immuneHealth)
-    out.putDouble(VitalsComponent.ConsciousnessKey, consciousness)
-    out.putDouble(VitalsComponent.BloodVolumeKey, bloodVolume)
-    out.putDouble(VitalsComponent.SepsisKey, sepsis)
+    out.putDouble(VitalsComponentImpl.ImmuneHealthKey, immuneHealth)
+    out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousness)
+    out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolume)
+    out.putDouble(VitalsComponentImpl.SepsisKey, sepsis)
   }
 
   override def readData(in: ValueInput): Unit = {
-    immuneHealth =
-      in.getDoubleOr(VitalsComponent.ImmuneHealthKey, CasualtiesBelowConfig.MaxImmuneHealth.get())
-    consciousness = in.getDoubleOr(VitalsComponent.ConsciousnessKey, VitalsComponent.MaxValue)
+    immuneHealth = in.getDoubleOr(
+      VitalsComponentImpl.ImmuneHealthKey,
+      CasualtiesBelowConfig.MaxImmuneHealth.get()
+    )
+    consciousness = in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue)
     bloodVolume =
-      in.getDoubleOr(VitalsComponent.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
-    sepsis = in.getDoubleOr(VitalsComponent.SepsisKey, 0.0)
+      in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
+    sepsis = in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0)
   }
+}
+
+object VitalsComponentImpl {
+
+  // NBT keys (serialization implementation detail; not part of the public API)
+  private val ImmuneHealthKey = "immune_health"
+  private val ConsciousnessKey = "consciousness"
+  private val BloodVolumeKey = "blood_volume"
+  private val SepsisKey = "sepsis"
 }

@@ -89,7 +89,7 @@ object LimbInjuries {
 
     val grantedPain = (context.pain + rollJitter(random, jitter)).max(0.0)
 
-    val stats = body.stats(part).copy()
+    val stats = body.stats(part)
     stats.pain = (stats.pain + grantedPain).min(LimbStats.MaxValue)
     mutate(stats, effectiveDamage)
     body.setStats(part, stats)

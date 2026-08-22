@@ -25,10 +25,10 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
   private val limbs =
     Map.from(BodyPart.values.map(_ -> LimbStats()))
 
-  override def stats(part: BodyPart): LimbStats = limbs(part)
+  override def stats(part: BodyPart): LimbStats = limbs(part).copy()
 
   override def setStats(part: BodyPart, stats: LimbStats): Unit = {
-    limbs(part) = stats
+    limbs(part) = stats.copy()
     reconcileMovementModifiers()
   }
 
@@ -36,24 +36,24 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
       other: BodyComponent,
       registryLookup: HolderLookup.Provider
   ): Unit = {
-    BodyPart.values.foreach { p => setStats(p, other.stats(p).copy()) }
+    BodyPart.values.foreach { p => setStats(p, other.stats(p)) }
   }
 
   override def writeData(out: ValueOutput): Unit = {
     BodyPart.values.foreach { part =>
       val child = out.child(part.id)
       val s = limbs(part)
-      child.putDouble(LimbStats.MuscleHealthKey, s.muscleHealth)
-      child.putDouble(LimbStats.SkinIntegrityKey, s.skinIntegrity)
+      child.putDouble(BodyComponentImpl.MuscleHealthKey, s.muscleHealth)
+      child.putDouble(BodyComponentImpl.SkinIntegrityKey, s.skinIntegrity)
       s.fractureRecoveryTicks.foreach { t =>
-        child.putInt(LimbStats.FractureRecoveryTicksKey, t)
+        child.putInt(BodyComponentImpl.FractureRecoveryTicksKey, t)
       }
       s.infectionProgress.foreach { p =>
-        child.putDouble(LimbStats.InfectionProgressKey, p)
+        child.putDouble(BodyComponentImpl.InfectionProgressKey, p)
       }
-      child.putBoolean(LimbStats.DislocatedKey, s.dislocated)
-      child.putDouble(LimbStats.ExternalBleedingRateKey, s.externalBleedingRate)
-      child.putDouble(LimbStats.PainKey, s.pain)
+      child.putBoolean(BodyComponentImpl.DislocatedKey, s.dislocated)
+      child.putDouble(BodyComponentImpl.ExternalBleedingRateKey, s.externalBleedingRate)
+      child.putDouble(BodyComponentImpl.PainKey, s.pain)
     }
   }
 
@@ -61,15 +61,17 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       in.child(part.id).ifPresent { child =>
         val s = limbs(part)
-        s.muscleHealth = child.getDoubleOr(LimbStats.MuscleHealthKey, LimbStats.MaxValue)
-        s.skinIntegrity = child.getDoubleOr(LimbStats.SkinIntegrityKey, LimbStats.MaxValue)
+        s.muscleHealth = child.getDoubleOr(BodyComponentImpl.MuscleHealthKey, LimbStats.MaxValue)
+        s.skinIntegrity = child.getDoubleOr(BodyComponentImpl.SkinIntegrityKey, LimbStats.MaxValue)
         s.fractureRecoveryTicks =
-          child.getInt(LimbStats.FractureRecoveryTicksKey).toScala.map(_.intValue)
-        s.infectionProgress =
-          child.read(LimbStats.InfectionProgressKey, Codec.DOUBLE).toScala.map(_.doubleValue)
-        s.dislocated = child.getBooleanOr(LimbStats.DislocatedKey, false)
-        s.externalBleedingRate = child.getDoubleOr(LimbStats.ExternalBleedingRateKey, 0.0)
-        s.pain = child.getDoubleOr(LimbStats.PainKey, 0.0)
+          child.getInt(BodyComponentImpl.FractureRecoveryTicksKey).toScala.map(_.intValue)
+        s.infectionProgress = child
+          .read(BodyComponentImpl.InfectionProgressKey, Codec.DOUBLE)
+          .toScala
+          .map(_.doubleValue)
+        s.dislocated = child.getBooleanOr(BodyComponentImpl.DislocatedKey, false)
+        s.externalBleedingRate = child.getDoubleOr(BodyComponentImpl.ExternalBleedingRateKey, 0.0)
+        s.pain = child.getDoubleOr(BodyComponentImpl.PainKey, 0.0)
       }
     }
     reconcileMovementModifiers()
@@ -119,6 +121,15 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
 }
 
 object BodyComponentImpl {
+
+  // NBT keys (serialization implementation detail; not part of the public API)
+  private val MuscleHealthKey = "muscle_health"
+  private val SkinIntegrityKey = "skin_integrity"
+  private val FractureRecoveryTicksKey = "fracture_recovery_ticks"
+  private val InfectionProgressKey = "infection_progress"
+  private val DislocatedKey = "dislocated"
+  private val ExternalBleedingRateKey = "external_bleeding_rate"
+  private val PainKey = "pain"
 
   /** How many dislocated-leg shares a fractured leg contributes to the movement/jump penalties:
     * fracture is the worse condition, so it reuses the dislocation config fractions scaled up by
