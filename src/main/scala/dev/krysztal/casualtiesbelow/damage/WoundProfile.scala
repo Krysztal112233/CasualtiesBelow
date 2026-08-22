@@ -46,31 +46,39 @@ final case class Wound(profile: WoundProfile, scatter: Boolean)
   */
 object WoundProfiles {
 
-  def classify(source: DamageSource): Option[Wound] = {
-    if (source.is(DamageTypeTags.IS_FIRE)) {
-      return Some(Wound(of(CasualtiesBelowConfig.BurnWound), scatter = false))
-    }
-    if (source.is(DamageTypeTags.IS_EXPLOSION) || source.is(DamageTypes.WITHER_SKULL)) {
-      return Some(Wound(of(CasualtiesBelowConfig.BlastWound), scatter = true))
-    }
-    if (source.getDirectEntity.isInstanceOf[Projectile]) {
-      val pierces =
-        source.is(DamageTypes.ARROW) || source.is(DamageTypes.TRIDENT) ||
-          source.is(DamageTypes.MOB_PROJECTILE)
-      return Option.when(pierces)(Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false))
-    }
-    if (source.is(DamageTypes.SONIC_BOOM)) {
-      return Some(Wound(of(CasualtiesBelowConfig.BluntWound), scatter = false))
-    }
-    if (source.is(DamageTypes.INDIRECT_MAGIC)) {
-      val fangs = source.getDirectEntity.isInstanceOf[EvokerFangs]
-      return Option.when(fangs)(Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false))
-    }
-    if (source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]) {
-      return Some(Wound(meleeProfile(source), scatter = false))
-    }
+  def classify(source: DamageSource): Option[Wound] = source match {
+    case s if s.is(DamageTypeTags.IS_FIRE) => wound(CasualtiesBelowConfig.BurnWound)
+    case s if s.is(DamageTypeTags.IS_EXPLOSION) || s.is(DamageTypes.WITHER_SKULL) =>
+      Some(Wound(of(CasualtiesBelowConfig.BlastWound), scatter = true))
+    case s if s.getDirectEntity.isInstanceOf[Projectile] => projectileProfile(s)
+    case s if s.is(DamageTypes.SONIC_BOOM)               => wound(CasualtiesBelowConfig.BluntWound)
+    case s if s.is(DamageTypes.INDIRECT_MAGIC)           => magicProfile(s)
+    case s if isMelee(s) => Some(Wound(meleeProfile(s), scatter = false))
+    case _               => None
+  }
 
-    None
+  private def wound(config: WoundProfileConfig): Option[Wound] = {
+    Some(Wound(of(config), scatter = false))
+  }
+
+  private def isMelee(source: DamageSource): Boolean = {
+    source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
+  }
+
+  /** Piercing projectiles (arrow/trident/mob projectile) wound; spit, wind charges and other
+    * harmless projectiles are ignored.
+    */
+  private def projectileProfile(source: DamageSource): Option[Wound] = {
+    val pierces =
+      source.is(DamageTypes.ARROW) || source.is(DamageTypes.TRIDENT) ||
+        source.is(DamageTypes.MOB_PROJECTILE)
+    Option.when(pierces)(Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false))
+  }
+
+  /** Evoker fangs pierce; witch potions and guardian beams leave no physical wound. */
+  private def magicProfile(source: DamageSource): Option[Wound] = source.getDirectEntity match {
+    case _: EvokerFangs => Some(Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false))
+    case _              => None
   }
 
   /** Melee sub-classification: sharp weapons cut, other weapons bludgeon, bare hands bite or
