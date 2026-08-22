@@ -7,6 +7,7 @@ import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.projectile.EvokerFangs
 import net.minecraft.world.entity.projectile.Projectile
 
+import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig.WoundProfileConfig
 
@@ -21,10 +22,15 @@ final case class WoundProfile(
     painPerPoint: Double
 )
 
-/** A classified hit: its profile, and whether the damage scatters as shrapnel across several random
-  * body parts (explosions) instead of striking one located part.
+/** A classified hit: its profile, whether the damage scatters as shrapnel across several random
+  * body parts (explosions) instead of striking one located part, and whether the hit is forced onto
+  * a specific part regardless of geometry (falling objects always land on the head).
   */
-final case class Wound(profile: WoundProfile, scatter: Boolean)
+final case class Wound(
+    profile: WoundProfile,
+    scatter: Boolean,
+    forcedPart: Option[BodyPart] = None
+)
 
 /** Maps incoming damage sources to wound profiles.
   *
@@ -51,6 +57,7 @@ object WoundProfiles {
     case s if s.is(DamageTypeTags.IS_EXPLOSION) || s.is(DamageTypes.WITHER_SKULL) =>
       Some(Wound(of(CasualtiesBelowConfig.BlastWound), scatter = true))
     case s if s.getDirectEntity.isInstanceOf[Projectile] => projectileProfile(s)
+    case s if isFallingObject(s)                         => fallingObjectProfile(s)
     case s if s.is(DamageTypes.SONIC_BOOM)               => wound(CasualtiesBelowConfig.BluntWound)
     case s if s.is(DamageTypes.INDIRECT_MAGIC)           => magicProfile(s)
     case s if isMelee(s) => Some(Wound(meleeProfile(s), scatter = false))
@@ -63,6 +70,21 @@ object WoundProfiles {
 
   private def isMelee(source: DamageSource): Boolean = {
     source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
+  }
+
+  /** Falling anvils and blocks crush, falling stalactites pierce — all land on the head regardless
+    * of hit geometry (helmets then mitigate, as in vanilla).
+    */
+  private def fallingObjectProfile(source: DamageSource): Option[Wound] = {
+    val profile =
+      if (source.is(DamageTypes.FALLING_STALACTITE)) CasualtiesBelowConfig.PierceWound
+      else CasualtiesBelowConfig.BluntWound
+    Some(Wound(of(profile), scatter = false, forcedPart = Some(BodyPart.Head)))
+  }
+
+  private def isFallingObject(source: DamageSource): Boolean = {
+    source.is(DamageTypes.FALLING_ANVIL) || source.is(DamageTypes.FALLING_BLOCK) ||
+    source.is(DamageTypes.FALLING_STALACTITE)
   }
 
   /** Piercing projectiles (arrow/trident/mob projectile) wound; spit, wind charges and other

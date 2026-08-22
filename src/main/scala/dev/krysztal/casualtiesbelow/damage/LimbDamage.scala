@@ -15,8 +15,6 @@ import dev.krysztal.casualtiesbelow.component.BodyPart
 import dev.krysztal.casualtiesbelow.component.LimbCondition
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
-
 /** Attributes incoming damage to body parts.
   *
   * Fall damage is attributed in [[onFallDamage]] (hooked from `LivingEntity.causeFallDamage`, where
@@ -96,7 +94,8 @@ object LimbDamage {
       case Some(wound) if wound.scatter =>
         applyScatter(player, source, damage, wound.profile)
       case Some(wound) =>
-        applyWound(player, HitLocation.pick(player, source), source, damage, wound.profile)
+        val part = wound.forcedPart.getOrElse(HitLocation.pick(player, source))
+        applyWound(player, part, source, damage, wound.profile)
     }
   }
 
