@@ -3,6 +3,10 @@ package dev.krysztal.casualtiesbelow.damage
 import java.io.InputStreamReader
 
 import scala.jdk.CollectionConverters.*
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
 
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.FileToIdConverter
@@ -21,10 +25,10 @@ import com.ezylang.evalex.Expression
 import com.google.gson.JsonElement
 import com.google.gson.JsonParser
 
-/** Datapack-driven per-item armor protection overrides
-  * (JSON files under `data/<namespace>/casualtiesbelow/armor_protection/`), layered on top of the
-  * `[armor]` config formulas: an entry matching the equipped piece replaces the formula for the
-  * factors it defines, and unmatched pieces fall back to the config entirely.
+/** Datapack-driven per-item armor protection overrides (JSON files under
+  * `data/<namespace>/casualtiesbelow/armor_protection/`), layered on top of the `[armor]` config
+  * formulas: an entry matching the equipped piece replaces the formula for the factors it defines,
+  * and unmatched pieces fall back to the config entirely.
   *
   * Each file is one override entry:
   *
@@ -77,12 +81,9 @@ object ArmorProtectionOverrides
       .listMatchingResources(manager)
       .asScala
       .flatMap { (id, resource) =>
-        try {
-          val reader = InputStreamReader(resource.open())
-          try Some(id -> JsonParser.parseReader(reader))
-          finally reader.close()
-        } catch {
-          case e: Exception =>
+        Using(InputStreamReader(resource.open()))(JsonParser.parseReader) match {
+          case Success(json) => Some(id -> json)
+          case Failure(e)    =>
             CasualtiesBelow.Logger.warn("Unable to read armor protection override {}: {}", id, e)
             None
         }
@@ -110,23 +111,29 @@ object ArmorProtectionOverrides
     if (!json.isJsonObject) return fail("not a JSON object")
     val obj = json.getAsJsonObject
 
-    val items =
+    val parsedItems =
       if (obj.has("items")) {
-        try obj.getAsJsonArray("items").asScala.map(e => Identifier.parse(e.getAsString)).toSet
-        catch { case e: Exception => return fail(s"invalid items list: ${e.getMessage}") }
-      } else Set.empty
-    val tag =
+        Try(obj.getAsJsonArray("items").asScala.map(e => Identifier.parse(e.getAsString)).toSet)
+      } else Success(Set.empty)
+    val parsedTag =
       if (obj.has("tag")) {
-        try Some(TagKey.create(Registries.ITEM, Identifier.parse(obj.get("tag").getAsString)))
-        catch { case e: Exception => return fail(s"invalid tag: ${e.getMessage}") }
-      } else None
-    if (items.isEmpty && tag.isEmpty) return fail("an entry needs at least one of items/tag")
+        Try(Some(TagKey.create(Registries.ITEM, Identifier.parse(obj.get("tag").getAsString))))
+      } else Success(None)
 
-    val skin = parseFactor(id, obj, "skin_factor", List("armor", "toughness"))
-    val muscle = parseFactor(id, obj, "muscle_factor", List("armor", "toughness", "skinFactor"))
-    if (skin.isEmpty && muscle.isEmpty) return fail("neither skin_factor nor muscle_factor defined")
+    (parsedItems, parsedTag) match {
+      case (Failure(e), _)                => fail(s"invalid items list: ${e.getMessage}")
+      case (_, Failure(e))                => fail(s"invalid tag: ${e.getMessage}")
+      case (Success(items), Success(tag)) =>
+        if (items.isEmpty && tag.isEmpty) return fail("an entry needs at least one of items/tag")
 
-    Some(Entry(items, tag, skin, muscle))
+        val skin = parseFactor(id, obj, "skin_factor", List("armor", "toughness"))
+        val muscle = parseFactor(id, obj, "muscle_factor", List("armor", "toughness", "skinFactor"))
+        if (skin.isEmpty && muscle.isEmpty) {
+          return fail("neither skin_factor nor muscle_factor defined")
+        }
+
+        Some(Entry(items, tag, skin, muscle))
+    }
   }
 
   /** Parses an optional factor field into a compiled expression; absent or invalid fields become
@@ -140,12 +147,13 @@ object ArmorProtectionOverrides
   ): Option[Expression] = {
     if (!obj.has(field)) return None
     val source = obj.get(field).getAsString
-    try {
+    Try {
       val expression = FormulaConfigValue.compile(source, variables)
       expression.evaluate() // fail fast on formulas that cannot evaluate at all
-      Some(expression)
-    } catch {
-      case e: Exception =>
+      expression
+    } match {
+      case Success(expression) => Some(expression)
+      case Failure(e)          =>
         CasualtiesBelow.Logger
           .warn("Ignoring {} of armor protection override {}: {}", field, id, e.getMessage)
         None
@@ -160,13 +168,14 @@ object ArmorProtectionOverrides
       variables: List[String],
       values: List[Double]
   ): Option[Double] = {
-    try {
+    Try {
       variables.lazyZip(values).foreach { (name, value) =>
         expression.`with`(name, value)
       }
-      Some(expression.evaluate().getNumberValue().doubleValue())
-    } catch {
-      case e: Exception =>
+      expression.evaluate().getNumberValue().doubleValue()
+    } match {
+      case Success(value) => Some(value)
+      case Failure(e)     =>
         CasualtiesBelow.Logger.warn("Armor protection formula evaluation failed: {}", e.getMessage)
         None
     }
