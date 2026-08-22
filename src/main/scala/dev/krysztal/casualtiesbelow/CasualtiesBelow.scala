@@ -33,7 +33,7 @@ object CasualtiesBelow extends ModInitializer {
         Identifier.fromNamespaceAndPath(ModId, "armor_protection"),
         ArmorProtectionOverrides
       )
-    Logger.info("CasualtiesBelow initialized")
+    Logger.info("Casualties: Below initialized")
   }
 
   def ofIdentifier(path: String): Identifier =
