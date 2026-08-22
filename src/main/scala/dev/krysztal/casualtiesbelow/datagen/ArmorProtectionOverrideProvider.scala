@@ -4,8 +4,12 @@ import java.util.concurrent.CompletableFuture
 
 import net.minecraft.data.CachedOutput
 import net.minecraft.data.DataProvider
+import net.minecraft.data.PackOutput
+import net.minecraft.resources.Identifier
 
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
+
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -74,9 +78,10 @@ final class ArmorProtectionOverrideProvider(output: FabricPackOutput) extends Da
   }
 
   override def run(cache: CachedOutput): CompletableFuture[?] = {
-    val dir = output
-      .getOutputFolder()
-      .resolve("data/casualtiesbelow/casualtiesbelow/armor_protection")
+    val paths = output.createPathProvider(
+      PackOutput.Target.DATA_PACK,
+      "casualtiesbelow/armor_protection"
+    )
     val writes = sets.map { set =>
       val items = new JsonArray
       set.pieces.foreach(items.add)
@@ -84,7 +89,11 @@ final class ArmorProtectionOverrideProvider(output: FabricPackOutput) extends Da
       json.add("items", items)
       json.addProperty("skin_factor", set.skinFactor)
       json.addProperty("muscle_factor", set.muscleFactor)
-      DataProvider.saveStable(cache, json, dir.resolve(s"${set.name}.json"))
+      DataProvider.saveStable(
+        cache,
+        json,
+        paths.json(Identifier.fromNamespaceAndPath(CasualtiesBelow.ModId, set.name))
+      )
     }
     CompletableFuture.allOf(writes*)
   }
