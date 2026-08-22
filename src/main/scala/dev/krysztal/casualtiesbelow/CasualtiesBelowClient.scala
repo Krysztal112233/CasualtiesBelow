@@ -4,12 +4,13 @@ import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.gui.screens.Screen
 
-import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
-import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
-
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+
+import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
+import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
+
 import net.neoforged.neoforge.client.gui.ConfigurationScreen
 import org.lwjgl.glfw.GLFW
 import fuzs.forgeconfigapiport.fabric.api.v5.client.ConfigScreenFactoryRegistry

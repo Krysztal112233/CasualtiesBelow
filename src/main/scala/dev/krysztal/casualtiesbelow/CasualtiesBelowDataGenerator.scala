@@ -7,14 +7,14 @@ import net.minecraft.world.damagesource.DamageScaling
 import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.damagesource.DeathMessageType
 
+import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
+import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
+
 import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.SharpMeleeTagProvider
-
-import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
-import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
 /** Data generation entrypoint (declared as `fabric-datagen` in fabric.mod.json). Run with
   * `./gradlew runDatagen`; output lands in `src/main/generated` and is packaged by Loom.

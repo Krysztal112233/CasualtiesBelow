@@ -5,10 +5,10 @@ import java.util.concurrent.CompletableFuture
 import net.minecraft.core.HolderLookup
 import net.minecraft.core.registries.Registries
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
-
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider
+
+import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowDamageTypes
 
 /** Emits the mod's dynamic-registry entries (currently: damage types) registered in
   * [[CasualtiesBelowDataGenerator.buildRegistry]].

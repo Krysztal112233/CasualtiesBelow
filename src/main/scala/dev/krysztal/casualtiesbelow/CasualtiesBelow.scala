@@ -2,13 +2,14 @@ package dev.krysztal.casualtiesbelow
 
 import net.minecraft.resources.Identifier
 
+import net.fabricmc.api.ModInitializer
+
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 
-import net.fabricmc.api.ModInitializer
 import org.slf4j.LoggerFactory
 
 object CasualtiesBelow extends ModInitializer {

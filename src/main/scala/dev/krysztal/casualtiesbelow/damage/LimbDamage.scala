@@ -6,6 +6,8 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
 
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
+
 import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc

@@ -5,12 +5,12 @@ import net.minecraft.core.particles.DustParticleOptions
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.component.BodyPart
-
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+
+import dev.krysztal.casualtiesbelow.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.component.BodyPart
 
 /** Client-side blood droplets for actively bleeding limbs.
   *

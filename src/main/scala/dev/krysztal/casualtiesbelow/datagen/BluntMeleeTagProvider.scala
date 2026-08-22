@@ -7,10 +7,10 @@ import net.minecraft.core.registries.Registries
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EntityTypeIds
 
-import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowTags
-
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
+
+import dev.krysztal.casualtiesbelow.damage.CasualtiesBelowTags
 
 /** Generates the mod's entity-type tags used for wound classification. */
 final class BluntMeleeTagProvider(
