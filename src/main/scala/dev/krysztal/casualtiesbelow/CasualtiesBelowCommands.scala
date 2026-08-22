@@ -1,5 +1,9 @@
 package dev.krysztal.casualtiesbelow
 
+import java.lang.Boolean
+import java.lang.Double
+import java.lang.Integer
+
 import scala.jdk.CollectionConverters.*
 
 import com.mojang.brigadier.arguments.ArgumentType
@@ -143,20 +147,20 @@ object CasualtiesBelowCommands {
     valueBranch(
       "muscle_health",
       DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
-      classOf[java.lang.Double]
+      classOf[Double]
     ) { (s, v) => s.muscleHealth = v },
     valueBranch(
       "skin_integrity",
       DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
-      classOf[java.lang.Double]
+      classOf[Double]
     ) { (s, v) => s.skinIntegrity = v },
-    valueBranch("dislocated", BoolArgumentType.bool(), classOf[java.lang.Boolean]) { (s, v) =>
+    valueBranch("dislocated", BoolArgumentType.bool(), classOf[Boolean]) { (s, v) =>
       s.dislocated = v
     },
     clearableBranch(
       "fracture_recovery_ticks",
       IntegerArgumentType.integer(0),
-      classOf[java.lang.Integer]
+      classOf[Integer]
     )(
       { (s, v) => s.fractureRecoveryTicks = Some(v.toInt) },
       { s => s.fractureRecoveryTicks = None }
@@ -164,7 +168,7 @@ object CasualtiesBelowCommands {
     clearableBranch(
       "infection_progress",
       DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
-      classOf[java.lang.Double]
+      classOf[Double]
     )(
       { (s, v) => s.infectionProgress = Some(v.doubleValue) },
       { s => s.infectionProgress = None }
@@ -172,12 +176,12 @@ object CasualtiesBelowCommands {
     valueBranch(
       "external_bleeding_rate",
       DoubleArgumentType.doubleArg(0.0),
-      classOf[java.lang.Double]
+      classOf[Double]
     ) { (s, v) => s.externalBleedingRate = v },
     valueBranch(
       "pain",
       DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
-      classOf[java.lang.Double]
+      classOf[Double]
     ) { (s, v) => s.pain = v }
   )
 
