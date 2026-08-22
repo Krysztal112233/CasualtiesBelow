@@ -8,6 +8,7 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.Using
 
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.FileToIdConverter
 import net.minecraft.resources.Identifier
@@ -61,7 +62,7 @@ object ArmorProtectionOverrides
 
     /** Whether this entry applies to [stack]. */
     def appliesTo(stack: ItemStack): Boolean = {
-      items.contains(stack.getItem.builtInRegistryHolder().key().identifier()) ||
+      items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem)) ||
       tag.exists(stack.is(_))
     }
   }
