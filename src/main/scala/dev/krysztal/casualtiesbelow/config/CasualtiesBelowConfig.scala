@@ -241,6 +241,34 @@ object CasualtiesBelowConfig {
   )
   Builder.pop()
 
+  Builder.push("armor")
+  val ArmorSkinFactorFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "skinFactorFormula",
+    "max(0.05, min(1, 1 - armor * 0.1 - toughness * 0.02))",
+    List("armor", "toughness"),
+    comment = Seq(
+      "Skin damage multiplier from the piece covering the struck body part, compiled with",
+      "EvalEx (https://github.com/ezylang/EvalEx). Available variables: armor (armor points),",
+      "toughness (armor toughness points). Skin and bleeding coefficients of the wound profile",
+      "are multiplied by this factor. Invalid formulas are rejected and corrected to the default.",
+      "Hot-reloaded on file change."
+    )
+  )
+  val ArmorMuscleFactorFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "muscleFactorFormula",
+    "1 - (1 - skinFactor) * 0.5",
+    List("armor", "toughness", "skinFactor"),
+    comment = Seq(
+      "Muscle damage multiplier from the covering armor piece: the blunt impact that still",
+      "transmits through the armor. Available variables: armor, toughness, skinFactor (the",
+      "evaluated skinFactorFormula result). Muscle and pain coefficients of the wound profile",
+      "are multiplied by this factor."
+    )
+  )
+  Builder.pop()
+
   Builder.push("immune")
   val FedImmuneRegenPerTick: ConfigValue[Double] = Builder
     .comment(

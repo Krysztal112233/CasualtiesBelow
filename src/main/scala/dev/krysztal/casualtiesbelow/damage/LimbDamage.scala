@@ -116,21 +116,22 @@ object LimbDamage {
       damage: Double,
       profile: WoundProfile
   ): Unit = {
-    LimbInjuries(player, part, source, damage, pain = damage * profile.painPerPoint) {
+    val mitigated = ArmorProtection.mitigate(player, part, source, profile)
+    LimbInjuries(player, part, source, damage, pain = damage * mitigated.painPerPoint) {
       (stats, effectiveDamage) =>
-        if (profile.bleedRatePerWound > 0.0) {
+        if (mitigated.bleedRatePerWound > 0.0) {
           BleedingCalc.applyWound(
             stats,
-            effectiveDamage * profile.skinPerPoint,
-            profile.bleedRatePerWound,
+            effectiveDamage * mitigated.skinPerPoint,
+            mitigated.bleedRatePerWound,
             player.getRandom
           )
-        } else if (profile.skinPerPoint > 0.0) {
+        } else if (mitigated.skinPerPoint > 0.0) {
           stats.skinIntegrity =
-            (stats.skinIntegrity - effectiveDamage * profile.skinPerPoint).max(0.0)
+            (stats.skinIntegrity - effectiveDamage * mitigated.skinPerPoint).max(0.0)
         }
         stats.muscleHealth =
-          (stats.muscleHealth - effectiveDamage * profile.musclePerPoint).max(0.0)
+          (stats.muscleHealth - effectiveDamage * mitigated.musclePerPoint).max(0.0)
     }
   }
 
