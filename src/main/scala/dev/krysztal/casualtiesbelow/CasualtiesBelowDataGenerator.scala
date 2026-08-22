@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.datagen.ArmorProtectionOverrideProvider
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
-import dev.krysztal.casualtiesbelow.datagen.SharpMeleeTagProvider
+import dev.krysztal.casualtiesbelow.datagen.ItemTagProvider
 
 /** Data generation entrypoint (declared as `fabric-datagen` in fabric.mod.json). Run with
   * `./gradlew runDatagen`; output lands in `src/main/generated` and is packaged by Loom.
@@ -30,9 +30,7 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
     pack.addProvider[DamageTypeTagProvider]((output, registries) =>
       DamageTypeTagProvider(output, registries)
     )
-    pack.addProvider[SharpMeleeTagProvider]((output, registries) =>
-      SharpMeleeTagProvider(output, registries)
-    )
+    pack.addProvider[ItemTagProvider]((output, registries) => ItemTagProvider(output, registries))
     pack.addProvider[BluntMeleeTagProvider]((output, registries) =>
       BluntMeleeTagProvider(output, registries)
     )

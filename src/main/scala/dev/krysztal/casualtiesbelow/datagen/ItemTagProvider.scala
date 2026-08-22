@@ -12,8 +12,10 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 
-/** Generates the mod's item tags used for wound classification. */
-final class SharpMeleeTagProvider(
+/** Generates the mod's item tags used for wound classification. One provider for the whole item
+  * registry — Fabric datagen rejects duplicate per-registry tag providers.
+  */
+final class ItemTagProvider(
     output: FabricPackOutput,
     registries: CompletableFuture[HolderLookup.Provider]
 ) extends FabricTagsProvider[Item](output, Registries.ITEM, registries) {
