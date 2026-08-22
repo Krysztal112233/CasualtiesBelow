@@ -3,9 +3,11 @@ package dev.krysztal.casualtiesbelow
 import net.minecraft.resources.Identifier
 
 import net.fabricmc.api.ModInitializer
+import net.fabricmc.fabric.api.resource.v1.DataResourceLoader
 
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.damage.ArmorProtectionOverrides
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
@@ -25,6 +27,12 @@ object CasualtiesBelow extends ModInitializer {
     InjuryProgression.register()
     LimbInjuries.register()
     ZombieAttackImmuneDrain.register()
+    DataResourceLoader
+      .get()
+      .registerReloadListener(
+        Identifier.fromNamespaceAndPath(ModId, "armor_protection"),
+        ArmorProtectionOverrides
+      )
     Logger.info("CasualtiesBelow initialized")
   }
 

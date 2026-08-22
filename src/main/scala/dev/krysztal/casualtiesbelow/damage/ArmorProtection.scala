@@ -46,18 +46,52 @@ object ArmorProtection {
       stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
     val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot.get)
     val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot.get)
-    if (armor <= 0.0 && toughness <= 0.0) return profile
 
     val config = CasualtiesBelowConfig
-    val skinFactor = config.ArmorSkinFactorFormula
-      .evaluate(armor, toughness)
-      .max(0.0)
-      .min(1.0)
-    val muscleFactor = config.ArmorMuscleFactorFormula
-      .evaluate(armor, toughness, skinFactor)
-      .max(0.0)
-      .min(1.0)
 
+    // A datapack override matches by item identity and replaces the config formula for the factors
+    // it defines — including for pieces with zero armor value, which the fallback path skips.
+    ArmorProtectionOverrides.forStack(stack) match {
+      case Some(entry) =>
+        val skinFactor = entry.skinFactor
+          .flatMap(e =>
+            ArmorProtectionOverrides.evaluate(e, List("armor", "toughness"), List(armor, toughness))
+          )
+          .getOrElse(config.ArmorSkinFactorFormula.evaluate(armor, toughness))
+          .max(0.0)
+          .min(1.0)
+        val muscleFactor = entry.muscleFactor
+          .flatMap(e =>
+            ArmorProtectionOverrides
+              .evaluate(
+                e,
+                List("armor", "toughness", "skinFactor"),
+                List(armor, toughness, skinFactor)
+              )
+          )
+          .getOrElse(config.ArmorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
+          .max(0.0)
+          .min(1.0)
+        applyFactors(profile, skinFactor, muscleFactor)
+      case None =>
+        if (armor <= 0.0 && toughness <= 0.0) return profile
+        val skinFactor = config.ArmorSkinFactorFormula
+          .evaluate(armor, toughness)
+          .max(0.0)
+          .min(1.0)
+        val muscleFactor = config.ArmorMuscleFactorFormula
+          .evaluate(armor, toughness, skinFactor)
+          .max(0.0)
+          .min(1.0)
+        applyFactors(profile, skinFactor, muscleFactor)
+    }
+  }
+
+  private def applyFactors(
+      profile: WoundProfile,
+      skinFactor: Double,
+      muscleFactor: Double
+  ): WoundProfile = {
     WoundProfile(
       profile.skinPerPoint * skinFactor,
       profile.musclePerPoint * muscleFactor,
