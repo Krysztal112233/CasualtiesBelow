@@ -37,9 +37,9 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
   */
 object CasualtiesBelowCommands {
   private val UnknownPart =
-    new SimpleCommandExceptionType(Component.literal("Unknown body part"))
+    SimpleCommandExceptionType(Component.literal("Unknown body part"))
   private val UnknownStat =
-    new SimpleCommandExceptionType(Component.literal("Unknown limb stat"))
+    SimpleCommandExceptionType(Component.literal("Unknown limb stat"))
 
   private val StatNames = List(
     "muscle_health",
