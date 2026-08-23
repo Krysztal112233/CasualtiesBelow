@@ -75,6 +75,9 @@ object DiscomfortOverrides extends SimplePreparableReloadListener[Map[Identifier
 
   @volatile private var entries: List[Entry] = List.empty
 
+  /** All loaded entries, in file order. */
+  def allEntries: List[Entry] = entries
+
   /** The highest-priority entry applying to [stack], if any (files are considered in identifier
     * order for determinism).
     */

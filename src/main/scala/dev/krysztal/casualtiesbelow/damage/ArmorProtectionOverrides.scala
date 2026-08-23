@@ -52,12 +52,17 @@ object ArmorProtectionOverrides
 
   private val Lister = FileToIdConverter.json("casualtiesbelow/armor_protection")
 
-  /** A parsed override: matched by item id or by live tag membership. */
+  /** A parsed override: matched by item id or by live tag membership. The factor source strings are
+    * retained alongside the compiled expressions so the entry can be shared with clients (see
+    * `GameplayDataSnapshot`).
+    */
   final case class Entry(
       items: Set[Identifier],
       tag: Option[TagKey[Item]],
       skinFactor: Option[Expression],
-      muscleFactor: Option[Expression]
+      muscleFactor: Option[Expression],
+      skinSource: Option[String],
+      muscleSource: Option[String]
   ) {
 
     /** Whether this entry applies to [stack]. */
@@ -68,6 +73,9 @@ object ArmorProtectionOverrides
   }
 
   @volatile private var entries: List[Entry] = List.empty
+
+  /** All loaded entries, in file order. */
+  def allEntries: List[Entry] = entries
 
   /** The highest-priority entry applying to [stack], if any (files are considered in identifier
     * order for determinism).
@@ -133,28 +141,30 @@ object ArmorProtectionOverrides
           return fail("neither skin_factor nor muscle_factor defined")
         }
 
-        Some(Entry(items, tag, skin, muscle))
+        Some(
+          Entry(items, tag, skin.map(_._2), muscle.map(_._2), skin.map(_._1), muscle.map(_._1))
+        )
     }
   }
 
-  /** Parses an optional factor field into a compiled expression; absent or invalid fields become
-    * `None` (the config formula stays the fallback for that factor).
+  /** Parses an optional factor field into its source string and compiled expression; absent or
+    * invalid fields become `None` (the config formula stays the fallback for that factor).
     */
   private def parseFactor(
       id: Identifier,
       obj: com.google.gson.JsonObject,
       field: String,
       variables: List[String]
-  ): Option[Expression] = {
+  ): Option[(String, Expression)] = {
     if (!obj.has(field)) return None
     val source = obj.get(field).getAsString
     Try {
       val expression = FormulaConfigValue.compile(source, variables)
       expression.evaluate() // fail fast on formulas that cannot evaluate at all
-      expression
+      (source, expression)
     } match {
-      case Success(expression) => Some(expression)
-      case Failure(e)          =>
+      case Success(parsed) => Some(parsed)
+      case Failure(e)      =>
         CasualtiesBelow.Logger
           .warn("Ignoring {} of armor protection override {}: {}", field, id, e.getMessage)
         None

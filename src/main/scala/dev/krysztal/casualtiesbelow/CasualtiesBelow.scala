@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.discomfort.DiscomfortOverrides
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
+import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
 
 import org.slf4j.LoggerFactory
 
@@ -31,6 +32,7 @@ object CasualtiesBelow extends ModInitializer {
     Discomfort.register()
     LimbInjuries.register()
     ZombieAttackImmuneDrain.register()
+    GameplayDataSync.register()
     DataResourceLoader
       .get()
       .registerReloadListener(
