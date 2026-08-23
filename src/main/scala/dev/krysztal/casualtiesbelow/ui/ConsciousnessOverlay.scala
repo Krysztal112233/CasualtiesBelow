@@ -84,7 +84,9 @@ object ConsciousnessOverlay {
         height,
         width,
         height,
-        ARGB.colorFromFloat(alpha, 0.0f, 0.0f, 0.0f)
+        // The vignette pipeline blends dst * (1 - src.rgb) and ignores src alpha, so the
+        // darkening strength lives in the color's RGB channels, not its alpha.
+        ARGB.colorFromFloat(1.0f, alpha, alpha, alpha)
       )
     }
   }
