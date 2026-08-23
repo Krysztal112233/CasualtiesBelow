@@ -24,5 +24,19 @@
   "bodypart.casualtiesbelow.arm_left": "Left Arm",
   "bodypart.casualtiesbelow.arm_right": "Right Arm",
   "bodypart.casualtiesbelow.leg_left": "Left Leg",
-  "bodypart.casualtiesbelow.leg_right": "Right Leg"
+  "bodypart.casualtiesbelow.leg_right": "Right Leg",
+  "jei.casualtiesbelow.discomfort.tier": "Discomfort: tier %1$s (base ≈%2$s per serving)",
+  "jei.casualtiesbelow.discomfort.override": "Discomfort: base ≈%1$s per serving (datapack override)",
+  "jei.casualtiesbelow.discomfort.stew": "Discomfort depends on the stew's effect: harmful stews count as tier 2-3, beneficial ones are safe.",
+  "jei.casualtiesbelow.discomfort.thresholds": "Effects: nausea ≥%1$s, refusal to eat ≥%2$s, vomiting ≥%3$s",
+  "jei.casualtiesbelow.armor.factors": "Covering the %1$s: skin wounds ×%2$s, muscle transmission ×%3$s",
+  "jei.casualtiesbelow.armor.override": "From a datapack override.",
+  "jei.casualtiesbelow.armor.formula": "From the material formula (config).",
+  "jei.casualtiesbelow.armor.bypass": "No protection against damage that bypasses armor (drowning, magic, the void, ...).",
+  "jei.casualtiesbelow.armor.slot.head": "head",
+  "jei.casualtiesbelow.armor.slot.chest": "chest",
+  "jei.casualtiesbelow.armor.slot.legs": "legs",
+  "jei.casualtiesbelow.armor.slot.feet": "feet",
+  "jei.casualtiesbelow.weapon.cut": "Sharp hits cut the skin: per damage point — skin ×%1$s, muscle ×%2$s, bleeding +%3$s/s per wound, pain ×%4$s",
+  "jei.casualtiesbelow.weapon.note": "Other armed hits bludgeon instead; unarmed hits bite or scratch."
 }

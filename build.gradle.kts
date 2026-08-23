@@ -33,6 +33,8 @@ repositories {
     maven("https://api.modrinth.com/maven") { name = "Modrinth" }
     maven("https://maven.ladysnake.org/releases") { name = "Ladysnake" }
     maven("https://raw.githubusercontent.com/Fuzss/modresources/main/maven/") { name = "Fuzs" }
+    // JEI (mezz): optional integration, compile against the API artifact only.
+    maven("https://maven.blamejared.com/") { name = "BlameJared" }
     // Aliyun mirror of Maven Central: repo.maven.apache.org returns 403 from this network.
     maven("https://maven.aliyun.com/repository/central") { name = "AliyunCentral" }
     mavenCentral()
@@ -47,6 +49,12 @@ dependencies {
 
     // ModMenu (client mod list / config screen integration).
     implementation("maven.modrinth:modmenu:${property("modmenu_version")}")
+
+    // JEI: optional informational integration. Compile-only against the API artifact; the full
+    // jar rides the dev runtime. The plugin class loads only when JEI is present (lazy
+    // `jei_mod_plugin` entrypoint), and JEI is a `suggests`, not a `depends`.
+    compileOnly("mezz.jei:jei-26.2-fabric-api:${property("jei_version")}")
+    runtimeOnly("mezz.jei:jei-26.2-fabric:${property("jei_version")}")
 
     // Scala 3 language support (Fabric language adapter + Scala runtime, bundled at runtime by this mod).
     implementation("maven.modrinth:krysztal-language-scala:${property("krysztal_scala_version")}")

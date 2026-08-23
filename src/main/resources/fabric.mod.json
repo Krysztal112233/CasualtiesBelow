@@ -33,6 +33,12 @@
         "adapter": "scala",
         "value": "dev.krysztal.casualtiesbelow.CasualtiesBelowDataGenerator"
       }
+    ],
+    "jei_mod_plugin": [
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.compat.jei.CasualtiesBelowJeiPlugin"
+      }
     ]
   },
   "custom": {
@@ -50,5 +56,8 @@
     "cardinal-components-base": ">=8.0.0",
     "cardinal-components-entity": ">=8.0.0",
     "forgeconfigapiport": ">=26.2.1"
+  },
+  "suggests": {
+    "jei": "*"
   }
 }

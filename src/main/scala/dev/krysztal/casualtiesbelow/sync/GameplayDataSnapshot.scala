@@ -12,8 +12,10 @@ import dev.krysztal.casualtiesbelow.damage.ArmorProtectionOverrides
 import dev.krysztal.casualtiesbelow.discomfort.DiscomfortOverrides
 
 import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.JsonPrimitive
 
 /** An armor protection override as shared with clients: the formula SOURCE strings (clients
   * recompile them with EvalEx; compiled expressions are not transferable).
@@ -57,62 +59,67 @@ final case class GameplayDataSnapshot(
 ) {
 
   def toJson: String = {
-    val root = new JsonObject
-
-    val armor = new JsonObject
-    armor.addProperty("skinFormula", armorSkinFormula)
-    armor.addProperty("muscleFormula", armorMuscleFormula)
-    val armorArray = new JsonArray
-    armorOverrides.foreach { o =>
-      val e = new JsonObject
-      if (o.items.nonEmpty) {
-        val items = new JsonArray
-        o.items.foreach(items.add)
-        e.add("items", items)
-      }
-      o.tag.foreach(e.addProperty("tag", _))
-      o.skin.foreach(e.addProperty("skin", _))
-      o.muscle.foreach(e.addProperty("muscle", _))
-      armorArray.add(e)
+    def armorOverrideJson(o: ArmorOverrideData): JsonObject = {
+      jsonObject(
+        "items" -> Option.when(o.items.nonEmpty)(stringArray(o.items)),
+        "tag" -> o.tag.map(JsonPrimitive(_)),
+        "skin" -> o.skin.map(JsonPrimitive(_)),
+        "muscle" -> o.muscle.map(JsonPrimitive(_))
+      )
     }
-    armor.add("overrides", armorArray)
-    root.add("armor", armor)
 
-    val discomfort = new JsonObject
-    val means = new JsonArray
-    discomfortLevelMeans.foreach(means.add(_))
-    discomfort.add("levelMeans", means)
-    discomfort.addProperty("nausea", nauseaThreshold)
-    discomfort.addProperty("refusal", refusalThreshold)
-    discomfort.addProperty("vomit", vomitThreshold)
-    val discomfortArray = new JsonArray
-    discomfortOverrides.foreach { o =>
-      val e = new JsonObject
-      if (o.items.nonEmpty) {
-        val items = new JsonArray
-        o.items.foreach(items.add)
-        e.add("items", items)
-      }
-      o.tag.foreach(e.addProperty("tag", _))
-      o.level.foreach(l => e.addProperty("level", l))
-      o.mean.foreach(m => e.addProperty("mean", m))
-      discomfortArray.add(e)
+    def discomfortOverrideJson(o: DiscomfortOverrideData): JsonObject = {
+      jsonObject(
+        "items" -> Option.when(o.items.nonEmpty)(stringArray(o.items)),
+        "tag" -> o.tag.map(JsonPrimitive(_)),
+        "level" -> o.level.map(JsonPrimitive(_)),
+        "mean" -> o.mean.map(JsonPrimitive(_))
+      )
     }
-    discomfort.add("overrides", discomfortArray)
-    root.add("discomfort", discomfort)
 
-    val woundObject = new JsonObject
-    wounds.foreach { (name, p) =>
-      val e = new JsonArray
-      e.add(p._1)
-      e.add(p._2)
-      e.add(p._3)
-      e.add(p._4)
-      woundObject.add(name, e)
-    }
-    root.add("wounds", woundObject)
+    jsonObject(
+      "armor" -> Some(
+        jsonObject(
+          "skinFormula" -> Some(JsonPrimitive(armorSkinFormula)),
+          "muscleFormula" -> Some(JsonPrimitive(armorMuscleFormula)),
+          "overrides" -> Some(jsonArray(armorOverrides)(armorOverrideJson))
+        )
+      ),
+      "discomfort" -> Some(
+        jsonObject(
+          "levelMeans" -> Some(jsonArray(discomfortLevelMeans)(JsonPrimitive(_))),
+          "nausea" -> Some(JsonPrimitive(nauseaThreshold)),
+          "refusal" -> Some(JsonPrimitive(refusalThreshold)),
+          "vomit" -> Some(JsonPrimitive(vomitThreshold)),
+          "overrides" -> Some(jsonArray(discomfortOverrides)(discomfortOverrideJson))
+        )
+      ),
+      "wounds" -> Some(
+        jsonObject(
+          wounds.toList.map { (name, p) =>
+            name -> Some(jsonArray(List(p._1, p._2, p._3, p._4))(JsonPrimitive(_)))
+          }*
+        )
+      )
+    ).toString
+  }
 
-    root.toString
+  /** Builds a JSON array by mapping each element; the only place an array is mutated. */
+  private def jsonArray[A](values: Iterable[A])(f: A => JsonElement): JsonArray = {
+    val array = new JsonArray
+    values.foreach(v => array.add(f(v)))
+    array
+  }
+
+  private def stringArray(values: Iterable[String]): JsonArray = jsonArray(values)(JsonPrimitive(_))
+
+  /** Builds a JSON object from optional fields; absent values are simply omitted. The only place an
+    * object is mutated.
+    */
+  private def jsonObject(fields: (String, Option[JsonElement])*): JsonObject = {
+    val obj = new JsonObject
+    fields.foreach { (key, value) => value.foreach(obj.add(key, _)) }
+    obj
   }
 }
 
