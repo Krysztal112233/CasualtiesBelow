@@ -165,8 +165,11 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     }
   }
 
-  /** Resolves the (skin, muscle) factors exactly like `ArmorProtection` does: datapack override
-    * first, config formula as fallback, clamped to [0, 1].
+  /** Resolves the (skin, muscle) factors exactly like `ArmorProtection.mitigate` does: for each
+    * factor independently, the datapack override formula is tried first and the config formula is
+    * the fallback when the override is absent or fails to evaluate (a broken override degrades to
+    * the fallback instead of dropping the page); the muscle formula sees the resolved skin factor.
+    * Results are clamped to [0, 1].
     */
   private def factors(
       stack: ItemStack,
@@ -175,16 +178,25 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       ovr: Option[ArmorOverrideData],
       data: GameplayDataSnapshot
   ): Option[(Double, Double)] = {
-    val skinSource = ovr.flatMap(_.skin).getOrElse(data.armorSkinFormula)
-    val skin = evaluate(skinSource, List("armor", "toughness"), List(armor, toughness))
+    val skin = ovr
+      .flatMap(_.skin)
+      .flatMap(evaluate(_, List("armor", "toughness"), List(armor, toughness)))
+      .orElse(evaluate(data.armorSkinFormula, List("armor", "toughness"), List(armor, toughness)))
       .map(v => v.max(0.0).min(1.0))
     skin.flatMap { s =>
-      val muscleSource = ovr.flatMap(_.muscle).getOrElse(data.armorMuscleFormula)
-      evaluate(
-        muscleSource,
-        List("armor", "toughness", "skinFactor"),
-        List(armor, toughness, s)
-      ).map(v => (s, v.max(0.0).min(1.0)))
+      ovr
+        .flatMap(_.muscle)
+        .flatMap(
+          evaluate(_, List("armor", "toughness", "skinFactor"), List(armor, toughness, s))
+        )
+        .orElse(
+          evaluate(
+            data.armorMuscleFormula,
+            List("armor", "toughness", "skinFactor"),
+            List(armor, toughness, s)
+          )
+        )
+        .map(v => (s, v.max(0.0).min(1.0)))
     }
   }
 
