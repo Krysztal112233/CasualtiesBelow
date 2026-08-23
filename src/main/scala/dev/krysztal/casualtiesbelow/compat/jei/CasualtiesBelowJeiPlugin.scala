@@ -20,7 +20,6 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.sync.ArmorOverrideData
-import dev.krysztal.casualtiesbelow.sync.DiscomfortOverrideData
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 import mezz.jei.api.IModPlugin
@@ -53,13 +52,14 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       data: GameplayDataSnapshot
   ): Unit = {
     val candidates = collectDiscomfortCandidates(data)
-    val stewOverridden = matchesAny(new ItemStack(Items.SUSPICIOUS_STEW), data.discomfortOverrides)
+    val stewOverridden =
+      data.discomfortOverrides.exists(_.appliesTo(new ItemStack(Items.SUSPICIOUS_STEW)))
 
     // Group items that share one description into a single info entry.
     val groups = candidates.toList
       .filter(item => item != Items.SUSPICIOUS_STEW || stewOverridden)
       .flatMap { item =>
-        resolveMean(new ItemStack(item), data).map(mean => (mean, item))
+        data.discomfortMeanOf(new ItemStack(item)).map(mean => (mean, item))
       }
       .groupBy(_._1)
 
@@ -115,33 +115,6 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     }
     items += Items.SUSPICIOUS_STEW // always documented: its tier is component-derived
     items.toSet
-  }
-
-  /** Mirrors `Discomfort.meanOf`: explicit overrides first, then tier tags (most severe wins). */
-  private def resolveMean(
-      stack: ItemStack,
-      data: GameplayDataSnapshot
-  ): Option[(Double, Option[Int])] = {
-    data.discomfortOverrides.find(_.appliesTo(stack)) match {
-      case Some(entry) =>
-        entry.level
-          .map(l =>
-            (
-              data.discomfortLevelMeans
-                .applyOrElse(l - 1, (_: Int) => data.discomfortLevelMeans.last),
-              Some(l)
-            )
-          )
-          .orElse(entry.mean.map(m => (m, None)))
-      case None =>
-        if (stack.is(CasualtiesBelowTags.Discomfort3Items)) {
-          Some((data.discomfortLevelMeans(2), Some(3)))
-        } else if (stack.is(CasualtiesBelowTags.Discomfort2Items)) {
-          Some((data.discomfortLevelMeans(1), Some(2)))
-        } else if (stack.is(CasualtiesBelowTags.Discomfort1Items)) {
-          Some((data.discomfortLevelMeans(0), Some(1)))
-        } else None
-    }
   }
 
   // --- armor wound protection ----------------------------------------------
@@ -265,26 +238,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   private def itemTag(id: String): TagKey[Item] =
     TagKey.create(Registries.ITEM, Identifier.parse(id))
 
-  private def matchesAny(stack: ItemStack, entries: List[DiscomfortOverrideData]): Boolean = {
-    entries.exists(_.appliesTo(stack))
-  }
-
   private def fmt(value: Double): String = {
     if (value == value.floor) value.toInt.toString
     else f"$value%.2f"
-  }
-
-  extension (o: DiscomfortOverrideData) {
-    def appliesTo(stack: ItemStack): Boolean = {
-      o.items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem).toString) ||
-      o.tag.exists(t => stack.is(itemTag(t)))
-    }
-  }
-
-  extension (o: ArmorOverrideData) {
-    def appliesTo(stack: ItemStack): Boolean = {
-      o.items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem).toString) ||
-      o.tag.exists(t => stack.is(itemTag(t)))
-    }
   }
 }

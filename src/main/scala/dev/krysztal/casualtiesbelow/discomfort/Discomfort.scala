@@ -15,10 +15,10 @@ import net.minecraft.world.item.ItemStack
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
-import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 /** Food discomfort: how revolting what you just ate was. Which food is how revolting is content —
   * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Items]] and up) with
@@ -35,8 +35,12 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   * ([[allowsEating]], enforced by the `Consumable` mixin); past the vomit threshold the player
   * throws up: hunger and saturation penalties, and relief down to a fraction of the maximum.
   *
-  * Untagged food (and beneficial suspicious stew) contributes nothing. Milk keeps working while
-  * nauseous: it bears no discomfort, so refusal never blocks it.
+  * All reads go through a [[GameplayDataSnapshot]]: server logic captures the live config and
+  * datapack state, client prediction and displays read the last synced snapshot — so the refusal
+  * prediction in `canConsume` matches the server's decision even when the server runs
+  * world-datapack overrides or a different config. Untagged food (and beneficial suspicious stew)
+  * contributes nothing. Milk keeps working while nauseous: it bears no discomfort, so refusal never
+  * blocks it.
   */
 object Discomfort {
 
@@ -44,21 +48,13 @@ object Discomfort {
     * explicit datapack override, tier tags (most severe tier wins), suspicious-stew effect
     * inspection.
     */
-  def meanOf(stack: ItemStack): Option[Double] = {
-    DiscomfortOverrides.forStack(stack) match {
-      case Some(entry) =>
-        Some(entry.mean.getOrElse(levelMean(entry.level.get)))
-      case None =>
-        if (stack.is(CasualtiesBelowTags.Discomfort3Items)) {
-          Some(CasualtiesBelowConfig.DiscomfortLevel3Mean.get())
-        } else if (stack.is(CasualtiesBelowTags.Discomfort2Items)) {
-          Some(CasualtiesBelowConfig.DiscomfortLevel2Mean.get())
-        } else if (stack.is(CasualtiesBelowTags.Discomfort1Items)) {
-          Some(CasualtiesBelowConfig.DiscomfortLevel1Mean.get())
-        } else {
-          suspiciousStewMean(stack)
-        }
-    }
+  def meanOf(stack: ItemStack): Option[Double] = meanOf(stack, GameplayDataSnapshot.current)
+
+  /** Snapshot-based overload, so every caller (server logic, client prediction, JEI pages) shares
+    * one resolution implementation against one data source.
+    */
+  def meanOf(stack: ItemStack, data: GameplayDataSnapshot): Option[Double] = {
+    data.discomfortMeanOf(stack).map(_._1).orElse(suspiciousStewMean(stack, data))
   }
 
   /** Whether [player] may start consuming [stack]: past the refusal threshold, food that bears
@@ -67,10 +63,11 @@ object Discomfort {
     */
   def allowsEating(player: Player, stack: ItemStack): Boolean = {
     if (player.isCreative || player.isSpectator) return true
+    val data = GameplayDataSnapshot.current
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
-    if (vitals.discomfort < CasualtiesBelowConfig.DiscomfortRefusalThreshold.get()) return true
+    if (vitals.discomfort < data.refusalThreshold) return true
 
-    meanOf(stack).forall(_ <= 0.0)
+    meanOf(stack, data).forall(_ <= 0.0)
   }
 
   /** Applies the discomfort of a just-consumed food item. Called by the `Consumable` mixin on the
@@ -165,15 +162,6 @@ object Discomfort {
     CasualtiesBelowComponents.Vitals.sync(player)
   }
 
-  /** The configured mean of a discomfort tier; out-of-range levels collapse to the severe tier
-    * (override entries are validated to 1-3 at load time, this is just exhaustiveness).
-    */
-  private def levelMean(level: Int): Double = level match {
-    case 1 => CasualtiesBelowConfig.DiscomfortLevel1Mean.get()
-    case 2 => CasualtiesBelowConfig.DiscomfortLevel2Mean.get()
-    case _ => CasualtiesBelowConfig.DiscomfortLevel3Mean.get()
-  }
-
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles
     * proportionally ([[CasualtiesBelowConfig.DiscomfortSpreadFraction]]).
     */
@@ -191,7 +179,7 @@ object Discomfort {
     * and wither are revolting (tier 3), other harmful effects mildly so (tier 2), and beneficial
     * stews are fine.
     */
-  private def suspiciousStewMean(stack: ItemStack): Option[Double] = {
+  private def suspiciousStewMean(stack: ItemStack, data: GameplayDataSnapshot): Option[Double] = {
     val effects = stack.get(DataComponents.SUSPICIOUS_STEW_EFFECTS)
     if (effects == null) return None
 
@@ -202,9 +190,9 @@ object Discomfort {
         e.effect().value() == MobEffects.WITHER.value()
       }
     ) {
-      Some(CasualtiesBelowConfig.DiscomfortLevel3Mean.get())
+      Some(data.discomfortLevelMeans(2))
     } else if (entries.exists(_.effect().value().getCategory == MobEffectCategory.HARMFUL)) {
-      Some(CasualtiesBelowConfig.DiscomfortLevel2Mean.get())
+      Some(data.discomfortLevelMeans(1))
     } else {
       None
     }

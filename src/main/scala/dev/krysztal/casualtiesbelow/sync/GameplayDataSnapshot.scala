@@ -5,7 +5,15 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.core.registries.Registries
+import net.minecraft.resources.Identifier
+import net.minecraft.tags.TagKey
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig.WoundProfileConfig
 import dev.krysztal.casualtiesbelow.damage.ArmorProtectionOverrides
@@ -17,6 +25,12 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 
+/** Whether an override entry (explicit items or one tag) targets [stack]. */
+private def targets(stack: ItemStack, items: List[String], tag: Option[String]): Boolean = {
+  items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem).toString) ||
+  tag.exists(t => stack.is(TagKey.create(Registries.ITEM, Identifier.parse(t))))
+}
+
 /** An armor protection override as shared with clients: the formula SOURCE strings (clients
   * recompile them with EvalEx; compiled expressions are not transferable).
   */
@@ -25,7 +39,9 @@ final case class ArmorOverrideData(
     tag: Option[String],
     skin: Option[String],
     muscle: Option[String]
-)
+) {
+  def appliesTo(stack: ItemStack): Boolean = targets(stack, items, tag)
+}
 
 /** A discomfort override as shared with clients (level XOR mean, as in the datapack files). */
 final case class DiscomfortOverrideData(
@@ -33,7 +49,9 @@ final case class DiscomfortOverrideData(
     tag: Option[String],
     level: Option[Int],
     mean: Option[Double]
-)
+) {
+  def appliesTo(stack: ItemStack): Boolean = targets(stack, items, tag)
+}
 
 /** The server-effective gameplay numbers and override tables.
   *
@@ -57,6 +75,34 @@ final case class GameplayDataSnapshot(
     /** Wound profile coefficients by profile name: (skin, muscle, bleed, pain) per damage point. */
     wounds: Map[String, (Double, Double, Double, Double)]
 ) {
+
+  /** Resolves the discomfort mean for [stack] from this snapshot, mirroring `Discomfort.meanOf`:
+    * explicit override entries first (a level resolves through this snapshot's tier means), then
+    * the tier tags (most severe tier wins). Returns the mean paired with the tier it came from
+    * (`None` for free-form means). Component-derived specials (suspicious stew) are the caller's
+    * job — they need no snapshot data.
+    */
+  def discomfortMeanOf(stack: ItemStack): Option[(Double, Option[Int])] = {
+    discomfortOverrides.find(_.appliesTo(stack)) match {
+      case Some(entry) =>
+        entry.level
+          .map(l => (tierMean(l, discomfortLevelMeans), Some(l)))
+          .orElse(entry.mean.map(m => (m, None)))
+      case None =>
+        if (stack.is(CasualtiesBelowTags.Discomfort3Items)) {
+          Some((discomfortLevelMeans(2), Some(3)))
+        } else if (stack.is(CasualtiesBelowTags.Discomfort2Items)) {
+          Some((discomfortLevelMeans(1), Some(2)))
+        } else if (stack.is(CasualtiesBelowTags.Discomfort1Items)) {
+          Some((discomfortLevelMeans(0), Some(1)))
+        } else None
+    }
+  }
+
+  /** The mean of a discomfort tier; out-of-range levels collapse to the most severe tier. */
+  private def tierMean(level: Int, means: List[Double]): Double = {
+    means.applyOrElse(level - 1, (_: Int) => means.last)
+  }
 
   def toJson: String = {
     def armorOverrideJson(o: ArmorOverrideData): JsonObject = {
@@ -128,8 +174,10 @@ object GameplayDataSnapshot {
   /** The latest snapshot received from the server, if any. Cleared on disconnect. */
   @volatile private var synced: Option[GameplayDataSnapshot] = None
 
-  /** What displays and client prediction should read: the server's snapshot when connected, else
-    * the local configuration and locally visible (builtin) overrides.
+  /** What client-side displays and prediction should read: the server's snapshot when connected,
+    * else the local configuration and locally visible (builtin) overrides. Server logic must NOT
+    * read this: `synced` belongs to the logical client (singleplayer shares the JVM), so the server
+    * always captures the live state via [[capture]] instead.
     */
   def current: GameplayDataSnapshot = synced.getOrElse(capture())
 
