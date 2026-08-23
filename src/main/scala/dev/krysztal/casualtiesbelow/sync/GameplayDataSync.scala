@@ -2,19 +2,14 @@ package dev.krysztal.casualtiesbelow.sync
 
 import java.nio.charset.StandardCharsets
 
-import scala.jdk.CollectionConverters.*
-
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 
-import net.fabricmc.fabric.api.client.networking.v1.ClientConfigurationNetworking
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
-import net.fabricmc.fabric.api.networking.v1.ServerConfigurationConnectionEvents
-import net.fabricmc.fabric.api.networking.v1.ServerConfigurationNetworking
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
@@ -28,10 +23,12 @@ final case class GameplayDataPayload(json: String) extends CustomPacketPayload {
 
 /** Server→client sync of the effective gameplay data (see [[GameplayDataSnapshot]]).
   *
-  * The snapshot is sent during the configuration phase on join — datapacks are already loaded on
-  * the server by then, and the payload lands before the recipe sync that triggers JEI's start, so
-  * recipe viewers see the server's numbers from the first frame — and again in the play phase after
-  * every successful datapack reload.
+  * Sent from [[ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS]], which fires per player right before
+  * the vanilla tag and recipe packets — both on join (play phase, before the recipe sync that
+  * triggers JEI's start) and on every successful datapack reload. This is the canonical hook for
+  * datapack→client sync (Fabric PR #2265; NeoForge's OnDatapackSyncEvent shares the semantics):
+  * [[ServerLifecycleEvents.END_DATA_PACK_RELOAD]] runs *after* the recipe sync and would leave
+  * recipe viewers reading a stale snapshot.
   */
 object GameplayDataSync {
 
@@ -44,33 +41,17 @@ object GameplayDataSync {
       payload => payload.json.getBytes(StandardCharsets.UTF_8)
     )
 
-  private def payload(): GameplayDataPayload = {
-    GameplayDataPayload(GameplayDataSnapshot.capture().toJson)
-  }
-
-  /** Common-side registration (payload types + send hooks). */
+  /** Common-side registration (payload type + send hook). */
   def register(): Unit = {
-    PayloadTypeRegistry.clientboundConfiguration().register(PayloadId, Codec)
     PayloadTypeRegistry.clientboundPlay().register(PayloadId, Codec)
 
-    ServerConfigurationConnectionEvents.CONFIGURE.register { (listener, _) =>
-      ServerConfigurationNetworking.send(listener, payload())
-    }
-    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register { (server, _, success) =>
-      if (success) {
-        server.getPlayerList.getPlayers.forEach { player =>
-          ServerPlayNetworking.send(player, payload())
-        }
-      }
+    ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register { (player, _) =>
+      ServerPlayNetworking.send(player, GameplayDataPayload(GameplayDataSnapshot.capture().toJson))
     }
   }
 
-  /** Client-side registration (receivers + disconnect cleanup). */
+  /** Client-side registration (receiver + disconnect cleanup). */
   def registerClient(): Unit = {
-    ClientConfigurationNetworking.registerGlobalReceiver(
-      PayloadId,
-      (payload, _) => GameplayDataSnapshot.receive(payload.json)
-    )
     ClientPlayNetworking.registerGlobalReceiver(
       PayloadId,
       (payload, _) => GameplayDataSnapshot.receive(payload.json)
