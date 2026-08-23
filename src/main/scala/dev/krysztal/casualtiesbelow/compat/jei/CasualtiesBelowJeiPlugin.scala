@@ -57,7 +57,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
     // Group items that share one description into a single info entry.
     val groups = candidates.toList
-      .filter(item => item != Items.SUSPICIOUS_STEW || stewOverridden)
+      .filter(_ != Items.SUSPICIOUS_STEW || stewOverridden)
       .flatMap { item =>
         data.discomfortMeanOf(new ItemStack(item)).map(mean => (mean, item))
       }
@@ -128,6 +128,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   ): Unit = {
     val groups = scala.collection.mutable.LinkedHashMap
       .empty[(EquipmentSlot, Double, Double, Boolean), List[Item]]
+    val covered = scala.collection.mutable.Set.empty[(Item, EquipmentSlot)]
 
     BuiltInRegistries.ITEM.forEach { item =>
       val stack = new ItemStack(item)
@@ -139,9 +140,36 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
         val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
         if (armor > 0.0 || toughness > 0.0) {
-          factors(stack, armor, toughness, ovr, data).foreach { (skin, muscle) =>
+          factors(stack, armor, toughness, ovr, data).foreach { case (skin, muscle) =>
+            covered += (item -> slot)
             val key = (slot, skin, muscle, ovr.isDefined)
             groups(key) = groups.getOrElse(key, List.empty) :+ item
+          }
+        }
+      }
+    }
+
+    // Override-targeted pieces not covered above: items without a positive armor attribute
+    // (elytra and similar) protect nothing by default, but a datapack override can give them
+    // factors, which the runtime honors too. Attributes are slot-specific, so coverage is
+    // tracked per (item, slot) and the real per-slot attributes are evaluated (usually zero).
+    BuiltInRegistries.ITEM.forEach { item =>
+      val stack = new ItemStack(item)
+      val equippable = stack.get(DataComponents.EQUIPPABLE)
+      if (equippable != null && ArmorSlots.contains(equippable.slot())) {
+        val slot = equippable.slot()
+        if (!covered.contains(item -> slot)) {
+          data.armorOverrides.find(_.appliesTo(stack)).foreach { ovr =>
+            val modifiers = stack
+              .getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
+            val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
+            val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
+            factors(stack, armor, toughness, Some(ovr), data).foreach { case (skin, muscle) =>
+              if (skin < 1.0 || muscle < 1.0) {
+                val key = (slot, skin, muscle, true)
+                groups(key) = groups.getOrElse(key, List.empty) :+ item
+              }
+            }
           }
         }
       }
