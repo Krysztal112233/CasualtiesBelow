@@ -29,6 +29,22 @@ object CasualtiesBelowConfig {
     .comment("Consciousness a player starts with.")
     .gameRestart()
     .defineInRange("startingConsciousness", 100.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessDimThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness below which the view starts to dim (client-side display effect only)."
+    )
+    .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessBlackoutThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness at or below which the dimming is strongest and slowly pulses.",
+      "Must not exceed consciousnessDimThreshold to take full effect."
+    )
+    .defineInRange("consciousnessBlackoutThreshold", 15.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
+    .comment(
+      "Strongest dimming opacity (0.0-1.0), reached at the blackout threshold. 0 disables the effect."
+    )
+    .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double])
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
