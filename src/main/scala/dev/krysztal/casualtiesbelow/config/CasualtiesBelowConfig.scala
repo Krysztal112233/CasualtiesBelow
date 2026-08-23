@@ -481,6 +481,30 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .define("affectAllLivingEntities", false)
+  val BootsCushionFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "bootsCushionFormula",
+    "min(0.5, armor * 0.07 + toughness * 0.04)",
+    List("armor", "toughness"),
+    comment = Seq(
+      "Fraction of the fall impact on the legs absorbed by worn boots (0 = none), compiled with",
+      "EvalEx. Available variables: armor, toughness (the boots' attribute values in the feet slot).",
+      "Boots with neither attribute cushion nothing. Invalid formulas are rejected and corrected",
+      "to the default. Hot-reloaded on file change."
+    )
+  )
+  val LeggingsConditionProtectionFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "leggingsConditionProtectionFormula",
+    "min(0.6, armor * 0.06 + toughness * 0.05)",
+    List("armor", "toughness"),
+    comment = Seq(
+      "Fraction of the fall impact ignored when rolling the dislocation/fracture thresholds,",
+      "from worn leggings, compiled with EvalEx. Available variables: armor, toughness (the",
+      "leggings' attribute values in the legs slot). Invalid formulas are rejected and corrected",
+      "to the default. Hot-reloaded on file change."
+    )
+  )
   Builder.pop()
 
   private val Spec = Builder.build()

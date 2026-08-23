@@ -1,10 +1,14 @@
 package dev.krysztal.casualtiesbelow.damage
 
+import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.world.damagesource.DamageSource
+import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.LivingEntity
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
@@ -16,6 +20,8 @@ import dev.krysztal.casualtiesbelow.api.wound.HitLocation
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 
 /** Attributes incoming damage to body parts.
@@ -161,25 +167,70 @@ object LimbDamage {
 
   /** Maps fall damage (in half-hearts, as produced by [[FallDamageFormula]]) to leg injuries:
     *
+    *   - worn boots cushion the whole impact (the `[fall]` cushion formula)
     *   - any damage: both legs lose muscle health and gain pain
     *   - ≥ [[ScrapeThreshold]]: skin scrape and external bleeding capped by skin damage
     *   - ≥ [[DislocationThreshold]]: one random leg is dislocated
     *   - ≥ [[FractureThreshold]]: one random leg fractures instead, with recovery time scaling with
-    *     the damage
+    *     the damage; worn leggings blunt the impact for these condition rolls (the `[fall]`
+    *     protection formula)
     *
-    * The constants are balancing placeholders; expect them to become config values or EvalEx
-    * formulas (like [[FallDamageFormula]]) once playtesting starts.
+    * The thresholds are structural rules (code constants); the equipment factors are balancing,
+    * read from config formulas.
     */
   private def attributeFallDamage(player: Player, source: DamageSource, damage: Double): Unit = {
+    val cushioned = damage * (1.0 - bootsCushion(player))
+    if (cushioned <= 0.0) return
+
     val severeLeg =
       if (player.getRandom.nextBoolean()) BodyPart.LegLeft else BodyPart.LegRight
 
     // General impact on both legs, then the severe injury on the randomly picked leg — the severe
     // leg effectively suffers two injuries, each cancellable on its own.
     BodyPart.Legs.foreach { leg =>
-      applyFallInjury(player, leg, source, damage)
+      applyFallInjury(player, leg, source, cushioned)
     }
-    applySevereFallInjury(player, severeLeg, source, damage)
+    applySevereFallInjury(
+      player,
+      severeLeg,
+      source,
+      cushioned * (1.0 - leggingsProtection(player))
+    )
+  }
+
+  /** Fraction of the fall impact absorbed by worn boots (0 without). */
+  private def bootsCushion(player: Player): Double = {
+    slotFormulaFactor(player, EquipmentSlot.FEET, CasualtiesBelowConfig.BootsCushionFormula)
+  }
+
+  /** Fraction of the fall impact ignored for dislocation/fracture rolls, from worn leggings. */
+  private def leggingsProtection(player: Player): Double = {
+    slotFormulaFactor(
+      player,
+      EquipmentSlot.LEGS,
+      CasualtiesBelowConfig.LeggingsConditionProtectionFormula
+    )
+  }
+
+  /** Evaluates a `[fall]` equipment formula against the armor/toughness of the piece in [slot],
+    * clamped to [0, 1]; 0 when the slot is empty or the piece has neither attribute.
+    */
+  private def slotFormulaFactor(
+      player: Player,
+      slot: EquipmentSlot,
+      formula: FormulaConfigValue
+  ): Double = {
+    val stack = player.getItemBySlot(slot)
+    if (stack.isEmpty) return 0.0
+    val modifiers =
+      stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
+    val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
+    val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
+    if (armor <= 0.0 && toughness <= 0.0) {
+      0.0
+    } else {
+      formula.evaluate(armor, toughness).max(0.0).min(1.0)
+    }
   }
 
   /** Fall impact rules for one leg: muscle health, impact pain ([[PainCalc.onFall]] via the injury
