@@ -30,6 +30,11 @@
             "name": "BlurStrength",
             "type": "float",
             "value": 0.0
+          },
+          {
+            "name": "DesaturationStrength",
+            "type": "float",
+            "value": 0.0
           }
         ]
       }

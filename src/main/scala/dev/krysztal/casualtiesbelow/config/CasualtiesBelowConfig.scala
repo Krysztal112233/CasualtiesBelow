@@ -59,6 +59,18 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("maxBloodVolume", 5000.0, 100.0, 100000.0, classOf[Double])
+  val BloodDesaturationStartFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of healthy maximum blood volume below which the world starts losing color.",
+      "The effect is client-side presentation only."
+    )
+    .defineInRange("bloodDesaturationStartFraction", 0.9, 0.0, 1.0, classOf[Double])
+  val BloodFullDesaturationFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of healthy maximum blood volume at or below which the world is fully grayscale.",
+      "Keep this below bloodDesaturationStartFraction for a gradual transition."
+    )
+    .defineInRange("bloodFullDesaturationFraction", 0.3, 0.0, 1.0, classOf[Double])
   val FedBloodRegenPerTick: ConfigValue[Double] = Builder
     .comment(
       "Blood volume regenerated per tick while well-fed (same food threshold as immune",

@@ -8,6 +8,7 @@ layout(std140) uniform VitalsConfig {
     float VignetteStrength;
     float HazeStrength;
     float BlurStrength;
+    float DesaturationStrength;
 };
 
 out vec4 fragColor;
@@ -39,6 +40,9 @@ void main() {
         + texture(InSampler, clampToTexture(texCoord + doubleVisionOffset, texelSize)).rgb
     );
     color = mix(color, doubleVision, DoubleVisionBlend * BlurStrength);
+
+    float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
+    color = mix(color, vec3(luminance), DesaturationStrength);
 
     float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
     float hazeFactor = 1.0 - HazeStrength * HazeFraction;

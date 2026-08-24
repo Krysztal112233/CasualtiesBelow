@@ -28,14 +28,14 @@ import org.lwjgl.system.MemoryStack
 
 /** Full-screen vitals effects applied to the world before the GUI: low consciousness contributes
   * edge darkening, blackout pulsing, zoom blur, and double vision; nausea contributes only steady
-  * edge darkening.
+  * edge darkening; low absolute blood volume progressively removes color.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
   private val ChainId = CasualtiesBelow.ofIdentifier("vitals")
   private val UniformGroup = "VitalsConfig"
   private val UniformBufferSize =
-    new Std140SizeCalculator().putFloat().putFloat().putFloat().get()
+    new Std140SizeCalculator().putFloat().putFloat().putFloat().putFloat().get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
 
@@ -103,6 +103,11 @@ object VitalsPostEffect {
           gameplayData.nauseaThreshold,
           gameplayData.maxDiscomfort
         )
+        val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
+        val fullDesaturation =
+          math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
+        val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
+        val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
         val consciousnessVignette =
           CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
             consciousnessVignetteProgress * pulse
@@ -113,10 +118,14 @@ object VitalsPostEffect {
           vignette = math.max(consciousnessVignette, discomfortVignette),
           haze = consciousnessVignette,
           blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
-            blurProgress * pulse
+            blurProgress * pulse,
+          desaturation = desaturation
         )
         Option.when(
-          strengths.vignette > 0.0f || strengths.haze > 0.0f || strengths.blur > 0.0f
+          strengths.vignette > 0.0f ||
+            strengths.haze > 0.0f ||
+            strengths.blur > 0.0f ||
+            strengths.desaturation > 0.0f
         )(strengths)
       }
   }
@@ -159,7 +168,7 @@ object VitalsPostEffect {
     val stack = MemoryStack.stackPush()
     try {
       val builder = Std140Builder.onStack(stack, UniformBufferSize)
-      builder.putFloat(0.0f).putFloat(0.0f).putFloat(0.0f)
+      builder.putFloat(0.0f).putFloat(0.0f).putFloat(0.0f).putFloat(0.0f)
       RenderSystem
         .getDevice()
         .createBuffer(
@@ -180,6 +189,7 @@ object VitalsPostEffect {
         .putFloat(strengths.vignette)
         .putFloat(strengths.haze)
         .putFloat(strengths.blur)
+        .putFloat(strengths.desaturation)
     } finally {
       view.close()
     }
@@ -192,5 +202,17 @@ object VitalsPostEffect {
     Mth.clamp(((value - threshold) / (maximum - threshold)).toFloat, 0.0f, 1.0f)
   }
 
-  private final case class EffectStrengths(vignette: Float, haze: Float, blur: Float)
+  private def progressBelow(value: Double, start: Double, full: Double): Float = {
+    if (value >= start) return 0.0f
+    if (full >= start || value <= full) return 1.0f
+
+    Mth.clamp(((start - value) / (start - full)).toFloat, 0.0f, 1.0f)
+  }
+
+  private final case class EffectStrengths(
+      vignette: Float,
+      haze: Float,
+      blur: Float,
+      desaturation: Float
+  )
 }

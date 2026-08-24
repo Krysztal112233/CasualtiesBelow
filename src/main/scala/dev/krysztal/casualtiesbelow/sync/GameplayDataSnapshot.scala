@@ -66,6 +66,7 @@ final case class DiscomfortOverrideData(
   * which is correct in singleplayer for everything except world-datapack overrides.
   */
 final case class GameplayDataSnapshot(
+    maxBloodVolume: Double,
     armorSkinFormula: String,
     armorMuscleFormula: String,
     armorOverrides: List[ArmorOverrideData],
@@ -131,6 +132,9 @@ final case class GameplayDataSnapshot(
     }
 
     jsonObject(
+      "vitals" -> Some(
+        jsonObject("maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)))
+      ),
       "armor" -> Some(
         jsonObject(
           "skinFormula" -> Some(JsonPrimitive(armorSkinFormula)),
@@ -212,6 +216,7 @@ object GameplayDataSnapshot {
   def capture(): GameplayDataSnapshot = {
     val config = CasualtiesBelowConfig
     GameplayDataSnapshot(
+      maxBloodVolume = config.MaxBloodVolume.get(),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
       armorOverrides = ArmorProtectionOverrides.allEntries.map { e =>
@@ -278,6 +283,7 @@ object GameplayDataSnapshot {
 
     val root = JsonParser.parseString(json).getAsJsonObject
 
+    val vitals = root.getAsJsonObject("vitals")
     val armor = root.getAsJsonObject("armor")
     val armorOverrides = armor.getAsJsonArray("overrides").asScala.toList.map { el =>
       val e = el.getAsJsonObject
@@ -316,6 +322,7 @@ object GameplayDataSnapshot {
       .toMap
 
     GameplayDataSnapshot(
+      maxBloodVolume = vitals.get("maxBloodVolume").getAsDouble,
       armorSkinFormula = armor.get("skinFormula").getAsString,
       armorMuscleFormula = armor.get("muscleFormula").getAsString,
       armorOverrides = armorOverrides,
