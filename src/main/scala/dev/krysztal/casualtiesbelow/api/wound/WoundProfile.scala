@@ -59,8 +59,8 @@ object WoundProfiles {
     case s if s.is(DamageTypeTags.IS_FIRE) => wound(CasualtiesBelowConfig.BurnWound)
     case s if s.is(DamageTypeTags.IS_EXPLOSION) || s.is(DamageTypes.WITHER_SKULL) =>
       Some(Wound(of(CasualtiesBelowConfig.BlastWound), scatter = true))
-    case s if s.getDirectEntity.isInstanceOf[Projectile] => projectileProfile(s)
-    case s if isFallingObject(s)                         => fallingObjectProfile(s)
+    case s if directEntity(s).exists(_.isInstanceOf[Projectile]) => projectileProfile(s)
+    case s if isFallingObject(s)                                 => fallingObjectProfile(s)
     case s if s.is(DamageTypes.CACTUS) || s.is(DamageTypes.SWEET_BERRY_BUSH) =>
       wound(CasualtiesBelowConfig.PrickWound)
     case s if s.is(DamageTypes.SONIC_BOOM)     => wound(CasualtiesBelowConfig.BluntWound)
@@ -74,7 +74,7 @@ object WoundProfiles {
   }
 
   private def isMelee(source: DamageSource): Boolean = {
-    source.isDirect && source.getDirectEntity.isInstanceOf[LivingEntity]
+    source.isDirect && directEntity(source).exists(_.isInstanceOf[LivingEntity])
   }
 
   /** Falling anvils and blocks crush, falling stalactites pierce — all land on the head regardless
@@ -103,26 +103,29 @@ object WoundProfiles {
   }
 
   /** Evoker fangs pierce; witch potions and guardian beams leave no physical wound. */
-  private def magicProfile(source: DamageSource): Option[Wound] = source.getDirectEntity match {
-    case _: EvokerFangs => Some(Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false))
-    case _              => None
+  private def magicProfile(source: DamageSource): Option[Wound] = {
+    directEntity(source).collect { case _: EvokerFangs =>
+      Wound(of(CasualtiesBelowConfig.PierceWound), scatter = false)
+    }
   }
 
   /** Melee sub-classification: sharp weapons cut, other weapons bludgeon, bare hands bite or
     * scratch — except slam-type attackers (slimes, golems, ...), which bludgeon bare-handed.
     */
   private def meleeProfile(source: DamageSource): WoundProfile = {
-    // `getWeaponItem` is the empty stack for bare-handed attackers, not null.
+    // No direct entity yields null; a bare-handed living attacker yields the empty stack.
     Option(source.getWeaponItem).filterNot(_.isEmpty) match {
       case Some(weapon) if weapon.is(CasualtiesBelowTags.SharpMeleeItems) =>
         of(CasualtiesBelowConfig.CutWound)
       case Some(_) =>
         of(CasualtiesBelowConfig.BluntWound)
       case None =>
-        val slams = source.getDirectEntity.is(CasualtiesBelowTags.BluntMeleeEntities)
+        val slams = directEntity(source).exists(_.is(CasualtiesBelowTags.BluntMeleeEntities))
         of(if (slams) CasualtiesBelowConfig.BluntWound else CasualtiesBelowConfig.BiteWound)
     }
   }
+
+  private def directEntity(source: DamageSource) = Option(source.getDirectEntity)
 
   private def of(config: WoundProfileConfig): WoundProfile = WoundProfile(
     config.skinPerPoint.get(),

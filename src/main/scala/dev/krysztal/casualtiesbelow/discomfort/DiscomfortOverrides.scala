@@ -68,7 +68,7 @@ object DiscomfortOverrides extends SimplePreparableReloadListener[Map[Identifier
 
     /** Whether this entry applies to [stack]. */
     def appliesTo(stack: ItemStack): Boolean = {
-      items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem)) ||
+      Option(BuiltInRegistries.ITEM.getKey(stack.getItem)).exists(items.contains) ||
       tag.exists(stack.is(_))
     }
   }

@@ -107,7 +107,9 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     }
     data.discomfortOverrides.foreach { o =>
       o.items.foreach { id =>
-        Try(BuiltInRegistries.ITEM.getValue(Identifier.parse(id))).toOption.foreach(items += _)
+        Try(Identifier.parse(id)).toOption
+          .flatMap(identifier => Option(BuiltInRegistries.ITEM.getValue(identifier)))
+          .foreach(items += _)
       }
       o.tag.foreach { tag =>
         BuiltInRegistries.ITEM.getTagOrEmpty(itemTag(tag)).forEach(h => items += h.value())
@@ -155,24 +157,25 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     // tracked per (item, slot) and the real per-slot attributes are evaluated (usually zero).
     BuiltInRegistries.ITEM.forEach { item =>
       val stack = new ItemStack(item)
-      val equippable = stack.get(DataComponents.EQUIPPABLE)
-      if (equippable != null && ArmorSlots.contains(equippable.slot())) {
-        val slot = equippable.slot()
-        if (!covered.contains(item -> slot)) {
-          data.armorOverrides.find(_.appliesTo(stack)).foreach { ovr =>
-            val modifiers = stack
-              .getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
-            val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
-            val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
-            factors(stack, armor, toughness, Some(ovr), data).foreach { case (skin, muscle) =>
-              if (skin < 1.0 || muscle < 1.0) {
-                val key = (slot, skin, muscle, true)
-                groups(key) = groups.getOrElse(key, List.empty) :+ item
+      Option(stack.get(DataComponents.EQUIPPABLE))
+        .filter(equippable => ArmorSlots.contains(equippable.slot()))
+        .foreach { equippable =>
+          val slot = equippable.slot()
+          if (!covered.contains(item -> slot)) {
+            data.armorOverrides.find(_.appliesTo(stack)).foreach { ovr =>
+              val modifiers = stack
+                .getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
+              val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
+              val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
+              factors(stack, armor, toughness, Some(ovr), data).foreach { case (skin, muscle) =>
+                if (skin < 1.0 || muscle < 1.0) {
+                  val key = (slot, skin, muscle, true)
+                  groups(key) = groups.getOrElse(key, List.empty) :+ item
+                }
               }
             }
           }
         }
-      }
     }
 
     groups.foreach { case ((slot, skin, muscle, isOverride), items) =>

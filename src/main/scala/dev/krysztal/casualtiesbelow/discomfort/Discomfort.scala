@@ -180,21 +180,20 @@ object Discomfort {
     * stews are fine.
     */
   private def suspiciousStewMean(stack: ItemStack, data: GameplayDataSnapshot): Option[Double] = {
-    val effects = stack.get(DataComponents.SUSPICIOUS_STEW_EFFECTS)
-    if (effects == null) return None
-
-    val entries = effects.effects().asScala
-    if (
-      entries.exists { e =>
-        e.effect().value() == MobEffects.POISON.value() ||
-        e.effect().value() == MobEffects.WITHER.value()
+    Option(stack.get(DataComponents.SUSPICIOUS_STEW_EFFECTS)).flatMap { effects =>
+      val entries = effects.effects().asScala
+      if (
+        entries.exists { e =>
+          e.effect().value() == MobEffects.POISON.value() ||
+          e.effect().value() == MobEffects.WITHER.value()
+        }
+      ) {
+        Some(data.discomfortLevelMeans(2))
+      } else if (entries.exists(_.effect().value().getCategory == MobEffectCategory.HARMFUL)) {
+        Some(data.discomfortLevelMeans(1))
+      } else {
+        None
       }
-    ) {
-      Some(data.discomfortLevelMeans(2))
-    } else if (entries.exists(_.effect().value().getCategory == MobEffectCategory.HARMFUL)) {
-      Some(data.discomfortLevelMeans(1))
-    } else {
-      None
     }
   }
 

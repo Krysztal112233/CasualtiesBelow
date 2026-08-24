@@ -27,7 +27,9 @@ import com.google.gson.JsonPrimitive
 
 /** Whether an override entry (explicit items or one tag) targets [stack]. */
 private def targets(stack: ItemStack, items: List[String], tag: Option[String]): Boolean = {
-  items.contains(BuiltInRegistries.ITEM.getKey(stack.getItem).toString) ||
+  Option(BuiltInRegistries.ITEM.getKey(stack.getItem)).exists(key =>
+    items.contains(key.toString)
+  ) ||
   tag.exists(t => stack.is(TagKey.create(Registries.ITEM, Identifier.parse(t))))
 }
 
