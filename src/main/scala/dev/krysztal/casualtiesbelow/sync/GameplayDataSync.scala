@@ -46,7 +46,7 @@ object GameplayDataSync {
     )
 
   /** The running server, tracked so the (thread-foreign) config reload callback can broadcast. */
-  @volatile private var server: MinecraftServer = _
+  @volatile private var server: Option[MinecraftServer] = None
 
   /** Common-side registration (payload type + send hooks). */
   def register(): Unit = {
@@ -55,15 +55,15 @@ object GameplayDataSync {
     ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register { (player, _) =>
       send(player)
     }
-    ServerLifecycleEvents.SERVER_STARTED.register(s => server = s)
-    ServerLifecycleEvents.SERVER_STOPPED.register(_ => server = null)
+    ServerLifecycleEvents.SERVER_STARTED.register(s => server = Some(s))
+    ServerLifecycleEvents.SERVER_STOPPED.register(_ => server = None)
 
     // Forge Config API Port hot-reloads the config file in place; rebroadcast so online clients
     // do not keep predicting against stale numbers. The callback runs on the file watcher
     // thread, so hop onto the server thread before capturing or sending.
     ModConfigEvents.reloading(CasualtiesBelow.ModId).register { _ =>
-      Option(server).foreach { s =>
-        s.execute(() => s.getPlayerList.getPlayers.forEach(send(_)))
+      server.foreach { current =>
+        current.execute(() => current.getPlayerList.getPlayers.forEach(send(_)))
       }
     }
   }

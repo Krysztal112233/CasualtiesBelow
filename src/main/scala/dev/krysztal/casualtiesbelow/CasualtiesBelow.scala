@@ -15,11 +15,12 @@ import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 object CasualtiesBelow extends ModInitializer {
   val ModId = "casualtiesbelow"
-  val Logger = LoggerFactory.getLogger(ModId)
+  val Logger: Logger = LoggerFactory.getLogger(ModId)
 
   override def onInitialize(): Unit = {
     CasualtiesBelowConfig.register()

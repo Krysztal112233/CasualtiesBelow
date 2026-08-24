@@ -98,6 +98,9 @@ tasks.withType<ScalaCompile>().configureEach {
     options.release = 25
     // Enforce the project's brace style: reject significant-indentation syntax.
     scalaCompileOptions.additionalParameters.add("-no-indent")
+    // Explicit nulls: Java members annotated @Nullable (JSpecify) become hard T | Null and
+    // must be null-checked before dereference; unannotated Java types stay flexible.
+    scalaCompileOptions.additionalParameters.add("-Yexplicit-nulls")
 }
 
 spotless {
