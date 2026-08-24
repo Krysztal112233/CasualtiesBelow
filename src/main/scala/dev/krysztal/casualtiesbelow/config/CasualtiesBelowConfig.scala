@@ -5,6 +5,7 @@ import java.lang.Double
 import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.discomfort.DiscomfortDistribution as Distribution
 import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
@@ -309,12 +310,13 @@ object CasualtiesBelowConfig {
   val MaxDiscomfort: ConfigValue[Double] = Builder
     .comment("Maximum discomfort value.")
     .defineInRange("maxValue", 100.0, 1.0, 10000.0, classOf[Double])
-  val DiscomfortDistribution: ConfigValue[String] = Builder
+  val DiscomfortDistribution: ModConfigSpec.EnumValue[Distribution] = Builder
     .comment(
-      "Sampling distribution for each bite: \"gaussian\" (normal, tails possible) or",
-      "\"uniform\" (even across the interval). Unknown values fall back to gaussian."
+      "Sampling distribution for each bite.",
+      "Gaussian: normal distribution with possible tails.",
+      "Uniform: even distribution across the configured interval."
     )
-    .define("distribution", "gaussian")
+    .defineEnum("distribution", Distribution.Gaussian)
   val DiscomfortSpreadFraction: ConfigValue[Double] = Builder
     .comment(
       "Spread of one dose as a fraction of its tier mean (gaussian standard deviation or",

@@ -20,6 +20,12 @@ import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
+/** Probability distribution used when sampling a food's discomfort dose around its mean. */
+enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
+  case Gaussian
+  case Uniform
+}
+
 /** Food discomfort: how revolting what you just ate was. Which food is how revolting is content —
   * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Items]] and up) with
   * per-item [[DiscomfortOverrides]] on top; what a tier *costs* and how the value floats, decays
@@ -189,8 +195,10 @@ object Discomfort {
     val spread = mean * CasualtiesBelowConfig.DiscomfortSpreadFraction.get()
     val sampled =
       CasualtiesBelowConfig.DiscomfortDistribution.get() match {
-        case "uniform" => mean + (random.nextDouble() * 2.0 - 1.0) * spread
-        case _         => mean + random.nextGaussian() * spread
+        case DiscomfortDistribution.Uniform =>
+          mean + (random.nextDouble() * 2.0 - 1.0) * spread
+        case DiscomfortDistribution.Gaussian =>
+          mean + random.nextGaussian() * spread
       }
     sampled.max(0.0)
   }
