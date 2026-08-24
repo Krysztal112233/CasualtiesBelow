@@ -5,18 +5,29 @@
   "passes": [
     {
       "vertex_shader": "minecraft:core/screenquad",
-      "fragment_shader": "casualtiesbelow:post/consciousness_vignette",
+      "fragment_shader": "casualtiesbelow:post/vitals",
       "inputs": [
         {
           "sampler_name": "In",
-          "target": "minecraft:main"
+          "target": "minecraft:main",
+          "bilinear": true
         }
       ],
       "output": "swap",
       "uniforms": {
-        "ConsciousnessConfig": [
+        "VitalsConfig": [
           {
-            "name": "Strength",
+            "name": "VignetteStrength",
+            "type": "float",
+            "value": 0.0
+          },
+          {
+            "name": "HazeStrength",
+            "type": "float",
+            "value": 0.0
+          },
+          {
+            "name": "BlurStrength",
             "type": "float",
             "value": 0.0
           }

@@ -11,6 +11,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainCalc
+import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
   * panel: an always-visible vitals section (consciousness, immune health) on top and a limb section
@@ -83,6 +84,7 @@ object MedicalPanel {
 
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     val body = CasualtiesBelowComponents.Body.get(player)
+    val gameplayData = GameplayDataSnapshot.current
     graphics.text(
       font,
       Component.translatable("screen.casualtiesbelow.body_status.section.vitals"),
@@ -152,9 +154,9 @@ object MedicalPanel {
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.discomfort"),
       Component.literal(
-        (vitals.discomfort / CasualtiesBelowConfig.MaxDiscomfort.get() * 100.0).toInt.toString
+        (vitals.discomfort / gameplayData.maxDiscomfort * 100.0).toInt.toString
       ),
-      vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()
+      vitals.discomfort >= gameplayData.nauseaThreshold
     )
 
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",

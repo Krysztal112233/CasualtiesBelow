@@ -6,7 +6,7 @@ import com.mojang.blaze3d.resource.CrossFrameResourcePool
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.renderer.GameRenderer
 
-import dev.krysztal.casualtiesbelow.ui.ConsciousnessPostEffect
+import dev.krysztal.casualtiesbelow.ui.VitalsPostEffect
 
 import org.spongepowered.asm.mixin.Final
 import org.spongepowered.asm.mixin.Mixin
@@ -36,12 +36,12 @@ abstract class GameRendererMixin {
     ),
     remap = false
   )
-  private def casualtiesbelow$renderConsciousnessEffect(
+  private def casualtiesbelow$renderVitalsEffect(
       deltaTracker: DeltaTracker,
       advanceGameTime: Boolean,
       ci: CallbackInfo
   ): Unit = {
-    ConsciousnessPostEffect.render(
+    VitalsPostEffect.render(
       this.asInstanceOf[GameRenderer],
       deltaTracker,
       resourcePool

@@ -42,10 +42,16 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessBlackoutThreshold", 15.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
-      "Strongest edge-darkening opacity (0.0-1.0), reached at the blackout threshold.",
+      "Strongest edge-darkening strength (0.0-1.0), reached at the blackout threshold.",
       "The center haze stays weaker; 0 disables the effect."
     )
     .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double])
+  val ConsciousnessMaxBlurStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Strongest zoom blur and double-vision strength (0.0-1.0), reached at zero consciousness.",
+      "The effect begins below consciousnessBlackoutThreshold; 0 disables it."
+    )
+    .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double])
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
@@ -336,6 +342,12 @@ object CasualtiesBelowConfig {
   val DiscomfortNauseaThreshold: ConfigValue[Double] = Builder
     .comment("Discomfort at or above which the nausea screen effect is kept up.")
     .defineInRange("nauseaThreshold", 30.0, 0.0, 10000.0, classOf[Double])
+  val DiscomfortMaxVignetteOpacity: ConfigValue[Double] = Builder
+    .comment(
+      "Strongest nausea edge-darkening strength (0.0-1.0), reached at maximum discomfort.",
+      "This effect does not add low-consciousness blur or pulsing; 0 disables it."
+    )
+    .defineInRange("maxVignetteOpacity", 0.35, 0.0, 1.0, classOf[Double])
   val DiscomfortRefusalThreshold: ConfigValue[Double] = Builder
     .comment(
       "Discomfort at or above which discomfort-bearing food can no longer be started —",

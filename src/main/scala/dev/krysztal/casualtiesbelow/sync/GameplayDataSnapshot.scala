@@ -69,6 +69,7 @@ final case class GameplayDataSnapshot(
     armorSkinFormula: String,
     armorMuscleFormula: String,
     armorOverrides: List[ArmorOverrideData],
+    maxDiscomfort: Double,
     discomfortLevelMeans: List[Double],
     nauseaThreshold: Double,
     refusalThreshold: Double,
@@ -139,6 +140,7 @@ final case class GameplayDataSnapshot(
       ),
       "discomfort" -> Some(
         jsonObject(
+          "maxValue" -> Some(JsonPrimitive(maxDiscomfort)),
           "levelMeans" -> Some(jsonArray(discomfortLevelMeans)(JsonPrimitive(_))),
           "nausea" -> Some(JsonPrimitive(nauseaThreshold)),
           "refusal" -> Some(JsonPrimitive(refusalThreshold)),
@@ -220,6 +222,7 @@ object GameplayDataSnapshot {
           e.muscleSource
         )
       },
+      maxDiscomfort = config.MaxDiscomfort.get(),
       discomfortLevelMeans = List(
         config.DiscomfortLevel1Mean.get(),
         config.DiscomfortLevel2Mean.get(),
@@ -316,6 +319,7 @@ object GameplayDataSnapshot {
       armorSkinFormula = armor.get("skinFormula").getAsString,
       armorMuscleFormula = armor.get("muscleFormula").getAsString,
       armorOverrides = armorOverrides,
+      maxDiscomfort = discomfort.get("maxValue").getAsDouble,
       discomfortLevelMeans =
         discomfort.getAsJsonArray("levelMeans").asScala.map(_.getAsDouble).toList,
       nauseaThreshold = discomfort.get("nausea").getAsDouble,
