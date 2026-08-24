@@ -40,7 +40,7 @@ object CasualtiesBelowConfig {
       "Consciousness at or below which the dimming is strongest and slowly pulses.",
       "Must not exceed consciousnessDimThreshold to take full effect."
     )
-    .defineInRange("consciousnessBlackoutThreshold", 15.0, 0.0, 100.0, classOf[Double])
+    .defineInRange("consciousnessBlackoutThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
       "Strongest edge-darkening strength (0.0-1.0), reached at the blackout threshold.",
