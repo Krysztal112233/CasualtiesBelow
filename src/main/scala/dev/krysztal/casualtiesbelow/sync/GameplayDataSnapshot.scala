@@ -72,7 +72,11 @@ final case class GameplayDataSnapshot(
     discomfortLevelMeans: List[Double],
     nauseaThreshold: Double,
     refusalThreshold: Double,
-    vomitThreshold: Double,
+    vomitChanceThreshold: Double,
+    vomitMinChancePerTick: Double,
+    vomitMaxChancePerTick: Double,
+    vomitRelief: Double,
+    vomitReliefSpreadFraction: Double,
     discomfortOverrides: List[DiscomfortOverrideData],
     /** Wound profile coefficients by profile name: (skin, muscle, bleed, pain) per damage point. */
     wounds: Map[String, (Double, Double, Double, Double)]
@@ -138,7 +142,11 @@ final case class GameplayDataSnapshot(
           "levelMeans" -> Some(jsonArray(discomfortLevelMeans)(JsonPrimitive(_))),
           "nausea" -> Some(JsonPrimitive(nauseaThreshold)),
           "refusal" -> Some(JsonPrimitive(refusalThreshold)),
-          "vomit" -> Some(JsonPrimitive(vomitThreshold)),
+          "vomitChanceThreshold" -> Some(JsonPrimitive(vomitChanceThreshold)),
+          "vomitMinChancePerTick" -> Some(JsonPrimitive(vomitMinChancePerTick)),
+          "vomitMaxChancePerTick" -> Some(JsonPrimitive(vomitMaxChancePerTick)),
+          "vomitRelief" -> Some(JsonPrimitive(vomitRelief)),
+          "vomitReliefSpreadFraction" -> Some(JsonPrimitive(vomitReliefSpreadFraction)),
           "overrides" -> Some(jsonArray(discomfortOverrides)(discomfortOverrideJson))
         )
       ),
@@ -219,7 +227,14 @@ object GameplayDataSnapshot {
       ),
       nauseaThreshold = config.DiscomfortNauseaThreshold.get(),
       refusalThreshold = config.DiscomfortRefusalThreshold.get(),
-      vomitThreshold = config.DiscomfortVomitThreshold.get(),
+      vomitChanceThreshold = config.DiscomfortVomitChanceThreshold.get(),
+      vomitMinChancePerTick = config.DiscomfortVomitMinChancePerTick.get(),
+      vomitMaxChancePerTick = math.max(
+        config.DiscomfortVomitMaxChancePerTick.get(),
+        config.DiscomfortVomitMinChancePerTick.get()
+      ),
+      vomitRelief = config.DiscomfortVomitRelief.get(),
+      vomitReliefSpreadFraction = config.DiscomfortVomitReliefSpreadFraction.get(),
       discomfortOverrides = DiscomfortOverrides.allEntries.map { e =>
         DiscomfortOverrideData(
           e.items.map(_.toString).toList.sorted,
@@ -305,7 +320,11 @@ object GameplayDataSnapshot {
         discomfort.getAsJsonArray("levelMeans").asScala.map(_.getAsDouble).toList,
       nauseaThreshold = discomfort.get("nausea").getAsDouble,
       refusalThreshold = discomfort.get("refusal").getAsDouble,
-      vomitThreshold = discomfort.get("vomit").getAsDouble,
+      vomitChanceThreshold = discomfort.get("vomitChanceThreshold").getAsDouble,
+      vomitMinChancePerTick = discomfort.get("vomitMinChancePerTick").getAsDouble,
+      vomitMaxChancePerTick = discomfort.get("vomitMaxChancePerTick").getAsDouble,
+      vomitRelief = discomfort.get("vomitRelief").getAsDouble,
+      vomitReliefSpreadFraction = discomfort.get("vomitReliefSpreadFraction").getAsDouble,
       discomfortOverrides = discomfortOverrides,
       wounds = wounds
     )

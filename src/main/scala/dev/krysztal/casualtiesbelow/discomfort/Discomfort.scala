@@ -32,8 +32,9 @@ import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
   *
   * Consequences are threshold-banded (all config): past the nausea threshold the screen distortion
   * effect is kept up; past the refusal threshold discomfort-bearing food can no longer be started
-  * ([[allowsEating]], enforced by the `Consumable` mixin); past the vomit threshold the player
-  * throws up: hunger and saturation penalties, and relief down to a fraction of the maximum.
+  * ([[allowsEating]], enforced by the `Consumable` mixin); above the vomiting threshold each tick
+  * rolls a chance that rises linearly with discomfort, and vomiting removes a fluctuating amount
+  * while applying hunger and saturation penalties.
   *
   * All reads go through a [[GameplayDataSnapshot]]: server logic captures the live config and
   * datapack state, client prediction and displays read the last synced snapshot — so the refusal
@@ -130,7 +131,7 @@ object Discomfort {
       player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NauseaRefreshTicks, 0))
     }
 
-    if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortVomitThreshold.get()) {
+    if (shouldVomit(vitals.discomfort, player.getRandom)) {
       vomit(player, vitals)
     }
   }
@@ -146,8 +147,7 @@ object Discomfort {
         .floatValue)
         .max(0.0f)
     )
-    vitals.discomfort = CasualtiesBelowConfig.MaxDiscomfort
-      .get() * CasualtiesBelowConfig.DiscomfortVomitResetFraction.get()
+    vitals.discomfort = (vitals.discomfort - sampleVomitRelief(player.getRandom)).max(0.0)
     player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, VomitNauseaTicks, 1))
     player
       .level()
@@ -160,6 +160,26 @@ object Discomfort {
         0.8f
       )
     CasualtiesBelowComponents.Vitals.sync(player)
+  }
+
+  private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {
+    val threshold = CasualtiesBelowConfig.DiscomfortVomitChanceThreshold.get()
+    if (discomfort <= threshold) return false
+
+    val maxDiscomfort = CasualtiesBelowConfig.MaxDiscomfort.get()
+    val progress =
+      if (maxDiscomfort <= threshold) 1.0
+      else ((discomfort - threshold) / (maxDiscomfort - threshold)).max(0.0).min(1.0)
+    val minChance = CasualtiesBelowConfig.DiscomfortVomitMinChancePerTick.get()
+    val maxChance =
+      math.max(CasualtiesBelowConfig.DiscomfortVomitMaxChancePerTick.get(), minChance)
+    random.nextDouble() < minChance + (maxChance - minChance) * progress
+  }
+
+  private def sampleVomitRelief(random: RandomSource): Double = {
+    val mean = CasualtiesBelowConfig.DiscomfortVomitRelief.get()
+    val spread = mean * CasualtiesBelowConfig.DiscomfortVomitReliefSpreadFraction.get()
+    mean + (random.nextDouble() * 2.0 - 1.0) * spread
   }
 
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles

@@ -341,9 +341,18 @@ object CasualtiesBelowConfig {
       "the character cannot bring themselves to swallow it."
     )
     .defineInRange("refusalThreshold", 60.0, 0.0, 10000.0, classOf[Double])
-  val DiscomfortVomitThreshold: ConfigValue[Double] = Builder
-    .comment("Discomfort at or above which the player vomits (see the vomit* penalties).")
-    .defineInRange("vomitThreshold", 90.0, 0.0, 10000.0, classOf[Double])
+  val DiscomfortVomitChanceThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Discomfort above which each server tick can trigger vomiting; the chance rises",
+      "linearly from vomitMinChancePerTick here to vomitMaxChancePerTick at maxValue."
+    )
+    .defineInRange("vomitChanceThreshold", 30.0, 0.0, 10000.0, classOf[Double])
+  val DiscomfortVomitMinChancePerTick: ConfigValue[Double] = Builder
+    .comment("Vomiting chance per tick immediately above vomitChanceThreshold (0.01 = 1%).")
+    .defineInRange("vomitMinChancePerTick", 0.01, 0.0, 1.0, classOf[Double])
+  val DiscomfortVomitMaxChancePerTick: ConfigValue[Double] = Builder
+    .comment("Vomiting chance per tick at maxValue (0.05 = 5%).")
+    .defineInRange("vomitMaxChancePerTick", 0.05, 0.0, 1.0, classOf[Double])
   val DiscomfortDecayLowPerSecond: ConfigValue[Double] = Builder
     .comment(
       "Discomfort decay per second while below the nausea threshold: mild queasiness is",
@@ -377,12 +386,15 @@ object CasualtiesBelowConfig {
   val DiscomfortVomitSaturationPenalty: ConfigValue[Double] = Builder
     .comment("Saturation lost when vomiting.")
     .defineInRange("vomitSaturationPenalty", 8.0, 0.0, 100.0, classOf[Double])
-  val DiscomfortVomitResetFraction: ConfigValue[Double] = Builder
+  val DiscomfortVomitRelief: ConfigValue[Double] = Builder
+    .comment("Mean discomfort removed by vomiting.")
+    .defineInRange("vomitRelief", 30.0, 0.0, 10000.0, classOf[Double])
+  val DiscomfortVomitReliefSpreadFraction: ConfigValue[Double] = Builder
     .comment(
-      "Discomfort after vomiting, as a fraction of maxValue: vomiting brings relief back",
-      "down to (below the nausea threshold by default)."
+      "Uniform random spread around vomitRelief as a fraction of that value",
+      "(0.05 = each vomit removes between 95% and 105% of the configured relief)."
     )
-    .defineInRange("vomitResetFraction", 0.3, 0.0, 1.0, classOf[Double])
+    .defineInRange("vomitReliefSpreadFraction", 0.05, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("immune")

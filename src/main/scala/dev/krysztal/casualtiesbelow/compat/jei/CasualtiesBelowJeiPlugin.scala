@@ -77,7 +77,14 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
           "jei.casualtiesbelow.discomfort.thresholds",
           fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
-          fmt(data.vomitThreshold)
+          fmt(data.vomitChanceThreshold)
+        ),
+        Component.translatable(
+          "jei.casualtiesbelow.discomfort.vomiting",
+          fmt(data.vomitMinChancePerTick * 100.0),
+          fmt(data.vomitMaxChancePerTick * 100.0),
+          fmt(data.vomitRelief),
+          fmt(data.vomitReliefSpreadFraction * 100.0)
         )
       )
     }
@@ -90,7 +97,14 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
           "jei.casualtiesbelow.discomfort.thresholds",
           fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
-          fmt(data.vomitThreshold)
+          fmt(data.vomitChanceThreshold)
+        ),
+        Component.translatable(
+          "jei.casualtiesbelow.discomfort.vomiting",
+          fmt(data.vomitMinChancePerTick * 100.0),
+          fmt(data.vomitMaxChancePerTick * 100.0),
+          fmt(data.vomitRelief),
+          fmt(data.vomitReliefSpreadFraction * 100.0)
         )
       )
     }
