@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.bleeding
 
-import net.minecraft.client.Minecraft
+import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.particles.DustParticleOptions
 import net.minecraft.util.Mth
 import net.minecraft.world.entity.player.Player
@@ -29,21 +29,19 @@ object BleedingParticles {
       Option(client.level).foreach { level =>
         level.players().forEach { player =>
           if (player.isAlive && !player.isSpectator) {
-            spawnForPlayer(client, player)
+            spawnForPlayer(level, player)
           }
         }
       }
     }
 
-  private def spawnForPlayer(client: Minecraft, player: Player): Unit = {
+  private def spawnForPlayer(level: ClientLevel, player: Player): Unit = {
     val body = CasualtiesBelowComponents.Body.get(player)
-    if (body == null) return
-
     val random = player.getRandom
     BodyPart.values.foreach { part =>
       val rate = body.stats(part).externalBleedingRate
       if (rate > 0.0 && random.nextFloat() < (rate * SpawnChancePerRate).min(1.0)) {
-        spawnDroplet(client, player, part)
+        spawnDroplet(level, player, part)
       }
     }
   }
@@ -52,7 +50,7 @@ object BleedingParticles {
     * plus a sideways offset for arms/legs, rotated into the body yaw so the particles track the
     * turned body rather than the view.
     */
-  private def spawnDroplet(client: Minecraft, player: Player, part: BodyPart): Unit = {
+  private def spawnDroplet(level: ClientLevel, player: Player, part: BodyPart): Unit = {
     val random = player.getRandom
     val (heightFraction, sideways) = part match {
       case BodyPart.Head     => (0.92, 0.0)
@@ -67,7 +65,7 @@ object BleedingParticles {
     val x = player.getX + sideways * Mth.cos(yawRad) + (random.nextDouble() - 0.5) * Spread
     val y = player.getY + player.getBbHeight * heightFraction
     val z = player.getZ + sideways * Mth.sin(yawRad) + (random.nextDouble() - 0.5) * Spread
-    client.level.addParticle(
+    level.addParticle(
       BloodDust,
       x,
       y,

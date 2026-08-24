@@ -28,9 +28,7 @@ object SkinBodyPartRenderer extends BodyPartRenderer {
   /** Semi-transparent white drawn over a hovered part (blit tint can only darken). */
   private val HoverOverlayColor = 0x40ffffff
 
-  override def isAvailable(player: LocalPlayer): Boolean = {
-    player != null && player.getSkin.body() != null
-  }
+  override def isAvailable(player: LocalPlayer): Boolean = true
 
   override def extractPart(
       graphics: GuiGraphicsExtractor,

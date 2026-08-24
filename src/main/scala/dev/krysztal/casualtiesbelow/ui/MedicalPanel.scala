@@ -81,8 +81,8 @@ object MedicalPanel {
     val contentX = x + Padding
     var y = Padding + 4
 
-    val vitals = Option(CasualtiesBelowComponents.Vitals.get(player))
-    val body = Option(CasualtiesBelowComponents.Body.get(player))
+    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    val body = CasualtiesBelowComponents.Body.get(player)
     graphics.text(
       font,
       Component.translatable("screen.casualtiesbelow.body_status.section.vitals"),
@@ -92,91 +92,85 @@ object MedicalPanel {
       true
     )
     y += SectionGap
-    vitals.foreach { v =>
-      y = extractStatBar(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.consciousness"),
-        v.consciousness,
-        ConsciousnessBadThreshold
-      )
+    y = extractStatBar(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.consciousness"),
+      vitals.consciousness,
+      ConsciousnessBadThreshold
+    )
 
-      // Immune health as a percentage of the configured maximum; red below the infection
-      // break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the immune system
-      // can no longer outpace infections.
-      val maxImmune = CasualtiesBelowConfig.MaxImmuneHealth.get()
+    // Immune health as a percentage of the configured maximum; red below the infection
+    // break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the immune system
+    // can no longer outpace infections.
+    val maxImmune = CasualtiesBelowConfig.MaxImmuneHealth.get()
 
-      y = extractStatBar(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
-        v.immuneHealth / maxImmune * 100.0,
-        CasualtiesBelowConfig.immuneBreakEven / maxImmune * 100.0
-      )
-      // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
-      // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
-      // room, not the configured base maximum.
-      val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(v.sepsis)
+    y = extractStatBar(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
+      vitals.immuneHealth / maxImmune * 100.0,
+      CasualtiesBelowConfig.immuneBreakEven / maxImmune * 100.0
+    )
+    // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
+    // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
+    // room, not the configured base maximum.
+    val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis)
 
-      y = extractStatBar(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
-        if (effectiveMaxBlood > 0.0) v.bloodVolume / effectiveMaxBlood * 100.0 else 0.0,
-        BloodBadThreshold
-      )
-      // Sepsis is a "higher is worse" meter, so it is a plain row like pain rather than a
-      // depletion bar; any sepsis at all is bad news.
-      y = extractStatRow(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.sepsis"),
-        Component.literal(
-          (v.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
-        ),
-        v.sepsis > 0.0
-      )
-      // Discomfort is another "higher is worse" meter (see Discomfort); red once nausea
-      // territory is reached.
-      y = extractStatRow(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.discomfort"),
-        Component.literal(
-          (v.discomfort / CasualtiesBelowConfig.MaxDiscomfort.get() * 100.0).toInt.toString
-        ),
-        v.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()
-      )
-    }
+    y = extractStatBar(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
+      if (effectiveMaxBlood > 0.0) vitals.bloodVolume / effectiveMaxBlood * 100.0 else 0.0,
+      BloodBadThreshold
+    )
+    // Sepsis is a "higher is worse" meter, so it is a plain row like pain rather than a
+    // depletion bar; any sepsis at all is bad news.
+    y = extractStatRow(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.sepsis"),
+      Component.literal(
+        (vitals.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
+      ),
+      vitals.sepsis > 0.0
+    )
+    // Discomfort is another "higher is worse" meter (see Discomfort); red once nausea
+    // territory is reached.
+    y = extractStatRow(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.discomfort"),
+      Component.literal(
+        (vitals.discomfort / CasualtiesBelowConfig.MaxDiscomfort.get() * 100.0).toInt.toString
+      ),
+      vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()
+    )
+
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",
     // so it is a plain row (red above the threshold) rather than a depletion bar.
-    body.foreach { b =>
-      val totalPain = PainCalc.total(b)
-      y = extractStatRow(
-        graphics,
-        font,
-        contentX,
-        y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.pain"),
-        Component.literal(totalPain.toInt.toString),
-        totalPain > PainBadThreshold
-      )
-    }
+    val totalPain = PainCalc.total(body)
+    y = extractStatRow(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.pain"),
+      Component.literal(totalPain.toInt.toString),
+      totalPain > PainBadThreshold
+    )
 
-    for {
-      part <- hoveredPart
-      body <- body
-    } {
+    hoveredPart.foreach { part =>
       val stats = body.stats(part)
       y += SectionGap / 2
       val partName = Component.translatable(s"bodypart.casualtiesbelow.${part.id}")

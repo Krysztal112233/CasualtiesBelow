@@ -44,9 +44,9 @@ object CasualtiesBelowClient extends ClientModInitializer {
 
     ClientTickEvents.END_CLIENT_TICK.register { client =>
       while (OpenScreenKey.consumeClick()) {
-        if (client.gui.screen() == null) {
-          client.gui.setScreen(BodyStatusScreen())
-        }
+        Option(client.player)
+          .filter(_ => Option(client.gui.screen()).isEmpty)
+          .foreach(_ => client.gui.setScreen(BodyStatusScreen()))
       }
     }
     BleedingParticles.register()

@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.ui
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
+import net.minecraft.client.player.LocalPlayer
 import net.minecraft.network.chat.Component
 import net.minecraft.util.Mth
 import net.minecraft.util.Util
@@ -124,15 +125,17 @@ class BodyStatusScreen
     val bodyOriginX = x + (panelWidth - BodyStatusScreen.BodyWidth) / 2
     val bodyOriginY = y + BodyStatusScreen.BodyTopPadding
     val hovered = hoveredPart(bodyOriginX, bodyOriginY, mouseX, mouseY)
-    extractBody(graphics, bodyOriginX, bodyOriginY, hovered)
-    MedicalPanel.extract(
-      graphics,
-      this.font,
-      this.minecraft.player,
-      hovered.map(_.part),
-      easedProgress,
-      this.height
-    )
+    Option(this.minecraft.player).foreach { player =>
+      extractBody(graphics, player, bodyOriginX, bodyOriginY, hovered)
+      MedicalPanel.extract(
+        graphics,
+        this.font,
+        player,
+        hovered.map(_.part),
+        easedProgress,
+        this.height
+      )
+    }
   }
 
   /** The part under the mouse, hit-tested against the un-trembled base rects so the highlight and
@@ -158,24 +161,24 @@ class BodyStatusScreen
     */
   private def extractBody(
       graphics: GuiGraphicsExtractor,
+      player: LocalPlayer,
       originX: Int,
       originY: Int,
       hovered: Option[BodyStatusScreen.PartRect]
   ): Unit = {
     val scale = BodyStatusScreen.BodyScale
-    // ComponentKey.get is null when the provider has no such component; Option wraps that.
-    val body = Option(CasualtiesBelowComponents.Body.get(this.minecraft.player))
-    val renderer = BodyPartRenderer.forPlayer(this.minecraft.player)
+    val body = CasualtiesBelowComponents.Body.get(player)
+    val renderer = BodyPartRenderer.forPlayer(player)
 
     BodyStatusScreen.PartLayout.foreach { rect =>
-      val stats = body.map(_.stats(rect.part))
+      val stats = Some(body.stats(rect.part))
       val (offsetX, offsetY) = stats match {
         case Some(s) if s.pain > 0.0 => BodyStatusScreen.trembleOffset(rect.part, s.pain)
         case _                       => (0, 0)
       }
       renderer.extractPart(
         graphics,
-        this.minecraft.player,
+        player,
         rect.part,
         stats,
         hovered.contains(rect),

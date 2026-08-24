@@ -46,10 +46,7 @@ object BodyPartRenderer {
     * block fallback otherwise.
     */
   def forPlayer(player: LocalPlayer): BodyPartRenderer = {
-    if (
-      UseSkinRendering && player != null &&
-      SkinBodyPartRenderer.isAvailable(player)
-    ) {
+    if (UseSkinRendering && SkinBodyPartRenderer.isAvailable(player)) {
       SkinBodyPartRenderer
     } else {
       BlockBodyPartRenderer

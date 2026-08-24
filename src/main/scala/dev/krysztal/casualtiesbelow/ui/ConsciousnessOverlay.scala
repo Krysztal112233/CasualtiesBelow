@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.ui
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphicsExtractor
+import net.minecraft.client.player.LocalPlayer
 import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.util.ARGB
 import net.minecraft.util.Mth
@@ -15,6 +16,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Screen dimming at low consciousness: below the dim threshold the view closes in (a dark vignette
@@ -42,53 +44,66 @@ object ConsciousnessOverlay {
         graphics: GuiGraphicsExtractor,
         deltaTracker: DeltaTracker
     ): Unit = {
-      val player = Minecraft.getInstance().player
-      if (player == null || player.isSpectator || !player.isAlive) return
-      val vitals = CasualtiesBelowComponents.Vitals.get(player)
-      if (vitals == null) return
-
-      val maxOpacity = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat
-      if (maxOpacity <= 0.0f) return
-
-      val dim = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
-      val blackout = math.min(CasualtiesBelowConfig.ConsciousnessBlackoutThreshold.get(), dim)
-      val consciousness = vitals.consciousness
-      if (consciousness >= dim) return
-
-      // 0 at the dim threshold → 1 at the blackout threshold.
-      var strength = ((dim - consciousness) / (dim - blackout).max(1.0e-6)).toFloat
-      strength = Mth.clamp(strength, 0.0f, 1.0f)
-      if (consciousness <= blackout) {
-        val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
-        strength *= 0.85f + 0.15f * Mth.sin(time * PulseSpeed)
-      }
-
-      val alpha = maxOpacity * strength
-      val width = graphics.guiWidth()
-      val height = graphics.guiHeight()
-      graphics.fill(
-        0,
-        0,
-        width,
-        height,
-        ARGB.colorFromFloat(alpha * HazeFraction, 0.0f, 0.0f, 0.0f)
-      )
-      graphics.blit(
-        RenderPipelines.VIGNETTE,
-        VignetteTexture,
-        0,
-        0,
-        0.0f,
-        0.0f,
-        width,
-        height,
-        width,
-        height,
-        // The vignette pipeline blends dst * (1 - src.rgb) and ignores src alpha, so the
-        // darkening strength lives in the color's RGB channels, not its alpha.
-        ARGB.colorFromFloat(1.0f, alpha, alpha, alpha)
-      )
+      Option(Minecraft.getInstance().player)
+        .filter(player => !player.isSpectator && player.isAlive)
+        .foreach { player =>
+          extractForPlayer(
+            graphics,
+            deltaTracker,
+            player,
+            CasualtiesBelowComponents.Vitals.get(player)
+          )
+        }
     }
+  }
+
+  private def extractForPlayer(
+      graphics: GuiGraphicsExtractor,
+      deltaTracker: DeltaTracker,
+      player: LocalPlayer,
+      vitals: VitalsComponent
+  ): Unit = {
+    val maxOpacity = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat
+    if (maxOpacity <= 0.0f) return
+
+    val dim = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
+    val blackout = math.min(CasualtiesBelowConfig.ConsciousnessBlackoutThreshold.get(), dim)
+    val consciousness = vitals.consciousness
+    if (consciousness >= dim) return
+
+    // 0 at the dim threshold → 1 at the blackout threshold.
+    var strength = ((dim - consciousness) / (dim - blackout).max(1.0e-6)).toFloat
+    strength = Mth.clamp(strength, 0.0f, 1.0f)
+    if (consciousness <= blackout) {
+      val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
+      strength *= 0.85f + 0.15f * Mth.sin(time * PulseSpeed)
+    }
+
+    val alpha = maxOpacity * strength
+    val width = graphics.guiWidth()
+    val height = graphics.guiHeight()
+    graphics.fill(
+      0,
+      0,
+      width,
+      height,
+      ARGB.colorFromFloat(alpha * HazeFraction, 0.0f, 0.0f, 0.0f)
+    )
+    graphics.blit(
+      RenderPipelines.VIGNETTE,
+      VignetteTexture,
+      0,
+      0,
+      0.0f,
+      0.0f,
+      width,
+      height,
+      width,
+      height,
+      // The vignette pipeline blends dst * (1 - src.rgb) and ignores src alpha, so the
+      // darkening strength lives in the color's RGB channels, not its alpha.
+      ARGB.colorFromFloat(1.0f, alpha, alpha, alpha)
+    )
   }
 
   private val VignetteTexture =
