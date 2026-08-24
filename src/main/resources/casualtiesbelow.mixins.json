@@ -5,6 +5,9 @@
   "mixins": [
     "BiomeInvoker",
     "ConsumableMixin",
-    "LivingEntityMixin"
+    "GameRendererMixin",
+    "LivingEntityMixin",
+    "PostChainAccessor",
+    "PostPassAccessor"
   ]
 }
