@@ -13,7 +13,7 @@ import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 
-final class VitalsComponentImpl(val player: Player) extends VitalsComponent with VitalsMutation {
+final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
   private var consciousnessState: Double = VitalsComponent.MaxValue
   private var unconsciousState: Boolean = false
@@ -84,34 +84,6 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent with
       in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
     sepsis = in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0)
     discomfort = in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0)
-  }
-}
-
-private[casualtiesbelow] trait VitalsMutation {
-  private[casualtiesbelow] def applyConsciousnessState(
-      consciousness: Double,
-      unconscious: Boolean
-  ): Unit
-}
-
-/** Package-internal mutation facade. The public component API deliberately has no independent
-  * scalar or latch setter, and alternate internal implementations fail with a descriptive error
-  * instead of an unchecked concrete-class cast.
-  */
-private[casualtiesbelow] object VitalsMutation {
-  def applyConsciousnessState(
-      vitals: VitalsComponent,
-      consciousness: Double,
-      unconscious: Boolean
-  ): Unit = {
-    vitals match {
-      case mutable: VitalsMutation =>
-        mutable.applyConsciousnessState(consciousness, unconscious)
-      case _ =>
-        throw new IllegalArgumentException(
-          s"Unsupported internal vitals component implementation: ${vitals.getClass.getName}"
-        )
-    }
   }
 }
 

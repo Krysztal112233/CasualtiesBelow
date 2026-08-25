@@ -23,6 +23,14 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
   def consciousness: Double
   def unconscious: Boolean
 
+  /** Package-internal mutation hook used only by the centralized consciousness authority. The
+    * scalar and latch always mutate as one reconciled state.
+    */
+  private[casualtiesbelow] def applyConsciousnessState(
+      consciousness: Double,
+      unconscious: Boolean
+  ): Unit
+
   var bloodOxygen: Double
   var bloodVolume: Double
   var sepsis: Double

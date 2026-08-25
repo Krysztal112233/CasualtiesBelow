@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
-import dev.krysztal.casualtiesbelow.component.VitalsMutation
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 
@@ -97,7 +96,7 @@ object ConsciousnessProgression {
   ): Boolean = {
     val previousConsciousness = vitals.consciousness
     val previousUnconscious = vitals.unconscious
-    VitalsMutation.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
+    vitals.applyConsciousnessState(step.consciousness, step.unconscious)
 
     if (step.unconscious != previousUnconscious) {
       if (step.unconscious) Unconsciousness.onEntered(player)
