@@ -52,8 +52,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -77,8 +76,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -116,8 +114,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -142,8 +139,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -167,8 +163,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -191,8 +186,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -215,8 +209,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -235,8 +228,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -252,8 +244,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -269,8 +260,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -286,8 +276,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -303,8 +292,7 @@ abstract class ServerGamePacketListenerImplMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target =
-          "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V",
+        target = ServerGamePacketListenerImplMixin.MainThreadHandoffTarget,
         shift = At.Shift.AFTER
       )
     ),
@@ -365,4 +353,13 @@ abstract class ServerGamePacketListenerImplMixin {
   }
 
   private def restricted: Boolean = Unconsciousness.restricts(player)
+}
+
+object ServerGamePacketListenerImplMixin {
+
+  /** Single source for the vanilla server-thread handoff descriptor used by all synchronous packet
+    * gates. Keeping the long JVM signature in one place avoids partial updates or typos.
+    */
+  private final val MainThreadHandoffTarget =
+    "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/server/level/ServerLevel;)V"
 }
