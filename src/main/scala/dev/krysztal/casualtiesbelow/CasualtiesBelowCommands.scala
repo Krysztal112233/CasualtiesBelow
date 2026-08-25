@@ -29,6 +29,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 
 /** Debug/admin commands for inspecting and editing body and vitals state:
   *
@@ -56,7 +57,7 @@ object CasualtiesBelowCommands {
     "pain"
   )
 
-  private val VitalsStatNames =
+  private val VitalsEditableStatNames =
     List(
       "immune_health",
       "consciousness",
@@ -65,6 +66,7 @@ object CasualtiesBelowCommands {
       "sepsis",
       "discomfort"
     )
+  private val VitalsStatNames = VitalsEditableStatNames :+ "unconscious"
 
   def register(): Unit = {
     CommandRegistrationCallback.EVENT.register { (dispatcher, _, _) =>
@@ -115,7 +117,9 @@ object CasualtiesBelowCommands {
                 .`then`(
                   Commands
                     .argument("stat", StringArgumentType.word())
-                    .suggests((_, b) => SharedSuggestionProvider.suggest(VitalsStatNames.asJava, b))
+                    .suggests((_, b) =>
+                      SharedSuggestionProvider.suggest(VitalsEditableStatNames.asJava, b)
+                    )
                     .`then`(
                       Commands
                         .argument("value", DoubleArgumentType.doubleArg(0.0))
@@ -323,7 +327,7 @@ object CasualtiesBelowCommands {
 
   private def setVitals(ctx: CommandContext[CommandSourceStack]): Int = {
     val name = StringArgumentType.getString(ctx, "stat")
-    if (!VitalsStatNames.contains(name)) throw UnknownStat.create()
+    if (!VitalsEditableStatNames.contains(name)) throw UnknownStat.create()
 
     val value = DoubleArgumentType.getDouble(ctx, "value")
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
@@ -334,7 +338,7 @@ object CasualtiesBelowCommands {
         case "immune_health" =>
           vitals.immuneHealth = value.min(CasualtiesBelowConfig.MaxImmuneHealth.get())
         case "consciousness" =>
-          vitals.consciousness = value.min(VitalsComponent.MaxValue)
+          ConsciousnessProgression.applyAuthoritativeEdit(player, vitals, value)
         case "blood_oxygen" =>
           vitals.bloodOxygen = value.min(VitalsComponent.MaxBloodOxygen)
         case "blood_volume" =>
@@ -343,6 +347,9 @@ object CasualtiesBelowCommands {
           vitals.sepsis = value.min(CasualtiesBelowConfig.MaxSepsis.get())
         case "discomfort" =>
           vitals.discomfort = value.min(CasualtiesBelowConfig.MaxDiscomfort.get())
+      }
+      if (name != "consciousness") {
+        ConsciousnessProgression.reconcileAfterEdit(player, vitals)
       }
       CasualtiesBelowComponents.Vitals.sync(player)
       src.sendSuccess(
@@ -361,6 +368,7 @@ object CasualtiesBelowCommands {
     case "blood_volume"  => f"${vitals.bloodVolume}%.1f mL"
     case "sepsis"        => f"${vitals.sepsis}%.1f"
     case "discomfort"    => f"${vitals.discomfort}%.1f"
+    case "unconscious"   => vitals.unconscious.toString
     case _               => throw UnknownStat.create()
   }
 
