@@ -16,7 +16,13 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
   */
 trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
   var immuneHealth: Double
-  var consciousness: Double
+
+  /** Read-only outside the centralized consciousness authority; the scalar and latch always mutate
+    * as one reconciled state.
+    */
+  def consciousness: Double
+  def unconscious: Boolean
+
   var bloodOxygen: Double
   var bloodVolume: Double
   var sepsis: Double

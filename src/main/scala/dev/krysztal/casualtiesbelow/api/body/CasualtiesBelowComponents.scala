@@ -9,6 +9,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.component.BodyComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 
 import org.ladysnake.cca.api.v3.component.ComponentFactory
 import org.ladysnake.cca.api.v3.component.ComponentKey
@@ -36,7 +37,7 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
 
     val vitals = Vitals.get(player)
     vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
-    vitals.consciousness = VitalsComponent.MaxValue
+    ConsciousnessProgression.resetHealthy(vitals)
     vitals.bloodOxygen = VitalsComponent.MaxBloodOxygen
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
     vitals.sepsis = 0.0

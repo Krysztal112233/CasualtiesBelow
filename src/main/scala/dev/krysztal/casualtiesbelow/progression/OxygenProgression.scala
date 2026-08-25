@@ -5,34 +5,28 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
-/** Couples vanilla breath, custom blood volume, blood oxygen, and consciousness.
+/** Couples vanilla breath and custom blood volume into a stored blood-oxygen reserve.
   *
-  * Blood oxygen is a stored reserve on a 0–100 scale. Its instantaneous target is the product of
-  * the player's vanilla air fraction and current blood fraction: vanilla air mechanics therefore
-  * retain authority over breathing (including Respiration, Water Breathing, bubble columns, and
-  * surface recovery), while blood loss reduces how much oxygen the circulation can carry. A sudden
-  * loss of blood clamps the reserve to its new capacity immediately; ordinary deoxygenation and
-  * reoxygenation approach the target at configured rates.
+  * Its instantaneous target is the product of the player's vanilla air fraction and current blood
+  * fraction: vanilla air mechanics therefore retain authority over breathing (including
+  * Respiration, Water Breathing, bubble columns, and surface recovery), while blood loss reduces
+  * how much oxygen the circulation can carry. A sudden loss of blood clamps the reserve to its new
+  * capacity immediately; ordinary deoxygenation and reoxygenation approach the target at configured
+  * rates.
   *
-  * Hypoxia contributes a delta to consciousness rather than assigning consciousness from oxygen.
-  * This leaves room for future independent contributors such as pain shock, temperature, and head
-  * trauma. Below the hypoxia threshold the drain scales with the oxygen deficit; above a separate
-  * recovery threshold consciousness recovers, with the gap between them preventing threshold
-  * jitter.
+  * This object does not write consciousness. [[ConsciousnessProgression]] interprets the stored
+  * oxygen as a pressure, so future pain shock, head trauma, or temperature sources can compose
+  * without healthy oxygen overwriting them.
   */
 object OxygenProgression {
 
-  /** Advances blood oxygen and its contribution to consciousness by one server tick. Returns
-    * whether either stored value changed.
+  /** Advances blood oxygen by one server tick and returns whether it changed. Consciousness is
+    * advanced separately by [[ConsciousnessProgression]] from this reserve.
     */
   def tick(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
     val previousOxygen = vitals.bloodOxygen
-    val previousConsciousness = vitals.consciousness
-
     vitals.bloodOxygen = nextBloodOxygen(player, vitals)
-    vitals.consciousness = nextConsciousness(vitals)
-
-    vitals.bloodOxygen != previousOxygen || vitals.consciousness != previousConsciousness
+    vitals.bloodOxygen != previousOxygen
   }
 
   private def nextBloodOxygen(player: ServerPlayer, vitals: VitalsComponent): Double = {
@@ -53,28 +47,6 @@ object OxygenProgression {
       (current - CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get()).max(target)
     } else {
       (current + CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()).min(target)
-    }
-  }
-
-  private def nextConsciousness(vitals: VitalsComponent): Double = {
-    val current = vitals.consciousness.max(0.0).min(VitalsComponent.MaxValue)
-    val hypoxiaThreshold = CasualtiesBelowConfig.BloodOxygenHypoxiaThreshold.get()
-
-    if (hypoxiaThreshold > 0.0 && vitals.bloodOxygen < hypoxiaThreshold) {
-      val severity = 1.0 - vitals.bloodOxygen / hypoxiaThreshold
-      val drain = CasualtiesBelowConfig.HypoxiaConsciousnessDrainPerTick.get() * severity
-      (current - drain).max(0.0)
-    } else {
-      val recoveryThreshold = math.max(
-        hypoxiaThreshold,
-        CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get()
-      )
-      if (vitals.bloodOxygen < recoveryThreshold) {
-        current
-      } else {
-        (current + CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get())
-          .min(VitalsComponent.MaxValue)
-      }
     }
   }
 

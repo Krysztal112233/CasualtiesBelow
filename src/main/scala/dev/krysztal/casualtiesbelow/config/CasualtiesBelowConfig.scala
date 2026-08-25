@@ -91,6 +91,12 @@ object CasualtiesBelowConfig {
       "The default 0.0625 restores 1.25 consciousness per second."
     )
     .defineInRange("consciousnessRecoveryPerTick", 0.0625, 0.0, 100.0, classOf[Double])
+  val ConsciousnessWakeThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness at which an unconscious player can wake once no active cause blocks waking.",
+      "Values below it form a hysteresis band with the zero-consciousness knockout point."
+    )
+    .defineInRange("consciousnessWakeThreshold", 20.0, 0.0, 100.0, classOf[Double])
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
