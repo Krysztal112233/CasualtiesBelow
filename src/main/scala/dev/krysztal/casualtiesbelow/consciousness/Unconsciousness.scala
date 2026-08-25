@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.player.Input
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.EntityHitResult
@@ -15,6 +16,7 @@ import net.minecraft.world.phys.EntityHitResult
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents
+import net.fabricmc.fabric.api.event.player.PlayerPickItemEvents
 import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
@@ -66,6 +68,12 @@ object Unconsciousness {
       ) => interactionResult(player)
     )
     PlayerBlockBreakEvents.BEFORE.register((_, player, _, _, _) => !restricts(player))
+    PlayerPickItemEvents.BLOCK.register((player, _, _, _) =>
+      if (restricts(player)) ItemStack.EMPTY else null
+    )
+    PlayerPickItemEvents.ENTITY.register((player, _, _) =>
+      if (restricts(player)) ItemStack.EMPTY else null
+    )
   }
 
   /** Clears active voluntary actions exactly when unconsciousness begins. The player remains in a
@@ -75,6 +83,10 @@ object Unconsciousness {
     player.stopUsingItem()
     player.setSprinting(false)
     player.stopFallFlying()
+    if (player.getAbilities.flying) {
+      player.getAbilities.flying = false
+      player.onUpdateAbilities()
+    }
     player.setShiftKeyDown(false)
     player.setLastClientInput(Input.EMPTY)
     if (player.isSleeping) {

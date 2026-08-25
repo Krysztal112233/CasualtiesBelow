@@ -7,8 +7,10 @@ import net.minecraft.client.gui.screens.Screen
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 
 import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
+import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.UnconsciousOverlay
@@ -49,6 +51,9 @@ object CasualtiesBelowClient extends ClientModInitializer {
           .foreach(_ => client.gui.setScreen(BodyStatusScreen()))
       }
     }
+    // Fabric calls stopDestroyBlock when this rejects a held attack. That immediately clears an
+    // in-progress crack, emits the vanilla ABORT packet, and suppresses the residual hand swing.
+    ClientPreAttackCallback.EVENT.register((_, player, _) => Unconsciousness.restricts(player))
     BleedingParticles.register()
     GameplayDataSync.registerClient()
     UnconsciousOverlay.register()
