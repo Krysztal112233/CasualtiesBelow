@@ -13,7 +13,6 @@
     "ServerGamePacketListenerImplMixin"
   ],
   "client": [
-    "ClientInputMixin",
     "GameRendererMixin",
     "KeyboardInputMixin",
     "PostChainAccessor",
