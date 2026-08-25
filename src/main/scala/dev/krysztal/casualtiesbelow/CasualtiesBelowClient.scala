@@ -51,8 +51,12 @@ object CasualtiesBelowClient extends ClientModInitializer {
           .foreach(_ => client.gui.setScreen(BodyStatusScreen()))
       }
     }
-    // Fabric calls stopDestroyBlock when this rejects a held attack. That immediately clears an
-    // in-progress crack, emits the vanilla ABORT packet, and suppresses the residual hand swing.
+    // NOTE: Not redundant with PlayerMixin.blockActionRestricted. That gate only makes vanilla
+    // mining a no-op; startAttack still swings unconditionally after startDestroyBlock returns
+    // false, and a dig already in progress when the latch flips would keep cracking until
+    // "completion" and only then be rejected server-side. Fabric calls stopDestroyBlock when this
+    // rejects a held attack: it immediately clears the in-progress crack, emits the vanilla ABORT
+    // packet, and suppresses the residual hand swing.
     ClientPreAttackCallback.EVENT.register((_, player, _) => Unconsciousness.restricts(player))
     BleedingParticles.register()
     GameplayDataSync.registerClient()
