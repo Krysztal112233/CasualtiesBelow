@@ -22,7 +22,7 @@
             "value": 0.0
           },
           {
-            "name": "HazeStrength",
+            "name": "HazeOpacity",
             "type": "float",
             "value": 0.0
           },

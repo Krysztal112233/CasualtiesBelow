@@ -6,14 +6,13 @@ in vec2 texCoord;
 
 layout(std140) uniform VitalsConfig {
     float VignetteStrength;
-    float HazeStrength;
+    float HazeOpacity;
     float BlurStrength;
     float DesaturationStrength;
 };
 
 out vec4 fragColor;
 
-const float HazeFraction = 0.35;
 const float VignetteOpacityMultiplier = 2.0;
 const float ZoomDistance = 0.025;
 const float DoubleVisionBlend = 0.44;
@@ -45,7 +44,7 @@ void main() {
     color = mix(color, vec3(luminance), DesaturationStrength);
 
     float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
-    float hazeFactor = 1.0 - HazeStrength * HazeFraction;
+    float hazeFactor = 1.0 - clamp(HazeOpacity, 0.0, 1.0);
     float vignetteFactor = max(
         0.0,
         1.0 - VignetteStrength * VignetteOpacityMultiplier * vignette

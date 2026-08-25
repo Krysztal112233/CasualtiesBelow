@@ -29,8 +29,7 @@ abstract class GameRendererMixin {
     at = Array(
       new At(
         value = "INVOKE",
-        target = "Lnet/minecraft/util/profiling/ProfilerFiller;pop()V",
-        ordinal = 0,
+        target = "Lnet/minecraft/client/renderer/fog/FogRenderer;endFrame()V",
         shift = At.Shift.BEFORE
       )
     ),

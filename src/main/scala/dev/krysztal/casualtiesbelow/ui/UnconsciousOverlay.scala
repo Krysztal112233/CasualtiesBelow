@@ -32,6 +32,10 @@ object UnconsciousOverlay {
 
   private def extract(graphics: GuiGraphicsExtractor): Unit = {
     val minecraft = Minecraft.getInstance()
+    // addLast intentionally has no inherited vanilla HUD condition, so apply the documented F1
+    // behavior directly instead of depending on registry ordering or an implementation detail.
+    if (minecraft.gui.hud.isHidden()) return
+
     Option(minecraft.player)
       .filter(player => !player.isCreative && !player.isSpectator && player.isAlive)
       .map(CasualtiesBelowComponents.Vitals.get)

@@ -38,7 +38,6 @@ object VitalsPostEffect {
     new Std140SizeCalculator().putFloat().putFloat().putFloat().putFloat().get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
-  private val BlackoutHazeStrength = (1.0 / 0.35).toFloat
 
   private var cachedChain: Option[PostChain] = None
   private var cachedConfigBuffer: Option[GpuBuffer] = None
@@ -70,12 +69,10 @@ object VitalsPostEffect {
       .flatMap { player =>
         val vitals = CasualtiesBelowComponents.Vitals.get(player)
         if (vitals.unconscious) {
-          // Haze is a whole-scene multiplier in the existing std140 contract; 1 / HazeFraction
-          // reaches full black without changing the shader layout or covering the GUI.
           Some(
             EffectStrengths(
               vignette = 1.0f,
-              haze = BlackoutHazeStrength,
+              hazeOpacity = 1.0f,
               blur = 0.0f,
               desaturation = 0.0f
             )
@@ -130,14 +127,14 @@ object VitalsPostEffect {
               discomfortVignetteProgress
           val strengths = EffectStrengths(
             vignette = math.max(consciousnessVignette, discomfortVignette),
-            haze = consciousnessVignette,
+            hazeOpacity = consciousnessVignette,
             blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
               blurProgress * pulse,
             desaturation = desaturation
           )
           Option.when(
             strengths.vignette > 0.0f ||
-              strengths.haze > 0.0f ||
+              strengths.hazeOpacity > 0.0f ||
               strengths.blur > 0.0f ||
               strengths.desaturation > 0.0f
           )(strengths)
@@ -202,7 +199,7 @@ object VitalsPostEffect {
       Std140Builder
         .intoBuffer(view.data())
         .putFloat(strengths.vignette)
-        .putFloat(strengths.haze)
+        .putFloat(strengths.hazeOpacity)
         .putFloat(strengths.blur)
         .putFloat(strengths.desaturation)
     } finally {
@@ -226,7 +223,7 @@ object VitalsPostEffect {
 
   private final case class EffectStrengths(
       vignette: Float,
-      haze: Float,
+      hazeOpacity: Float,
       blur: Float,
       desaturation: Float
   )
