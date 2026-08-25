@@ -67,6 +67,7 @@ final case class DiscomfortOverrideData(
   */
 final case class GameplayDataSnapshot(
     maxBloodVolume: Double,
+    bloodOxygenHypoxiaThreshold: Double,
     armorSkinFormula: String,
     armorMuscleFormula: String,
     armorOverrides: List[ArmorOverrideData],
@@ -133,7 +134,10 @@ final case class GameplayDataSnapshot(
 
     jsonObject(
       "vitals" -> Some(
-        jsonObject("maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)))
+        jsonObject(
+          "maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)),
+          "bloodOxygenHypoxiaThreshold" -> Some(JsonPrimitive(bloodOxygenHypoxiaThreshold))
+        )
       ),
       "armor" -> Some(
         jsonObject(
@@ -217,6 +221,7 @@ object GameplayDataSnapshot {
     val config = CasualtiesBelowConfig
     GameplayDataSnapshot(
       maxBloodVolume = config.MaxBloodVolume.get(),
+      bloodOxygenHypoxiaThreshold = config.BloodOxygenHypoxiaThreshold.get(),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
       armorOverrides = ArmorProtectionOverrides.allEntries.map { e =>
@@ -323,6 +328,7 @@ object GameplayDataSnapshot {
 
     GameplayDataSnapshot(
       maxBloodVolume = vitals.get("maxBloodVolume").getAsDouble,
+      bloodOxygenHypoxiaThreshold = vitals.get("bloodOxygenHypoxiaThreshold").getAsDouble,
       armorSkinFormula = armor.get("skinFormula").getAsString,
       armorMuscleFormula = armor.get("muscleFormula").getAsString,
       armorOverrides = armorOverrides,

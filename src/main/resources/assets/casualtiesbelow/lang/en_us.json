@@ -4,6 +4,7 @@
   "screen.casualtiesbelow.body_status": "Body Status",
   "screen.casualtiesbelow.body_status.section.vitals": "Vitals",
   "screen.casualtiesbelow.body_status.stat.consciousness": "Consciousness",
+  "screen.casualtiesbelow.body_status.stat.blood_oxygen": "Blood Oxygen",
   "screen.casualtiesbelow.body_status.stat.immune_health": "Immune Health",
   "screen.casualtiesbelow.body_status.stat.blood": "Blood",
   "screen.casualtiesbelow.body_status.stat.sepsis": "Sepsis",

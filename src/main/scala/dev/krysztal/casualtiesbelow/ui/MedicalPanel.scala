@@ -14,10 +14,10 @@ import dev.krysztal.casualtiesbelow.pain.PainCalc
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
-  * panel: an always-visible vitals section (consciousness, immune health) on top and a limb section
-  * below it that only appears while a body part is selected. Muscle/skin/vitals stats are drawn as
-  * label + bar; pain and the condition rows (fracture, dislocation, infection, bleeding) are plain
-  * label + value rows. Values in a bad condition are drawn red.
+  * panel: an always-visible vitals section (consciousness, blood oxygen, immune health) on top and
+  * a limb section below it that only appears while a body part is selected. Muscle/skin/vitals
+  * stats are drawn as label + bar; pain and the condition rows (fracture, dislocation, infection,
+  * bleeding) are plain label + value rows. Values in a bad condition are drawn red.
   *
   * Stateless and independent of any screen — reusable from screens or HUD overlays. All data is
   * read from the given player's synced components. [[MedicalPanel.Width]] tells callers how much
@@ -102,6 +102,15 @@ object MedicalPanel {
       Component.translatable("screen.casualtiesbelow.body_status.stat.consciousness"),
       vitals.consciousness,
       ConsciousnessBadThreshold
+    )
+    y = extractStatBar(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.blood_oxygen"),
+      vitals.bloodOxygen,
+      gameplayData.bloodOxygenHypoxiaThreshold
     )
 
     // Immune health as a percentage of the configured maximum; red below the infection
