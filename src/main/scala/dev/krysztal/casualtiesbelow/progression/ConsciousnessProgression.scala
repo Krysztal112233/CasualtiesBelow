@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
-import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutation
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 
@@ -71,11 +71,11 @@ object ConsciousnessProgression {
     )
   }
 
-  /** Death-respawn and debug recovery reset. This is a lifecycle reset, not a wake transition, so
-    * no state-change event fires.
+  /** Explicit recovery reset. Unlike fresh death-respawn component construction, this is an
+    * authoritative state change and therefore emits the same wake event as physiological recovery.
     */
-  def resetHealthy(vitals: VitalsComponent): Unit = {
-    VitalsComponentImpl.applyConsciousnessState(vitals, VitalsComponent.MaxValue, false)
+  def resetHealthy(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
+    applyStep(player, vitals, ConsciousnessStep(VitalsComponent.MaxValue, false))
   }
 
   private def currentPressure(vitals: VitalsComponent): ConsciousnessPressure = {
@@ -97,7 +97,7 @@ object ConsciousnessProgression {
   ): Boolean = {
     val previousConsciousness = vitals.consciousness
     val previousUnconscious = vitals.unconscious
-    VitalsComponentImpl.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
+    VitalsMutation.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
 
     if (step.unconscious != previousUnconscious) {
       if (step.unconscious) Unconsciousness.onEntered(player)
@@ -149,7 +149,9 @@ object ConsciousnessProgression {
         true
       } else if (
         unconscious &&
-        bounded >= wakeThreshold.max(MinimumWakeThreshold).min(VitalsComponent.MaxValue) &&
+        bounded >= wakeThreshold
+          .max(VitalsComponent.MinimumWakeThreshold)
+          .min(VitalsComponent.MaxValue) &&
         !pressures.exists(_.wakeBlocked)
       ) {
         false
@@ -191,12 +193,30 @@ object ConsciousnessProgression {
     }
   }
 
-  def inferLoadedUnconscious(
-      saved: Option[Boolean],
-      consciousness: Double
-  ): Boolean = saved.getOrElse(consciousness <= 0.0)
-
-  private val MinimumWakeThreshold = 1.0e-6
+  /** Normalizes serialized or copied state without firing a transition event. A zero scalar always
+    * implies unconsciousness; a positive latched scalar remains valid inside the wake hysteresis
+    * band. NaN falls back conservatively according to the saved latch, while infinities clamp to
+    * the corresponding endpoint.
+    */
+  private[casualtiesbelow] def normalizeStoredState(
+      savedConsciousness: Double,
+      savedUnconscious: Option[Boolean]
+  ): (Double, Boolean) = {
+    val consciousness =
+      if (java.lang.Double.isFinite(savedConsciousness)) {
+        savedConsciousness.max(0.0).min(VitalsComponent.MaxValue)
+      } else if (savedConsciousness == Double.PositiveInfinity) {
+        VitalsComponent.MaxValue
+      } else if (savedConsciousness == Double.NegativeInfinity) {
+        0.0
+      } else if (savedUnconscious.contains(true)) {
+        0.0
+      } else {
+        VitalsComponent.MaxValue
+      }
+    val unconscious = savedUnconscious.getOrElse(consciousness <= 0.0) || consciousness <= 0.0
+    (consciousness, unconscious)
+  }
 }
 
 private[progression] final case class ConsciousnessPressure(

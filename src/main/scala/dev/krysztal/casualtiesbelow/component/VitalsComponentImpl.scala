@@ -4,6 +4,7 @@ import scala.jdk.OptionConverters.*
 
 import com.mojang.serialization.Codec
 import net.minecraft.core.HolderLookup
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
@@ -12,7 +13,7 @@ import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 
-final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
+final class VitalsComponentImpl(val player: Player) extends VitalsComponent with VitalsMutation {
   var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
   private var consciousnessState: Double = VitalsComponent.MaxValue
   private var unconsciousState: Boolean = false
@@ -26,7 +27,12 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
       registryLookup: HolderLookup.Provider
   ): Unit = {
     immuneHealth = other.immuneHealth
-    applyConsciousnessState(other.consciousness, other.unconscious)
+    val (normalizedConsciousness, normalizedUnconscious) =
+      ConsciousnessProgression.normalizeStoredState(
+        other.consciousness,
+        Some(other.unconscious)
+      )
+    applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = other.bloodOxygen
     bloodVolume = other.bloodVolume
     sepsis = other.sepsis
@@ -37,13 +43,15 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
 
   override def unconscious: Boolean = unconsciousState
 
-  private def applyConsciousnessState(
+  override private[casualtiesbelow] def applyConsciousnessState(
       consciousness: Double,
       unconscious: Boolean
   ): Unit = {
     consciousnessState = consciousness
     unconsciousState = unconscious
   }
+
+  override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
 
   override def writeData(out: ValueOutput): Unit = {
     out.putDouble(VitalsComponentImpl.ImmuneHealthKey, immuneHealth)
@@ -60,15 +68,14 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
       VitalsComponentImpl.ImmuneHealthKey,
       CasualtiesBelowConfig.MaxImmuneHealth.get()
     )
-    val loadedConsciousness =
-      in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue)
-    applyConsciousnessState(
-      loadedConsciousness,
-      ConsciousnessProgression.inferLoadedUnconscious(
-        in.read(VitalsComponentImpl.UnconsciousKey, Codec.BOOL).toScala.map(_.booleanValue),
-        loadedConsciousness
+    val savedUnconscious =
+      in.read(VitalsComponentImpl.UnconsciousKey, Codec.BOOL).toScala.map(_.booleanValue)
+    val (normalizedConsciousness, normalizedUnconscious) =
+      ConsciousnessProgression.normalizeStoredState(
+        in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue),
+        savedUnconscious
       )
-    )
+    applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = in.getDoubleOr(
       VitalsComponentImpl.BloodOxygenKey,
       VitalsComponent.MaxBloodOxygen
@@ -80,21 +87,35 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 }
 
-object VitalsComponentImpl {
-
-  /** Internal bridge used by [[ConsciousnessProgression]] so the public component API exposes no
-    * independent scalar or latch setter. The registered CCA factory always produces this concrete
-    * implementation.
-    */
+private[casualtiesbelow] trait VitalsMutation {
   private[casualtiesbelow] def applyConsciousnessState(
+      consciousness: Double,
+      unconscious: Boolean
+  ): Unit
+}
+
+/** Package-internal mutation facade. The public component API deliberately has no independent
+  * scalar or latch setter, and alternate internal implementations fail with a descriptive error
+  * instead of an unchecked concrete-class cast.
+  */
+private[casualtiesbelow] object VitalsMutation {
+  def applyConsciousnessState(
       vitals: VitalsComponent,
       consciousness: Double,
       unconscious: Boolean
   ): Unit = {
-    vitals
-      .asInstanceOf[VitalsComponentImpl]
-      .applyConsciousnessState(consciousness, unconscious)
+    vitals match {
+      case mutable: VitalsMutation =>
+        mutable.applyConsciousnessState(consciousness, unconscious)
+      case _ =>
+        throw new IllegalArgumentException(
+          s"Unsupported internal vitals component implementation: ${vitals.getClass.getName}"
+        )
+    }
   }
+}
+
+object VitalsComponentImpl {
 
   // NBT keys (serialization implementation detail; not part of the public API)
   private val ImmuneHealthKey = "immune_health"

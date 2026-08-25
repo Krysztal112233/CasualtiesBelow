@@ -19,8 +19,9 @@ final case class ConsciousnessStateChangeContext(
 
 /** Fired once after a player actually enters unconsciousness or wakes from it.
   *
-  * Server-side only. Ordinary component loading, copying, and death-respawn reset do not fire this
-  * event. Listeners must not mutate the player's vitals component re-entrantly.
+  * Server-side only. Ordinary component loading, lossless copying, and fresh death-respawn
+  * construction do not fire this event. Explicit recovery resets do fire when they wake the player.
+  * Listeners must not mutate the player's vitals component re-entrantly.
   */
 trait ConsciousnessStateChangeCallback {
   def onConsciousnessStateChange(context: ConsciousnessStateChangeContext): Unit

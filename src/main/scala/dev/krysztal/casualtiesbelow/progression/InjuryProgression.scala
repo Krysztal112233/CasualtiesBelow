@@ -4,7 +4,6 @@ import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.RandomSource
 
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
@@ -54,15 +53,9 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 object InjuryProgression {
 
   def register(): Unit = {
+    // CCA's LOSSLESS_ONLY strategy copies injuries during lossless reconstruction (for example an
+    // End return) and leaves ordinary death respawns at their fresh component defaults.
     ServerTickEvents.END_SERVER_TICK.register(tickServer)
-    // Components persist through respawn (RespawnCopyStrategy.ALWAYS_COPY) so dimension changes
-    // keep the player's condition; a death respawn (alive = false) is a fresh start and resets
-    // everything — dying of sepsis must not respawn you still infected.
-    ServerPlayerEvents.AFTER_RESPAWN.register { (_, newPlayer, alive) =>
-      if (!alive) {
-        CasualtiesBelowComponents.reset(newPlayer)
-      }
-    }
   }
 
   private def tickServer(server: MinecraftServer): Unit = {
@@ -134,18 +127,25 @@ object InjuryProgression {
       vitalsChanged = true
     }
 
-    // Read vanilla's already-updated air supply after the blood changes above: the two fractions
-    // determine oxygen availability. Consciousness progression then consumes that reserve and owns
-    // both the scalar and the recoverable unconscious latch.
-    vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
-    vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
-
+    // Zero blood is fatal before oxygen can drive consciousness to zero and latch the recoverable
+    // unconscious state. A player saved by another mechanic remains at zero blood and is handled
+    // fatally again next tick rather than entering the wakeable progression path.
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
         if (maxBlood <= 0.0) CasualtiesBelowDamageTypes.sepsis(player.level())
         else CasualtiesBelowDamageTypes.bloodLoss(player.level())
       player.hurtServer(player.level(), fatal, Float.MaxValue)
+      if (vitalsChanged) {
+        CasualtiesBelowComponents.Vitals.sync(player)
+      }
+      return
     }
+
+    // Read vanilla's already-updated air supply after the blood changes above: the two fractions
+    // determine oxygen availability. Consciousness progression then consumes that reserve and owns
+    // both the scalar and the recoverable unconscious latch.
+    vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
+    vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
 
     // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery
     // can stop the drain between two periodic syncs, and a skipped final value would only reach

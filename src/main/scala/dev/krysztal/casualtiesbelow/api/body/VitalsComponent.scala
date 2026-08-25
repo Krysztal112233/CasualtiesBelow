@@ -32,4 +32,5 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
 object VitalsComponent {
   val MaxValue: Double = 100.0
   val MaxBloodOxygen: Double = 100.0
+  val MinimumWakeThreshold: Double = 1.0e-6
 }

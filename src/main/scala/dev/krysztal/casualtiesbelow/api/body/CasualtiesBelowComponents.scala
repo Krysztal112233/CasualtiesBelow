@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.api.body
 import scala.reflect.ClassTag
 
 import net.minecraft.resources.Identifier
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
@@ -27,21 +28,21 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
   val Body: ComponentKey[BodyComponent] = ofComponent("body")
   val Vitals: ComponentKey[VitalsComponent] = ofComponent("vitals")
 
-  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no sepsis. Used by the
-    * debug `recover` command and by death respawns (dimension-change respawns keep their copied
-    * state and never pass through here).
+  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no sepsis. Explicitly
+    * waking an unconscious player follows the normal state-change event contract. Death respawns
+    * instead receive fresh component defaults through the CCA copy strategy.
     */
-  def reset(player: Player): Unit = {
+  def reset(player: ServerPlayer): Unit = {
     val body = Body.get(player)
     BodyPart.values.foreach { part => body.setStats(part, LimbStats()) }
 
     val vitals = Vitals.get(player)
     vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
-    ConsciousnessProgression.resetHealthy(vitals)
     vitals.bloodOxygen = VitalsComponent.MaxBloodOxygen
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
     vitals.sepsis = 0.0
     vitals.discomfort = 0.0
+    ConsciousnessProgression.resetHealthy(player, vitals)
 
     Body.sync(player)
     Vitals.sync(player)
@@ -53,12 +54,12 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
     registry.registerForPlayers(
       Body,
       (player: Player) => BodyComponentImpl(player),
-      RespawnCopyStrategy.ALWAYS_COPY
+      RespawnCopyStrategy.LOSSLESS_ONLY
     )
     registry.registerForPlayers(
       Vitals,
       (player: Player) => VitalsComponentImpl(player),
-      RespawnCopyStrategy.ALWAYS_COPY
+      RespawnCopyStrategy.LOSSLESS_ONLY
     )
   }
 }

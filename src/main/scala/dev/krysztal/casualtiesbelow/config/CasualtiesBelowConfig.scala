@@ -5,6 +5,7 @@ import java.lang.Double
 import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.discomfort.DiscomfortDistribution as Distribution
 import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
 
@@ -43,8 +44,8 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessBlackoutThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
-      "Strongest edge-darkening strength (0.0-1.0), reached at the blackout threshold.",
-      "The center haze stays weaker; 0 disables the effect."
+      "Strongest dimming opacity (0.0-1.0), reached at the blackout threshold.",
+      "Edge darkening is applied in addition to the full-screen haze; 0 disables the effect."
     )
     .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double])
   val ConsciousnessMaxBlurStrength: ConfigValue[Double] = Builder
@@ -94,9 +95,16 @@ object CasualtiesBelowConfig {
   val ConsciousnessWakeThreshold: ConfigValue[Double] = Builder
     .comment(
       "Consciousness at which an unconscious player can wake once no active cause blocks waking.",
-      "Values below it form a hysteresis band with the zero-consciousness knockout point."
+      "Values below it form a hysteresis band with the zero-consciousness knockout point.",
+      "The minimum is 0.000001 so waking always requires positive consciousness."
     )
-    .defineInRange("consciousnessWakeThreshold", 20.0, 0.0, 100.0, classOf[Double])
+    .defineInRange(
+      "consciousnessWakeThreshold",
+      20.0,
+      VitalsComponent.MinimumWakeThreshold,
+      VitalsComponent.MaxValue,
+      classOf[Double]
+    )
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
