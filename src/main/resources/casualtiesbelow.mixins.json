@@ -2,11 +2,19 @@
   "required": true,
   "package": "dev.krysztal.casualtiesbelow.mixin",
   "compatibilityLevel": "JAVA_25",
+  "injectors": {
+    "defaultRequire": 1
+  },
   "mixins": [
     "BiomeInvoker",
     "ConsumableMixin",
-    "GameRendererMixin",
     "LivingEntityMixin",
+    "PlayerMixin",
+    "ServerGamePacketListenerImplMixin"
+  ],
+  "client": [
+    "GameRendererMixin",
+    "KeyboardInputMixin",
     "PostChainAccessor",
     "PostPassAccessor"
   ]
