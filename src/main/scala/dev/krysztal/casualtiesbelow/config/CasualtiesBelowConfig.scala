@@ -86,8 +86,11 @@ object CasualtiesBelowConfig {
     )
     .defineInRange("consciousnessRecoveryOxygenThreshold", 75.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessRecoveryPerTick: ConfigValue[Double] = Builder
-    .comment("Consciousness restored per tick while blood oxygen is above its recovery threshold.")
-    .defineInRange("consciousnessRecoveryPerTick", 0.25, 0.0, 100.0, classOf[Double])
+    .comment(
+      "Consciousness restored per tick while blood oxygen is above its recovery threshold.",
+      "The default 0.0625 restores 1.25 consciousness per second."
+    )
+    .defineInRange("consciousnessRecoveryPerTick", 0.0625, 0.0, 100.0, classOf[Double])
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
