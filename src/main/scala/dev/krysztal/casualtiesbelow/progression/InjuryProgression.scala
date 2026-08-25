@@ -27,6 +27,8 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
   *     proportionally to the skin damage (see [[BleedingCalc.cap]]); reaching zero blood is fatal
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
+  *   - vanilla air supply and custom blood volume jointly drive blood oxygen; hypoxia lowers
+  *     consciousness, while adequate oxygen restores it (see [[OxygenProgression]])
   *   - wounds with meaningful skin damage can get infected; the immune system fights infections
   *     with its total capacity split across all infected limbs, against per-limb spread rates
   *     proportional to its complement; past a progress ramp an infection can also seed adjacent
@@ -130,6 +132,11 @@ object InjuryProgression {
       vitals.bloodVolume = (vitals.bloodVolume - totalBleeding).max(0.0)
       vitalsChanged = true
     }
+
+    // Read vanilla's already-updated air supply after the blood changes above: the two fractions
+    // jointly determine oxygen availability, which in turn contributes to consciousness.
+    vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
+
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
         if (maxBlood <= 0.0) CasualtiesBelowDamageTypes.sepsis(player.level())

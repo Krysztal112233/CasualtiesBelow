@@ -37,6 +37,7 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
     val vitals = Vitals.get(player)
     vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
     vitals.consciousness = VitalsComponent.MaxValue
+    vitals.bloodOxygen = VitalsComponent.MaxBloodOxygen
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
     vitals.sepsis = 0.0
     vitals.discomfort = 0.0

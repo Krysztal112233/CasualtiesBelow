@@ -53,6 +53,41 @@ object CasualtiesBelowConfig {
       "The effect begins below consciousnessBlackoutThreshold; 0 disables it."
     )
     .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double])
+  val BloodOxygenDepletionPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Blood oxygen lost per tick while its air-and-blood target is lower than the current value.",
+      "The target follows vanilla air supply, so Respiration and Water Breathing keep their",
+      "normal effects. At the default rate, a healthy player reaches 25 oxygen as the vanilla",
+      "15-second air reserve runs out."
+    )
+    .defineInRange("bloodOxygenDepletionPerTick", 0.25, 0.0, 100.0, classOf[Double])
+  val BloodOxygenRecoveryPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Blood oxygen restored per tick while its air-and-blood target is higher than the current",
+      "value. Recovery can never exceed the capacity allowed by the current blood volume."
+    )
+    .defineInRange("bloodOxygenRecoveryPerTick", 0.5, 0.0, 100.0, classOf[Double])
+  val BloodOxygenHypoxiaThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Blood oxygen below which hypoxia starts lowering consciousness.",
+      "The drain ramps linearly to its maximum at zero oxygen."
+    )
+    .defineInRange("bloodOxygenHypoxiaThreshold", 50.0, 0.0, 100.0, classOf[Double])
+  val HypoxiaConsciousnessDrainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum consciousness lost per tick from hypoxia, reached at zero blood oxygen."
+    )
+    .defineInRange("hypoxiaConsciousnessDrainPerTick", 0.5, 0.0, 100.0, classOf[Double])
+  val ConsciousnessRecoveryOxygenThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Blood oxygen at or above which consciousness can recover from hypoxia.",
+      "The effective value is never lower than bloodOxygenHypoxiaThreshold; values between the",
+      "two thresholds form a neutral band."
+    )
+    .defineInRange("consciousnessRecoveryOxygenThreshold", 75.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessRecoveryPerTick: ConfigValue[Double] = Builder
+    .comment("Consciousness restored per tick while blood oxygen is above its recovery threshold.")
+    .defineInRange("consciousnessRecoveryPerTick", 0.25, 0.0, 100.0, classOf[Double])
   val MaxBloodVolume: ConfigValue[Double] = Builder
     .comment(
       "Total blood volume of a player, in mL; bleeding drains it and reaching zero is fatal."
