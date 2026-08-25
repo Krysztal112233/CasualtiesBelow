@@ -9,6 +9,7 @@ import com.mojang.blaze3d.resource.CrossFrameResourcePool
 import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
+import net.minecraft.client.player.LocalPlayer
 import net.minecraft.client.renderer.GameRenderer
 import net.minecraft.client.renderer.LevelTargetBundle
 import net.minecraft.client.renderer.PostChain
@@ -19,6 +20,7 @@ import net.fabricmc.api.Environment
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.mixin.PostChainAccessor
 import dev.krysztal.casualtiesbelow.mixin.PostPassAccessor
@@ -69,77 +71,88 @@ object VitalsPostEffect {
       .flatMap { player =>
         val vitals = CasualtiesBelowComponents.Vitals.get(player)
         if (vitals.unconscious) {
-          Some(
-            EffectStrengths(
-              vignette = 1.0f,
-              hazeOpacity = 1.0f,
-              blur = 0.0f,
-              desaturation = 0.0f
-            )
-          )
+          Some(unconsciousStrengths)
         } else if (minecraft.gui.hud.isHidden()) {
           None
         } else {
-          val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
-          val blackoutThreshold =
-            math.min(CasualtiesBelowConfig.ConsciousnessBlackoutThreshold.get(), dimThreshold)
-          val pulse =
-            if (vitals.consciousness <= blackoutThreshold) {
-              val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
-              0.85f + 0.15f * Mth.sin(time * PulseSpeed)
-            } else {
-              1.0f
-            }
-          val consciousnessVignetteProgress = Mth.clamp(
-            ((dimThreshold - vitals.consciousness) / (dimThreshold - blackoutThreshold)
-              .max(1.0e-6)).toFloat,
-            0.0f,
-            1.0f
-          )
-          val blurProgress =
-            if (vitals.consciousness > blackoutThreshold) {
-              0.0f
-            } else if (blackoutThreshold <= 0.0) {
-              1.0f
-            } else {
-              Mth.clamp(
-                ((blackoutThreshold - vitals.consciousness) / blackoutThreshold).toFloat,
-                0.0f,
-                1.0f
-              )
-            }
-          val gameplayData = GameplayDataSnapshot.current
-          val discomfortVignetteProgress = progressAbove(
-            vitals.discomfort,
-            gameplayData.nauseaThreshold,
-            gameplayData.maxDiscomfort
-          )
-          val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
-          val fullDesaturation =
-            math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
-          val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
-          val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
-          val consciousnessVignette =
-            CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
-              consciousnessVignetteProgress * pulse
-          val discomfortVignette =
-            CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat *
-              discomfortVignetteProgress
-          val strengths = EffectStrengths(
-            vignette = math.max(consciousnessVignette, discomfortVignette),
-            hazeOpacity = consciousnessVignette,
-            blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
-              blurProgress * pulse,
-            desaturation = desaturation
-          )
-          Option.when(
-            strengths.vignette > 0.0f ||
-              strengths.hazeOpacity > 0.0f ||
-              strengths.blur > 0.0f ||
-              strengths.desaturation > 0.0f
-          )(strengths)
+          Some(awakeStrengths(player, vitals, deltaTracker)).filter(hasVisibleEffect)
         }
       }
+  }
+
+  private def unconsciousStrengths: EffectStrengths = {
+    EffectStrengths(
+      vignette = 1.0f,
+      hazeOpacity = 1.0f,
+      blur = 0.0f,
+      desaturation = 0.0f
+    )
+  }
+
+  private def awakeStrengths(
+      player: LocalPlayer,
+      vitals: VitalsComponent,
+      deltaTracker: DeltaTracker
+  ): EffectStrengths = {
+    val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
+    val blackoutThreshold =
+      math.min(CasualtiesBelowConfig.ConsciousnessBlackoutThreshold.get(), dimThreshold)
+    val pulse =
+      if (vitals.consciousness <= blackoutThreshold) {
+        val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
+        0.85f + 0.15f * Mth.sin(time * PulseSpeed)
+      } else {
+        1.0f
+      }
+    val consciousnessVignetteProgress = Mth.clamp(
+      ((dimThreshold - vitals.consciousness) / (dimThreshold - blackoutThreshold)
+        .max(1.0e-6)).toFloat,
+      0.0f,
+      1.0f
+    )
+    val blurProgress =
+      if (vitals.consciousness > blackoutThreshold) {
+        0.0f
+      } else if (blackoutThreshold <= 0.0) {
+        1.0f
+      } else {
+        Mth.clamp(
+          ((blackoutThreshold - vitals.consciousness) / blackoutThreshold).toFloat,
+          0.0f,
+          1.0f
+        )
+      }
+    val gameplayData = GameplayDataSnapshot.current
+    val discomfortVignetteProgress = progressAbove(
+      vitals.discomfort,
+      gameplayData.nauseaThreshold,
+      gameplayData.maxDiscomfort
+    )
+    val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
+    val fullDesaturation =
+      math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
+    val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
+    val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
+    val consciousnessVignette =
+      CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
+        consciousnessVignetteProgress * pulse
+    val discomfortVignette =
+      CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat *
+        discomfortVignetteProgress
+    EffectStrengths(
+      vignette = math.max(consciousnessVignette, discomfortVignette),
+      hazeOpacity = consciousnessVignette,
+      blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
+        blurProgress * pulse,
+      desaturation = desaturation
+    )
+  }
+
+  private def hasVisibleEffect(strengths: EffectStrengths): Boolean = {
+    strengths.vignette > 0.0f ||
+    strengths.hazeOpacity > 0.0f ||
+    strengths.blur > 0.0f ||
+    strengths.desaturation > 0.0f
   }
 
   private def configBuffer(chain: PostChain): Option[GpuBuffer] = {
