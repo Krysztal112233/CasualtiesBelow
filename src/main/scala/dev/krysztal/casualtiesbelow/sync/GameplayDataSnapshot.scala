@@ -68,6 +68,7 @@ final case class DiscomfortOverrideData(
 final case class GameplayDataSnapshot(
     maxBloodVolume: Double,
     bloodOxygenHypoxiaThreshold: Double,
+    unconsciousWakeThreshold: Double,
     armorSkinFormula: String,
     armorMuscleFormula: String,
     armorOverrides: List[ArmorOverrideData],
@@ -136,7 +137,8 @@ final case class GameplayDataSnapshot(
       "vitals" -> Some(
         jsonObject(
           "maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)),
-          "bloodOxygenHypoxiaThreshold" -> Some(JsonPrimitive(bloodOxygenHypoxiaThreshold))
+          "bloodOxygenHypoxiaThreshold" -> Some(JsonPrimitive(bloodOxygenHypoxiaThreshold)),
+          "unconsciousWakeThreshold" -> Some(JsonPrimitive(unconsciousWakeThreshold))
         )
       ),
       "armor" -> Some(
@@ -222,6 +224,7 @@ object GameplayDataSnapshot {
     GameplayDataSnapshot(
       maxBloodVolume = config.MaxBloodVolume.get(),
       bloodOxygenHypoxiaThreshold = config.BloodOxygenHypoxiaThreshold.get(),
+      unconsciousWakeThreshold = config.ConsciousnessWakeThreshold.get(),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
       armorOverrides = ArmorProtectionOverrides.allEntries.map { e =>
@@ -281,6 +284,9 @@ object GameplayDataSnapshot {
     def optString(obj: JsonObject, key: String): Option[String] = {
       Option.when(obj.has(key))(obj.get(key).getAsString)
     }
+    def optDouble(obj: JsonObject, key: String, fallback: => Double): Double = {
+      Option.when(obj.has(key))(obj.get(key).getAsDouble).getOrElse(fallback)
+    }
     def optItems(obj: JsonObject): List[String] = {
       if (obj.has("items")) obj.getAsJsonArray("items").asScala.map(_.getAsString).toList
       else List.empty
@@ -329,6 +335,11 @@ object GameplayDataSnapshot {
     GameplayDataSnapshot(
       maxBloodVolume = vitals.get("maxBloodVolume").getAsDouble,
       bloodOxygenHypoxiaThreshold = vitals.get("bloodOxygenHypoxiaThreshold").getAsDouble,
+      unconsciousWakeThreshold = optDouble(
+        vitals,
+        "unconsciousWakeThreshold",
+        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get()
+      ),
       armorSkinFormula = armor.get("skinFormula").getAsString,
       armorMuscleFormula = armor.get("muscleFormula").getAsString,
       armorOverrides = armorOverrides,

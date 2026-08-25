@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
+import dev.krysztal.casualtiesbelow.ui.UnconsciousOverlay
 
 import net.neoforged.neoforge.client.gui.ConfigurationScreen
 import org.lwjgl.glfw.GLFW
@@ -50,5 +51,6 @@ object CasualtiesBelowClient extends ClientModInitializer {
     }
     BleedingParticles.register()
     GameplayDataSync.registerClient()
+    UnconsciousOverlay.register()
   }
 }

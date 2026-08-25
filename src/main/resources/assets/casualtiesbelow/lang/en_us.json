@@ -12,6 +12,8 @@
   "death.attack.blood_loss": "%1$s bled out",
   "death.attack.sepsis": "%1$s succumbed to sepsis",
   "message.casualtiesbelow.discomfort.refused": "You can't bring yourself to swallow it",
+  "hud.casualtiesbelow.unconscious": "Unconscious",
+  "hud.casualtiesbelow.unconscious.progress": "Consciousness %1$s / %2$s",
   "screen.casualtiesbelow.body_status.stat.muscle_health": "Muscle Health",
   "screen.casualtiesbelow.body_status.stat.skin_integrity": "Skin Integrity",
   "screen.casualtiesbelow.body_status.stat.pain": "Pain",
