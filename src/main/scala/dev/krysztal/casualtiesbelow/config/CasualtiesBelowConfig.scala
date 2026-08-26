@@ -521,6 +521,13 @@ object CasualtiesBelowConfig {
       "disables fluctuation."
     )
     .defineInRange("zombieHitImmuneDrainJitter", 0.3, 0.0, 1.0, classOf[Double])
+  val PoisonImmuneDrainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Immune health lost per tick while vanilla Poison is active, before linear effect-level",
+      "scaling (Poison I = 1×, Poison II = 2×). This combines additively with diet; 0",
+      "disables poison immune drain."
+    )
+    .defineInRange("poisonImmuneDrainPerTick", 0.05, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
   Builder.push("movement")

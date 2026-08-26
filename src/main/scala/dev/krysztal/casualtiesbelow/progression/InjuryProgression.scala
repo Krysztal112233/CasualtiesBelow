@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.progression
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.RandomSource
+import net.minecraft.world.effect.MobEffects
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
@@ -37,7 +38,7 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
   *     limbs (see [[tickInfection]], [[tickContagion]]), and it scales skin regrowth (see
   *     [[tickSkinRegen]])
   *   - immune health is a lifestyle stat decoupled from infection: a full stomach restores it,
-  *     hunger drains it (see [[tickImmune]])
+  *     while hunger and active vanilla Poison drain it (see [[tickImmune]])
   *   - skin regrows only once the wound has clotted shut; muscle regrows regardless (slower)
   *   - pain decays linearly at the configured rate
   *
@@ -177,13 +178,14 @@ object InjuryProgression {
     true
   }
 
-  /** Immune health is a lifestyle stat driven by diet, deliberately decoupled from infection load:
-    * being well-fed restores it slowly and hunger drains it (thresholds mirror vanilla's
-    * regeneration/sprinting cutoffs). Returns whether the value changed.
+  /** Immune health is a lifestyle stat deliberately decoupled from infection load. Being well-fed
+    * restores it slowly and hunger drains it (thresholds mirror vanilla's regeneration/sprinting
+    * cutoffs). Active vanilla Poison adds a continuous drain scaled linearly by effect level,
+    * independently of whether a poison damage pulse lands. Returns whether the value changed.
     */
   private def tickImmune(vitals: VitalsComponent, player: ServerPlayer): Boolean = {
     val food = player.getFoodData.getFoodLevel
-    val delta: Double =
+    val foodDelta: Double =
       if (food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue) {
         CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
       } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
@@ -191,6 +193,11 @@ object InjuryProgression {
       } else {
         0.0
       }
+
+    val poisonDrain = Option(player.getEffect(MobEffects.POISON)).fold(0.0) { effect =>
+      CasualtiesBelowConfig.PoisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
+    }
+    val delta = foodDelta - poisonDrain
     if (delta == 0.0) return false
 
     val next =
