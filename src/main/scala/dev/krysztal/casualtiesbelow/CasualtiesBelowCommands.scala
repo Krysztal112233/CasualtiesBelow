@@ -29,6 +29,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 
 /** Debug/admin commands for inspecting and editing body and vitals state:
@@ -61,12 +62,13 @@ object CasualtiesBelowCommands {
     List(
       "immune_health",
       "consciousness",
+      "pain_shock_load",
       "blood_oxygen",
       "blood_volume",
       "sepsis",
       "discomfort"
     )
-  private val VitalsStatNames = VitalsEditableStatNames :+ "unconscious"
+  private val VitalsStatNames = VitalsEditableStatNames ++ List("pain_shock_stage", "unconscious")
 
   def register(): Unit = {
     CommandRegistrationCallback.EVENT.register { (dispatcher, _, _) =>
@@ -339,6 +341,8 @@ object CasualtiesBelowCommands {
           vitals.immuneHealth = value.min(CasualtiesBelowConfig.MaxImmuneHealth.get())
         case "consciousness" =>
           ConsciousnessProgression.applyAuthoritativeEdit(player, vitals, value)
+        case "pain_shock_load" =>
+          PainShock.applyAuthoritativeEdit(vitals, value)
         case "blood_oxygen" =>
           vitals.bloodOxygen = value.min(VitalsComponent.MaxBloodOxygen)
         case "blood_volume" =>
@@ -362,14 +366,16 @@ object CasualtiesBelowCommands {
   }
 
   private def vitalsValue(vitals: VitalsComponent, stat: String): String = stat match {
-    case "immune_health" => f"${vitals.immuneHealth}%.1f"
-    case "consciousness" => f"${vitals.consciousness}%.1f"
-    case "blood_oxygen"  => f"${vitals.bloodOxygen}%.1f"
-    case "blood_volume"  => f"${vitals.bloodVolume}%.1f mL"
-    case "sepsis"        => f"${vitals.sepsis}%.1f"
-    case "discomfort"    => f"${vitals.discomfort}%.1f"
-    case "unconscious"   => vitals.unconscious.toString
-    case _               => throw UnknownStat.create()
+    case "immune_health"    => f"${vitals.immuneHealth}%.1f"
+    case "consciousness"    => f"${vitals.consciousness}%.1f"
+    case "pain_shock_load"  => f"${vitals.painShockLoad}%.1f"
+    case "pain_shock_stage" => vitals.painShockStage.id
+    case "blood_oxygen"     => f"${vitals.bloodOxygen}%.1f"
+    case "blood_volume"     => f"${vitals.bloodVolume}%.1f mL"
+    case "sepsis"           => f"${vitals.sepsis}%.1f"
+    case "discomfort"       => f"${vitals.discomfort}%.1f"
+    case "unconscious"      => vitals.unconscious.toString
+    case _                  => throw UnknownStat.create()
   }
 
   private def getPart(ctx: CommandContext[CommandSourceStack]): BodyPart = {
