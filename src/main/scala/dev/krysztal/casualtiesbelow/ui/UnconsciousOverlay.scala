@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
@@ -91,7 +92,9 @@ object UnconsciousOverlay {
           }
         }
 
-        val entryThreshold = CasualtiesBelowConfig.ConsciousnessFloor.get()
+        val entryThreshold =
+          if (vitals.painShockStage == PainShockStage.Recovering) 0.0
+          else CasualtiesBelowConfig.ConsciousnessFloor.get().doubleValue
         val wakeThreshold = GameplayDataSnapshot.current.unconsciousWakeThreshold
         val progress = wakeProgress(vitals.consciousness, entryThreshold, wakeThreshold)
         drawRing(graphics, progress, minecraft.getWindow.getGuiScale)
