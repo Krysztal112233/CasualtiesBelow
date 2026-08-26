@@ -36,6 +36,18 @@ object CasualtiesBelowConfig {
       "Consciousness below which the view starts to dim (client-side display effect only)."
     )
     .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessFloor: ConfigValue[Double] = Builder
+    .comment(
+      "Minimum consciousness value; the scalar can never drop below this floor.",
+      "The unconscious latch engages at the floor; future mechanics may let it float."
+    )
+    .defineInRange("consciousnessFloor", 10.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessIncapacitationStartThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness below which blackout and movement slowdown ramp in linearly,",
+      "reaching full effect at consciousnessFloor. Must exceed consciousnessFloor."
+    )
+    .defineInRange("consciousnessIncapacitationStartThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
       "Strongest dimming opacity (0.0-1.0), reached at zero consciousness.",
@@ -90,7 +102,7 @@ object CasualtiesBelowConfig {
   val ConsciousnessWakeThreshold: ConfigValue[Double] = Builder
     .comment(
       "Consciousness at which an unconscious player can wake once no active cause blocks waking.",
-      "Values below it form a hysteresis band with the zero-consciousness knockout point.",
+      "Values below it form a hysteresis band with the consciousness-floor knockout point.",
       "The minimum is 0.000001 so waking always requires positive consciousness."
     )
     .defineInRange(

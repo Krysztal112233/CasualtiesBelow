@@ -22,6 +22,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.mixin.PostChainAccessor
 import dev.krysztal.casualtiesbelow.mixin.PostPassAccessor
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
@@ -30,8 +31,9 @@ import org.lwjgl.system.MemoryStack
 
 /** Full-screen vitals effects applied to the world before the GUI: low consciousness contributes
   * progressive darkening (edge vignette plus uniform haze) with a gentle pulse, zoom blur, and
-  * double vision along a single ramp; nausea contributes additional steady darkening; low absolute
-  * blood volume progressively removes color.
+  * double vision along a single ramp; approaching the consciousness floor fades the world to black;
+  * nausea contributes additional steady darkening; low absolute blood volume progressively removes
+  * color.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
@@ -118,6 +120,7 @@ object VitalsPostEffect {
       math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
     val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
     val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
+    val severityDarkness = Unconsciousness.severityOf(vitals.consciousness).toFloat
     val consciousnessDarkness =
       CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
         consciousnessProgress * pulse
@@ -125,7 +128,7 @@ object VitalsPostEffect {
       CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat *
         discomfortDarknessProgress
     EffectStrengths(
-      darkness = math.max(consciousnessDarkness, discomfortDarkness),
+      darkness = math.max(math.max(consciousnessDarkness, discomfortDarkness), severityDarkness),
       blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
         consciousnessProgress * pulse,
       desaturation = desaturation

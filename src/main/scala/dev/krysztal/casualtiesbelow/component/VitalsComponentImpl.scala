@@ -30,7 +30,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     val (normalizedConsciousness, normalizedUnconscious) =
       ConsciousnessProgression.normalizeStoredState(
         other.consciousness,
-        Some(other.unconscious)
+        Some(other.unconscious),
+        CasualtiesBelowConfig.ConsciousnessFloor.get()
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = other.bloodOxygen
@@ -73,7 +74,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     val (normalizedConsciousness, normalizedUnconscious) =
       ConsciousnessProgression.normalizeStoredState(
         in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue),
-        savedUnconscious
+        savedUnconscious,
+        CasualtiesBelowConfig.ConsciousnessFloor.get()
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = in.getDoubleOr(

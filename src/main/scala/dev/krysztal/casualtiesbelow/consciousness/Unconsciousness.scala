@@ -4,6 +4,8 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.entity.ai.attributes.AttributeModifier
+import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Input
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
@@ -17,7 +19,9 @@ import net.fabricmc.fabric.api.event.player.UseBlockCallback
 import net.fabricmc.fabric.api.event.player.UseEntityCallback
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Query and enforcement entry points for the server-authored unconscious latch.
   *
@@ -32,6 +36,55 @@ object Unconsciousness {
     !player.isCreative &&
     !player.isSpectator &&
     CasualtiesBelowComponents.Vitals.get(player).unconscious
+  }
+
+  private val SlownessModifierId = CasualtiesBelow.ofIdentifier("consciousness_slowness")
+
+  /** Incapacitation severity of a scalar in [0, 1]: 0 at and above the start threshold, ramping
+    * linearly to 1 at the consciousness floor.
+    */
+  def severityOf(consciousness: Double): Double = {
+    val floor = CasualtiesBelowConfig.ConsciousnessFloor.get()
+    val start = CasualtiesBelowConfig.ConsciousnessIncapacitationStartThreshold.get()
+    if (start <= floor) {
+      if (consciousness <= floor) 1.0 else 0.0
+    } else {
+      ((start - consciousness) / (start - floor)).max(0.0).min(1.0)
+    }
+  }
+
+  /** Severity for a player; a latched player is always fully incapacitated. */
+  def severity(player: Player): Double = {
+    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    if (vitals.unconscious) 1.0 else severityOf(vitals.consciousness)
+  }
+
+  /** Applies the gradual MOVEMENT_SPEED penalty each server tick after consciousness progression.
+    * The attribute syncs to the client, keeping movement prediction consistent; full immobility for
+    * a latched player is handled separately by PlayerMixin.isImmobile.
+    */
+  def tickMovementRestriction(player: ServerPlayer): Unit = {
+    val attribute = player.getAttribute(Attributes.MOVEMENT_SPEED)
+    if (attribute == null) {
+      return
+    }
+    val value =
+      if (player.isAlive && !player.isCreative && !player.isSpectator) {
+        severity(player)
+      } else {
+        0.0
+      }
+    if (value > 0.0) {
+      attribute.addOrUpdateTransientModifier(
+        new AttributeModifier(
+          SlownessModifierId,
+          -value,
+          AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+        )
+      )
+    } else {
+      attribute.removeModifier(SlownessModifierId)
+    }
   }
 
   def register(): Unit = {

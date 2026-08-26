@@ -29,7 +29,8 @@ object ConsciousnessProgression {
         vitals.unconscious,
         List(currentPressure(vitals)),
         CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get()
+        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+        CasualtiesBelowConfig.ConsciousnessFloor.get()
       )
     )
   }
@@ -49,7 +50,8 @@ object ConsciousnessProgression {
         consciousness,
         vitals.unconscious,
         List(currentPressure(vitals)),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get()
+        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+        CasualtiesBelowConfig.ConsciousnessFloor.get()
       )
     )
   }
@@ -65,7 +67,8 @@ object ConsciousnessProgression {
         vitals.consciousness,
         vitals.unconscious,
         List(currentPressure(vitals)),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get()
+        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+        CasualtiesBelowConfig.ConsciousnessFloor.get()
       )
     )
   }
@@ -120,31 +123,33 @@ object ConsciousnessProgression {
       unconscious: Boolean,
       pressures: List[ConsciousnessPressure],
       recoveryPerTick: Double,
-      wakeThreshold: Double
+      wakeThreshold: Double,
+      floor: Double
   ): ConsciousnessStep = {
-    val ceiling = pressureCeiling(pressures)
-    val bounded = current.max(0.0).min(ceiling)
+    val ceiling = pressureCeiling(pressures).max(floor)
+    val bounded = current.max(floor).min(ceiling)
     val totalLoss = pressures.map(_.lossPerTick.max(0.0)).sum
     val next =
       if (totalLoss > 0.0) {
-        (bounded - totalLoss).max(0.0)
+        (bounded - totalLoss).max(floor)
       } else if (pressures.exists(_.recoveryBlocked)) {
         bounded
       } else {
         (bounded + recoveryPerTick.max(0.0)).min(ceiling)
       }
-    reconcile(next, unconscious, pressures, wakeThreshold)
+    reconcile(next, unconscious, pressures, wakeThreshold, floor)
   }
 
   private[progression] def reconcile(
       consciousness: Double,
       unconscious: Boolean,
       pressures: List[ConsciousnessPressure],
-      wakeThreshold: Double
+      wakeThreshold: Double,
+      floor: Double
   ): ConsciousnessStep = {
-    val bounded = consciousness.max(0.0).min(pressureCeiling(pressures))
+    val bounded = consciousness.max(floor).min(pressureCeiling(pressures).max(floor))
     val nextUnconscious =
-      if (!unconscious && bounded <= 0.0) {
+      if (!unconscious && bounded <= floor) {
         true
       } else if (
         unconscious &&
@@ -192,28 +197,30 @@ object ConsciousnessProgression {
     }
   }
 
-  /** Normalizes serialized or copied state without firing a transition event. A zero scalar always
-    * implies unconsciousness; a positive latched scalar remains valid inside the wake hysteresis
-    * band. NaN falls back conservatively according to the saved latch, while infinities clamp to
-    * the corresponding endpoint.
+  /** Normalizes serialized or copied state without firing a transition event. A scalar at or below
+    * the floor always implies unconsciousness; a latched scalar above the floor remains valid
+    * inside the wake hysteresis band. NaN falls back conservatively according to the saved latch,
+    * while infinities clamp to the corresponding endpoint.
     */
   private[casualtiesbelow] def normalizeStoredState(
       savedConsciousness: Double,
-      savedUnconscious: Option[Boolean]
+      savedUnconscious: Option[Boolean],
+      floor: Double
   ): (Double, Boolean) = {
-    val consciousness =
+    val raw =
       if (java.lang.Double.isFinite(savedConsciousness)) {
-        savedConsciousness.max(0.0).min(VitalsComponent.MaxValue)
+        savedConsciousness
       } else if (savedConsciousness == Double.PositiveInfinity) {
         VitalsComponent.MaxValue
       } else if (savedConsciousness == Double.NegativeInfinity) {
-        0.0
+        floor
       } else if (savedUnconscious.contains(true)) {
-        0.0
+        floor
       } else {
         VitalsComponent.MaxValue
       }
-    val unconscious = savedUnconscious.getOrElse(consciousness <= 0.0) || consciousness <= 0.0
+    val consciousness = raw.max(floor).min(VitalsComponent.MaxValue)
+    val unconscious = savedUnconscious.getOrElse(raw <= floor) || raw <= floor
     (consciousness, unconscious)
   }
 }

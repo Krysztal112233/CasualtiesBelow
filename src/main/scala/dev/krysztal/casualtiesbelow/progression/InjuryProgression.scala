@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -127,8 +128,8 @@ object InjuryProgression {
       vitalsChanged = true
     }
 
-    // Zero blood is fatal before oxygen can drive consciousness to zero and latch the recoverable
-    // unconscious state. A player saved by another mechanic remains at zero blood and is handled
+    // Zero blood is fatal before oxygen can drive consciousness to its floor and latch the
+    // recoverable unconscious state. A player saved by another mechanic remains at zero blood and is handled
     // fatally again next tick rather than entering the wakeable progression path.
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
@@ -146,6 +147,7 @@ object InjuryProgression {
     // both the scalar and the recoverable unconscious latch.
     vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
+    Unconsciousness.tickMovementRestriction(player)
 
     // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery
     // can stop the drain between two periodic syncs, and a skipped final value would only reach
