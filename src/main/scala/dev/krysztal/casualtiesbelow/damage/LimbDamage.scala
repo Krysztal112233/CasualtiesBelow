@@ -169,7 +169,7 @@ object LimbDamage {
     *
     *   - worn boots cushion the whole impact (the `[fall]` cushion formula)
     *   - any damage: both legs lose muscle health and gain pain
-    *   - ≥ [[ScrapeThreshold]]: skin scrape and external bleeding capped by skin damage
+    *   - > [[ScrapeThreshold]]: skin scrape and external bleeding capped by skin damage
     *   - ≥ [[DislocationThreshold]]: one random leg is dislocated
     *   - ≥ [[FractureThreshold]]: one random leg fractures instead, with recovery time scaling with
     *     the damage; worn leggings blunt the impact for these condition rolls (the `[fall]`
@@ -247,7 +247,7 @@ object LimbDamage {
       (stats, effectiveDamage) =>
         stats.muscleHealth = (stats.muscleHealth - effectiveDamage * MuscleDamagePerPoint).max(0.0)
 
-        if (effectiveDamage >= ScrapeThreshold) {
+        if (effectiveDamage > ScrapeThreshold) {
           BleedingCalc.applyWound(
             stats,
             (effectiveDamage - ScrapeThreshold) * ScrapePerPoint,
@@ -306,11 +306,11 @@ object LimbDamage {
   /** Muscle health lost per half-heart of fall damage. */
   private val MuscleDamagePerPoint = 4.0
 
-  /** Fall damage (half-hearts) at which the landing also scrapes the skin. */
-  private val ScrapeThreshold = 6.0
+  /** Fall impact (half-hearts) absorbed before the landing starts scraping the skin. */
+  private val ScrapeThreshold = 4.0
 
   /** Skin integrity lost per half-heart above [[ScrapeThreshold]]. */
-  private val ScrapePerPoint = 2.0
+  private val ScrapePerPoint = 4.0
 
   /** Fall damage at which one random leg is dislocated. */
   private val DislocationThreshold = 8.0
