@@ -217,19 +217,23 @@ object InjuryProgression {
       fightShare: Double,
       random: RandomSource
   ): Boolean = {
-    val fractureHealed = tickFracture(stats)
-    val bleedingStopped = tickBleeding(stats)
-    val infectionTransition = tickInfection(stats, immuneHealth, fightShare, random)
-    tickInfectionEffects(stats)
-    tickSkinRegen(stats, immuneHealth)
-    tickMuscleRegen(stats)
-    tickPainDecay(stats)
-    tickWalkingStrain(stats, strainPainRate)
+
+    given givenStats: LimbStats = stats
+
+    val fractureHealed = tickFracture()
+    val bleedingStopped = tickBleeding()
+    val infectionTransition = tickInfection(immuneHealth, fightShare, random)
+    tickInfectionEffects()
+    tickSkinRegen(immuneHealth)
+    tickMuscleRegen()
+    tickPainDecay()
+    tickWalkingStrain(strainPainRate)
+
     fractureHealed || bleedingStopped || infectionTransition
   }
 
   /** Counts down the fracture recovery time; returns true when the fracture healed this tick. */
-  private def tickFracture(stats: LimbStats): Boolean = {
+  private def tickFracture()(using stats: LimbStats): Boolean = {
     if (stats.fractureRecoveryTicks.isEmpty) return false
 
     val remaining = stats.fractureRecoveryTicks.get
@@ -245,7 +249,7 @@ object InjuryProgression {
   /** Clots an actively bleeding wound linearly (rate capped by the skin damage); returns true when
     * the bleeding stopped this tick.
     */
-  private def tickBleeding(stats: LimbStats): Boolean = {
+  private def tickBleeding()(using stats: LimbStats): Boolean = {
     if (stats.externalBleedingRate <= 0.0) return false
 
     val capped = stats.externalBleedingRate.min(BleedingCalc.cap(stats.skinIntegrity))
@@ -265,11 +269,10 @@ object InjuryProgression {
     * (onset, cleared).
     */
   private def tickInfection(
-      stats: LimbStats,
       immuneHealth: Double,
       fightShare: Double,
       random: RandomSource
-  ): Boolean = {
+  )(using stats: LimbStats): Boolean = {
     val immuneFraction = immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
     stats.infectionProgress match {
       case Some(progress) =>
@@ -338,7 +341,7 @@ object InjuryProgression {
     * and persists until the infection recedes) and muscle decay (at full strength double the muscle
     * regrowth rate, so the limb loses muscle net).
     */
-  private def tickInfectionEffects(stats: LimbStats): Unit = {
+  private def tickInfectionEffects()(using stats: LimbStats): Unit = {
     if (stats.infectionProgress.isEmpty) return
 
     val start = CasualtiesBelowConfig.InfectionEffectStartProgress.get()
@@ -357,7 +360,7 @@ object InjuryProgression {
   /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the
     * configured minimum multiplier (zero immune) and the full base rate (full immune).
     */
-  private def tickSkinRegen(stats: LimbStats, immuneHealth: Double): Unit = {
+  private def tickSkinRegen(immuneHealth: Double)(using stats: LimbStats): Unit = {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= LimbStats.MaxValue) return
 
@@ -370,14 +373,14 @@ object InjuryProgression {
   }
 
   /** Muscle regrows regardless of bleeding (slower than skin). */
-  private def tickMuscleRegen(stats: LimbStats): Unit = {
+  private def tickMuscleRegen()(using stats: LimbStats): Unit = {
     if (stats.muscleHealth >= LimbStats.MaxValue) return
 
     stats.muscleHealth = (stats.muscleHealth + MuscleRegenPerTick).min(LimbStats.MaxValue)
   }
 
   /** Pain decays linearly at the configured rate. */
-  private def tickPainDecay(stats: LimbStats): Unit = {
+  private def tickPainDecay()(using stats: LimbStats): Unit = {
     if (stats.pain <= 0.0) return
 
     stats.pain = (stats.pain - CasualtiesBelowConfig.PainDecayPerTick.get()).max(0.0)
@@ -386,7 +389,7 @@ object InjuryProgression {
   /** Walking strain: pain scaled by the leg's tissue damage (muscle and skin), at the configured
     * rate for the leg's condition; a rate of zero means no strain applies this tick.
     */
-  private def tickWalkingStrain(stats: LimbStats, strainPainRate: Double): Unit = {
+  private def tickWalkingStrain(strainPainRate: Double)(using stats: LimbStats): Unit = {
     if (strainPainRate <= 0.0) return
 
     val tissueDamage =

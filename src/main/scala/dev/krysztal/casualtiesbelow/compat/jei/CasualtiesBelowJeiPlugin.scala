@@ -39,19 +39,19 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   override def getPluginUid: Identifier = CasualtiesBelow.ofIdentifier("jei_plugin")
 
   override def registerRecipes(registration: IRecipeRegistration): Unit = {
-    val data = GameplayDataSnapshot.current
-    registerDiscomfort(registration, data)
-    registerArmor(registration, data)
-    registerSharpWeapons(registration, data)
+    given data: GameplayDataSnapshot = GameplayDataSnapshot.current
+
+    registerDiscomfort(registration)
+    registerArmor(registration)
+    registerSharpWeapons(registration)
   }
 
   // --- food discomfort -----------------------------------------------------
 
   private def registerDiscomfort(
-      registration: IRecipeRegistration,
-      data: GameplayDataSnapshot
-  ): Unit = {
-    val candidates = collectDiscomfortCandidates(data)
+      registration: IRecipeRegistration
+  )(using data: GameplayDataSnapshot): Unit = {
+    val candidates = collectDiscomfortCandidates
     val stewOverridden =
       data.discomfortOverrides.exists(_.appliesTo(new ItemStack(Items.SUSPICIOUS_STEW)))
 
@@ -110,7 +110,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     }
   }
 
-  private def collectDiscomfortCandidates(data: GameplayDataSnapshot): Set[Item] = {
+  private def collectDiscomfortCandidates(using data: GameplayDataSnapshot): Set[Item] = {
     val items = scala.collection.mutable.LinkedHashSet.empty[Item]
     List(
       CasualtiesBelowTags.Discomfort1Items,
@@ -139,9 +139,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     List(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)
 
   private def registerArmor(
-      registration: IRecipeRegistration,
-      data: GameplayDataSnapshot
-  ): Unit = {
+      registration: IRecipeRegistration
+  )(using data: GameplayDataSnapshot): Unit = {
     val groups = scala.collection.mutable.LinkedHashMap
       .empty[(EquipmentSlot, Double, Double, Boolean), List[Item]]
     val covered = scala.collection.mutable.Set.empty[(Item, EquipmentSlot)]
@@ -156,7 +155,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
         val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
         if (armor > 0.0 || toughness > 0.0) {
-          factors(stack, armor, toughness, ovr, data).foreach { case (skin, muscle) =>
+          factors(stack, armor, toughness, ovr).foreach { case (skin, muscle) =>
             covered += (item -> slot)
             val key = (slot, skin, muscle, ovr.isDefined)
             groups(key) = groups.getOrElse(key, List.empty) :+ item
@@ -181,7 +180,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
                 .getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
               val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
               val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
-              factors(stack, armor, toughness, Some(ovr), data).foreach { case (skin, muscle) =>
+              factors(stack, armor, toughness, Some(ovr)).foreach { case (skin, muscle) =>
                 if (skin < 1.0 || muscle < 1.0) {
                   val key = (slot, skin, muscle, true)
                   groups(key) = groups.getOrElse(key, List.empty) :+ item
@@ -220,9 +219,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       stack: ItemStack,
       armor: Double,
       toughness: Double,
-      ovr: Option[ArmorOverrideData],
-      data: GameplayDataSnapshot
-  ): Option[(Double, Double)] = {
+      ovr: Option[ArmorOverrideData]
+  )(using data: GameplayDataSnapshot): Option[(Double, Double)] = {
     val skin = ovr
       .flatMap(_.skin)
       .flatMap(evaluate(_, List("armor", "toughness"), List(armor, toughness)))
@@ -265,9 +263,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   // --- weapon wound profiles ------------------------------------------------
 
   private def registerSharpWeapons(
-      registration: IRecipeRegistration,
-      data: GameplayDataSnapshot
-  ): Unit = {
+      registration: IRecipeRegistration
+  )(using data: GameplayDataSnapshot): Unit = {
     data.wounds.get("cut").foreach { (skin, muscle, bleed, pain) =>
       val items = BuiltInRegistries.ITEM
         .getTagOrEmpty(CasualtiesBelowTags.SharpMeleeItems)
