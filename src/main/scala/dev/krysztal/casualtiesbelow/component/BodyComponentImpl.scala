@@ -78,29 +78,56 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
   }
 
   /** Recomputes the transient attribute modifiers derived from leg conditions. Fracture and
-    * dislocation are independent conditions and their penalties stack: a dislocated leg counts as
-    * one share of the configured fractions, a fractured leg as
-    * [[BodyComponentImpl.FracturePenaltyMultiplier]] shares (fracture is the worse condition), and
-    * a leg with both contributes both shares. Remove-then-add with fixed modifier ids keeps
-    * repeated calls idempotent, mirroring how vanilla applies the sprinting modifier.
+    * dislocation form one structural layer: a dislocated leg counts as one share of the configured
+    * fractions, a fractured leg as [[BodyComponentImpl.FracturePenaltyMultiplier]] shares, and a
+    * leg with both contributes both shares. Muscle damage forms a separate multiplicative layer:
+    * each leg's normalized deficit is squared, then both legs are averaged.
+    *
+    * Only the server derives these modifiers; vanilla's syncable attributes carry the authoritative
+    * values to clients. Fixed ids and value comparisons make reconciliation idempotent, while the
+    * continuously changing muscle layer is quantized to avoid per-tick attribute packets during
+    * slow natural regeneration.
     */
   private def reconcileMovementModifiers(): Unit = {
-    val legSeverity = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+    if (player.level().isClientSide()) return
+
+    val structuralSeverity = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
       val s = limbs(p)
       val fractureShare =
         if (s.fractureRecoveryTicks.isDefined) BodyComponentImpl.FracturePenaltyMultiplier else 0.0
       val dislocationShare = if (s.dislocated) 1.0 else 0.0
       total + fractureShare + dislocationShare
     }
+    val muscleDeficit = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+      val healthFraction =
+        (limbs(p).muscleHealth / LimbStats.MaxValue).max(0.0).min(1.0)
+      val deficit = 1.0 - healthFraction
+      total + deficit * deficit
+    } / BodyPart.Legs.size
+
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.LegSpeedPenaltyId,
-      -legSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.get()
+      -structuralSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.get()
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.LegJumpPenaltyId,
-      -legSeverity * CasualtiesBelowConfig.DislocationJumpReduction.get()
+      -structuralSeverity * CasualtiesBelowConfig.DislocationJumpReduction.get()
+    )
+    reconcileAttribute(
+      Attributes.MOVEMENT_SPEED,
+      BodyComponentImpl.LegMuscleSpeedPenaltyId,
+      BodyComponentImpl.quantizeMusclePenalty(
+        muscleDeficit * CasualtiesBelowConfig.MuscleSpeedReduction.get()
+      )
+    )
+    reconcileAttribute(
+      Attributes.JUMP_STRENGTH,
+      BodyComponentImpl.LegMuscleJumpPenaltyId,
+      BodyComponentImpl.quantizeMusclePenalty(
+        muscleDeficit * CasualtiesBelowConfig.MuscleJumpReduction.get()
+      )
     )
   }
 
@@ -110,9 +137,14 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
       amount: Double
   ): Unit = {
     Option(player.getAttribute(attribute)).foreach { instance =>
-      instance.removeModifier(id)
-      if (amount != 0.0) {
-        instance.addTransientModifier(
+      val current = Option(instance.getModifier(id))
+      if (amount == 0.0) {
+        if (current.isDefined) instance.removeModifier(id)
+      } else if (
+        !current
+          .exists(m => m.amount() == amount && m.operation() == Operation.ADD_MULTIPLIED_TOTAL)
+      ) {
+        instance.addOrUpdateTransientModifier(
           new AttributeModifier(id, amount, Operation.ADD_MULTIPLIED_TOTAL)
         )
       }
@@ -136,9 +168,17 @@ object BodyComponentImpl {
     * this fixed structural factor.
     */
   private val FracturePenaltyMultiplier = 1.5
+  private val MuscleModifierQuantum = 0.001
+
+  private def quantizeMusclePenalty(reduction: Double): Double =
+    -math.round(reduction / MuscleModifierQuantum) * MuscleModifierQuantum
 
   val LegSpeedPenaltyId: Identifier =
     CasualtiesBelow.ofIdentifier("leg_speed_penalty")
   val LegJumpPenaltyId: Identifier =
     CasualtiesBelow.ofIdentifier("leg_jump_penalty")
+  val LegMuscleSpeedPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("leg_muscle_speed_penalty")
+  val LegMuscleJumpPenaltyId: Identifier =
+    CasualtiesBelow.ofIdentifier("leg_muscle_jump_penalty")
 }

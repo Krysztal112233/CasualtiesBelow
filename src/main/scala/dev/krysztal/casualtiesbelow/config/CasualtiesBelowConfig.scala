@@ -538,6 +538,21 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("dislocationJumpReduction", 0.2, 0.0, 1.0, classOf[Double])
+  val MuscleSpeedReduction: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum movement speed multiplier reduction from leg muscle damage, reached when both",
+      "legs have zero muscle health. Each leg's normalized deficit is squared, then both legs",
+      "are averaged; this layer multiplies independently with fracture and dislocation penalties."
+    )
+    .gameRestart()
+    .defineInRange("muscleSpeedReduction", 0.75, 0.0, 1.0, classOf[Double])
+  val MuscleJumpReduction: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum jump strength multiplier reduction from leg muscle damage, reached when both",
+      "legs have zero muscle health. Uses the same squared-deficit average as movement speed."
+    )
+    .gameRestart()
+    .defineInRange("muscleJumpReduction", 0.6, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("pain")
