@@ -113,9 +113,9 @@ object MedicalPanel {
       gameplayData.bloodOxygenHypoxiaThreshold
     )
 
-    // Immune health as a percentage of the configured maximum; red below the infection
-    // break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the immune system
-    // can no longer outpace infections.
+    // Immune health displays its actual value while the bar fill uses the configured maximum; red
+    // below the infection break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the
+    // immune system can no longer outpace infections.
     val maxImmune = CasualtiesBelowConfig.MaxImmuneHealth.get()
 
     y = extractStatBar(
@@ -124,8 +124,9 @@ object MedicalPanel {
       contentX,
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
-      vitals.immuneHealth / maxImmune * 100.0,
-      CasualtiesBelowConfig.immuneBreakEven / maxImmune * 100.0
+      vitals.immuneHealth,
+      CasualtiesBelowConfig.immuneBreakEven,
+      maxImmune
     )
     // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
     // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
@@ -231,7 +232,8 @@ object MedicalPanel {
       y: Int,
       label: Component,
       value: Double,
-      badThreshold: Double
+      badThreshold: Double,
+      maxValue: Double = LimbStats.MaxValue
   ): Int = {
     val nextY = extractStatRow(
       graphics,
@@ -243,7 +245,7 @@ object MedicalPanel {
       value < badThreshold
     )
     graphics.fill(x, nextY, x + ContentWidth, nextY + BarHeight, BarBackgroundColor)
-    val fraction = Mth.clamp(value / LimbStats.MaxValue, 0.0, 1.0)
+    val fraction = Mth.clamp(value / maxValue, 0.0, 1.0)
     val fillWidth = Math.round(ContentWidth * fraction).toInt
     if (fillWidth > 0) {
       graphics.fill(
