@@ -68,7 +68,7 @@ object CasualtiesBelowConfig {
       "normal effects. At the default rate, a healthy player reaches 25 oxygen as the vanilla",
       "15-second air reserve runs out."
     )
-    .defineInRange("bloodOxygenDepletionPerTick", 0.25, 0.0, 100.0, classOf[Double])
+    .defineInRange("bloodOxygenDepletionPerTick", 0.3, 0.0, 100.0, classOf[Double])
   val BloodOxygenRecoveryPerTick: ConfigValue[Double] = Builder
     .comment(
       "Blood oxygen restored per tick while its air-and-blood target is higher than the current",
@@ -85,7 +85,7 @@ object CasualtiesBelowConfig {
     .comment(
       "Maximum consciousness lost per tick from hypoxia, reached at zero blood oxygen."
     )
-    .defineInRange("hypoxiaConsciousnessDrainPerTick", 0.5, 0.0, 100.0, classOf[Double])
+    .defineInRange("hypoxiaConsciousnessDrainPerTick", 0.4, 0.0, 100.0, classOf[Double])
   val ConsciousnessRecoveryOxygenThreshold: ConfigValue[Double] = Builder
     .comment(
       "Blood oxygen at or above which consciousness can recover from hypoxia.",
@@ -96,9 +96,9 @@ object CasualtiesBelowConfig {
   val ConsciousnessRecoveryPerTick: ConfigValue[Double] = Builder
     .comment(
       "Consciousness restored per tick while blood oxygen is above its recovery threshold.",
-      "The default 0.0625 restores 1.25 consciousness per second."
+      "The default 0.08 restores 1.6 consciousness per second."
     )
-    .defineInRange("consciousnessRecoveryPerTick", 0.0625, 0.0, 100.0, classOf[Double])
+    .defineInRange("consciousnessRecoveryPerTick", 0.08, 0.0, 100.0, classOf[Double])
   val ConsciousnessWakeThreshold: ConfigValue[Double] = Builder
     .comment(
       "Consciousness at which an unconscious player can wake once no active cause blocks waking.",
