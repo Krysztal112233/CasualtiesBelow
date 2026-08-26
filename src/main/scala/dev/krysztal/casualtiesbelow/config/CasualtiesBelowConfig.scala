@@ -63,16 +63,16 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double])
   val BloodOxygenDepletionPerTick: ConfigValue[Double] = Builder
     .comment(
-      "Blood oxygen lost per tick while its air-and-blood target is lower than the current value.",
-      "The target follows vanilla air supply, so Respiration and Water Breathing keep their",
-      "normal effects. At the default rate, a healthy player reaches 25 oxygen as the vanilla",
-      "15-second air reserve runs out."
+      "Blood oxygen lost per tick only after the vanilla air supply is fully exhausted.",
+      "Respiration and Water Breathing retain their normal effects by delaying or preventing",
+      "that point. At the default rate, a healthy reserve takes about 16.7 seconds of exhausted",
+      "air to fall from 100 to zero."
     )
     .defineInRange("bloodOxygenDepletionPerTick", 0.3, 0.0, 100.0, classOf[Double])
   val BloodOxygenRecoveryPerTick: ConfigValue[Double] = Builder
     .comment(
-      "Blood oxygen restored per tick while its air-and-blood target is higher than the current",
-      "value. Recovery can never exceed the capacity allowed by the current blood volume."
+      "Blood oxygen restored per tick while vanilla air remains available.",
+      "Recovery can never exceed the capacity allowed by the current blood volume."
     )
     .defineInRange("bloodOxygenRecoveryPerTick", 0.5, 0.0, 100.0, classOf[Double])
   val BloodOxygenHypoxiaThreshold: ConfigValue[Double] = Builder

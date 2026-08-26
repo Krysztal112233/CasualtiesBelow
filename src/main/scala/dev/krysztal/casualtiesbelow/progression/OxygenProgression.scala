@@ -7,12 +7,11 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Couples vanilla breath and custom blood volume into a stored blood-oxygen reserve.
   *
-  * Its instantaneous target is the product of the player's vanilla air fraction and current blood
-  * fraction: vanilla air mechanics therefore retain authority over breathing (including
-  * Respiration, Water Breathing, bubble columns, and surface recovery), while blood loss reduces
-  * how much oxygen the circulation can carry. A sudden loss of blood clamps the reserve to its new
-  * capacity immediately; ordinary deoxygenation and reoxygenation approach the target at configured
-  * rates.
+  * Blood volume determines its instantaneous carrying capacity. Vanilla air supply acts as a gate:
+  * any positive air lets the reserve recover toward that capacity, while exhausted air (`<= 0`)
+  * makes it deplete toward zero. Vanilla air mechanics therefore retain authority over breathing
+  * (including Respiration, Water Breathing, bubble columns, and surface recovery), while a sudden
+  * loss of blood still clamps the reserve to its new capacity immediately.
   *
   * This object does not write consciousness. [[ConsciousnessProgression]] interprets the stored
   * oxygen as a pressure, so future pain shock, head trauma, or temperature sources can compose
@@ -34,14 +33,12 @@ object OxygenProgression {
     val bloodFraction = clampFraction(vitals.bloodVolume / maxBloodVolume)
     val capacity = VitalsComponent.MaxBloodOxygen * bloodFraction
 
-    val maxAir = player.getMaxAirSupply
-    val airFraction =
-      if (maxAir <= 0) 0.0
-      else clampFraction(player.getAirSupply.toDouble / maxAir.toDouble)
-    val target = capacity * airFraction
+    val hasVanillaAir = player.getMaxAirSupply > 0 && player.getAirSupply > 0
+    val target = if (hasVanillaAir) capacity else 0.0
 
-    // Oxygen already carried above the new blood-volume capacity is lost immediately. Breath-driven
-    // changes remain gradual so surfacing does not snap the reserve back to full.
+    // Oxygen already carried above the new blood-volume capacity is lost immediately. Once the
+    // vanilla bubbles are exhausted, depletion remains gradual; resurfacing likewise restores the
+    // reserve at its configured rate instead of snapping it back to capacity.
     val current = vitals.bloodOxygen.max(0.0).min(capacity)
     if (current > target) {
       (current - CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get()).max(target)

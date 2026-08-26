@@ -27,9 +27,10 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
   *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
   *     proportionally to the skin damage (see [[BleedingCalc.cap]]); reaching zero blood is fatal
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
-  *   - vanilla air supply and custom blood volume jointly drive blood oxygen; hypoxia pressures
-  *     consciousness, while adequate oxygen permits recovery, and reaching zero latches the
-  *     recoverable unconscious state (see [[OxygenProgression]], [[ConsciousnessProgression]])
+  *   - exhausted vanilla air gates blood-oxygen depletion, while custom blood volume sets its
+  *     carrying capacity; hypoxia pressures consciousness, while adequate oxygen permits recovery,
+  *     and sustained pressure can latch the recoverable unconscious state (see
+  *     [[OxygenProgression]], [[ConsciousnessProgression]])
   *   - wounds with meaningful skin damage can get infected; the immune system fights infections
   *     with its total capacity split across all infected limbs, against per-limb spread rates
   *     proportional to its complement; past a progress ramp an infection can also seed adjacent
@@ -142,9 +143,9 @@ object InjuryProgression {
       return
     }
 
-    // Read vanilla's already-updated air supply after the blood changes above: the two fractions
-    // determine oxygen availability. Consciousness progression then consumes that reserve and owns
-    // both the scalar and the recoverable unconscious latch.
+    // Read vanilla's already-updated air supply after the blood changes above: blood volume sets
+    // oxygen capacity, while fully exhausted air gates depletion. Consciousness progression then
+    // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
     vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
     Unconsciousness.tickMovementRestriction(player)
