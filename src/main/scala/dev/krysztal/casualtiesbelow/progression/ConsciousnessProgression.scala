@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.progression
 
 import net.minecraft.server.level.ServerPlayer
 
+import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
@@ -12,8 +13,10 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
   *
   * Physiological sources contribute pressures rather than assigning consciousness directly. Harm
   * takes precedence over natural recovery; otherwise every active source must permit recovery.
-  * Separate recovery and wake blockers leave room for future states such as pain shock, head
-  * trauma, temperature stress, or sedation without letting healthy oxygen overwrite them.
+  * Separate recovery and wake blockers leave room for future states such as head trauma,
+  * temperature stress, or sedation without letting healthy oxygen overwrite them. Pain shock is a
+  * stronger discrete override: its collapsed phase owns literal-zero consciousness, then its
+  * recovery phase temporarily lowers the scalar bound to zero.
   */
 object ConsciousnessProgression {
 
@@ -21,18 +24,19 @@ object ConsciousnessProgression {
     * value changed.
     */
   def tick(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
-    applyStep(
-      player,
-      vitals,
-      advance(
-        vitals.consciousness,
-        vitals.unconscious,
-        List(currentPressure(vitals)),
-        CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
-        CasualtiesBelowConfig.ConsciousnessFloor.get()
-      )
-    )
+    val step = vitals.painShockStage match {
+      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case _                        =>
+        advance(
+          vitals.consciousness,
+          vitals.unconscious,
+          List(currentPressure(vitals)),
+          CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
+          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          effectiveFloor(vitals)
+        )
+    }
+    applyStep(player, vitals, step)
   }
 
   /** Applies an authoritative external consciousness edit, such as an admin command, and
@@ -43,34 +47,36 @@ object ConsciousnessProgression {
       vitals: VitalsComponent,
       consciousness: Double
   ): Boolean = {
-    applyStep(
-      player,
-      vitals,
-      reconcile(
-        consciousness,
-        vitals.unconscious,
-        List(currentPressure(vitals)),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
-        CasualtiesBelowConfig.ConsciousnessFloor.get()
-      )
-    )
+    val step = vitals.painShockStage match {
+      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case _                        =>
+        reconcile(
+          consciousness,
+          vitals.unconscious,
+          List(currentPressure(vitals)),
+          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          effectiveFloor(vitals)
+        )
+    }
+    applyStep(player, vitals, step)
   }
 
   /** Reconciles the discrete state after another authoritative vitals edit changed the active
     * physiological pressure (for example blood oxygen).
     */
   def reconcileAfterEdit(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
-    applyStep(
-      player,
-      vitals,
-      reconcile(
-        vitals.consciousness,
-        vitals.unconscious,
-        List(currentPressure(vitals)),
-        CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
-        CasualtiesBelowConfig.ConsciousnessFloor.get()
-      )
-    )
+    val step = vitals.painShockStage match {
+      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case _                        =>
+        reconcile(
+          vitals.consciousness,
+          vitals.unconscious,
+          List(currentPressure(vitals)),
+          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          effectiveFloor(vitals)
+        )
+    }
+    applyStep(player, vitals, step)
   }
 
   /** Explicit recovery reset. Unlike fresh death-respawn component construction, this is an
@@ -78,6 +84,13 @@ object ConsciousnessProgression {
     */
   def resetHealthy(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
     applyStep(player, vitals, ConsciousnessStep(VitalsComponent.MaxValue, false))
+  }
+
+  private def effectiveFloor(vitals: VitalsComponent): Double = {
+    vitals.painShockStage match {
+      case PainShockStage.Recovering => 0.0
+      case _                         => CasualtiesBelowConfig.ConsciousnessFloor.get()
+    }
   }
 
   private def currentPressure(vitals: VitalsComponent): ConsciousnessPressure = {
@@ -197,30 +210,41 @@ object ConsciousnessProgression {
     }
   }
 
-  /** Normalizes serialized or copied state without firing a transition event. A scalar at or below
-    * the floor always implies unconsciousness; a latched scalar above the floor remains valid
-    * inside the wake hysteresis band. NaN falls back conservatively according to the saved latch,
-    * while infinities clamp to the corresponding endpoint.
+  /** Normalizes serialized or copied state without firing a transition event. Stable physiology
+    * keeps the configured floor invariant. A collapsed pain-shock episode is always literal zero
+    * and unconscious; its recovery phase preserves a scalar in [0, 100] and the unconscious latch
+    * so recovery can resume below the ordinary floor. NaN falls back conservatively according to
+    * the phase/latch, while infinities clamp to the corresponding endpoint.
     */
   private[casualtiesbelow] def normalizeStoredState(
       savedConsciousness: Double,
       savedUnconscious: Option[Boolean],
-      floor: Double
+      floor: Double,
+      painShockStage: PainShockStage
   ): (Double, Boolean) = {
+    if (painShockStage == PainShockStage.Collapsed) {
+      return (0.0, true)
+    }
+
+    val minimum =
+      if (painShockStage == PainShockStage.Recovering) 0.0
+      else floor
     val raw =
       if (java.lang.Double.isFinite(savedConsciousness)) {
         savedConsciousness
       } else if (savedConsciousness == Double.PositiveInfinity) {
         VitalsComponent.MaxValue
       } else if (savedConsciousness == Double.NegativeInfinity) {
-        floor
-      } else if (savedUnconscious.contains(true)) {
-        floor
+        minimum
+      } else if (painShockStage == PainShockStage.Recovering || savedUnconscious.contains(true)) {
+        minimum
       } else {
         VitalsComponent.MaxValue
       }
-    val consciousness = raw.max(floor).min(VitalsComponent.MaxValue)
-    val unconscious = savedUnconscious.getOrElse(raw <= floor) || raw <= floor
+    val consciousness = raw.max(minimum).min(VitalsComponent.MaxValue)
+    val unconscious =
+      if (painShockStage == PainShockStage.Recovering) true
+      else savedUnconscious.getOrElse(raw <= floor) || raw <= floor
     (consciousness, unconscious)
   }
 }

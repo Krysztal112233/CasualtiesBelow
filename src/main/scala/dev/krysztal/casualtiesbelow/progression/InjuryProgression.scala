@@ -17,6 +17,7 @@ import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.pain.PainShock
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -42,7 +43,9 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
   *   - skin naturally regrows once a wound has clotted shut; vanilla Regeneration adds micro-repair
   *     even while bleeding and tightens the bleeding cap as the skin closes; muscle regrows
   *     regardless (slower)
-  *   - pain decays linearly at the configured rate
+  *   - pain decays linearly at the configured rate; whole-body pain above the shock threshold
+  *     accumulates hidden load, which can force literal-zero unconsciousness before later
+  *     permitting recovery (see [[PainShock]])
   *
   * Dislocations never self-heal — they need treatment (not yet implemented).
   *
@@ -110,7 +113,10 @@ object InjuryProgression {
 
     tickContagion(player, body)
 
-    var vitalsChanged = tickSepsis(vitals, infectionLoad)
+    // Pain shock reads the fully updated per-limb pains for this tick. Load-only changes stay
+    // server-side and do not request a sync; discrete phase transitions do.
+    var vitalsChanged = PainShock.tick(body, vitals)
+    vitalsChanged = tickSepsis(vitals, infectionLoad) || vitalsChanged
     vitalsChanged = tickImmune(vitals, player) || vitalsChanged
 
     // Sepsis compresses the effective blood cap; well-fed players regenerate blood up to it.
@@ -154,6 +160,7 @@ object InjuryProgression {
     // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
     vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
+    vitalsChanged = PainShock.finishRecovery(vitals) || vitalsChanged
     Unconsciousness.tickMovementRestriction(player)
 
     // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery

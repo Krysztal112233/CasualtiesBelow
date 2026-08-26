@@ -38,8 +38,9 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessFloor: ConfigValue[Double] = Builder
     .comment(
-      "Minimum consciousness value; the scalar can never drop below this floor.",
-      "The unconscious latch engages at the floor; future mechanics may let it float."
+      "Ordinary minimum consciousness value; the unconscious latch engages at this floor.",
+      "Pain shock is the bounded exception: collapse sets consciousness to literal zero and its",
+      "recovery phase permits the scalar to rise from zero before normal floor rules resume."
     )
     .defineInRange("consciousnessFloor", 10.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessIncapacitationStartThreshold: ConfigValue[Double] = Builder
@@ -595,6 +596,50 @@ object CasualtiesBelowConfig {
   val PainDecayPerTick: ConfigValue[Double] = Builder
     .comment("Pain faded per tick on every limb (0.025 = a full limb's pain fades in ~200 s).")
     .defineInRange("painDecayPerTick", 0.025, 0.0, 10.0, classOf[Double])
+  val ShockAccumulationStartPain: ConfigValue[Double] = Builder
+    .comment(
+      "Whole-body pain above which hidden pain-shock load starts accumulating.",
+      "At or below this value the load instead recovers at shockRecoveryPerTick."
+    )
+    .defineInRange("shockAccumulationStartPain", 70.0, 0.0, 100.0, classOf[Double])
+  val ShockMaximumRatePain: ConfigValue[Double] = Builder
+    .comment(
+      "Whole-body pain at which shock load reaches its maximum accumulation rate.",
+      "Between the start and maximum-rate thresholds the rate scales linearly; an effective",
+      "value below shockAccumulationStartPain is treated as equal to it."
+    )
+    .defineInRange("shockMaximumRatePain", 80.0, 0.0, 100.0, classOf[Double])
+  val ShockMaximumGainPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum hidden shock load gained per tick at or above shockMaximumRatePain.",
+      "The default 0.2 is 4 load per second, so 0 to the default collapse threshold takes 22.5 s."
+    )
+    .defineInRange("shockMaximumGainPerTick", 0.2, 0.0, 100.0, classOf[Double])
+  val ShockRecoveryPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Shock load removed per tick while whole-body pain is at or below the accumulation start.",
+      "The default 0.1 removes 2 load per second."
+    )
+    .defineInRange("shockRecoveryPerTick", 0.1, 0.0, 100.0, classOf[Double])
+  val ShockCollapseThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Shock load that collapses a stable player when crossed upward and permits consciousness",
+      "recovery when crossed downward. Load can continue accumulating to 100 after collapse."
+    )
+    .defineInRange(
+      "shockCollapseThreshold",
+      90.0,
+      VitalsComponent.MinimumWakeThreshold,
+      VitalsComponent.MaxValue,
+      classOf[Double]
+    )
+  val ShockWakeLoadCap: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum hidden shock load retained when a recovering player wakes.",
+      "The default zero fully clears residual load, giving every new episode the full 22.5-second",
+      "accumulation window at the maximum gain rate."
+    )
+    .defineInRange("shockWakeLoadCap", 0.0, 0.0, 100.0, classOf[Double])
   val FracturedWalkingPainPerTick: ConfigValue[Double] = Builder
     .comment(
       "Pain granted per tick while walking on a fractured leg, at full tissue damage (muscle and",
