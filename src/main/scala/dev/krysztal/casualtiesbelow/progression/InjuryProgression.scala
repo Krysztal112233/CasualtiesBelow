@@ -39,7 +39,9 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
   *     [[tickSkinRegen]])
   *   - immune health is a lifestyle stat decoupled from infection: a full stomach restores it,
   *     while hunger and active vanilla Poison drain it (see [[tickImmune]])
-  *   - skin regrows only once the wound has clotted shut; muscle regrows regardless (slower)
+  *   - skin naturally regrows once a wound has clotted shut; vanilla Regeneration adds micro-repair
+  *     even while bleeding and tightens the bleeding cap as the skin closes; muscle regrows
+  *     regardless (slower)
   *   - pain decays linearly at the configured rate
   *
   * Dislocations never self-heal — they need treatment (not yet implemented).
@@ -75,6 +77,8 @@ object InjuryProgression {
     val body = CasualtiesBelowComponents.Body.get(player)
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     val walking = isWalking(player)
+    val regenerationMultiplier =
+      Option(player.getEffect(MobEffects.REGENERATION)).fold(0.0)(_.getAmplifier + 1.0)
     var totalBleeding = 0.0
 
     // The immune system splits its fight capacity across all infected limbs: one infection is
@@ -91,6 +95,7 @@ object InjuryProgression {
         walkingStrainRate(part, current, walking),
         vitals.immuneHealth,
         fightShare,
+        regenerationMultiplier,
         player.getRandom
       )
       totalBleeding += updated.externalBleedingRate
@@ -210,18 +215,21 @@ object InjuryProgression {
 
   /** One tick of evolution for one limb, mutating the given copy in place. `strainPainRate` is the
     * walking-strain pain rate when the limb is a fractured/dislocated leg currently bearing the
-    * walking player, zero otherwise. `immuneHealth` modulates infection spread and skin regrowth.
+    * walking player, zero otherwise. `immuneHealth` modulates infection spread and natural skin
+    * regrowth; `regenerationMultiplier` drives the independent vanilla Regeneration micro-repair.
     * Returns whether a discrete transition occurred (fracture healed, bleeding stopped, infection
     * started or cleared).
     *
-    * Ordering matters: bleeding clots before skin regrowth is considered, so a wound that seals
-    * this tick starts regrowing skin immediately.
+    * Ordering matters: bleeding clots before natural skin regrowth is considered, so a wound that
+    * seals this tick starts regrowing skin immediately. Regeneration then repairs skin even if the
+    * wound remains open and reconciles its tighter bleeding cap in the same tick.
     */
   private def tickLimb(
       stats: LimbStats,
       strainPainRate: Double,
       immuneHealth: Double,
       fightShare: Double,
+      regenerationMultiplier: Double,
       random: RandomSource
   ): Boolean = {
 
@@ -230,13 +238,16 @@ object InjuryProgression {
     val fractureHealed = tickFracture()
     val bleedingStopped = tickBleeding()
     val infectionTransition = tickInfection(immuneHealth, fightShare, random)
+
     tickInfectionEffects()
     tickSkinRegen(immuneHealth)
+    val regenerationTransition =
+      tickRegenerationSkin(regenerationMultiplier)
     tickMuscleRegen()
     tickPainDecay()
     tickWalkingStrain(strainPainRate)
 
-    fractureHealed || bleedingStopped || infectionTransition
+    fractureHealed || bleedingStopped || regenerationTransition || infectionTransition
   }
 
   /** Counts down the fracture recovery time; returns true when the fracture healed this tick. */
@@ -377,6 +388,29 @@ object InjuryProgression {
         (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
     stats.skinIntegrity =
       (stats.skinIntegrity + SkinRegenPerTick * multiplier).min(LimbStats.MaxValue)
+  }
+
+  /** Vanilla Regeneration provides micro skin repair on every damaged limb, even while bleeding.
+    * Raising skin integrity immediately lowers the limb's allowed bleeding cap. Returns whether the
+    * skin reached full integrity or the cap reconciliation stopped an active bleed, so either
+    * discrete transition syncs immediately.
+    */
+  private def tickRegenerationSkin(multiplier: Double)(using stats: LimbStats): Boolean = {
+    if (multiplier <= 0.0 || stats.skinIntegrity >= LimbStats.MaxValue) return false
+
+    val restore = CasualtiesBelowConfig.RegenerationSkinRestorePerTick.get() * multiplier
+    if (restore <= 0.0) return false
+
+    val previousSkin = stats.skinIntegrity
+    val wasBleeding = stats.externalBleedingRate > 0.0
+    stats.skinIntegrity = (previousSkin + restore).min(LimbStats.MaxValue)
+    stats.externalBleedingRate =
+      stats.externalBleedingRate.min(BleedingCalc.cap(stats.skinIntegrity))
+
+    val reachedFullSkin =
+      previousSkin < LimbStats.MaxValue && stats.skinIntegrity >= LimbStats.MaxValue
+    val stoppedBleeding = wasBleeding && stats.externalBleedingRate <= 0.0
+    reachedFullSkin || stoppedBleeding
   }
 
   /** Muscle regrows regardless of bleeding (slower than skin). */

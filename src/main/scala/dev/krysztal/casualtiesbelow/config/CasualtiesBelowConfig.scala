@@ -530,6 +530,16 @@ object CasualtiesBelowConfig {
     .defineInRange("poisonImmuneDrainPerTick", 0.05, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
+  Builder.push("regeneration")
+  val RegenerationSkinRestorePerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Skin integrity restored per tick on every damaged limb while vanilla Regeneration is",
+      "active, before linear effect-level scaling (Regeneration I = 1×, Regeneration II = 2×).",
+      "Recovery continues while bleeding and immediately tightens the bleeding cap; 0 disables it."
+    )
+    .defineInRange("skinRestorePerTick", 0.001, 0.0, 10.0, classOf[Double])
+  Builder.pop()
+
   Builder.push("movement")
   val DislocationSpeedReduction: ConfigValue[Double] = Builder
     .comment(
