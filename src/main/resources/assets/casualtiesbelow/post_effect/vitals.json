@@ -17,12 +17,7 @@
       "uniforms": {
         "VitalsConfig": [
           {
-            "name": "VignetteStrength",
-            "type": "float",
-            "value": 0.0
-          },
-          {
-            "name": "HazeOpacity",
+            "name": "DarknessStrength",
             "type": "float",
             "value": 0.0
           },

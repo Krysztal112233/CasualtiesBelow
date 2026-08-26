@@ -29,15 +29,16 @@ import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 import org.lwjgl.system.MemoryStack
 
 /** Full-screen vitals effects applied to the world before the GUI: low consciousness contributes
-  * edge darkening, blackout pulsing, zoom blur, and double vision; nausea contributes only steady
-  * edge darkening; low absolute blood volume progressively removes color.
+  * progressive darkening (edge vignette plus uniform haze) with a gentle pulse, zoom blur, and
+  * double vision along a single ramp; nausea contributes additional steady darkening; low absolute
+  * blood volume progressively removes color.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
   private val ChainId = CasualtiesBelow.ofIdentifier("vitals")
   private val UniformGroup = "VitalsConfig"
   private val UniformBufferSize =
-    new Std140SizeCalculator().putFloat().putFloat().putFloat().putFloat().get()
+    new Std140SizeCalculator().putFloat().putFloat().putFloat().get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
 
@@ -82,8 +83,7 @@ object VitalsPostEffect {
 
   private def unconsciousStrengths: EffectStrengths = {
     EffectStrengths(
-      vignette = 1.0f,
-      hazeOpacity = 1.0f,
+      darkness = 1.0f,
       blur = 0.0f,
       desaturation = 0.0f
     )
@@ -95,35 +95,20 @@ object VitalsPostEffect {
       deltaTracker: DeltaTracker
   ): EffectStrengths = {
     val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
-    val blackoutThreshold =
-      math.min(CasualtiesBelowConfig.ConsciousnessBlackoutThreshold.get(), dimThreshold)
+    val consciousnessProgress = Mth.clamp(
+      ((dimThreshold - vitals.consciousness) / math.max(dimThreshold, 1.0e-6)).toFloat,
+      0.0f,
+      1.0f
+    )
     val pulse =
-      if (vitals.consciousness <= blackoutThreshold) {
+      if (consciousnessProgress > 0.0f) {
         val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
         0.85f + 0.15f * Mth.sin(time * PulseSpeed)
       } else {
         1.0f
       }
-    val consciousnessVignetteProgress = Mth.clamp(
-      ((dimThreshold - vitals.consciousness) / (dimThreshold - blackoutThreshold)
-        .max(1.0e-6)).toFloat,
-      0.0f,
-      1.0f
-    )
-    val blurProgress =
-      if (vitals.consciousness > blackoutThreshold) {
-        0.0f
-      } else if (blackoutThreshold <= 0.0) {
-        1.0f
-      } else {
-        Mth.clamp(
-          ((blackoutThreshold - vitals.consciousness) / blackoutThreshold).toFloat,
-          0.0f,
-          1.0f
-        )
-      }
     val gameplayData = GameplayDataSnapshot.current
-    val discomfortVignetteProgress = progressAbove(
+    val discomfortDarknessProgress = progressAbove(
       vitals.discomfort,
       gameplayData.nauseaThreshold,
       gameplayData.maxDiscomfort
@@ -133,24 +118,22 @@ object VitalsPostEffect {
       math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
     val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
     val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
-    val consciousnessVignette =
+    val consciousnessDarkness =
       CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
-        consciousnessVignetteProgress * pulse
-    val discomfortVignette =
+        consciousnessProgress * pulse
+    val discomfortDarkness =
       CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat *
-        discomfortVignetteProgress
+        discomfortDarknessProgress
     EffectStrengths(
-      vignette = math.max(consciousnessVignette, discomfortVignette),
-      hazeOpacity = consciousnessVignette,
+      darkness = math.max(consciousnessDarkness, discomfortDarkness),
       blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
-        blurProgress * pulse,
+        consciousnessProgress * pulse,
       desaturation = desaturation
     )
   }
 
   private def hasVisibleEffect(strengths: EffectStrengths): Boolean = {
-    strengths.vignette > 0.0f ||
-    strengths.hazeOpacity > 0.0f ||
+    strengths.darkness > 0.0f ||
     strengths.blur > 0.0f ||
     strengths.desaturation > 0.0f
   }
@@ -193,7 +176,7 @@ object VitalsPostEffect {
     val stack = MemoryStack.stackPush()
     try {
       val builder = Std140Builder.onStack(stack, UniformBufferSize)
-      builder.putFloat(0.0f).putFloat(0.0f).putFloat(0.0f).putFloat(0.0f)
+      builder.putFloat(0.0f).putFloat(0.0f).putFloat(0.0f)
       RenderSystem
         .getDevice()
         .createBuffer(
@@ -211,8 +194,7 @@ object VitalsPostEffect {
     try {
       Std140Builder
         .intoBuffer(view.data())
-        .putFloat(strengths.vignette)
-        .putFloat(strengths.hazeOpacity)
+        .putFloat(strengths.darkness)
         .putFloat(strengths.blur)
         .putFloat(strengths.desaturation)
     } finally {
@@ -235,8 +217,7 @@ object VitalsPostEffect {
   }
 
   private final case class EffectStrengths(
-      vignette: Float,
-      hazeOpacity: Float,
+      darkness: Float,
       blur: Float,
       desaturation: Float
   )

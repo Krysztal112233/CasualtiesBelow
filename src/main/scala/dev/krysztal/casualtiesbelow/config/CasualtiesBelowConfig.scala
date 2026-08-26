@@ -36,22 +36,17 @@ object CasualtiesBelowConfig {
       "Consciousness below which the view starts to dim (client-side display effect only)."
     )
     .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double])
-  val ConsciousnessBlackoutThreshold: ConfigValue[Double] = Builder
-    .comment(
-      "Consciousness at or below which the dimming is strongest and slowly pulses.",
-      "Must not exceed consciousnessDimThreshold to take full effect."
-    )
-    .defineInRange("consciousnessBlackoutThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
-      "Strongest dimming opacity (0.0-1.0), reached at the blackout threshold.",
-      "Edge darkening is applied in addition to the full-screen haze; 0 disables the effect."
+      "Strongest dimming opacity (0.0-1.0), reached at zero consciousness.",
+      "Edge darkening is applied in addition to the full-screen haze; 0 disables the effect.",
+      "Dimming and blur gently pulse while active."
     )
     .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double])
   val ConsciousnessMaxBlurStrength: ConfigValue[Double] = Builder
     .comment(
       "Strongest zoom blur and double-vision strength (0.0-1.0), reached at zero consciousness.",
-      "The effect begins below consciousnessBlackoutThreshold; 0 disables it."
+      "The effect shares the dimming ramp below consciousnessDimThreshold; 0 disables it."
     )
     .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double])
   val BloodOxygenDepletionPerTick: ConfigValue[Double] = Builder

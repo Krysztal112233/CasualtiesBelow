@@ -5,8 +5,7 @@ uniform sampler2D InSampler;
 in vec2 texCoord;
 
 layout(std140) uniform VitalsConfig {
-    float VignetteStrength;
-    float HazeOpacity;
+    float DarknessStrength;
     float BlurStrength;
     float DesaturationStrength;
 };
@@ -44,10 +43,11 @@ void main() {
     color = mix(color, vec3(luminance), DesaturationStrength);
 
     float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
-    float hazeFactor = 1.0 - clamp(HazeOpacity, 0.0, 1.0);
+    float darkness = clamp(DarknessStrength, 0.0, 1.0);
+    float hazeFactor = 1.0 - darkness;
     float vignetteFactor = max(
         0.0,
-        1.0 - VignetteStrength * VignetteOpacityMultiplier * vignette
+        1.0 - darkness * VignetteOpacityMultiplier * vignette
     );
 
     fragColor = vec4(color * hazeFactor * vignetteFactor, scene.a);
