@@ -10,7 +10,8 @@
     "ConsumableMixin",
     "LivingEntityMixin",
     "PlayerMixin",
-    "ServerGamePacketListenerImplMixin"
+    "ServerGamePacketListenerImplMixin",
+    "ServerPlayerGameModeMixin"
   ],
   "client": [
     "GameRendererMixin",

@@ -24,4 +24,7 @@ trait BodyComponent extends CopyableComponent[BodyComponent] with AutoSyncedComp
   def stats(part: BodyPart): LimbStats
 
   def setStats(part: BodyPart, stats: LimbStats): Unit
+
+  /** Reconciles transient player attributes derived from limb state and the current game mode. */
+  private[casualtiesbelow] def reconcileMovementModifiers(): Unit
 }

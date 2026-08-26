@@ -86,24 +86,37 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     * Only the server derives these modifiers; vanilla's syncable attributes carry the authoritative
     * values to clients. Fixed ids and value comparisons make reconciliation idempotent, while the
     * continuously changing muscle layer is quantized to avoid per-tick attribute packets during
-    * slow natural regeneration.
+    * slow natural regeneration. Creative and spectator players retain their limb state but suppress
+    * both layers until they return to survival or adventure mode.
     */
-  private def reconcileMovementModifiers(): Unit = {
+  override private[casualtiesbelow] def reconcileMovementModifiers(): Unit = {
     if (player.level().isClientSide()) return
 
-    val structuralSeverity = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
-      val s = limbs(p)
-      val fractureShare =
-        if (s.fractureRecoveryTicks.isDefined) BodyComponentImpl.FracturePenaltyMultiplier else 0.0
-      val dislocationShare = if (s.dislocated) 1.0 else 0.0
-      total + fractureShare + dislocationShare
-    }
-    val muscleDeficit = BodyPart.Legs.foldLeft(0.0) { (total, p) =>
-      val healthFraction =
-        (limbs(p).muscleHealth / LimbStats.MaxValue).max(0.0).min(1.0)
-      val deficit = 1.0 - healthFraction
-      total + deficit * deficit
-    } / BodyPart.Legs.size
+    val restrictionsApply = !player.isCreative && !player.isSpectator
+    val structuralSeverity =
+      if (!restrictionsApply) {
+        0.0
+      } else {
+        BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+          val s = limbs(p)
+          val fractureShare =
+            if (s.fractureRecoveryTicks.isDefined) BodyComponentImpl.FracturePenaltyMultiplier
+            else 0.0
+          val dislocationShare = if (s.dislocated) 1.0 else 0.0
+          total + fractureShare + dislocationShare
+        }
+      }
+    val muscleDeficit =
+      if (!restrictionsApply) {
+        0.0
+      } else {
+        BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+          val healthFraction =
+            (limbs(p).muscleHealth / LimbStats.MaxValue).max(0.0).min(1.0)
+          val deficit = 1.0 - healthFraction
+          total + deficit * deficit
+        } / BodyPart.Legs.size
+      }
 
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
