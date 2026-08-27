@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
+import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.UnconsciousOverlay
 
@@ -60,6 +61,7 @@ object CasualtiesBelowClient extends ClientModInitializer {
     ClientPreAttackCallback.EVENT.register((_, player, _) => Unconsciousness.restricts(player))
     BleedingParticles.register()
     GameplayDataSync.registerClient()
+    BloodBarHud.register()
     UnconsciousOverlay.register()
   }
 }
