@@ -134,10 +134,10 @@ object CasualtiesBelowConfig {
   val FedBloodRegenPerTick: ConfigValue[Double] = Builder
     .comment(
       "Blood volume regenerated per tick while well-fed (same food threshold as immune",
-      "regeneration), capped by the effective maximum blood volume. A survivor of sepsis or",
-      "heavy bleeding has to eat well to recover."
+      "regeneration), capped by the effective maximum blood volume. At the default 0.05 mL/tick,",
+      "blood recovers at 1 mL/second; a survivor of sepsis or heavy bleeding has to eat well."
     )
-    .defineInRange("fedBloodRegenPerTick", 0.5, 0.0, 100.0, classOf[Double])
+    .defineInRange("fedBloodRegenPerTick", 0.05, 0.0, 100.0, classOf[Double])
   val MaxImmuneHealth: ConfigValue[Double] = Builder
     .comment(
       "Maximum (and starting) immune health. With the default infection rates, the break-even",
