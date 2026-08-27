@@ -27,8 +27,11 @@ final class DamageTypeTagProvider(
     builder(DamageTypeTags.BYPASSES_EFFECTS).add(bloodLoss, sepsis)
     builder(DamageTypeTags.BYPASSES_ENCHANTMENTS).add(bloodLoss, sepsis)
     builder(DamageTypeTags.BYPASSES_RESISTANCE).add(bloodLoss, sepsis)
-    // A physiological fatal check must not be delayed by an earlier hurt's invulnerability window.
-    builder(DamageTypeTags.BYPASSES_COOLDOWN).add(bloodLoss, sepsis)
+    // Forced deaths and physiological fatal checks must not be delayed by an earlier hurt's
+    // invulnerability window, including the Float.MaxValue hit left behind by a totem rescue.
+    builder(DamageTypeTags.BYPASSES_COOLDOWN)
+      .addTag(DamageTypeTags.BYPASSES_INVULNERABILITY)
+      .add(bloodLoss, sepsis)
 
     // Forced vanilla deaths and the mod's physiological fatal sources must reach health zero.
     builder(CasualtiesBelowTags.BypassesHealthRedirect)
