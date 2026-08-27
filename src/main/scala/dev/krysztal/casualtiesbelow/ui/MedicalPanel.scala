@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.ui
 
+import net.minecraft.SharedConstants
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.network.chat.Component
@@ -308,7 +309,9 @@ object MedicalPanel {
       rows += ((stat("infection"), Component.literal(f"$progress%.0f%%")))
     }
     if (stats.externalBleedingRate > 0.0) {
-      rows += ((stat("bleeding"), Component.literal(f"${stats.externalBleedingRate}%.2f mL/t")))
+      val bleedingPerSecond =
+        stats.externalBleedingRate * SharedConstants.TICKS_PER_SECOND
+      rows += ((stat("bleeding"), Component.literal(f"$bleedingPerSecond%.2f mL/s")))
     }
     rows.result()
   }
