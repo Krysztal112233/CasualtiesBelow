@@ -8,6 +8,7 @@ layout(std140) uniform VitalsConfig {
     float DarknessStrength;
     float BlurStrength;
     float DesaturationStrength;
+    float DiscomfortVignetteStrength;
     float ShockStrength;
     float ShockNoiseStrength;
     float ShockTime;
@@ -76,6 +77,11 @@ vec3 applyPainShock(vec3 color, float vignette) {
     return color;
 }
 
+vec3 applyDiscomfortVignette(vec3 color, float vignette) {
+    float strength = clamp(DiscomfortVignetteStrength, 0.0, 1.0);
+    return color * (1.0 - strength * vignette);
+}
+
 vec3 applyDarkness(vec3 color, float vignette) {
     float darkness = clamp(DarknessStrength, 0.0, 1.0);
     float hazeFactor = 1.0 - darkness;
@@ -99,6 +105,7 @@ void main() {
     }
     color = applyBloodLossDesaturation(color, DesaturationStrength);
     color = applyPainShock(color, vignette);
+    color = applyDiscomfortVignette(color, vignette);
     color = applyDarkness(color, vignette);
 
     fragColor = vec4(color, scene.a);

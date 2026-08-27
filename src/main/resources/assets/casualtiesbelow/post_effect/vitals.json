@@ -32,6 +32,11 @@
             "value": 0.0
           },
           {
+            "name": "DiscomfortVignetteStrength",
+            "type": "float",
+            "value": 0.0
+          },
+          {
             "name": "ShockStrength",
             "type": "float",
             "value": 0.0

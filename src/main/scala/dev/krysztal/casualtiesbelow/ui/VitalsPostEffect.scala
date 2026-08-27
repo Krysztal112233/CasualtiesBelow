@@ -47,6 +47,7 @@ object VitalsPostEffect {
     .putFloat()
     .putFloat()
     .putFloat()
+    .putFloat()
     .get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
@@ -111,6 +112,7 @@ object VitalsPostEffect {
       darkness = 1.0f,
       blur = 0.0f,
       desaturation = 0.0f,
+      discomfortVignette = 0.0f,
       shock = 0.0f,
       shockNoise = 0.0f,
       shockTime = 0.0f
@@ -129,9 +131,10 @@ object VitalsPostEffect {
     val painShock = painShockVisual(player, vitals, gameplayData, deltaTracker)
 
     EffectStrengths(
-      darkness = math.max(consciousness.darkness, discomfort.darkness),
+      darkness = consciousness.darkness,
       blur = consciousness.blur,
       desaturation = bloodLoss.desaturation,
+      discomfortVignette = discomfort.vignette,
       shock = painShock.strength,
       shockNoise = painShock.noise,
       shockTime = painShock.time
@@ -156,9 +159,10 @@ object VitalsPostEffect {
       } else {
         1.0f
       }
-    val dimming =
-      CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat * progress * pulse
-    val incapacitation = Unconsciousness.severityOf(vitals.consciousness).toFloat
+    val maxDimming = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat
+    val dimming = maxDimming * progress * pulse
+    val incapacitation =
+      maxDimming * Unconsciousness.severityOf(vitals.consciousness).toFloat
 
     ConsciousnessVisual(
       darkness = math.max(dimming, incapacitation),
@@ -176,7 +180,7 @@ object VitalsPostEffect {
       gameplayData.maxDiscomfort
     )
     DiscomfortVisual(
-      darkness = CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat * progress
+      vignette = CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat * progress
     )
   }
 
@@ -292,6 +296,7 @@ object VitalsPostEffect {
     strengths.darkness > 0.0f ||
     strengths.blur > 0.0f ||
     strengths.desaturation > 0.0f ||
+    strengths.discomfortVignette > 0.0f ||
     strengths.shock > 0.0f
   }
 
@@ -340,6 +345,7 @@ object VitalsPostEffect {
         .putFloat(0.0f)
         .putFloat(0.0f)
         .putFloat(0.0f)
+        .putFloat(0.0f)
       RenderSystem
         .getDevice()
         .createBuffer(
@@ -360,6 +366,7 @@ object VitalsPostEffect {
         .putFloat(strengths.darkness)
         .putFloat(strengths.blur)
         .putFloat(strengths.desaturation)
+        .putFloat(strengths.discomfortVignette)
         .putFloat(strengths.shock)
         .putFloat(strengths.shockNoise)
         .putFloat(strengths.shockTime)
@@ -384,7 +391,7 @@ object VitalsPostEffect {
 
   private final case class ConsciousnessVisual(darkness: Float, blur: Float)
 
-  private final case class DiscomfortVisual(darkness: Float)
+  private final case class DiscomfortVisual(vignette: Float)
 
   private final case class BloodLossVisual(desaturation: Float)
 
@@ -394,6 +401,7 @@ object VitalsPostEffect {
       darkness: Float,
       blur: Float,
       desaturation: Float,
+      discomfortVignette: Float,
       shock: Float,
       shockNoise: Float,
       shockTime: Float

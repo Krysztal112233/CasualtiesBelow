@@ -51,9 +51,9 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessIncapacitationStartThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
-      "Strongest dimming opacity (0.0-1.0), reached at zero consciousness.",
-      "Edge darkening is applied in addition to the full-screen haze; 0 disables the effect.",
-      "Dimming and blur gently pulse while active."
+      "Strongest awake dimming opacity (0.0-1.0), approached near the consciousness floor.",
+      "Edge darkening is applied in addition to the full-screen haze; 0 disables awake dimming.",
+      "Unconscious blackout remains fully opaque. Dimming and blur gently pulse while active."
     )
     .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double])
   val ConsciousnessMaxBlurStrength: ConfigValue[Double] = Builder
