@@ -21,6 +21,7 @@ const float DoubleVisionBlend = 0.44;
 const vec3 ShockEdgeMultiplier = vec3(0.55, 0.03, 0.01);
 const float ShockNoiseFramesPerTick = 0.1;
 const float ShockNoisePixelScale = 0.3333333;
+const float MaxShockNoiseStrength = 0.5;
 
 float staticNoise(vec2 position) {
     vec3 value = fract(vec3(position.xyx) * 0.1031);
@@ -32,33 +33,38 @@ vec2 clampToTexture(vec2 coordinates, vec2 texelSize) {
     return clamp(coordinates, texelSize * 0.5, 1.0 - texelSize * 0.5);
 }
 
-void main() {
-    vec4 scene = texture(InSampler, texCoord);
-    vec2 centered = texCoord - 0.5;
-    vec2 texelSize = 1.0 / vec2(textureSize(InSampler, 0));
-    vec2 zoomOffset = centered * ZoomDistance * BlurStrength;
+vec3 applyConsciousnessDistortion(
+    vec3 sceneColor,
+    vec2 coordinates,
+    vec2 centered,
+    vec2 texelSize,
+    float strength
+) {
+    vec2 zoomOffset = centered * ZoomDistance * strength;
+    vec3 color = sceneColor * 0.28;
+    color += texture(InSampler, coordinates - zoomOffset * 0.25).rgb * 0.24;
+    color += texture(InSampler, coordinates - zoomOffset * 0.50).rgb * 0.20;
+    color += texture(InSampler, coordinates - zoomOffset * 0.75).rgb * 0.16;
+    color += texture(InSampler, coordinates - zoomOffset).rgb * 0.12;
 
-    vec3 color = scene.rgb * 0.28;
-    color += texture(InSampler, texCoord - zoomOffset * 0.25).rgb * 0.24;
-    color += texture(InSampler, texCoord - zoomOffset * 0.50).rgb * 0.20;
-    color += texture(InSampler, texCoord - zoomOffset * 0.75).rgb * 0.16;
-    color += texture(InSampler, texCoord - zoomOffset).rgb * 0.12;
-
-    vec2 doubleVisionOffset = texelSize * vec2(6.0, 2.0) * BlurStrength;
+    vec2 doubleVisionOffset = texelSize * vec2(6.0, 2.0) * strength;
     vec3 doubleVision = 0.5 * (
-        texture(InSampler, clampToTexture(texCoord - doubleVisionOffset, texelSize)).rgb
-        + texture(InSampler, clampToTexture(texCoord + doubleVisionOffset, texelSize)).rgb
+        texture(InSampler, clampToTexture(coordinates - doubleVisionOffset, texelSize)).rgb
+        + texture(InSampler, clampToTexture(coordinates + doubleVisionOffset, texelSize)).rgb
     );
-    color = mix(color, doubleVision, DoubleVisionBlend * BlurStrength);
+    return mix(color, doubleVision, DoubleVisionBlend * strength);
+}
 
+vec3 applyBloodLossDesaturation(vec3 color, float strength) {
     float luminance = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    color = mix(color, vec3(luminance), DesaturationStrength);
+    return mix(color, vec3(luminance), clamp(strength, 0.0, 1.0));
+}
 
-    float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
+vec3 applyPainShock(vec3 color, float vignette) {
     float shock = clamp(ShockStrength, 0.0, 1.0) * vignette;
     color *= mix(vec3(1.0), ShockEdgeMultiplier, shock);
 
-    float noiseAmount = clamp(ShockNoiseStrength, 0.0, 0.2) * shock;
+    float noiseAmount = clamp(ShockNoiseStrength, 0.0, MaxShockNoiseStrength) * shock;
     if (noiseAmount > 0.0) {
         float noiseFrame = floor(ShockTime * ShockNoiseFramesPerTick);
         vec2 noiseCell = floor(gl_FragCoord.xy * ShockNoisePixelScale);
@@ -67,13 +73,33 @@ void main() {
         float brightFlake = smoothstep(0.92, 1.0, noise) * 0.8;
         color = clamp(color + vec3((grain + brightFlake) * noiseAmount), 0.0, 1.0);
     }
+    return color;
+}
 
+vec3 applyDarkness(vec3 color, float vignette) {
     float darkness = clamp(DarknessStrength, 0.0, 1.0);
     float hazeFactor = 1.0 - darkness;
     float vignetteFactor = max(
         0.0,
         1.0 - darkness * VignetteOpacityMultiplier * vignette
     );
+    return color * hazeFactor * vignetteFactor;
+}
 
-    fragColor = vec4(color * hazeFactor * vignetteFactor, scene.a);
+void main() {
+    vec4 scene = texture(InSampler, texCoord);
+    vec2 centered = texCoord - 0.5;
+    vec2 texelSize = 1.0 / vec2(textureSize(InSampler, 0));
+    float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
+    float blur = clamp(BlurStrength, 0.0, 1.0);
+
+    vec3 color = scene.rgb;
+    if (blur > 0.0) {
+        color = applyConsciousnessDistortion(color, texCoord, centered, texelSize, blur);
+    }
+    color = applyBloodLossDesaturation(color, DesaturationStrength);
+    color = applyPainShock(color, vignette);
+    color = applyDarkness(color, vignette);
+
+    fragColor = vec4(color, scene.a);
 }

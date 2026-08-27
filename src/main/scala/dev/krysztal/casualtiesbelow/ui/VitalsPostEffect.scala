@@ -32,12 +32,9 @@ import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 import org.lwjgl.system.MemoryStack
 
-/** Full-screen vitals effects applied to the world before the GUI: low consciousness contributes
-  * progressive darkening (edge vignette plus uniform haze) with a gentle pulse, zoom blur, and
-  * double vision along a single ramp; approaching the consciousness floor fades the world to black;
-  * nausea contributes additional steady darkening; low absolute blood volume progressively removes
-  * color; accumulating pain-shock load adds a warm peripheral warning with restrained final-stage
-  * pulsing and fine animated edge static.
+/** Full-screen vitals effects applied to the world before the GUI. Each gameplay mechanism computes
+  * an independent visual channel; the channels are composed into one post-chain uniform block so
+  * their ordering and overlap remain explicit without multiplying full-screen passes.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
@@ -125,49 +122,88 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       deltaTracker: DeltaTracker
   ): EffectStrengths = {
+    val gameplayData = GameplayDataSnapshot.current
+    val consciousness = consciousnessVisual(player, vitals, deltaTracker)
+    val discomfort = discomfortVisual(vitals, gameplayData)
+    val bloodLoss = bloodLossVisual(vitals, gameplayData)
+    val painShock = painShockVisual(player, vitals, gameplayData, deltaTracker)
+
+    EffectStrengths(
+      darkness = math.max(consciousness.darkness, discomfort.darkness),
+      blur = consciousness.blur,
+      desaturation = bloodLoss.desaturation,
+      shock = painShock.strength,
+      shockNoise = painShock.noise,
+      shockTime = painShock.time
+    )
+  }
+
+  private def consciousnessVisual(
+      player: LocalPlayer,
+      vitals: VitalsComponent,
+      deltaTracker: DeltaTracker
+  ): ConsciousnessVisual = {
     val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
-    val consciousnessProgress = Mth.clamp(
+    val progress = Mth.clamp(
       ((dimThreshold - vitals.consciousness) / math.max(dimThreshold, 1.0e-6)).toFloat,
       0.0f,
       1.0f
     )
     val pulse =
-      if (consciousnessProgress > 0.0f) {
+      if (progress > 0.0f) {
         val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
         0.85f + 0.15f * Mth.sin(time * PulseSpeed)
       } else {
         1.0f
       }
-    val gameplayData = GameplayDataSnapshot.current
-    val discomfortDarknessProgress = progressAbove(
+    val dimming =
+      CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat * progress * pulse
+    val incapacitation = Unconsciousness.severityOf(vitals.consciousness).toFloat
+
+    ConsciousnessVisual(
+      darkness = math.max(dimming, incapacitation),
+      blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat * progress * pulse
+    )
+  }
+
+  private def discomfortVisual(
+      vitals: VitalsComponent,
+      gameplayData: GameplayDataSnapshot
+  ): DiscomfortVisual = {
+    val progress = progressAbove(
       vitals.discomfort,
       gameplayData.nauseaThreshold,
       gameplayData.maxDiscomfort
     )
-    val shock = shockVisualStrength(player, vitals, gameplayData, deltaTracker)
-    val shockTime =
-      (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
-        deltaTracker.getGameTimeDeltaPartialTick(true)
+    DiscomfortVisual(
+      darkness = CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat * progress
+    )
+  }
+
+  private def bloodLossVisual(
+      vitals: VitalsComponent,
+      gameplayData: GameplayDataSnapshot
+  ): BloodLossVisual = {
     val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
     val fullDesaturation =
       math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
     val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
-    val desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
-    val severityDarkness = Unconsciousness.severityOf(vitals.consciousness).toFloat
-    val consciousnessDarkness =
-      CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat *
-        consciousnessProgress * pulse
-    val discomfortDarkness =
-      CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat *
-        discomfortDarknessProgress
-    EffectStrengths(
-      darkness = math.max(math.max(consciousnessDarkness, discomfortDarkness), severityDarkness),
-      blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
-        consciousnessProgress * pulse,
-      desaturation = desaturation,
-      shock = shock,
-      shockNoise = CasualtiesBelowConfig.ShockVisualNoiseStrength.get().toFloat,
-      shockTime = shockTime
+    BloodLossVisual(
+      desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
+    )
+  }
+
+  private def painShockVisual(
+      player: LocalPlayer,
+      vitals: VitalsComponent,
+      gameplayData: GameplayDataSnapshot,
+      deltaTracker: DeltaTracker
+  ): PainShockVisual = {
+    PainShockVisual(
+      strength = shockVisualStrength(player, vitals, gameplayData, deltaTracker),
+      noise = CasualtiesBelowConfig.ShockVisualNoiseStrength.get().toFloat,
+      time = (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
+        deltaTracker.getGameTimeDeltaPartialTick(true)
     )
   }
 
@@ -345,6 +381,14 @@ object VitalsPostEffect {
 
     Mth.clamp(((start - value) / (start - full)).toFloat, 0.0f, 1.0f)
   }
+
+  private final case class ConsciousnessVisual(darkness: Float, blur: Float)
+
+  private final case class DiscomfortVisual(darkness: Float)
+
+  private final case class BloodLossVisual(desaturation: Float)
+
+  private final case class PainShockVisual(strength: Float, noise: Float, time: Float)
 
   private final case class EffectStrengths(
       darkness: Float,
