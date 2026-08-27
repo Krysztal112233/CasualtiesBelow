@@ -13,20 +13,22 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   * crossing it downward permits consciousness recovery. Direction is encoded by [[PainShockStage]]
   * rather than by separate entry and exit numbers.
   *
-  * Load-only changes deliberately do not request a component sync: the value is hidden from player
-  * UI and will piggyback on another vitals sync. Stage transitions do request one because they
-  * alter consciousness behavior immediately.
+  * Load remains hidden from numeric UI, but crossing an integer during [[PainShockStage.Stable]]
+  * requests an owner-only component sync for smooth, server-authoritative peripheral warning
+  * visuals. Stage transitions still sync immediately because they alter consciousness behavior.
   */
 object PainShock {
   val MaxLoad: Double = 100.0
 
   /** Advances load from current whole-body pain and reconciles the shock phase. Returns whether the
-    * phase changed and therefore requires an immediate vitals sync.
+    * phase changed or stable load crossed an integer boundary and therefore requires a vitals sync.
     */
   def tick(body: BodyComponent, vitals: VitalsComponent): Boolean = {
     val previousLoad = normalizeLoad(vitals.painShockLoad)
+    val previousStage = vitals.painShockStage
     val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
-    applyLoad(vitals, previousLoad, nextLoad)
+    applyLoad(vitals, previousLoad, nextLoad) ||
+    (previousStage == PainShockStage.Stable && crossedInteger(previousLoad, nextLoad))
   }
 
   /** Clears the recovery phase after the centralized consciousness authority actually wakes the
@@ -126,6 +128,10 @@ object PainShock {
 
   private def collapseThreshold: Double = {
     CasualtiesBelowConfig.ShockCollapseThreshold.get().doubleValue.max(0.0).min(MaxLoad)
+  }
+
+  private def crossedInteger(previousLoad: Double, nextLoad: Double): Boolean = {
+    math.floor(previousLoad) != math.floor(nextLoad)
   }
 
   private def normalizeLoad(load: Double): Double = {

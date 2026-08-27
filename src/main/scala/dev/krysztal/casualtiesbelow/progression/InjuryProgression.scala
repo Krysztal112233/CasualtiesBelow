@@ -113,8 +113,8 @@ object InjuryProgression {
 
     tickContagion(player, body)
 
-    // Pain shock reads the fully updated per-limb pains for this tick. Load-only changes stay
-    // server-side and do not request a sync; discrete phase transitions do.
+    // Pain shock reads the fully updated per-limb pains for this tick. Stable-load integer
+    // crossings request owner-only warning interpolation syncs; phase transitions sync at once.
     var vitalsChanged = PainShock.tick(body, vitals)
     vitalsChanged = tickSepsis(vitals, infectionLoad) || vitalsChanged
     vitalsChanged = tickImmune(vitals, player) || vitalsChanged

@@ -69,6 +69,7 @@ final case class GameplayDataSnapshot(
     maxBloodVolume: Double,
     bloodOxygenHypoxiaThreshold: Double,
     unconsciousWakeThreshold: Double,
+    shockCollapseThreshold: Double,
     armorSkinFormula: String,
     armorMuscleFormula: String,
     armorOverrides: List[ArmorOverrideData],
@@ -138,7 +139,8 @@ final case class GameplayDataSnapshot(
         jsonObject(
           "maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)),
           "bloodOxygenHypoxiaThreshold" -> Some(JsonPrimitive(bloodOxygenHypoxiaThreshold)),
-          "unconsciousWakeThreshold" -> Some(JsonPrimitive(unconsciousWakeThreshold))
+          "unconsciousWakeThreshold" -> Some(JsonPrimitive(unconsciousWakeThreshold)),
+          "shockCollapseThreshold" -> Some(JsonPrimitive(shockCollapseThreshold))
         )
       ),
       "armor" -> Some(
@@ -225,6 +227,7 @@ object GameplayDataSnapshot {
       maxBloodVolume = config.MaxBloodVolume.get(),
       bloodOxygenHypoxiaThreshold = config.BloodOxygenHypoxiaThreshold.get(),
       unconsciousWakeThreshold = config.ConsciousnessWakeThreshold.get(),
+      shockCollapseThreshold = config.ShockCollapseThreshold.get(),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
       armorOverrides = ArmorProtectionOverrides.allEntries.map { e =>
@@ -339,6 +342,11 @@ object GameplayDataSnapshot {
         vitals,
         "unconsciousWakeThreshold",
         CasualtiesBelowConfig.ConsciousnessWakeThreshold.get()
+      ),
+      shockCollapseThreshold = optDouble(
+        vitals,
+        "shockCollapseThreshold",
+        CasualtiesBelowConfig.ShockCollapseThreshold.get()
       ),
       armorSkinFormula = armor.get("skinFormula").getAsString,
       armorMuscleFormula = armor.get("muscleFormula").getAsString,
