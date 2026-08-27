@@ -1,5 +1,7 @@
 package dev.krysztal.casualtiesbelow.ui
 
+import java.util.UUID
+
 import scala.jdk.CollectionConverters.*
 
 import com.mojang.blaze3d.buffers.GpuBuffer
@@ -20,6 +22,7 @@ import net.fabricmc.api.Environment
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
@@ -33,19 +36,35 @@ import org.lwjgl.system.MemoryStack
   * progressive darkening (edge vignette plus uniform haze) with a gentle pulse, zoom blur, and
   * double vision along a single ramp; approaching the consciousness floor fades the world to black;
   * nausea contributes additional steady darkening; low absolute blood volume progressively removes
-  * color.
+  * color; accumulating pain-shock load adds a warm peripheral warning with restrained final-stage
+  * pulsing and fine animated edge static.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
   private val ChainId = CasualtiesBelow.ofIdentifier("vitals")
   private val UniformGroup = "VitalsConfig"
-  private val UniformBufferSize =
-    new Std140SizeCalculator().putFloat().putFloat().putFloat().get()
+  private val UniformBufferSize = new Std140SizeCalculator()
+    .putFloat()
+    .putFloat()
+    .putFloat()
+    .putFloat()
+    .putFloat()
+    .putFloat()
+    .get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
+  private val ShockPulseSpeed = (2.0 * Math.PI / 20.0).toFloat
+  private val ShockLoadInterpolationTicks = 5.0f
+  private val ShockPulseMinimumModulation = 0.05f
+  private val ShockTimePeriodTicks = 20000
 
   private var cachedChain: Option[PostChain] = None
   private var cachedConfigBuffer: Option[GpuBuffer] = None
+  private var shockInterpolationPlayer: Option[UUID] = None
+  private var observedShockLoad = 0.0f
+  private var displayedShockLoad = 0.0f
+  private var shockInterpolationStart = 0.0f
+  private var shockInterpolationProgress = 1.0f
 
   def render(
       gameRenderer: GameRenderer,
@@ -69,25 +88,35 @@ object VitalsPostEffect {
 
   private def effectStrengths(deltaTracker: DeltaTracker): Option[EffectStrengths] = {
     val minecraft = Minecraft.getInstance()
-    Option(minecraft.player)
-      .filter(player => !player.isCreative && !player.isSpectator && player.isAlive)
-      .flatMap { player =>
+    Option(minecraft.player) match {
+      case Some(player) if !player.isCreative && !player.isSpectator && player.isAlive =>
         val vitals = CasualtiesBelowComponents.Vitals.get(player)
         if (vitals.unconscious) {
+          snapShockLoad(player, vitals.painShockLoad)
           Some(unconsciousStrengths)
         } else if (minecraft.gui.hud.isHidden()) {
+          snapShockLoad(player, vitals.painShockLoad)
           None
         } else {
           Some(awakeStrengths(player, vitals, deltaTracker)).filter(hasVisibleEffect)
         }
-      }
+      case Some(player) =>
+        snapShockLoad(player, CasualtiesBelowComponents.Vitals.get(player).painShockLoad)
+        None
+      case None =>
+        clearShockInterpolation()
+        None
+    }
   }
 
   private def unconsciousStrengths: EffectStrengths = {
     EffectStrengths(
       darkness = 1.0f,
       blur = 0.0f,
-      desaturation = 0.0f
+      desaturation = 0.0f,
+      shock = 0.0f,
+      shockNoise = 0.0f,
+      shockTime = 0.0f
     )
   }
 
@@ -115,6 +144,10 @@ object VitalsPostEffect {
       gameplayData.nauseaThreshold,
       gameplayData.maxDiscomfort
     )
+    val shock = shockVisualStrength(player, vitals, gameplayData, deltaTracker)
+    val shockTime =
+      (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
+        deltaTracker.getGameTimeDeltaPartialTick(true)
     val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
     val fullDesaturation =
       math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
@@ -131,14 +164,99 @@ object VitalsPostEffect {
       darkness = math.max(math.max(consciousnessDarkness, discomfortDarkness), severityDarkness),
       blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat *
         consciousnessProgress * pulse,
-      desaturation = desaturation
+      desaturation = desaturation,
+      shock = shock,
+      shockNoise = CasualtiesBelowConfig.ShockVisualNoiseStrength.get().toFloat,
+      shockTime = shockTime
     )
+  }
+
+  private def shockVisualStrength(
+      player: LocalPlayer,
+      vitals: VitalsComponent,
+      gameplayData: GameplayDataSnapshot,
+      deltaTracker: DeltaTracker
+  ): Float = {
+    val visualStart = CasualtiesBelowConfig.ShockVisualStartLoad.get().toFloat
+    val actualLoad = Mth.clamp(vitals.painShockLoad.toFloat, 0.0f, 100.0f)
+    if (vitals.painShockStage != PainShockStage.Stable || actualLoad <= visualStart) {
+      snapShockLoad(player, actualLoad)
+      return 0.0f
+    }
+
+    val collapseThreshold =
+      Mth.clamp(gameplayData.shockCollapseThreshold.toFloat, 0.0f, 100.0f)
+    val load = smoothedShockLoad(player, actualLoad, deltaTracker)
+    val progress = progressAbove(load, visualStart, collapseThreshold)
+    val pulseStart = (visualStart + collapseThreshold) * 0.5f
+    val pulseProgress = progressAbove(load, pulseStart, collapseThreshold)
+    val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
+    val pulseWave = 0.5f + 0.5f * Mth.sin(time * ShockPulseSpeed)
+    val pulseDepth = CasualtiesBelowConfig.ShockVisualPulseStrength.get().toFloat
+    val modulation = Mth.clamp(
+      1.0f - pulseDepth * pulseProgress * pulseWave,
+      ShockPulseMinimumModulation,
+      1.0f
+    )
+    Mth.clamp(
+      CasualtiesBelowConfig.ShockVisualMaxStrength.get().toFloat * progress * modulation,
+      0.0f,
+      1.0f
+    )
+  }
+
+  private def smoothedShockLoad(
+      player: LocalPlayer,
+      actualLoad: Float,
+      deltaTracker: DeltaTracker
+  ): Float = {
+    if (!shockInterpolationPlayer.contains(player.getUUID)) {
+      return snapShockLoad(player, actualLoad)
+    }
+    if (actualLoad != observedShockLoad) {
+      shockInterpolationStart = displayedShockLoad
+      observedShockLoad = actualLoad
+      shockInterpolationProgress = 0.0f
+    }
+    if (shockInterpolationProgress < 1.0f) {
+      shockInterpolationProgress = math
+        .min(
+          1.0f,
+          shockInterpolationProgress +
+            deltaTracker.getRealtimeDeltaTicks() / ShockLoadInterpolationTicks
+        )
+        .toFloat
+      val progress = shockInterpolationProgress
+      val eased = progress * progress * (3.0f - 2.0f * progress)
+      displayedShockLoad =
+        shockInterpolationStart + (observedShockLoad - shockInterpolationStart) * eased
+    }
+    displayedShockLoad
+  }
+
+  private def snapShockLoad(player: LocalPlayer, load: Double): Float = {
+    val normalizedLoad = Mth.clamp(load.toFloat, 0.0f, 100.0f)
+    shockInterpolationPlayer = Some(player.getUUID)
+    observedShockLoad = normalizedLoad
+    displayedShockLoad = normalizedLoad
+    shockInterpolationStart = normalizedLoad
+    shockInterpolationProgress = 1.0f
+    normalizedLoad
+  }
+
+  private def clearShockInterpolation(): Unit = {
+    shockInterpolationPlayer = None
+    observedShockLoad = 0.0f
+    displayedShockLoad = 0.0f
+    shockInterpolationStart = 0.0f
+    shockInterpolationProgress = 1.0f
   }
 
   private def hasVisibleEffect(strengths: EffectStrengths): Boolean = {
     strengths.darkness > 0.0f ||
     strengths.blur > 0.0f ||
-    strengths.desaturation > 0.0f
+    strengths.desaturation > 0.0f ||
+    strengths.shock > 0.0f
   }
 
   private def configBuffer(chain: PostChain): Option[GpuBuffer] = {
@@ -179,7 +297,13 @@ object VitalsPostEffect {
     val stack = MemoryStack.stackPush()
     try {
       val builder = Std140Builder.onStack(stack, UniformBufferSize)
-      builder.putFloat(0.0f).putFloat(0.0f).putFloat(0.0f)
+      builder
+        .putFloat(0.0f)
+        .putFloat(0.0f)
+        .putFloat(0.0f)
+        .putFloat(0.0f)
+        .putFloat(0.0f)
+        .putFloat(0.0f)
       RenderSystem
         .getDevice()
         .createBuffer(
@@ -200,6 +324,9 @@ object VitalsPostEffect {
         .putFloat(strengths.darkness)
         .putFloat(strengths.blur)
         .putFloat(strengths.desaturation)
+        .putFloat(strengths.shock)
+        .putFloat(strengths.shockNoise)
+        .putFloat(strengths.shockTime)
     } finally {
       view.close()
     }
@@ -222,6 +349,9 @@ object VitalsPostEffect {
   private final case class EffectStrengths(
       darkness: Float,
       blur: Float,
-      desaturation: Float
+      desaturation: Float,
+      shock: Float,
+      shockNoise: Float,
+      shockTime: Float
   )
 }

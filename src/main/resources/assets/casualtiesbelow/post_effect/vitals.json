@@ -30,6 +30,21 @@
             "name": "DesaturationStrength",
             "type": "float",
             "value": 0.0
+          },
+          {
+            "name": "ShockStrength",
+            "type": "float",
+            "value": 0.0
+          },
+          {
+            "name": "ShockNoiseStrength",
+            "type": "float",
+            "value": 0.0
+          },
+          {
+            "name": "ShockTime",
+            "type": "float",
+            "value": 0.0
           }
         ]
       }

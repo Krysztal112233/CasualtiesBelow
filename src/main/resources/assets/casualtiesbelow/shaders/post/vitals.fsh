@@ -8,6 +8,9 @@ layout(std140) uniform VitalsConfig {
     float DarknessStrength;
     float BlurStrength;
     float DesaturationStrength;
+    float ShockStrength;
+    float ShockNoiseStrength;
+    float ShockTime;
 };
 
 out vec4 fragColor;
@@ -15,6 +18,15 @@ out vec4 fragColor;
 const float VignetteOpacityMultiplier = 2.0;
 const float ZoomDistance = 0.025;
 const float DoubleVisionBlend = 0.44;
+const vec3 ShockEdgeMultiplier = vec3(0.55, 0.03, 0.01);
+const float ShockNoiseFramesPerTick = 0.1;
+const float ShockNoisePixelScale = 0.3333333;
+
+float staticNoise(vec2 position) {
+    vec3 value = fract(vec3(position.xyx) * 0.1031);
+    value += dot(value, value.yzx + 33.33);
+    return fract((value.x + value.y) * value.z);
+}
 
 vec2 clampToTexture(vec2 coordinates, vec2 texelSize) {
     return clamp(coordinates, texelSize * 0.5, 1.0 - texelSize * 0.5);
@@ -43,6 +55,19 @@ void main() {
     color = mix(color, vec3(luminance), DesaturationStrength);
 
     float vignette = smoothstep(0.45, 1.25, length(centered * 2.0));
+    float shock = clamp(ShockStrength, 0.0, 1.0) * vignette;
+    color *= mix(vec3(1.0), ShockEdgeMultiplier, shock);
+
+    float noiseAmount = clamp(ShockNoiseStrength, 0.0, 0.2) * shock;
+    if (noiseAmount > 0.0) {
+        float noiseFrame = floor(ShockTime * ShockNoiseFramesPerTick);
+        vec2 noiseCell = floor(gl_FragCoord.xy * ShockNoisePixelScale);
+        float noise = staticNoise(noiseCell + vec2(noiseFrame * 17.0, noiseFrame * 29.0));
+        float grain = (noise * 2.0 - 1.0) * 0.6;
+        float brightFlake = smoothstep(0.92, 1.0, noise) * 0.8;
+        color = clamp(color + vec3((grain + brightFlake) * noiseAmount), 0.0, 1.0);
+    }
+
     float darkness = clamp(DarknessStrength, 0.0, 1.0);
     float hazeFactor = 1.0 - darkness;
     float vignetteFactor = max(

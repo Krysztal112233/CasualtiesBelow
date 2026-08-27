@@ -640,6 +640,30 @@ object CasualtiesBelowConfig {
       "accumulation window at the maximum gain rate."
     )
     .defineInRange("shockWakeLoadCap", 0.0, 0.0, 100.0, classOf[Double])
+  val ShockVisualStartLoad: ConfigValue[Double] = Builder
+    .comment(
+      "Client-local shock load at which the warm peripheral warning starts fading in.",
+      "This display value is not synchronized from dedicated servers."
+    )
+    .defineInRange("shockVisualStartLoad", 0.0, 0.0, 100.0, classOf[Double])
+  val ShockVisualMaxStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Client-local maximum warm peripheral warning strength (0.0-1.0).",
+      "Set to zero to disable the pain-shock warning without changing gameplay."
+    )
+    .defineInRange("shockVisualMaxStrength", 1.0, 0.0, 1.0, classOf[Double])
+  val ShockVisualPulseStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Client-local depth of the slow warning pulse during the final half of the load ramp.",
+      "Set to zero for a static peripheral warning."
+    )
+    .defineInRange("shockVisualPulseStrength", 0.2, 0.0, 1.0, classOf[Double])
+  val ShockVisualNoiseStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Client-local brightness variation of the animated static at the warning edge.",
+      "The default is clearly visible but remains peripheral; zero disables it independently."
+    )
+    .defineInRange("shockVisualNoiseStrength", 0.25, 0.0, 0.5, classOf[Double])
   val FracturedWalkingPainPerTick: ConfigValue[Double] = Builder
     .comment(
       "Pain granted per tick while walking on a fractured leg, at full tissue damage (muscle and",
