@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.component.BodyComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
@@ -29,9 +30,10 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
   val Body: ComponentKey[BodyComponent] = ofComponent("body")
   val Vitals: ComponentKey[VitalsComponent] = ofComponent("vitals")
 
-  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no sepsis. Explicitly
-    * waking an unconscious player follows the normal state-change event contract. Death respawns
-    * instead receive fresh component defaults through the CCA copy strategy.
+  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no hemostasis window or
+    * sepsis. Explicitly waking an unconscious player follows the normal state-change event
+    * contract. Death respawns instead receive fresh component defaults through the CCA copy
+    * strategy.
     */
   def reset(player: ServerPlayer): Unit = {
     val body = Body.get(player)
@@ -41,6 +43,7 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
     vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
     vitals.bloodOxygen = VitalsComponent.MaxBloodOxygen
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
+    TotemHemostasis.reset(vitals)
     vitals.sepsis = 0.0
     vitals.discomfort = 0.0
     PainShock.resetHealthy(vitals)

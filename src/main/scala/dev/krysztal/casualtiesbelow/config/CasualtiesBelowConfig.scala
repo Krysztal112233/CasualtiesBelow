@@ -179,6 +179,25 @@ object CasualtiesBelowConfig {
       "0 disables fluctuation."
     )
     .defineInRange("bleedingRateJitter", 0.3, 0.0, 1.0, classOf[Double])
+  val TotemBloodRestoreFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of the effective maximum blood volume restored when death protection saves",
+      "a player from blood loss. It must stay positive to avoid a zero-blood rescue loop; wounds",
+      "remain open and keep bleeding."
+    )
+    .defineInRange("totemBloodRestoreFraction", 0.2, 0.000001, 1.0, classOf[Double])
+  val TotemHemostasisInitialReduction: ConfigValue[Double] = Builder
+    .comment(
+      "Initial fraction of actual blood drain prevented after a blood-loss totem rescue.",
+      "The reduction decays linearly to zero over totemHemostasisDurationTicks."
+    )
+    .defineInRange("totemHemostasisInitialReduction", 0.8, 0.0, 1.0, classOf[Double])
+  val TotemHemostasisDurationTicks: ConfigValue[Integer] = Builder
+    .comment(
+      "Duration of the post-totem hemostasis window in ticks (20 ticks = 1 second).",
+      "The hidden timer freezes with the rest of physiology in creative and spectator modes."
+    )
+    .defineInRange("totemHemostasisDurationTicks", 600, 0, 72000)
   Builder.pop()
 
   Builder.push("infection")

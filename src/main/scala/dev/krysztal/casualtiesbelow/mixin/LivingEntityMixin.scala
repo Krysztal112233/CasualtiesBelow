@@ -1,8 +1,11 @@
 package dev.krysztal.casualtiesbelow.mixin
 
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 
@@ -56,5 +59,26 @@ abstract class LivingEntityMixin {
       damageSource,
       ci.getReturnValue
     )
+  }
+
+  /** Vanilla has already consumed the death-protection item and applied its effects at RETURN. Only
+    * a successful blood-loss rescue receives the physiological blood/hemostasis adapter; sepsis and
+    * forced vanilla deaths bypass this method before an item can be consumed.
+    */
+  @Inject(
+    method = Array("checkTotemDeathProtection"),
+    at = Array(new At(value = "RETURN")),
+    remap = false
+  )
+  private def casualtiesbelow$afterTotemDeathProtection(
+      killingDamage: DamageSource,
+      ci: CallbackInfoReturnable[Boolean]
+  ): Unit = {
+    if (ci.getReturnValue && killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss)) {
+      this.asInstanceOf[LivingEntity] match {
+        case player: ServerPlayer => TotemHemostasis.activate(player)
+        case _                    =>
+      }
+    }
   }
 }

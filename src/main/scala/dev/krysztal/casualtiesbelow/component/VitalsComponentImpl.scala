@@ -11,6 +11,7 @@ import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
@@ -23,6 +24,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   private var painShockStageState: PainShockStage = PainShockStage.Stable
   var bloodOxygen: Double = VitalsComponent.MaxBloodOxygen
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
+  private var totemHemostasisTicksState: Int = 0
   var sepsis: Double = 0.0
   var discomfort: Double = 0.0
 
@@ -48,6 +50,9 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = other.bloodOxygen
     bloodVolume = other.bloodVolume
+    applyTotemHemostasisTicks(
+      TotemHemostasis.normalizeRemainingTicks(other.totemHemostasisTicks)
+    )
     sepsis = other.sepsis
     discomfort = other.discomfort
   }
@@ -76,6 +81,12 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     painShockStageState = stage
   }
 
+  override def totemHemostasisTicks: Int = totemHemostasisTicksState
+
+  override private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
+    totemHemostasisTicksState = ticks
+  }
+
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
 
   override def writeData(out: ValueOutput): Unit = {
@@ -86,6 +97,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     out.putString(VitalsComponentImpl.PainShockStageKey, painShockStage.id)
     out.putDouble(VitalsComponentImpl.BloodOxygenKey, bloodOxygen)
     out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolume)
+    out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, totemHemostasisTicks)
     out.putDouble(VitalsComponentImpl.SepsisKey, sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
   }
@@ -121,6 +133,11 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     )
     bloodVolume =
       in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
+    applyTotemHemostasisTicks(
+      TotemHemostasis.normalizeRemainingTicks(
+        in.getIntOr(VitalsComponentImpl.TotemHemostasisTicksKey, 0)
+      )
+    )
     sepsis = in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0)
     discomfort = in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0)
   }
@@ -136,6 +153,7 @@ object VitalsComponentImpl {
   private val PainShockStageKey = "pain_shock_stage"
   private val BloodOxygenKey = "blood_oxygen"
   private val BloodVolumeKey = "blood_volume"
+  private val TotemHemostasisTicksKey = "totem_hemostasis_ticks"
   private val SepsisKey = "sepsis"
   private val DiscomfortKey = "discomfort"
 }

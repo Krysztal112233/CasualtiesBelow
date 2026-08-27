@@ -2,17 +2,24 @@ package dev.krysztal.casualtiesbelow.api
 
 import net.minecraft.core.registries.Registries
 import net.minecraft.tags.TagKey
+import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 
-/** The mod's own vanilla-registry tags, used for wound classification (see
-  * [[dev.krysztal.casualtiesbelow.api.wound.WoundProfiles]]) and food discomfort tiers (see
+/** The mod's own vanilla-registry tags, used for fatal-damage passthrough, wound classification
+  * (see [[dev.krysztal.casualtiesbelow.api.wound.WoundProfiles]]) and food discomfort tiers (see
   * `discomfort.Discomfort`). Being datapack tags, all of them are overridable/extendable by
   * datapacks and other mods.
   */
 object CasualtiesBelowTags {
+
+  /** Damage sources whose vanilla player-health write remains authoritative. Datapacks and other
+    * mods may extend this tag for damage that must retain vanilla fatal semantics.
+    */
+  val BypassesHealthRedirect: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("bypasses_health_redirect"))
 
   /** Melee weapons that cut skin open (swords, axes by default). */
   val SharpMeleeItems: TagKey[Item] =

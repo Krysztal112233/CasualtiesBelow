@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
+import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.pain.PainShock
@@ -28,7 +29,9 @@ import dev.krysztal.casualtiesbelow.pain.PainShock
   *     skin) at the configured rate
   *   - bleeding drains the blood volume and clots linearly; the per-limb rate is capped
   *     proportionally to the skin damage (see [[BleedingCalc.cap]]); reaching zero blood is fatal
-  *     ([[CasualtiesBelowDamageTypes.BloodLoss]])
+  *     ([[CasualtiesBelowDamageTypes.BloodLoss]]), while a successful death-protection rescue
+  *     restores a bounded blood reserve and temporarily reduces actual drain without closing wounds
+  *     (see [[TotemHemostasis]])
   *   - exhausted vanilla air gates blood-oxygen depletion, while custom blood volume sets its
   *     carrying capacity; hypoxia pressures consciousness, while adequate oxygen permits recovery,
   *     and sustained pressure can latch the recoverable unconscious state (see
@@ -137,13 +140,19 @@ object InjuryProgression {
     }
 
     if (totalBleeding > 0.0) {
-      vitals.bloodVolume = (vitals.bloodVolume - totalBleeding).max(0.0)
-      vitalsChanged = true
+      val actualBleeding = totalBleeding * TotemHemostasis.bleedingMultiplier(vitals)
+      if (actualBleeding > 0.0) {
+        vitals.bloodVolume = (vitals.bloodVolume - actualBleeding).max(0.0)
+        vitalsChanged = true
+      }
     }
+    // The timer is hidden client-side state: advancing it does not force an extra sync. Any blood
+    // change already syncs through vitalsChanged, while persistence always writes the live value.
+    TotemHemostasis.tick(vitals)
 
     // Zero blood is fatal before oxygen can drive consciousness to its floor and latch the
-    // recoverable unconscious state. A player saved by another mechanic remains at zero blood and is handled
-    // fatally again next tick rather than entering the wakeable progression path.
+    // recoverable unconscious state. Blood-loss death protection restores blood synchronously in
+    // the vanilla totem path; an unrescued player remains at zero and dies normally.
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
         if (maxBlood <= 0.0) CasualtiesBelowDamageTypes.sepsis(player.level())

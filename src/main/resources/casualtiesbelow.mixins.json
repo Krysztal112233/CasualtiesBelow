@@ -9,6 +9,7 @@
     "BiomeInvoker",
     "ConsumableMixin",
     "LivingEntityMixin",
+    "PlayerActuallyHurtMixin",
     "PlayerMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerPlayerGameModeMixin"

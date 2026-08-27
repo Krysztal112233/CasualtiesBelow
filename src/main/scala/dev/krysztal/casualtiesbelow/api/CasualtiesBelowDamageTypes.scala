@@ -14,14 +14,16 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 object CasualtiesBelowDamageTypes {
 
   /** Fatal blood loss, dealt when the blood volume reaches zero. Tagged `bypasses_armor`,
-    * `bypasses_effects`, `bypasses_enchantments` and `bypasses_resistance` (see
-    * `data/minecraft/tags/damage_type/`): bleeding out is not preventable by gear.
+    * `bypasses_effects`, `bypasses_enchantments`, `bypasses_resistance` and `bypasses_cooldown`
+    * (see `data/minecraft/tags/damage_type/`): bleeding out is not preventable or delayed by gear
+    * or hurt cooldown, but vanilla death protection may still provide one rescue window.
     */
   val BloodLoss: ResourceKey[DamageType] =
     ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("blood_loss"))
 
   /** Fatal sepsis, dealt when sepsis compresses the effective blood volume cap to zero. Same
-    * bypasses tags as [[BloodLoss]].
+    * gear/effect/cooldown bypasses as [[BloodLoss]], plus `bypasses_invulnerability`, so death
+    * protection cannot rescue it.
     */
   val Sepsis: ResourceKey[DamageType] =
     ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("sepsis"))
