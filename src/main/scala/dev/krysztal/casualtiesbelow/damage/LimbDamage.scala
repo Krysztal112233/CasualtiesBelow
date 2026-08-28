@@ -62,11 +62,13 @@ object LimbDamage {
       source: DamageSource,
       damaged: Boolean
   ): Unit = {
-    val isEligibleFall = damaged && isFallDamage(source) &&
-      entity.isInstanceOf[ServerPlayer] && entity.level().isInstanceOf[ServerLevel]
+    val player = entity match {
+      case player: ServerPlayer => player
+      case _                    => return
+    }
+    val isEligibleFall = damaged && isFallDamage(source) && player.level().isInstanceOf[ServerLevel]
     if (!isEligibleFall) return
 
-    val player = entity.asInstanceOf[ServerPlayer]
     if (player.isCreative || player.isSpectator) return
 
     // Players always use the custom formula (see FallDamageFormula.appliesTo), so the
@@ -96,9 +98,11 @@ object LimbDamage {
       damageTaken: Float,
       blocked: Boolean
   ): Unit = {
-    if (!entity.isInstanceOf[ServerPlayer]) return // Components are server-player authoritative.
-
-    val player = entity.asInstanceOf[ServerPlayer]
+    // Components are server-player authoritative.
+    val player = entity match {
+      case player: ServerPlayer => player
+      case _                    => return
+    }
     if (player.isCreative || player.isSpectator) return
     if (isFallDamage(source)) return
     if (blocked) return
