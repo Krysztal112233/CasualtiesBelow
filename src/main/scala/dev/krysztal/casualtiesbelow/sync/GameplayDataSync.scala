@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
+import net.fabricmc.fabric.api.event.lifecycle.v1.CommonLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
@@ -34,12 +35,11 @@ final case class GameplayDataPayload(json: String) extends CustomPacketPayload {
   *
   * On `/reload` that hook fires *before* the vanilla tag broadcast, so an entry referencing a tag
   * key ADDED by that same reload cannot resolve on the client yet and is skipped (per-entry
-  * isolation in `GameplayDataStores`). A corrective resend from
-  * [[ServerLifecycleEvents.END_DATA_PACK_RELOAD]] — which fires after the tag packet is enqueued —
-  * delivers the complete payload immediately afterwards. END_DATA_PACK_RELOAD alone would be too
-  * late for the primary send: it runs after the recipe sync, leaving recipe viewers with stale
-  * data. Config hot reloads (Forge Config API Port watches the file) rebroadcast to all online
-  * players as well.
+  * isolation in `GameplayDataStores`). The client therefore keeps the raw payload and re-decodes it
+  * from [[CommonLifecycleEvents.TAGS_LOADED]] — which fires after the pending tags are applied but
+  * before the recipe packet that triggers JEI's rebuild — so the skipped entries decode in time.
+  * Config hot reloads (Forge Config API Port watches the file) rebroadcast to all online players as
+  * well.
   */
 object GameplayDataSync {
 
@@ -61,10 +61,6 @@ object GameplayDataSync {
 
     ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register { (player, _) =>
       send(player)
-    }
-    // Corrective resend after the reload's tag broadcast; see the class doc.
-    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register { (current, _, success) =>
-      if (success) current.getPlayerList.getPlayers.forEach(send(_))
     }
     ServerLifecycleEvents.SERVER_STARTED.register(s => server = Some(s))
     ServerLifecycleEvents.SERVER_STOPPED.register(_ => server = None)
@@ -99,6 +95,11 @@ object GameplayDataSync {
     )
     ClientPlayConnectionEvents.DISCONNECT.register { (_, _) =>
       GameplayDataSnapshot.clearSynced()
+    }
+    // /reload delivers this payload before the new tag contents; re-decode once tags are applied
+    // (still before the recipe packet that rebuilds JEI). See the class doc.
+    CommonLifecycleEvents.TAGS_LOADED.register { (registries, _) =>
+      GameplayDataSnapshot.rereceive(registries)
     }
   }
 }

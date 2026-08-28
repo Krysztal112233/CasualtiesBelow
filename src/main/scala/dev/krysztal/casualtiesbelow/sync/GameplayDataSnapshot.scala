@@ -98,6 +98,11 @@ object GameplayDataSnapshot {
   /** The latest snapshot received from the server, if any. Cleared on disconnect. */
   @volatile private var synced: Option[GameplayDataSnapshot] = None
 
+  /** The raw JSON of the latest received payload, kept so it can be re-decoded when tag contents
+    * arrive after the payload (see [[rereceive]]). Cleared on disconnect.
+    */
+  @volatile private var lastReceivedJson: Option[String] = None
+
   /** What client-side displays and prediction should read: the server's snapshot when connected,
     * else the local configuration. Server logic must NOT read this: `synced` belongs to the logical
     * client (singleplayer shares the JVM), so the server always captures the live state via
@@ -106,9 +111,11 @@ object GameplayDataSnapshot {
   def current: GameplayDataSnapshot = synced.getOrElse(capture())
 
   /** Decodes and stores a snapshot received from the server. Malformed payloads are logged and
-    * ignored, keeping the previous config and per-object data together.
+    * ignored, keeping the previous config and per-object data together. The raw payload is kept
+    * either way so [[rereceive]] can retry it against fresher tag contents.
     */
   def receive(json: String, lookup: HolderLookup.Provider): Unit = {
+    lastReceivedJson = Some(json)
     Try(fromJson(json, lookup)) match {
       case Success(snapshot) =>
         GameplayDataStores.setSynced(snapshot.gameplayData)
@@ -118,8 +125,19 @@ object GameplayDataSnapshot {
     }
   }
 
+  /** Re-decodes the latest received payload against the given (fresh) registry access. On a
+    * dedicated-server `/reload`, the vanilla tag packet is processed (and `TAGS_LOADED` fires)
+    * after this payload arrives: entries referencing tag keys ADDED by that reload were skipped on
+    * the first pass and decode on this one — before the following recipe packet triggers JEI's
+    * rebuild. No-op when nothing was received (e.g. before join or after disconnect).
+    */
+  def rereceive(lookup: HolderLookup.Provider): Unit = {
+    lastReceivedJson.foreach(receive(_, lookup))
+  }
+
   def clearSynced(): Unit = {
     synced = None
+    lastReceivedJson = None
     GameplayDataStores.clearSynced()
   }
 
