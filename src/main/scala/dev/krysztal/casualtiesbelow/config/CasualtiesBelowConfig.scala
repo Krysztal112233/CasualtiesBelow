@@ -335,72 +335,6 @@ object CasualtiesBelowConfig {
     .defineInRange("sepsisDecayPerTick", 0.03, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
-  // Wound profiles: how each damage kind splits into skin/muscle loss, bleeding, and pain.
-  // Classification (which profile a damage source gets) is datapack-tag driven where it is
-  // content — see CasualtiesBelowTags and WoundProfiles.classify.
-  Builder.push("wounds")
-  val BiteWound: WoundProfileConfig = woundProfile(
-    "bite",
-    skin = 1.5,
-    muscle = 2.0,
-    bleed = 0.1,
-    pain = 4.0,
-    "Unarmed bite/scratch hits (most bare-handed mobs): teeth and claws break skin lightly"
-  )
-  val CutWound: WoundProfileConfig = woundProfile(
-    "cut",
-    skin = 2.0,
-    muscle = 3.0,
-    bleed = 0.2,
-    pain = 4.0,
-    "Sharp-weapon melee hits (the casualtiesbelow:sharp_melee item tag)"
-  )
-  val BluntWound: WoundProfileConfig = woundProfile(
-    "blunt",
-    skin = 0.0,
-    muscle = 3.0,
-    bleed = 0.0,
-    pain = 4.0,
-    "Blunt hits (non-sharp weapons, slam attackers in casualtiesbelow:blunt_melee, sonic boom):",
-    "muscle only, skin intact"
-  )
-  val PierceWound: WoundProfileConfig = woundProfile(
-    "pierce",
-    skin = 3.0,
-    muscle = 2.0,
-    bleed = 0.15,
-    pain = 5.0,
-    "Piercing projectiles and similar (arrows, tridents, shulker bullets, evoker fangs)"
-  )
-  val BurnWound: WoundProfileConfig = woundProfile(
-    "burn",
-    skin = 1.0,
-    muscle = 0.2,
-    bleed = 0.0,
-    pain = 2.0,
-    "Fire damage (standing in fire/lava, fireballs): burns wreck the skin but cauterize —",
-    "no bleeding; the damaged skin is an infection gateway"
-  )
-  val PrickWound: WoundProfileConfig = woundProfile(
-    "prick",
-    skin = 1.5,
-    muscle = 0.0,
-    bleed = 0.05,
-    pain = 1.0,
-    "Environmental pricks (cactus, sweet berry bushes): thorns scratch skin but never reach",
-    "muscle — zero muscle damage so contact spam cannot melt it"
-  )
-  val BlastWound: WoundProfileConfig = woundProfile(
-    "blast",
-    skin = 2.0,
-    muscle = 2.0,
-    bleed = 0.25,
-    pain = 6.0,
-    "Explosions (creepers, ghast fireball AoE, wither skulls): shrapnel scatters the damage",
-    "across a few random body parts"
-  )
-  Builder.pop()
-
   Builder.push("armor")
   val ArmorSkinFactorFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
@@ -778,39 +712,6 @@ object CasualtiesBelowConfig {
   Builder.pop()
 
   private val Spec = Builder.build()
-
-  /** One wound profile's worth of coefficients (see the `wounds.*` config sections). */
-  final case class WoundProfileConfig(
-      skinPerPoint: ConfigValue[Double],
-      musclePerPoint: ConfigValue[Double],
-      bleedRatePerWound: ConfigValue[Double],
-      painPerPoint: ConfigValue[Double]
-  )
-
-  private def woundProfile(
-      name: String,
-      skin: Double,
-      muscle: Double,
-      bleed: Double,
-      pain: Double,
-      commentLines: String*
-  ): WoundProfileConfig = {
-    Builder.push(name)
-    val skinValue = Builder
-      .comment((commentLines :+ "Skin integrity lost per half-heart of damage.").toArray*)
-      .defineInRange("skinPerPoint", skin, 0.0, 100.0, classOf[Double])
-    val muscleValue = Builder
-      .comment(Array("Muscle health lost per half-heart of damage.")*)
-      .defineInRange("musclePerPoint", muscle, 0.0, 100.0, classOf[Double])
-    val bleedValue = Builder
-      .comment(Array("External bleeding rate (mL/tick) granted per wound; zero = no bleeding.")*)
-      .defineInRange("bleedRatePerWound", bleed, 0.0, 10.0, classOf[Double])
-    val painValue = Builder
-      .comment(Array("Pain granted per half-heart of damage.")*)
-      .defineInRange("painPerPoint", pain, 0.0, 100.0, classOf[Double])
-    Builder.pop()
-    WoundProfileConfig(skinValue, muscleValue, bleedValue, painValue)
-  }
 
   /** Immune health at which infection spread and immune fight exactly cancel out for a single
     * infection: `max × spread / (spread + fight)`. Below it infections spread, above it they
