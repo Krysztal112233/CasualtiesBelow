@@ -83,9 +83,9 @@ class BodyStatusScreen
     extractBlurredBackground(graphics)
     val alpha = (0xc0 * easedProgress).toInt
     if (alpha > 0) {
-      graphics.fill(0, 0, this.width, this.height, (alpha << 24) | 0x101010)
+      graphics.fill(0, 0, width, height, (alpha << 24) | 0x101010)
     }
-    this.minecraft.gui.hud.extractDeferredSubtitles()
+    minecraft.gui.hud.extractDeferredSubtitles()
   }
 
   override def extractRenderState(
@@ -98,10 +98,10 @@ class BodyStatusScreen
 
     val panelWidth = BodyStatusScreen.PanelWidth
     val panelHeight = BodyStatusScreen.PanelHeight
-    val x = (this.width - panelWidth) / 2
-    val settledY = (this.height - panelHeight) / 2
+    val x = (width - panelWidth) / 2
+    val settledY = (height - panelHeight) / 2
     // Start fully below the screen's bottom edge, slide up to the center.
-    val y = Mth.lerpInt(easedProgress, this.height, settledY)
+    val y = Mth.lerpInt(easedProgress, height, settledY)
 
     graphics.fill(
       x - BodyStatusScreen.BorderWidth,
@@ -114,9 +114,9 @@ class BodyStatusScreen
 
     val title = Component.translatable("screen.casualtiesbelow.body_status")
     graphics.text(
-      this.font,
+      font,
       title,
-      x + (panelWidth - this.font.width(title)) / 2,
+      x + (panelWidth - font.width(title)) / 2,
       y + BodyStatusScreen.TitleTopPadding,
       BodyStatusScreen.TitleColor,
       true
@@ -125,15 +125,15 @@ class BodyStatusScreen
     val bodyOriginX = x + (panelWidth - BodyStatusScreen.BodyWidth) / 2
     val bodyOriginY = y + BodyStatusScreen.BodyTopPadding
     val hovered = hoveredPart(bodyOriginX, bodyOriginY, mouseX, mouseY)
-    Option(this.minecraft.player).foreach { player =>
+    Option(minecraft.player).foreach { player =>
       extractBody(graphics, player, bodyOriginX, bodyOriginY, hovered)
       MedicalPanel.extract(
         graphics,
-        this.font,
+        font,
         player,
         hovered.map(_.part),
         easedProgress,
-        this.height
+        height
       )
     }
   }
@@ -209,7 +209,7 @@ class BodyStatusScreen
   override def tick(): Unit = {
     if (closing && openProgress <= 0f) {
       // Actually remove the screen; done on the tick rather than mid-render.
-      this.minecraft.gui.setScreen(null)
+      minecraft.gui.setScreen(null)
     }
   }
 

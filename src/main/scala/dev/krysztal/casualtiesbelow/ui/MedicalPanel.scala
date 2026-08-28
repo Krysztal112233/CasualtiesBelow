@@ -292,27 +292,24 @@ object MedicalPanel {
     def stat(id: String): Component =
       Component.translatable(s"screen.casualtiesbelow.body_status.stat.$id")
 
-    val rows = List.newBuilder[(Component, Component)]
-    stats.fractureRecoveryTicks.foreach { ticks =>
-      rows += ((
-        stat("fracture"),
-        Component.translatable(
+    val rows = List(
+      stats.fractureRecoveryTicks.map { ticks =>
+        stat("fracture") -> Component.translatable(
           "screen.casualtiesbelow.body_status.value.minutes",
           f"${ticks / 20.0 / 60.0}%.1f"
         )
-      ))
-    }
-    if (stats.dislocated) {
-      rows += ((stat("dislocated"), Component.translatable("gui.yes")))
-    }
-    stats.infectionProgress.foreach { progress =>
-      rows += ((stat("infection"), Component.literal(f"$progress%.0f%%")))
-    }
-    if (stats.externalBleedingRate > 0.0) {
-      val bleedingPerSecond =
-        stats.externalBleedingRate * SharedConstants.TICKS_PER_SECOND
-      rows += ((stat("bleeding"), Component.literal(f"$bleedingPerSecond%.2f mL/s")))
-    }
-    rows.result()
+      },
+      Option.when(stats.dislocated) {
+        stat("dislocated") -> Component.translatable("gui.yes")
+      },
+      stats.infectionProgress.map { progress =>
+        stat("infection") -> Component.literal(f"$progress%.0f%%")
+      },
+      Option.when(stats.externalBleedingRate > 0.0) {
+        val bleedingPerSecond = stats.externalBleedingRate * SharedConstants.TICKS_PER_SECOND
+        stat("bleeding") -> Component.literal(f"$bleedingPerSecond%.2f mL/s")
+      }
+    )
+    rows.flatten
   }
 }
