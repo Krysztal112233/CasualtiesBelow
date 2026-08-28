@@ -3,15 +3,13 @@ package dev.krysztal.casualtiesbelow
 import net.minecraft.resources.Identifier
 
 import net.fabricmc.api.ModInitializer
-import net.fabricmc.fabric.api.resource.v1.DataResourceLoader
 
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
+import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
-import dev.krysztal.casualtiesbelow.damage.ArmorProtectionOverrides
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.discomfort.Discomfort
-import dev.krysztal.casualtiesbelow.discomfort.DiscomfortOverrides
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
@@ -24,6 +22,7 @@ object CasualtiesBelow extends ModInitializer {
   val Logger: Logger = LoggerFactory.getLogger(ModId)
 
   override def onInitialize(): Unit = {
+    CasualtiesBelowRegistries.registerAll()
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()
@@ -36,18 +35,6 @@ object CasualtiesBelow extends ModInitializer {
     LimbInjuries.register()
     ZombieAttackImmuneDrain.register()
     GameplayDataSync.register()
-    DataResourceLoader
-      .get()
-      .registerReloadListener(
-        Identifier.fromNamespaceAndPath(ModId, "armor_protection"),
-        ArmorProtectionOverrides
-      )
-    DataResourceLoader
-      .get()
-      .registerReloadListener(
-        Identifier.fromNamespaceAndPath(ModId, "discomfort"),
-        DiscomfortOverrides
-      )
     Logger.info("Casualties: Below initialized")
   }
 

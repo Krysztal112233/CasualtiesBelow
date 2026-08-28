@@ -1,14 +1,15 @@
 package dev.krysztal.casualtiesbelow.compat.jei
 
 import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 import scala.util.Try
 
+import net.minecraft.core.RegistryAccess
 import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
-import net.minecraft.tags.TagKey
+import net.minecraft.util.Util
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.item.Item
@@ -18,8 +19,12 @@ import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.client.ClientRegistryAccess
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
-import dev.krysztal.casualtiesbelow.sync.ArmorOverrideData
+import dev.krysztal.casualtiesbelow.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 import mezz.jei.api.IModPlugin
@@ -29,9 +34,9 @@ import mezz.jei.api.registration.IRecipeRegistration
 /** JEI integration: informational pages (the "uses" view) describing what this mod makes items do —
   * food discomfort, armor wound protection, and weapon wound profiles.
   *
-  * All numbers come from [[GameplayDataSnapshot.current]], i.e. the server's effective
-  * configuration when connected. Loaded only when JEI is present (the `jei_mod_plugin` entrypoint
-  * is lazy), and regenerated on every JEI start.
+  * Config-derived numbers come from [[GameplayDataSnapshot.current]] and per-object content comes
+  * from the current client's synced dynamic registries. Loaded only when JEI is present (the
+  * `jei_mod_plugin` entrypoint is lazy), and regenerated on every JEI start.
   */
 @JeiPlugin
 object CasualtiesBelowJeiPlugin extends IModPlugin {
@@ -40,6 +45,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   override def registerRecipes(registration: IRecipeRegistration): Unit = {
     given data: GameplayDataSnapshot = GameplayDataSnapshot.current
+    given registryAccess: RegistryAccess =
+      ClientRegistryAccess.current.getOrElse(RegistryAccess.EMPTY)
 
     registerDiscomfort(registration)
     registerArmor(registration)
@@ -50,16 +57,19 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   private def registerDiscomfort(
       registration: IRecipeRegistration
-  )(using data: GameplayDataSnapshot): Unit = {
+  )(using data: GameplayDataSnapshot, registryAccess: RegistryAccess): Unit = {
     val candidates = collectDiscomfortCandidates
-    val stewOverridden =
-      data.discomfortOverrides.exists(_.appliesTo(new ItemStack(Items.SUSPICIOUS_STEW)))
+    val stewOverridden = GameplayDataLookup
+      .discomfort(registryAccess, new ItemStack(Items.SUSPICIOUS_STEW))
+      .isDefined
 
     // Group items that share one description into a single info entry.
     val groups = candidates.toList
       .filter(_ != Items.SUSPICIOUS_STEW || stewOverridden)
       .flatMap { item =>
-        data.discomfortMeanOf(new ItemStack(item)).map(mean => (mean, item))
+        Discomfort
+          .meanOfWithTier(new ItemStack(item), registryAccess, data)
+          .map(mean => (mean, item))
       }
       .groupBy(_._1)
 
@@ -110,7 +120,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     }
   }
 
-  private def collectDiscomfortCandidates(using data: GameplayDataSnapshot): Set[Item] = {
+  private def collectDiscomfortCandidates(using registryAccess: RegistryAccess): Set[Item] = {
     val items = scala.collection.mutable.LinkedHashSet.empty[Item]
     List(
       CasualtiesBelowTags.Discomfort1Items,
@@ -119,16 +129,11 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     ).foreach { tag =>
       BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(h => items += h.value())
     }
-    data.discomfortOverrides.foreach { o =>
-      o.items.foreach { id =>
-        Try(Identifier.parse(id)).toOption
-          .flatMap(identifier => Option(BuiltInRegistries.ITEM.getValue(identifier)))
-          .foreach(items += _)
+    GameplayDataLookup
+      .orderedEntries(registryAccess, CasualtiesBelowRegistries.Discomfort)(_.priority.intValue())
+      .foreach { (_, entry) =>
+        if (entry.items.isBound) entry.items.stream().forEach(holder => items += holder.value())
       }
-      o.tag.foreach { tag =>
-        BuiltInRegistries.ITEM.getTagOrEmpty(itemTag(tag)).forEach(h => items += h.value())
-      }
-    }
     items += Items.SUSPICIOUS_STEW // always documented: its tier is component-derived
     items.toSet
   }
@@ -140,7 +145,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   private def registerArmor(
       registration: IRecipeRegistration
-  )(using data: GameplayDataSnapshot): Unit = {
+  )(using data: GameplayDataSnapshot, registryAccess: RegistryAccess): Unit = {
     val groups = scala.collection.mutable.LinkedHashMap
       .empty[(EquipmentSlot, Double, Double, Boolean), List[Item]]
     val covered = scala.collection.mutable.Set.empty[(Item, EquipmentSlot)]
@@ -149,7 +154,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       val stack = new ItemStack(item)
       val modifiers =
         stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
-      val ovr = data.armorOverrides.find(_.appliesTo(stack))
+      val ovr = GameplayDataLookup.armorProtection(registryAccess, stack)
 
       ArmorSlots.foreach { slot =>
         val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
@@ -175,7 +180,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         .foreach { equippable =>
           val slot = equippable.slot()
           if (!covered.contains(item -> slot)) {
-            data.armorOverrides.find(_.appliesTo(stack)).foreach { ovr =>
+            GameplayDataLookup.armorProtection(registryAccess, stack).foreach { ovr =>
               val modifiers = stack
                 .getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
               val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
@@ -219,16 +224,18 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       stack: ItemStack,
       armor: Double,
       toughness: Double,
-      ovr: Option[ArmorOverrideData]
+      ovr: Option[ArmorProtectionData]
   )(using data: GameplayDataSnapshot): Option[(Double, Double)] = {
     val skin = ovr
-      .flatMap(_.skin)
+      .flatMap(_.skinFactor.toScala)
+      .map(_.source)
       .flatMap(evaluate(_, List("armor", "toughness"), List(armor, toughness)))
       .orElse(evaluate(data.armorSkinFormula, List("armor", "toughness"), List(armor, toughness)))
       .map(v => v.max(0.0).min(1.0))
     skin.flatMap { s =>
       ovr
-        .flatMap(_.muscle)
+        .flatMap(_.muscleFactor.toScala)
+        .map(_.source)
         .flatMap(
           evaluate(_, List("armor", "toughness", "skinFactor"), List(armor, toughness, s))
         )
@@ -264,33 +271,34 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   private def registerSharpWeapons(
       registration: IRecipeRegistration
-  )(using data: GameplayDataSnapshot): Unit = {
-    data.wounds.get("cut").foreach { (skin, muscle, bleed, pain) =>
-      val items = BuiltInRegistries.ITEM
-        .getTagOrEmpty(CasualtiesBelowTags.SharpMeleeItems)
-        .asScala
-        .map(h => new ItemStack(h.value()))
-        .toList
-      if (items.nonEmpty) {
-        registration.addItemStackInfo(
-          items.asJava,
-          Component.translatable(
-            "jei.casualtiesbelow.weapon.cut",
-            fmt(skin),
-            fmt(muscle),
-            fmt(bleed),
-            fmt(pain)
-          ),
-          Component.translatable("jei.casualtiesbelow.weapon.note")
-        )
+  )(using registryAccess: RegistryAccess): Unit = {
+    val profileKey =
+      CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.WoundProfile, "cut")
+    GameplayDataLookup
+      .entry(registryAccess, CasualtiesBelowRegistries.WoundProfile, profileKey)
+      .foreach { profile =>
+        val items = BuiltInRegistries.ITEM
+          .getTagOrEmpty(CasualtiesBelowTags.SharpMeleeItems)
+          .asScala
+          .map(h => new ItemStack(h.value()))
+          .toList
+        if (items.nonEmpty) {
+          registration.addItemStackInfo(
+            items.asJava,
+            Component.translatable(
+              Util.makeDescriptionId("wound_profile", profileKey.identifier()),
+              fmt(profile.skinPerPoint),
+              fmt(profile.musclePerPoint),
+              fmt(profile.bleedRatePerWound),
+              fmt(profile.painPerPoint)
+            ),
+            Component.translatable("jei.casualtiesbelow.weapon.note")
+          )
+        }
       }
-    }
   }
 
   // --- helpers ---------------------------------------------------------------
-
-  private def itemTag(id: String): TagKey[Item] =
-    TagKey.create(Registries.ITEM, Identifier.parse(id))
 
   private def fmt(value: Double): String = {
     if (value == value.floor) value.toInt.toString

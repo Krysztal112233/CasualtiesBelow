@@ -41,6 +41,6 @@
   "jei.casualtiesbelow.armor.slot.chest": "chest",
   "jei.casualtiesbelow.armor.slot.legs": "legs",
   "jei.casualtiesbelow.armor.slot.feet": "feet",
-  "jei.casualtiesbelow.weapon.cut": "Sharp hits cut the skin: per damage point — skin ×%1$s, muscle ×%2$s, bleeding +%3$s/s per wound, pain ×%4$s",
+  "wound_profile.casualtiesbelow.cut": "Sharp hits cut the skin: per damage point — skin ×%1$s, muscle ×%2$s, bleeding +%3$s/s per wound, pain ×%4$s",
   "jei.casualtiesbelow.weapon.note": "Other armed hits bludgeon instead; unarmed hits bite or scratch."
 }
