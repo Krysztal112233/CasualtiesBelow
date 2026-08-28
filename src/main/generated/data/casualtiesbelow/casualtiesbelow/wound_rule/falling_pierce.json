@@ -1,0 +1,6 @@
+{
+  "damage_types": "minecraft:falling_stalactite",
+  "forced_part": "head",
+  "priority": 70,
+  "profile": "casualtiesbelow:pierce"
+}

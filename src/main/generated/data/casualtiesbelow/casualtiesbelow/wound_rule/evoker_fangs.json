@@ -1,0 +1,10 @@
+{
+  "damage_types": "minecraft:indirect_magic",
+  "predicate": {
+    "direct_entity": {
+      "minecraft:entity_type": "minecraft:evoker_fangs"
+    }
+  },
+  "priority": 40,
+  "profile": "casualtiesbelow:pierce"
+}

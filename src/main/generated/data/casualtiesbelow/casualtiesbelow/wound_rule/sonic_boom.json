@@ -1,0 +1,5 @@
+{
+  "damage_types": "minecraft:sonic_boom",
+  "priority": 50,
+  "profile": "casualtiesbelow:blunt"
+}

@@ -1,0 +1,9 @@
+{
+  "damage_types": [
+    "minecraft:arrow",
+    "minecraft:trident",
+    "minecraft:mob_projectile"
+  ],
+  "priority": 80,
+  "profile": "casualtiesbelow:pierce"
+}

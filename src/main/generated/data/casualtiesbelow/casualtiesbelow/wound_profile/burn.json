@@ -1,0 +1,6 @@
+{
+  "bleed_rate_per_wound": 0.0,
+  "muscle_per_point": 0.2,
+  "pain_per_point": 2.0,
+  "skin_per_point": 1.0
+}

@@ -1,0 +1,8 @@
+{
+  "direct_living": true,
+  "priority": 30,
+  "profile": "casualtiesbelow:cut",
+  "weapon": {
+    "items": "#casualtiesbelow:sharp_melee"
+  }
+}

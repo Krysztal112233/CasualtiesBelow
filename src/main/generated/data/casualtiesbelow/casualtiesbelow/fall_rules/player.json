@@ -1,0 +1,13 @@
+{
+  "dislocation_pain": 30.0,
+  "dislocation_threshold": 8.0,
+  "entities": "minecraft:player",
+  "fall_bleeding_rate_per_wound": 0.5,
+  "fall_pain_per_point": 6.0,
+  "fracture_base_recovery_ticks": 24000,
+  "fracture_pain": 50.0,
+  "fracture_threshold": 10.0,
+  "muscle_damage_per_point": 4.0,
+  "scrape_per_point": 4.0,
+  "scrape_threshold": 4.0
+}

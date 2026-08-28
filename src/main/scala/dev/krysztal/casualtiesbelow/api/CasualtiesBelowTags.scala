@@ -21,6 +21,12 @@ object CasualtiesBelowTags {
   val BypassesHealthRedirect: TagKey[DamageType] =
     TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("bypasses_health_redirect"))
 
+  /** Damage sources classified as blast wounds. This joins vanilla's explosion tag with special
+    * explosion-like damage types such as wither skulls.
+    */
+  val BlastSources: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("blast_sources"))
+
   /** Melee weapons that cut skin open (swords, axes by default). */
   val SharpMeleeItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelow.ofIdentifier("sharp_melee"))

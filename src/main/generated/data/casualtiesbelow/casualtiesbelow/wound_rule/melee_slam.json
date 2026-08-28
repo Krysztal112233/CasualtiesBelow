@@ -1,0 +1,10 @@
+{
+  "direct_living": true,
+  "predicate": {
+    "direct_entity": {
+      "minecraft:entity_type": "#casualtiesbelow:blunt_melee"
+    }
+  },
+  "priority": 20,
+  "profile": "casualtiesbelow:blunt"
+}

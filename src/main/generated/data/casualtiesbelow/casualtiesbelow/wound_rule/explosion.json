@@ -1,0 +1,6 @@
+{
+  "damage_types": "#casualtiesbelow:blast_sources",
+  "priority": 90,
+  "profile": "casualtiesbelow:blast",
+  "scatter": true
+}

@@ -1,0 +1,5 @@
+{
+  "damage_types": "#minecraft:is_fire",
+  "priority": 100,
+  "profile": "casualtiesbelow:burn"
+}

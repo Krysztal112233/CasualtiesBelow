@@ -1,0 +1,8 @@
+{
+  "damage_types": [
+    "minecraft:cactus",
+    "minecraft:sweet_berry_bush"
+  ],
+  "priority": 60,
+  "profile": "casualtiesbelow:prick"
+}

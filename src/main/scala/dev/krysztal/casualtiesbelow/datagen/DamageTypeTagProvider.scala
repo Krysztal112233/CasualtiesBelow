@@ -6,6 +6,7 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.core.registries.Registries
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.world.damagesource.DamageType
+import net.minecraft.world.damagesource.DamageTypes
 
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
@@ -42,5 +43,11 @@ final class DamageTypeTagProvider(
 
     // Sepsis is terminal; the other physiological sources remain eligible for death protection.
     builder(DamageTypeTags.BYPASSES_INVULNERABILITY).add(sepsis)
+
+    // HolderSet codecs cannot represent a union of one tag and direct entries. Give the blast
+    // wound rule one semantic tag that datapacks can extend.
+    builder(CasualtiesBelowTags.BlastSources)
+      .forceAddTag(DamageTypeTags.IS_EXPLOSION)
+      .add(DamageTypes.WITHER_SKULL)
   }
 }

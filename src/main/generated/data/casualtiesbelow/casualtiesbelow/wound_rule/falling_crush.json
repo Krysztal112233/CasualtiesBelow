@@ -1,0 +1,9 @@
+{
+  "damage_types": [
+    "minecraft:falling_anvil",
+    "minecraft:falling_block"
+  ],
+  "forced_part": "head",
+  "priority": 70,
+  "profile": "casualtiesbelow:blunt"
+}

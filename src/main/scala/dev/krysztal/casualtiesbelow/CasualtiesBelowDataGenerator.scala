@@ -11,10 +11,12 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
-import dev.krysztal.casualtiesbelow.datagen.ArmorProtectionOverrideProvider
+import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
+import dev.krysztal.casualtiesbelow.datagen.CasualtiesBelowDataDefaults
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
+import dev.krysztal.casualtiesbelow.datagen.GameplayDataProvider
 import dev.krysztal.casualtiesbelow.datagen.ItemTagProvider
 
 /** Data generation entrypoint (declared as `fabric-datagen` in fabric.mod.json). Run with
@@ -34,12 +36,26 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
     pack.addProvider[BluntMeleeTagProvider]((output, registries) =>
       BluntMeleeTagProvider(output, registries)
     )
-    pack.addProvider[ArmorProtectionOverrideProvider]((output, _) =>
-      ArmorProtectionOverrideProvider(output)
+    pack.addProvider[GameplayDataProvider]((output, registries) =>
+      GameplayDataProvider(output, registries)
     )
   }
 
   override def buildRegistry(registryBuilder: RegistrySetBuilder): Unit = {
+    registryBuilder
+      .add(
+        CasualtiesBelowRegistries.WoundProfile,
+        CasualtiesBelowDataDefaults.bootstrapWoundProfiles
+      )
+      .add(CasualtiesBelowRegistries.WoundRule, CasualtiesBelowDataDefaults.bootstrapWoundRules)
+      .add(
+        CasualtiesBelowRegistries.ArmorProtection,
+        CasualtiesBelowDataDefaults.bootstrapArmorProtection
+      )
+      .add(CasualtiesBelowRegistries.Discomfort, CasualtiesBelowDataDefaults.bootstrapDiscomfort)
+      .add(CasualtiesBelowRegistries.FallRules, CasualtiesBelowDataDefaults.bootstrapFallRules)
+      .add(CasualtiesBelowRegistries.HitLocation, CasualtiesBelowDataDefaults.bootstrapHitLocation)
+
     registryBuilder.add(
       Registries.DAMAGE_TYPE,
       bootstrap => {
