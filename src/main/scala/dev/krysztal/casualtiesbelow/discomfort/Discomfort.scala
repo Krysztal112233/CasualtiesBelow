@@ -1,7 +1,9 @@
 package dev.krysztal.casualtiesbelow.discomfort
 
 import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 
+import net.minecraft.core.RegistryAccess
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
@@ -15,8 +17,10 @@ import net.minecraft.world.item.ItemStack
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
@@ -28,8 +32,8 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
 
 /** Food discomfort: how revolting what you just ate was. Which food is how revolting is content —
   * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Items]] and up) with
-  * per-item [[DiscomfortOverrides]] on top; what a tier *costs* and how the value floats, decays
-  * and escalates is balancing, read from the `[discomfort]` config section.
+  * per-item `discomfort` registry entries on top; what a tier *costs* and how the value floats,
+  * decays and escalates is balancing, read from the `[discomfort]` config section.
   *
   * The mean is sampled per bite (gaussian or uniform, config-selected) and then modulated by the
   * player's state instead of leaning on RNG alone: eating while already nauseous, force-feeding on
@@ -42,26 +46,35 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
   * rolls a chance that rises linearly with discomfort, and vomiting removes a fluctuating amount
   * while applying hunger and saturation penalties.
   *
-  * All reads go through a [[GameplayDataSnapshot]]: server logic captures the live config and
-  * datapack state, client prediction and displays read the last synced snapshot — so the refusal
-  * prediction in `canConsume` matches the server's decision even when the server runs
-  * world-datapack overrides or a different config. Untagged food (and beneficial suspicious stew)
-  * contributes nothing. Milk keeps working while nauseous: it bears no discomfort, so refusal never
-  * blocks it.
+  * Authoritative per-item entries come from the synced `discomfort` registry through the current
+  * level's registry access on both sides. Global means and thresholds still come from
+  * [[GameplayDataSnapshot]]. Untagged food (and beneficial suspicious stew) contributes nothing.
+  * Milk keeps working while nauseous: it bears no discomfort, so refusal never blocks it.
   */
 object Discomfort {
 
   /** Resolves the discomfort mean for [stack], or `None` when the food is fine. Lookup order:
-    * explicit datapack override, tier tags (most severe tier wins), suspicious-stew effect
-    * inspection.
+    * explicit registry entry, tier tags (most severe tier wins), suspicious-stew effect inspection.
     */
-  def meanOf(stack: ItemStack): Option[Double] = meanOf(stack, GameplayDataSnapshot.current)
+  def meanOf(
+      stack: ItemStack,
+      registryAccess: RegistryAccess,
+      data: GameplayDataSnapshot
+  ): Option[Double] = {
+    meanOfWithTier(stack, registryAccess, data)
+      .map(_._1)
+      .orElse(suspiciousStewMean(stack, data))
+  }
 
-  /** Snapshot-based overload, so every caller (server logic, client prediction, JEI pages) shares
-    * one resolution implementation against one data source.
+  /** Resolves the registry/tag-derived mean and its tier for client displays. Explicit registry
+    * entries take precedence over tier tags; among tags, the most severe tier wins.
     */
-  def meanOf(stack: ItemStack, data: GameplayDataSnapshot): Option[Double] = {
-    data.discomfortMeanOf(stack).map(_._1).orElse(suspiciousStewMean(stack, data))
+  def meanOfWithTier(
+      stack: ItemStack,
+      registryAccess: RegistryAccess,
+      data: GameplayDataSnapshot
+  ): Option[(Double, Option[Int])] = {
+    explicitMean(stack, registryAccess, data).orElse(taggedMean(stack, data))
   }
 
   /** Whether [player] may start consuming [stack]: past the refusal threshold, food that bears
@@ -70,18 +83,21 @@ object Discomfort {
     */
   def allowsEating(player: Player, stack: ItemStack): Boolean = {
     if (player.isCreative || player.isSpectator) return true
-    val data = GameplayDataSnapshot.current
+    val data = player match {
+      case _: ServerPlayer => GameplayDataSnapshot.capture()
+      case _               => GameplayDataSnapshot.current
+    }
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     if (vitals.discomfort < data.refusalThreshold) return true
 
-    meanOf(stack, data).forall(_ <= 0.0)
+    meanOf(stack, player.registryAccess(), data).forall(_ <= 0.0)
   }
 
   /** Applies the discomfort of a just-consumed food item. Called by the `Consumable` mixin on the
     * server when a player finishes eating or drinking something with a food component.
     */
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
-    meanOf(stack) match {
+    meanOf(stack, player.registryAccess(), GameplayDataSnapshot.capture()) match {
       case None                    => ()
       case Some(mean) if mean <= 0 => ()
       case Some(mean)              =>
@@ -201,6 +217,37 @@ object Discomfort {
           mean + random.nextGaussian() * spread
       }
     sampled.max(0.0)
+  }
+
+  private def explicitMean(
+      stack: ItemStack,
+      registryAccess: RegistryAccess,
+      data: GameplayDataSnapshot
+  ): Option[(Double, Option[Int])] = {
+    GameplayDataLookup.discomfort(registryAccess, stack).flatMap { entry =>
+      entry.level.toScala
+        .map(level =>
+          (tierMean(level.intValue(), data.discomfortLevelMeans), Some(level.intValue()))
+        )
+        .orElse(entry.mean.toScala.map(mean => (mean.doubleValue(), None)))
+    }
+  }
+
+  private def taggedMean(
+      stack: ItemStack,
+      data: GameplayDataSnapshot
+  ): Option[(Double, Option[Int])] = {
+    if (stack.is(CasualtiesBelowTags.Discomfort3Items)) {
+      Some((tierMean(3, data.discomfortLevelMeans), Some(3)))
+    } else if (stack.is(CasualtiesBelowTags.Discomfort2Items)) {
+      Some((tierMean(2, data.discomfortLevelMeans), Some(2)))
+    } else if (stack.is(CasualtiesBelowTags.Discomfort1Items)) {
+      Some((tierMean(1, data.discomfortLevelMeans), Some(1)))
+    } else None
+  }
+
+  private def tierMean(level: Int, means: List[Double]): Double = {
+    means.applyOrElse(level - 1, (_: Int) => means.last)
   }
 
   /** Suspicious stew carries its effects per stack, so it cannot sit in a fixed tier tag: poison

@@ -1,9 +1,12 @@
 package dev.krysztal.casualtiesbelow.pain
 
+import net.minecraft.world.entity.LivingEntity
+
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
@@ -38,20 +41,25 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it
   *     server-side, client-side results are presentation-only.
   *
-  * The numeric constants here are balancing placeholders; expect them to become config values once
-  * playtesting starts.
+  * Fall and condition grants come from the victim's matching `fall_rules` entry; aggregation
+  * strategy remains global config-driven math.
   */
 object PainCalc {
 
   /** Impact pain granted to one limb by a fall, per half-heart of formula damage. */
-  def onFall(damage: Double): Double = damage * FallPainPerPoint
+  def onFall(victim: LivingEntity, damage: Double): Double = {
+    val rules = GameplayDataLookup.fallRules(victim.level().registryAccess(), victim)
+    damage * rules.fallPainPerPoint
+  }
 
   /** One-time pain granted when a discrete condition onsets on a limb. */
-  def onConditionOnset(condition: LimbCondition): Double =
+  def onConditionOnset(victim: LivingEntity, condition: LimbCondition): Double = {
+    val rules = GameplayDataLookup.fallRules(victim.level().registryAccess(), victim)
     condition match {
-      case LimbCondition.Fracture    => FracturePain
-      case LimbCondition.Dislocation => DislocationPain
+      case LimbCondition.Fracture    => rules.fracturePain
+      case LimbCondition.Dislocation => rules.dislocationPain
     }
+  }
 
   /** Whole-body pain for the given body, from all limbs' current pain. */
   def total(body: BodyComponent): Double =
@@ -86,12 +94,4 @@ object PainCalc {
     }.sum
   }
 
-  /** Impact pain per half-heart of fall damage. */
-  private val FallPainPerPoint = 6.0
-
-  /** One-time pain granted when a limb fractures. */
-  private val FracturePain = 50.0
-
-  /** One-time pain granted when a limb is dislocated. */
-  private val DislocationPain = 30.0
 }

@@ -17,6 +17,8 @@ import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.data.FallRulesData
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.wound.HitLocation
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
@@ -33,8 +35,8 @@ import dev.krysztal.casualtiesbelow.progression.StarvationProgression
   * damage goes through [[afterDamage]] (Fabric's `ServerLivingEntityEvents.AFTER_DAMAGE`), which
   * carries no hit-location information: the affected part is guessed from hit geometry (see
   * [[HitLocation]]). What kind of wound a hit inflicts — bite, cut, blunt, pierce, burn, blast — is
-  * classified from the damage source by [[WoundProfiles]] (tag-driven; see
-  * [[CasualtiesBelowTags]]).
+  * classified from the damage source by [[WoundProfiles]] (rule-driven; see the
+  * `casualtiesbelow:wound_rule` registry).
   */
 object LimbDamage {
 
@@ -104,7 +106,7 @@ object LimbDamage {
 
     StarvationProgression.onAfterDamage(player, source, damageTaken)
     val damage = damageTaken.toDouble
-    WoundProfiles.classify(source) match {
+    WoundProfiles.classify(player.level(), player, source) match {
       case None                         => ()
       case Some(wound) if wound.scatter =>
         applyScatter(player, source, damage, wound.profile)
@@ -175,32 +177,39 @@ object LimbDamage {
     *
     *   - worn boots cushion the whole impact (the `[fall]` cushion formula)
     *   - any damage: both legs lose muscle health and gain pain
-    *   - > [[ScrapeThreshold]]: skin scrape and external bleeding capped by skin damage
-    *   - ≥ [[DislocationThreshold]]: one random leg is dislocated
-    *   - ≥ [[FractureThreshold]]: one random leg fractures instead, with recovery time scaling with
-    *     the damage; worn leggings blunt the impact for these condition rolls (the `[fall]`
-    *     protection formula)
+    *   - above the registry scrape threshold: skin scrape and external bleeding capped by skin
+    *     damage
+    *   - at the registry dislocation threshold: one random leg is dislocated
+    *   - at the registry fracture threshold: one random leg fractures instead, with recovery time
+    *     scaling with the damage; worn leggings blunt the impact for these condition rolls (the
+    *     `[fall]` protection formula)
     *
-    * The thresholds are structural rules (code constants); the equipment factors are balancing,
-    * read from config formulas.
+    * Impact and condition values come from the matching `fall_rules` entry; equipment factors stay
+    * in config formulas.
     */
-  private def attributeFallDamage(player: Player, source: DamageSource, damage: Double): Unit = {
+  private def attributeFallDamage(
+      player: ServerPlayer,
+      source: DamageSource,
+      damage: Double
+  ): Unit = {
     val cushioned = damage * (1.0 - bootsCushion(player))
     if (cushioned <= 0.0) return
 
+    val rules = GameplayDataLookup.fallRules(player.registryAccess(), player)
     val severeLeg =
       if (player.getRandom.nextBoolean()) BodyPart.LegLeft else BodyPart.LegRight
 
     // General impact on both legs, then the severe injury on the randomly picked leg — the severe
     // leg effectively suffers two injuries, each cancellable on its own.
     BodyPart.Legs.foreach { leg =>
-      applyFallInjury(player, leg, source, cushioned)
+      applyFallInjury(player, leg, source, cushioned, rules)
     }
     applySevereFallInjury(
       player,
       severeLeg,
       source,
-      cushioned * (1.0 - leggingsProtection(player))
+      cushioned * (1.0 - leggingsProtection(player)),
+      rules
     )
   }
 
@@ -244,47 +253,50 @@ object LimbDamage {
     * Application mechanics (context, event, commit) live in [[LimbInjuries.apply]].
     */
   private def applyFallInjury(
-      player: Player,
+      player: ServerPlayer,
       leg: BodyPart,
       source: DamageSource,
-      damage: Double
+      damage: Double,
+      rules: FallRulesData
   ): Unit = {
-    LimbInjuries(player, leg, source, damage, pain = PainCalc.onFall(damage)) {
+    LimbInjuries(player, leg, source, damage, pain = PainCalc.onFall(player, damage)) {
       (stats, effectiveDamage) =>
-        stats.muscleHealth = (stats.muscleHealth - effectiveDamage * MuscleDamagePerPoint).max(0.0)
+        stats.muscleHealth =
+          (stats.muscleHealth - effectiveDamage * rules.muscleDamagePerPoint).max(0.0)
 
-        if (effectiveDamage > ScrapeThreshold) {
+        if (effectiveDamage > rules.scrapeThreshold) {
           BleedingCalc.applyWound(
             stats,
-            (effectiveDamage - ScrapeThreshold) * ScrapePerPoint,
-            FallBleedingRatePerWound,
+            (effectiveDamage - rules.scrapeThreshold) * rules.scrapePerPoint,
+            rules.fallBleedingRatePerWound,
             player.getRandom
           )
         }
     }
   }
 
-  /** Severe fall injury rules for the picked leg: fracture above [[FractureThreshold]], dislocation
-    * above [[DislocationThreshold]] — discrete condition onsets carrying a fixed one-time pain
-    * grant ([[PainCalc.onConditionOnset]]), independent of impact pain.
+  /** Severe fall injury rules for the picked leg: fracture above the registry fracture threshold,
+    * dislocation above its dislocation threshold — discrete condition onsets carrying a fixed
+    * one-time pain grant ([[PainCalc.onConditionOnset]]), independent of impact pain.
     *
     * Onset guards prevent re-granting: an already-fractured leg takes no new condition, and an
     * already-dislocated leg is not re-dislocated (a dislocated leg can still progress to a
     * fracture).
     */
   private def applySevereFallInjury(
-      player: Player,
+      player: ServerPlayer,
       leg: BodyPart,
       source: DamageSource,
-      damage: Double
+      damage: Double,
+      rules: FallRulesData
   ): Unit = {
-    if (damage < DislocationThreshold) return
+    if (damage < rules.dislocationThreshold) return
 
     val current = CasualtiesBelowComponents.Body.get(player).stats(leg)
     if (current.fractureRecoveryTicks.isDefined) return
 
     val condition =
-      if (damage >= FractureThreshold) {
+      if (damage >= rules.fractureThreshold) {
         LimbCondition.Fracture
       } else {
         if (current.dislocated) return
@@ -297,11 +309,12 @@ object LimbDamage {
       source,
       damage,
       Some(condition),
-      PainCalc.onConditionOnset(condition)
+      PainCalc.onConditionOnset(player, condition)
     ) { (stats, effectiveDamage) =>
       if (condition == LimbCondition.Fracture) {
         stats.fractureRecoveryTicks = Some(
-          (FractureBaseRecoveryTicks * effectiveDamage / FractureThreshold).toInt
+          (rules.fractureBaseRecoveryTicks
+            .intValue() * effectiveDamage / rules.fractureThreshold).toInt
         )
       } else {
         stats.dislocated = true
@@ -309,26 +322,4 @@ object LimbDamage {
     }
   }
 
-  /** Muscle health lost per half-heart of fall damage. */
-  private val MuscleDamagePerPoint = 4.0
-
-  /** Fall impact (half-hearts) absorbed before the landing starts scraping the skin. */
-  private val ScrapeThreshold = 4.0
-
-  /** Skin integrity lost per half-heart above [[ScrapeThreshold]]. */
-  private val ScrapePerPoint = 4.0
-
-  /** Fall damage at which one random leg is dislocated. */
-  private val DislocationThreshold = 8.0
-
-  /** Fall damage at which one random leg fractures (instead of dislocating). */
-  private val FractureThreshold = 10.0
-
-  /** Fracture recovery time at exactly [[FractureThreshold]] damage, in ticks (~1 day); scales
-    * linearly with the damage.
-    */
-  private val FractureBaseRecoveryTicks = 24000
-
-  /** External bleeding rate (mL/tick) granted by one fall scrape, before the skin cap. */
-  private val FallBleedingRatePerWound = 0.5
 }

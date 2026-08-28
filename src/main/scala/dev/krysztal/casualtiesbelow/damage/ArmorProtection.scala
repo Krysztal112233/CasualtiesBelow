@@ -1,5 +1,7 @@
 package dev.krysztal.casualtiesbelow.damage
 
+import scala.jdk.OptionConverters.*
+
 import net.minecraft.core.component.DataComponents
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.world.damagesource.DamageSource
@@ -9,6 +11,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
@@ -52,24 +55,15 @@ object ArmorProtection {
 
     // A datapack override matches by item identity and replaces the config formula for the factors
     // it defines — including for pieces with zero armor value, which the fallback path skips.
-    ArmorProtectionOverrides.forStack(stack) match {
+    GameplayDataLookup.armorProtection(player.level().registryAccess(), stack) match {
       case Some(entry) =>
-        val skinFactor = entry.skinFactor
-          .flatMap(e =>
-            ArmorProtectionOverrides.evaluate(e, List("armor", "toughness"), List(armor, toughness))
-          )
+        val skinFactor = entry.skinFactor.toScala
+          .flatMap(_.evaluate(armor, toughness))
           .getOrElse(config.ArmorSkinFactorFormula.evaluate(armor, toughness))
           .max(0.0)
           .min(1.0)
-        val muscleFactor = entry.muscleFactor
-          .flatMap(e =>
-            ArmorProtectionOverrides
-              .evaluate(
-                e,
-                List("armor", "toughness", "skinFactor"),
-                List(armor, toughness, skinFactor)
-              )
-          )
+        val muscleFactor = entry.muscleFactor.toScala
+          .flatMap(_.evaluate(armor, toughness, skinFactor))
           .getOrElse(config.ArmorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
           .max(0.0)
           .min(1.0)
