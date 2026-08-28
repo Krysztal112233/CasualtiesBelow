@@ -30,15 +30,13 @@ abstract class ConsumableMixin {
       cir: CallbackInfoReturnable[Boolean]
   ): Unit = {
     user match {
+      case serverPlayer: ServerPlayer if !Discomfort.allowsEating(serverPlayer, stack) =>
+        serverPlayer.sendSystemMessage(
+          Component.translatable("message.casualtiesbelow.discomfort.refused"),
+          true
+        )
+        cir.setReturnValue(false)
       case player: Player if !Discomfort.allowsEating(player, stack) =>
-        player match {
-          case serverPlayer: ServerPlayer =>
-            serverPlayer.sendSystemMessage(
-              Component.translatable("message.casualtiesbelow.discomfort.refused"),
-              true
-            )
-          case _ => ()
-        }
         cir.setReturnValue(false)
       case _ => ()
     }
