@@ -1,6 +1,7 @@
 {
   "values": [
     "#minecraft:bypasses_invulnerability",
+    "minecraft:outside_border",
     "casualtiesbelow:blood_loss",
     "casualtiesbelow:sepsis",
     "casualtiesbelow:hypoxia",

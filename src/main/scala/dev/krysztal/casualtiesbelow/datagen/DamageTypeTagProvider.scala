@@ -39,7 +39,7 @@ final class DamageTypeTagProvider(
     // Forced vanilla deaths and the mod's physiological fatal sources must reach health zero.
     builder(CasualtiesBelowTags.BypassesHealthRedirect)
       .addTag(DamageTypeTags.BYPASSES_INVULNERABILITY)
-      .add(bloodLoss, sepsis, hypoxia, starvation)
+      .add(DamageTypes.OUTSIDE_BORDER, bloodLoss, sepsis, hypoxia, starvation)
 
     // Sepsis is terminal; the other physiological sources remain eligible for death protection.
     builder(DamageTypeTags.BYPASSES_INVULNERABILITY).add(sepsis)
