@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
 
 import org.ladysnake.cca.api.v3.component.ComponentFactory
 import org.ladysnake.cca.api.v3.component.ComponentKey
@@ -30,10 +31,10 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
   val Body: ComponentKey[BodyComponent] = ofComponent("body")
   val Vitals: ComponentKey[VitalsComponent] = ofComponent("vitals")
 
-  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no hemostasis window or
-    * sepsis. Explicitly waking an unconscious player follows the normal state-change event
-    * contract. Death respawns instead receive fresh component defaults through the CCA copy
-    * strategy.
+  /** Resets a player to a fully healthy state: pristine limbs, full vitals, no terminal-hypoxia or
+    * hemostasis timer, and no sepsis. Explicitly waking an unconscious player follows the normal
+    * state-change event contract. Death respawns instead receive fresh component defaults through
+    * the CCA copy strategy.
     */
   def reset(player: ServerPlayer): Unit = {
     val body = Body.get(player)
@@ -43,6 +44,7 @@ object CasualtiesBelowComponents extends EntityComponentInitializer {
     vitals.immuneHealth = CasualtiesBelowConfig.MaxImmuneHealth.get()
     vitals.bloodOxygen = VitalsComponent.MaxBloodOxygen
     vitals.bloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
+    HypoxiaProgression.reset(vitals)
     TotemHemostasis.reset(vitals)
     vitals.sepsis = 0.0
     vitals.discomfort = 0.0

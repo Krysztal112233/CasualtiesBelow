@@ -147,6 +147,41 @@ object CasualtiesBelowConfig {
     .defineInRange("maxImmuneHealth", 200.0, 1.0, 10000.0, classOf[Double])
   Builder.pop()
 
+  Builder.push("hazards")
+  val TerminalHypoxiaDurationTicks: ConfigValue[Integer] = Builder
+    .comment(
+      "Ticks spent at zero blood oxygen while breathing remains blocked before terminal hypoxia",
+      "deals its fatal hit (20 ticks = 1 second). Must remain positive; ending the breathing",
+      "block resets the hidden persisted exposure timer immediately."
+    )
+    .defineInRange("terminalHypoxiaDurationTicks", 200, 1, 72000)
+  val InWallBloodOxygenDepletionPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Blood oxygen lost per tick while the player's head is in a wall. When exhausted-air",
+      "drowning is active simultaneously, only the stronger of this and",
+      "vitals.bloodOxygenDepletionPerTick applies."
+    )
+    .defineInRange("inWallBloodOxygenDepletionPerTick", 0.5, 0.0, 100.0, classOf[Double])
+  val StarvationBloodLossFractionPerDamage: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of healthy max blood lost per accepted vanilla starvation damage point.",
+      "The default 0.05 drains 250 mL per normal 1.0-damage pulse at 5000 mL healthy capacity."
+    )
+    .defineInRange("starvationBloodLossFractionPerDamage", 0.05, 0.0, 1.0, classOf[Double])
+  val EasyStarvationBloodFloorFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Easy starvation floor as a fraction of effective post-sepsis max blood. Vanilla hurt",
+      "pulses stop at the floor; the default 0.5 leaves half of effective blood."
+    )
+    .defineInRange("easyStarvationBloodFloorFraction", 0.5, 0.0, 1.0, classOf[Double])
+  val NormalStarvationBloodFloorFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Normal starvation floor as a fraction of effective post-sepsis max blood. It is clamped",
+      "no higher than the Easy floor at use time; the default 0.05 leaves five percent."
+    )
+    .defineInRange("normalStarvationBloodFloorFraction", 0.05, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
   Builder.push("limbs")
   val StartingMuscleHealth: ConfigValue[Double] = Builder
     .comment("Muscle health each limb starts with.")

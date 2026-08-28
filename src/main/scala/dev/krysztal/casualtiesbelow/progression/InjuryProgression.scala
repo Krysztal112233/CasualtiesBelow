@@ -16,6 +16,7 @@ import dev.krysztal.casualtiesbelow.api.body.LimbStats
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
+import dev.krysztal.casualtiesbelow.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.pain.PainShock
@@ -72,13 +73,22 @@ object InjuryProgression {
   private def tickServer(server: MinecraftServer): Unit = {
     ticks += 1
     val syncTick = ticks % SyncIntervalTicks == 0
-    server.getPlayerList.getPlayers.forEach { player =>
-      tickPlayer(player, syncTick)
+    try {
+      server.getPlayerList.getPlayers.forEach { player =>
+        tickPlayer(player, syncTick)
+      }
+    } finally {
+      // No player references are retained, and entries for players who disconnected during this
+      // tick cannot leak into a later tick.
+      StarvationProgression.discardRemaining()
     }
   }
 
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
-    if (player.isCreative || player.isSpectator || !player.isAlive) return
+    if (player.isCreative || player.isSpectator || !player.isAlive) {
+      StarvationProgression.discard(player)
+      return
+    }
 
     val body = CasualtiesBelowComponents.Body.get(player)
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
@@ -125,25 +135,27 @@ object InjuryProgression {
     // Sepsis compresses the effective blood cap; well-fed players regenerate blood up to it.
     // Blood over the cap is lost outright: surviving sepsis leaves the body drained, and
     // recovery means eating well.
-    val maxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis)
+    val maxBlood = BloodVolume.effectiveMaximum(vitals)
+    vitalsChanged = BloodVolume.clamp(vitals, maxBlood) || vitalsChanged
     if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.get()) {
-      val regenerated =
-        (vitals.bloodVolume + CasualtiesBelowConfig.FedBloodRegenPerTick.get()).min(maxBlood)
-      if (regenerated != vitals.bloodVolume) {
-        vitals.bloodVolume = regenerated
-        vitalsChanged = true
-      }
+      val regenerated = BloodVolume.restore(
+        vitals,
+        CasualtiesBelowConfig.FedBloodRegenPerTick.get(),
+        maxBlood
+      )
+      vitalsChanged = regenerated > 0.0 || vitalsChanged
     }
-    if (vitals.bloodVolume > maxBlood) {
-      vitals.bloodVolume = maxBlood
-      vitalsChanged = true
-    }
+
+    // Accepted vanilla starvation pulses are translated first. The final blood check below keeps
+    // source priority deterministic if bleeding also applies in this tick.
+    val starvation = StarvationProgression.consume(player, vitals, maxBlood)
+    vitalsChanged = starvation.changed || vitalsChanged
 
     if (totalBleeding > 0.0) {
       val actualBleeding = totalBleeding * TotemHemostasis.bleedingMultiplier(vitals)
       if (actualBleeding > 0.0) {
-        vitals.bloodVolume = (vitals.bloodVolume - actualBleeding).max(0.0)
-        vitalsChanged = true
+        val drained = BloodVolume.drain(vitals, actualBleeding, maxBlood)
+        vitalsChanged = drained > 0.0 || vitalsChanged
       }
     }
     // The timer is hidden client-side state: advancing it does not force an extra sync. Any blood
@@ -155,8 +167,13 @@ object InjuryProgression {
     // the vanilla totem path; an unrescued player remains at zero and dies normally.
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
-        if (maxBlood <= 0.0) CasualtiesBelowDamageTypes.sepsis(player.level())
-        else CasualtiesBelowDamageTypes.bloodLoss(player.level())
+        if (maxBlood <= 0.0) {
+          CasualtiesBelowDamageTypes.sepsis(player.level())
+        } else if (starvation.reachedZero) {
+          CasualtiesBelowDamageTypes.starvation(player.level())
+        } else {
+          CasualtiesBelowDamageTypes.bloodLoss(player.level())
+        }
       player.hurtServer(player.level(), fatal, Float.MaxValue)
       if (vitalsChanged) {
         CasualtiesBelowComponents.Vitals.sync(player)
@@ -167,8 +184,25 @@ object InjuryProgression {
     // Read vanilla's already-updated air supply after the blood changes above: blood volume sets
     // oxygen capacity, while fully exhausted air gates depletion. Consciousness progression then
     // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
-    vitalsChanged = OxygenProgression.tick(player, vitals) || vitalsChanged
+    val oxygen = OxygenProgression.tick(player, vitals)
+    vitalsChanged = oxygen.changed || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
+
+    // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
+    // state. A successful death-protection hit restores physiology synchronously; either way this
+    // player's progression returns immediately after the fatal call.
+    if (HypoxiaProgression.tick(vitals, oxygen.breathingBlocked)) {
+      player.hurtServer(
+        player.level(),
+        CasualtiesBelowDamageTypes.hypoxia(player.level()),
+        Float.MaxValue
+      )
+      if (vitalsChanged) {
+        CasualtiesBelowComponents.Vitals.sync(player)
+      }
+      return
+    }
+
     vitalsChanged = PainShock.finishRecovery(vitals) || vitalsChanged
     Unconsciousness.tickMovementRestriction(player)
 

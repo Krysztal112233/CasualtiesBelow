@@ -28,6 +28,18 @@ object CasualtiesBelowDamageTypes {
   val Sepsis: ResourceKey[DamageType] =
     ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("sepsis"))
 
+  /** Fatal terminal hypoxia after sustained zero oxygen while breathing remains blocked. It has the
+    * same gear/effect/cooldown bypasses as blood loss and remains death-protection eligible.
+    */
+  val Hypoxia: ResourceKey[DamageType] =
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("hypoxia"))
+
+  /** Fatal starvation when an accepted vanilla food pulse drains blood to zero on Hard. It has the
+    * same gear/effect/cooldown bypasses as blood loss and remains death-protection eligible.
+    */
+  val Starvation: ResourceKey[DamageType] =
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("starvation"))
+
   /** A sourceless blood-loss damage instance. */
   def bloodLoss(level: Level): DamageSource =
     new DamageSource(
@@ -38,5 +50,17 @@ object CasualtiesBelowDamageTypes {
   def sepsis(level: Level): DamageSource =
     new DamageSource(
       level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(Sepsis)
+    )
+
+  /** A sourceless terminal-hypoxia damage instance. */
+  def hypoxia(level: Level): DamageSource =
+    new DamageSource(
+      level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(Hypoxia)
+    )
+
+  /** A sourceless fatal-starvation damage instance. */
+  def starvation(level: Level): DamageSource =
+    new DamageSource(
+      level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(Starvation)
     )
 }

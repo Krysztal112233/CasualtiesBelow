@@ -8,6 +8,7 @@
   "mixins": [
     "BiomeInvoker",
     "ConsumableMixin",
+    "FoodDataMixin",
     "LivingEntityMixin",
     "PlayerActuallyHurtMixin",
     "PlayerMixin",

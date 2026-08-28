@@ -45,6 +45,8 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
       bootstrap => {
         bootstrap.register(CasualtiesBelowDamageTypes.BloodLoss, BloodLossDamageType)
         bootstrap.register(CasualtiesBelowDamageTypes.Sepsis, SepsisDamageType)
+        bootstrap.register(CasualtiesBelowDamageTypes.Hypoxia, HypoxiaDamageType)
+        bootstrap.register(CasualtiesBelowDamageTypes.Starvation, StarvationDamageType)
       }
     )
   }
@@ -63,6 +65,24 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
   /** Fatal sepsis, dealt when sepsis compresses the effective blood volume cap to zero. */
   private val SepsisDamageType = DamageType(
     "sepsis",
+    DamageScaling.NEVER,
+    0.0f,
+    DamageEffects.HURT,
+    DeathMessageType.DEFAULT
+  )
+
+  /** Fatal terminal hypoxia after the configured zero-oxygen exposure. */
+  private val HypoxiaDamageType = DamageType(
+    "hypoxia",
+    DamageScaling.NEVER,
+    0.0f,
+    DamageEffects.HURT,
+    DeathMessageType.DEFAULT
+  )
+
+  /** Fatal custom starvation after vanilla food cadence drains blood to zero. */
+  private val StarvationDamageType = DamageType(
+    "starvation",
     DamageScaling.NEVER,
     0.0f,
     DamageEffects.HURT,

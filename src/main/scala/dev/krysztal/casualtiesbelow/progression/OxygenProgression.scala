@@ -1,51 +1,98 @@
 package dev.krysztal.casualtiesbelow.progression
 
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.level.gamerules.GameRules
 
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
-/** Couples vanilla breath and custom blood volume into a stored blood-oxygen reserve.
+/** Couples vanilla breath, in-wall suffocation, and custom blood volume into blood oxygen.
   *
-  * Blood volume determines its instantaneous carrying capacity. Vanilla air supply acts as a gate:
-  * any positive air lets the reserve recover toward that capacity, while exhausted air (`<= 0`)
-  * makes it deplete toward zero. Vanilla air mechanics therefore retain authority over breathing
-  * (including Respiration, Water Breathing, bubble columns, and surface recovery), while a sudden
-  * loss of blood still clamps the reserve to its new capacity immediately.
+  * Blood volume determines instantaneous carrying capacity. Exhausted vanilla air blocks breathing
+  * only while `drowningDamage` is enabled; this keeps Respiration, Water Breathing, bubble columns,
+  * air recovery, and the gamerule upstream of custom physiology. Being in a wall is an independent
+  * breathing block. Simultaneous blocks use the stronger configured deprivation rate rather than
+  * stacking. Vanilla drowning/in-wall damage pulses are not translated into another loss.
   *
   * This object does not write consciousness. [[ConsciousnessProgression]] interprets the stored
-  * oxygen as a pressure, so future pain shock, head trauma, or temperature sources can compose
-  * without healthy oxygen overwriting them.
+  * oxygen as a pressure, while [[HypoxiaProgression]] owns hidden terminal exposure metadata.
   */
 object OxygenProgression {
 
-  /** Advances blood oxygen by one server tick and returns whether it changed. Consciousness is
-    * advanced separately by [[ConsciousnessProgression]] from this reserve.
+  /** Advances blood oxygen by one server tick and reports both mutation and breathing ownership for
+    * downstream terminal-hypoxia progression.
     */
-  def tick(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
+  private[progression] def tick(
+      player: ServerPlayer,
+      vitals: VitalsComponent
+  ): OxygenProgressionResult = {
+    val inWall = player.isInWall
+    val exhaustedAir =
+      player.level().getGameRules.get(GameRules.DROWNING_DAMAGE).booleanValue &&
+        player.getMaxAirSupply > 0 && player.getAirSupply <= 0
+    val deprivationRate =
+      if (inWall && exhaustedAir) {
+        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick
+          .get()
+          .doubleValue
+          .max(CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue)
+      } else if (inWall) {
+        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick.get().doubleValue
+      } else if (exhaustedAir) {
+        CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue
+      } else {
+        0.0
+      }
+
+    val breathingBlocked = inWall || exhaustedAir
+    val boundedDeprivationRate = finiteNonNegative(deprivationRate)
     val previousOxygen = vitals.bloodOxygen
-    vitals.bloodOxygen = nextBloodOxygen(player, vitals)
-    vitals.bloodOxygen != previousOxygen
+    vitals.bloodOxygen = nextBloodOxygen(vitals, breathingBlocked, boundedDeprivationRate)
+    OxygenProgressionResult(
+      changed = !same(previousOxygen, vitals.bloodOxygen),
+      breathingBlocked = breathingBlocked,
+      deprivationRate = boundedDeprivationRate
+    )
   }
 
-  private def nextBloodOxygen(player: ServerPlayer, vitals: VitalsComponent): Double = {
-    val maxBloodVolume = CasualtiesBelowConfig.MaxBloodVolume.get()
-    val bloodFraction = clampFraction(vitals.bloodVolume / maxBloodVolume)
-    val capacity = VitalsComponent.MaxBloodOxygen * bloodFraction
+  private def nextBloodOxygen(
+      vitals: VitalsComponent,
+      breathingBlocked: Boolean,
+      deprivationRate: Double
+  ): Double = {
+    val capacity = BloodVolume.oxygenCarryingCapacity(vitals)
+    val current = normalizedOxygen(vitals.bloodOxygen, capacity)
 
-    val hasVanillaAir = player.getMaxAirSupply > 0 && player.getAirSupply > 0
-    val target = if (hasVanillaAir) capacity else 0.0
-
-    // Oxygen already carried above the new blood-volume capacity is lost immediately. Once the
-    // vanilla bubbles are exhausted, depletion remains gradual; resurfacing likewise restores the
-    // reserve at its configured rate instead of snapping it back to capacity.
-    val current = vitals.bloodOxygen.max(0.0).min(capacity)
-    if (current > target) {
-      (current - CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get()).max(target)
+    // Oxygen above a newly reduced blood-volume capacity is lost immediately. Active deprivation
+    // and recovery remain gradual at their configured rates.
+    if (breathingBlocked) {
+      (current - deprivationRate).max(0.0)
     } else {
-      (current + CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()).min(target)
+      (current + finiteNonNegative(CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()))
+        .min(capacity)
     }
   }
 
-  private def clampFraction(value: Double): Double = value.max(0.0).min(1.0)
+  private def normalizedOxygen(value: Double, capacity: Double): Double = {
+    if (value == Double.PositiveInfinity) capacity
+    else if (value.isFinite) value.max(0.0).min(capacity)
+    else 0.0
+  }
+
+  private def finiteNonNegative(value: Double): Double = {
+    if (value == Double.PositiveInfinity) Double.MaxValue
+    else if (value.isFinite) value.max(0.0)
+    else 0.0
+  }
+
+  private def same(left: Double, right: Double): Boolean = {
+    java.lang.Double.doubleToLongBits(left) == java.lang.Double.doubleToLongBits(right)
+  }
 }
+
+private[progression] final case class OxygenProgressionResult(
+    changed: Boolean,
+    breathingBlocked: Boolean,
+    deprivationRate: Double
+)

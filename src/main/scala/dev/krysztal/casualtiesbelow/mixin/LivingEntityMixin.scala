@@ -8,6 +8,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
+import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue
 import org.spongepowered.asm.mixin.Mixin
@@ -61,9 +62,10 @@ abstract class LivingEntityMixin {
     )
   }
 
-  /** Vanilla has already consumed the death-protection item and applied its effects at RETURN. Only
-    * a successful blood-loss rescue receives the physiological blood/hemostasis adapter; sepsis and
-    * forced vanilla deaths bypass this method before an item can be consumed.
+  /** Vanilla has already consumed the death-protection item and applied its effects at RETURN.
+    * Blood-loss and starvation rescues use the bounded blood/hemostasis adapter; terminal-hypoxia
+    * rescues reset exposure and restore bounded oxygen/consciousness. Sepsis and forced vanilla
+    * deaths bypass this method before an item can be consumed.
     */
   @Inject(
     method = Array("checkTotemDeathProtection"),
@@ -74,11 +76,16 @@ abstract class LivingEntityMixin {
       killingDamage: DamageSource,
       ci: CallbackInfoReturnable[Boolean]
   ): Unit = {
-    if (ci.getReturnValue && killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss)) {
-      this.asInstanceOf[LivingEntity] match {
-        case player: ServerPlayer => TotemHemostasis.activate(player)
-        case _                    =>
-      }
+    if (!ci.getReturnValue) return
+
+    this.asInstanceOf[LivingEntity] match {
+      case player: ServerPlayer
+          if killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss) ||
+            killingDamage.is(CasualtiesBelowDamageTypes.Starvation) =>
+        TotemHemostasis.activate(player)
+      case player: ServerPlayer if killingDamage.is(CasualtiesBelowDamageTypes.Hypoxia) =>
+        HypoxiaProgression.onDeathProtection(player)
+      case _ =>
     }
   }
 }

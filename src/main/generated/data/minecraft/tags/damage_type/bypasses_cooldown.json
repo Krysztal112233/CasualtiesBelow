@@ -2,6 +2,8 @@
   "values": [
     "#minecraft:bypasses_invulnerability",
     "casualtiesbelow:blood_loss",
-    "casualtiesbelow:sepsis"
+    "casualtiesbelow:sepsis",
+    "casualtiesbelow:hypoxia",
+    "casualtiesbelow:starvation"
   ]
 }

@@ -20,25 +20,27 @@ final class DamageTypeTagProvider(
 ) extends FabricTagsProvider[DamageType](output, Registries.DAMAGE_TYPE, registries) {
 
   override protected def addTags(registries: HolderLookup.Provider): Unit = {
-    // Bleeding out and sepsis are not preventable by gear or effects.
+    // Physiological fatal checks are not preventable by gear or effects.
     val bloodLoss = CasualtiesBelowDamageTypes.BloodLoss
     val sepsis = CasualtiesBelowDamageTypes.Sepsis
-    builder(DamageTypeTags.BYPASSES_ARMOR).add(bloodLoss, sepsis)
-    builder(DamageTypeTags.BYPASSES_EFFECTS).add(bloodLoss, sepsis)
-    builder(DamageTypeTags.BYPASSES_ENCHANTMENTS).add(bloodLoss, sepsis)
-    builder(DamageTypeTags.BYPASSES_RESISTANCE).add(bloodLoss, sepsis)
+    val hypoxia = CasualtiesBelowDamageTypes.Hypoxia
+    val starvation = CasualtiesBelowDamageTypes.Starvation
+    builder(DamageTypeTags.BYPASSES_ARMOR).add(bloodLoss, sepsis, hypoxia, starvation)
+    builder(DamageTypeTags.BYPASSES_EFFECTS).add(bloodLoss, sepsis, hypoxia, starvation)
+    builder(DamageTypeTags.BYPASSES_ENCHANTMENTS).add(bloodLoss, sepsis, hypoxia, starvation)
+    builder(DamageTypeTags.BYPASSES_RESISTANCE).add(bloodLoss, sepsis, hypoxia, starvation)
     // Forced deaths and physiological fatal checks must not be delayed by an earlier hurt's
     // invulnerability window, including the Float.MaxValue hit left behind by a totem rescue.
     builder(DamageTypeTags.BYPASSES_COOLDOWN)
       .addTag(DamageTypeTags.BYPASSES_INVULNERABILITY)
-      .add(bloodLoss, sepsis)
+      .add(bloodLoss, sepsis, hypoxia, starvation)
 
     // Forced vanilla deaths and the mod's physiological fatal sources must reach health zero.
     builder(CasualtiesBelowTags.BypassesHealthRedirect)
       .addTag(DamageTypeTags.BYPASSES_INVULNERABILITY)
-      .add(bloodLoss, sepsis)
+      .add(bloodLoss, sepsis, hypoxia, starvation)
 
-    // Sepsis is terminal; blood loss deliberately remains eligible for death protection.
+    // Sepsis is terminal; the other physiological sources remain eligible for death protection.
     builder(DamageTypeTags.BYPASSES_INVULNERABILITY).add(sepsis)
   }
 }

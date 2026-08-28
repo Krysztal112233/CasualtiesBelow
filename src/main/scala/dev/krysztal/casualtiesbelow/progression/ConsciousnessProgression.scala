@@ -86,6 +86,37 @@ object ConsciousnessProgression {
     applyStep(player, vitals, ConsciousnessStep(VitalsComponent.MaxValue, false))
   }
 
+  /** Reconciles a successful hypoxia death-protection rescue at no less than the configured wake
+    * threshold. A collapsed pain-shock episode remains literal-zero and unconscious; low oxygen
+    * capacity can likewise keep waking blocked.
+    */
+  private[casualtiesbelow] def restoreAfterHypoxiaDeathProtection(
+      player: ServerPlayer,
+      vitals: VitalsComponent
+  ): Boolean = {
+    val wakeThreshold = configuredWakeThreshold
+    val step = vitals.painShockStage match {
+      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case _                        =>
+        reconcile(
+          vitals.consciousness.max(wakeThreshold),
+          vitals.unconscious,
+          List(currentPressure(vitals)),
+          wakeThreshold,
+          effectiveFloor(vitals)
+        )
+    }
+    applyStep(player, vitals, step)
+  }
+
+  private def configuredWakeThreshold: Double = {
+    CasualtiesBelowConfig.ConsciousnessWakeThreshold
+      .get()
+      .doubleValue
+      .max(VitalsComponent.MinimumWakeThreshold)
+      .min(VitalsComponent.MaxValue)
+  }
+
   private def effectiveFloor(vitals: VitalsComponent): Double = {
     vitals.painShockStage match {
       case PainShockStage.Recovering => 0.0
@@ -230,7 +261,7 @@ object ConsciousnessProgression {
       if (painShockStage == PainShockStage.Recovering) 0.0
       else floor
     val raw =
-      if (java.lang.Double.isFinite(savedConsciousness)) {
+      if (savedConsciousness.isFinite) {
         savedConsciousness
       } else if (savedConsciousness == Double.PositiveInfinity) {
         VitalsComponent.MaxValue

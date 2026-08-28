@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.damage
 
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EquipmentSlot
@@ -23,6 +24,7 @@ import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.pain.PainCalc
+import dev.krysztal.casualtiesbelow.progression.StarvationProgression
 
 /** Attributes incoming damage to body parts.
   *
@@ -59,10 +61,11 @@ object LimbDamage {
       damaged: Boolean
   ): Unit = {
     val isEligibleFall = damaged && isFallDamage(source) &&
-      entity.isInstanceOf[Player] && entity.level().isInstanceOf[ServerLevel]
+      entity.isInstanceOf[ServerPlayer] && entity.level().isInstanceOf[ServerLevel]
     if (!isEligibleFall) return
 
-    val player = entity.asInstanceOf[Player]
+    val player = entity.asInstanceOf[ServerPlayer]
+    if (player.isCreative || player.isSpectator) return
 
     // Players always use the custom formula (see FallDamageFormula.appliesTo), so the
     // severity can be recomputed deterministically from the same inputs.
@@ -91,12 +94,15 @@ object LimbDamage {
       damageTaken: Float,
       blocked: Boolean
   ): Unit = {
-    if (!entity.isInstanceOf[Player]) return // The body component exists on players only.
+    if (!entity.isInstanceOf[ServerPlayer]) return // Components are server-player authoritative.
+
+    val player = entity.asInstanceOf[ServerPlayer]
+    if (player.isCreative || player.isSpectator) return
     if (isFallDamage(source)) return
     if (blocked) return
     if (damageTaken <= 0) return
 
-    val player = entity.asInstanceOf[Player]
+    StarvationProgression.onAfterDamage(player, source, damageTaken)
     val damage = damageTaken.toDouble
     WoundProfiles.classify(source) match {
       case None                         => ()

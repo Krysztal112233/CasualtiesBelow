@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
 
 final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
@@ -24,6 +25,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   private var painShockStageState: PainShockStage = PainShockStage.Stable
   var bloodOxygen: Double = VitalsComponent.MaxBloodOxygen
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
+  private var hypoxiaExposureTicksState: Int = 0
   private var totemHemostasisTicksState: Int = 0
   var sepsis: Double = 0.0
   var discomfort: Double = 0.0
@@ -50,6 +52,9 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     bloodOxygen = other.bloodOxygen
     bloodVolume = other.bloodVolume
+    applyHypoxiaExposureTicks(
+      HypoxiaProgression.normalizeExposureTicks(other.hypoxiaExposureTicks)
+    )
     applyTotemHemostasisTicks(
       TotemHemostasis.normalizeRemainingTicks(other.totemHemostasisTicks)
     )
@@ -81,6 +86,12 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     painShockStageState = stage
   }
 
+  override def hypoxiaExposureTicks: Int = hypoxiaExposureTicksState
+
+  override private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
+    hypoxiaExposureTicksState = ticks
+  }
+
   override def totemHemostasisTicks: Int = totemHemostasisTicksState
 
   override private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
@@ -97,6 +108,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     out.putString(VitalsComponentImpl.PainShockStageKey, painShockStage.id)
     out.putDouble(VitalsComponentImpl.BloodOxygenKey, bloodOxygen)
     out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolume)
+    out.putInt(VitalsComponentImpl.HypoxiaExposureTicksKey, hypoxiaExposureTicks)
     out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, totemHemostasisTicks)
     out.putDouble(VitalsComponentImpl.SepsisKey, sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
@@ -133,6 +145,11 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     )
     bloodVolume =
       in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
+    applyHypoxiaExposureTicks(
+      HypoxiaProgression.normalizeExposureTicks(
+        in.getIntOr(VitalsComponentImpl.HypoxiaExposureTicksKey, 0)
+      )
+    )
     applyTotemHemostasisTicks(
       TotemHemostasis.normalizeRemainingTicks(
         in.getIntOr(VitalsComponentImpl.TotemHemostasisTicksKey, 0)
@@ -153,6 +170,7 @@ object VitalsComponentImpl {
   private val PainShockStageKey = "pain_shock_stage"
   private val BloodOxygenKey = "blood_oxygen"
   private val BloodVolumeKey = "blood_volume"
+  private val HypoxiaExposureTicksKey = "hypoxia_exposure_ticks"
   private val TotemHemostasisTicksKey = "totem_hemostasis_ticks"
   private val SepsisKey = "sepsis"
   private val DiscomfortKey = "discomfort"

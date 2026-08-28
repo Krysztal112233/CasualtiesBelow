@@ -4,9 +4,10 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
-/** Physiological adapter applied only after vanilla death protection rescues blood loss.
+/** Physiological blood adapter after vanilla death protection rescues blood loss or starvation.
   *
   * It restores a bounded blood reserve and temporarily reduces the actual whole-body blood drain.
   * Limb bleeding rates remain untouched, so clotting and treatment continue to operate on the real
@@ -20,8 +21,7 @@ object TotemHemostasis {
     */
   def activate(player: ServerPlayer): Unit = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
-    val effectiveMaxBlood =
-      CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis).doubleValue.max(0.0)
+    val effectiveMaxBlood = BloodVolume.effectiveMaximum(vitals)
     val restoreFraction =
       CasualtiesBelowConfig.TotemBloodRestoreFraction
         .get()
@@ -29,7 +29,7 @@ object TotemHemostasis {
         .max(MinimumRestoreFraction)
         .min(1.0)
     val restoredBlood = effectiveMaxBlood * restoreFraction
-    vitals.bloodVolume = (vitals.bloodVolume.max(0.0) + restoredBlood).min(effectiveMaxBlood)
+    BloodVolume.restore(vitals, restoredBlood, effectiveMaxBlood)
     vitals.applyTotemHemostasisTicks(configuredDurationTicks)
     CasualtiesBelowComponents.Vitals.sync(player)
   }

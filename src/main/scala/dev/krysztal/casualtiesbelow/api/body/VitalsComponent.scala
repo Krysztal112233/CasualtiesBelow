@@ -4,13 +4,13 @@ import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
 /** Whole-player vitals: immune health, consciousness, hidden pain-shock load and phase, blood
-  * oxygen, blood volume, hidden totem hemostasis, sepsis, and discomfort. Immune health ranges from
-  * 0 to the configured maximum (`maxImmuneHealth`, default 200); consciousness, pain-shock load,
-  * and blood oxygen from 0 to their constants below; blood volume is in mL, up to the configured
-  * maximum; discomfort runs from 0 to the configured maximum (`[discomfort] maxValue`, default
-  * 100). Blood oxygen is normalized oxygen availability relative to a healthy, fully oxygenated
-  * player rather than a clinical saturation percentage: less blood lowers how much oxygen the body
-  * can carry.
+  * oxygen, blood volume, hidden terminal-hypoxia exposure and totem hemostasis, sepsis, and
+  * discomfort. Immune health ranges from 0 to the configured maximum (`maxImmuneHealth`, default
+  * 200); consciousness, pain-shock load, and blood oxygen from 0 to their constants below; blood
+  * volume is in mL, up to the configured maximum; discomfort runs from 0 to the configured maximum
+  * (`[discomfort] maxValue`, default 100). Blood oxygen is normalized oxygen availability relative
+  * to a healthy, fully oxygenated player rather than a clinical saturation percentage: less blood
+  * lowers how much oxygen the body can carry.
   *
   * `Double` rather than `Float` for the same reason as [[LimbStats]]: per-tick accumulation
   * precision.
@@ -43,6 +43,11 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
 
   var bloodOxygen: Double
   var bloodVolume: Double
+
+  /** Consecutive terminal-exposure ticks while oxygen is zero and breathing remains blocked. */
+  def hypoxiaExposureTicks: Int
+
+  private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit
 
   /** Remaining ticks of the hidden, server-authoritative post-totem hemostasis window. */
   def totemHemostasisTicks: Int
