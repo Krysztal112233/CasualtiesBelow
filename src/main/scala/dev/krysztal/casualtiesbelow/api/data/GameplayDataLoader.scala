@@ -2,7 +2,10 @@ package dev.krysztal.casualtiesbelow.api.data
 
 import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
-import scala.util.control.NonFatal
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
@@ -53,15 +56,9 @@ final class GameplayDataLoader[T](
 
     converter.listMatchingResources(manager).asScala.foreach { (location, resource) =>
       val id = converter.fileToId(location)
-      try {
-        val json = {
-          val reader = resource.openAsReader()
-          try StrictJsonParser.parse(reader)
-          finally reader.close()
-        }
-        prepared += id -> json
-      } catch {
-        case NonFatal(error) =>
+      Using(resource.openAsReader())(StrictJsonParser.parse(_)) match {
+        case Success(json)  => prepared += id -> json
+        case Failure(error) =>
           CasualtiesBelow.Logger.warn(
             s"Couldn't read gameplay data file '$id' from '$location'",
             error
@@ -84,25 +81,27 @@ final class GameplayDataLoader[T](
     val ops = RegistryOps.create(JsonOps.INSTANCE, lookup)
 
     prepared.foreach { (id, json) =>
-      try {
-        val result = codec.parse(ops, json)
-        result.result().toScala match {
-          case Some(entry) => decoded += id -> entry
-          case None        =>
-            val reason = result.error().toScala.map(_.message()).getOrElse("unknown decode error")
-            CasualtiesBelow.Logger.warn(
-              "Couldn't decode gameplay data entry '{}' from directory '{}': {}",
-              id,
-              directorySegment,
-              reason
-            )
-        }
-      } catch {
-        case NonFatal(error) =>
+      Try(codec.parse(ops, json)) match {
+        case Failure(error) =>
           CasualtiesBelow.Logger.warn(
             s"Couldn't decode gameplay data entry '$id' from directory '$directorySegment'",
             error
           )
+        case Success(result) =>
+          result
+            .result()
+            .toScala
+            .fold {
+              val reason = result.error().toScala.map(_.message()).getOrElse("unknown decode error")
+              CasualtiesBelow.Logger.warn(
+                "Couldn't decode gameplay data entry '{}' from directory '{}': {}",
+                id,
+                directorySegment,
+                reason
+              )
+            } { entry =>
+              decoded += id -> entry
+            }
       }
     }
 
