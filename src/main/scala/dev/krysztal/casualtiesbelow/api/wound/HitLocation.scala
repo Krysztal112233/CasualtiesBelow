@@ -10,7 +10,7 @@ import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 
 /** Guesses the body part a hit landed on from hit geometry — vanilla damage carries no hit-location
   * information. Geometry and positionless-hit weights come from the matching `hit_location`
-  * registry entry for the victim's entity type.
+  * datapack entry for the victim's entity type.
   */
 object HitLocation {
 
@@ -18,7 +18,7 @@ object HitLocation {
     * source carries no position information.
     */
   def pick(victim: LivingEntity, source: DamageSource): BodyPart = {
-    val rules = GameplayDataLookup.hitLocation(victim.level().registryAccess(), victim)
+    val rules = GameplayDataLookup.hitLocation(victim)
     hitOrigin(source) match {
       case Some(origin) => locate(victim, origin, rules)
       case None         => randomPart(victim, rules)

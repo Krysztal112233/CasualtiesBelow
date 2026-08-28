@@ -4,7 +4,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.jdk.OptionConverters.*
 
-import net.minecraft.resources.ResourceKey
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
@@ -12,9 +12,9 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
-import dev.krysztal.casualtiesbelow.api.data.WoundProfileData
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
 /** How one damage kind wounds a limb: skin integrity and muscle health lost per half-heart of
@@ -39,7 +39,7 @@ final case class Wound(
 )
 
 /** Evaluates datapack-defined wound rules against incoming damage sources. Rules are considered by
-  * descending priority and ascending registry id; the first complete match with a resolvable wound
+  * descending priority and ascending datapack id; the first complete match with a resolvable wound
   * profile wins.
   */
 object WoundProfiles {
@@ -49,13 +49,12 @@ object WoundProfiles {
       player: ServerPlayer,
       source: DamageSource
   ): Option[Wound] = {
+    val store = GameplayDataStores.server
     GameplayDataLookup
-      .orderedEntries(level.registryAccess(), CasualtiesBelowRegistries.WoundRule)(
-        _.priority.intValue()
-      )
+      .orderedEntries(store.woundRules)(_.priority.intValue())
       .iterator
       .filter { (_, rule) => matches(rule, level, player, source) }
-      .flatMap { (ruleKey, rule) => resolve(ruleKey, rule, level) }
+      .flatMap { (ruleId, rule) => resolve(ruleId, rule, store) }
       .nextOption()
   }
 
@@ -77,12 +76,12 @@ object WoundProfiles {
   }
 
   private def resolve(
-      ruleKey: ResourceKey[WoundRuleData],
+      ruleId: Identifier,
       rule: WoundRuleData,
-      level: ServerLevel
+      store: GameplayDataStore
   ): Option[Wound] = {
     GameplayDataLookup
-      .entry(level.registryAccess(), CasualtiesBelowRegistries.WoundProfile, rule.profile)
+      .entry(store.woundProfiles, rule.profile)
       .map { profile =>
         Wound(
           WoundProfile(
@@ -99,14 +98,18 @@ object WoundProfiles {
         if (WarnedMissingProfiles.add(rule.profile)) {
           CasualtiesBelow.Logger.warn(
             "Ignoring wound rule {} because profile {} is missing",
-            ruleKey.identifier(),
-            rule.profile.identifier()
+            ruleId,
+            rule.profile
           )
         }
         None
       }
   }
 
-  private val WarnedMissingProfiles =
-    ConcurrentHashMap.newKeySet[ResourceKey[WoundProfileData]]()
+  private val WarnedMissingProfiles = ConcurrentHashMap.newKeySet[Identifier]()
+
+  /** Clears the missing-profile warning dedup on datapack reload, so a reference broken again by a
+    * later reload warns again instead of staying silently ignored.
+    */
+  private[casualtiesbelow] def clearWarnedMissingProfiles(): Unit = WarnedMissingProfiles.clear()
 }

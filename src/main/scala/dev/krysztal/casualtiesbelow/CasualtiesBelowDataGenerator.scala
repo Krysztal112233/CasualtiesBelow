@@ -11,9 +11,7 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
-import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
-import dev.krysztal.casualtiesbelow.datagen.CasualtiesBelowDataDefaults
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.GameplayDataProvider
@@ -42,20 +40,6 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
   }
 
   override def buildRegistry(registryBuilder: RegistrySetBuilder): Unit = {
-    registryBuilder
-      .add(
-        CasualtiesBelowRegistries.WoundProfile,
-        CasualtiesBelowDataDefaults.bootstrapWoundProfiles
-      )
-      .add(CasualtiesBelowRegistries.WoundRule, CasualtiesBelowDataDefaults.bootstrapWoundRules)
-      .add(
-        CasualtiesBelowRegistries.ArmorProtection,
-        CasualtiesBelowDataDefaults.bootstrapArmorProtection
-      )
-      .add(CasualtiesBelowRegistries.Discomfort, CasualtiesBelowDataDefaults.bootstrapDiscomfort)
-      .add(CasualtiesBelowRegistries.FallRules, CasualtiesBelowDataDefaults.bootstrapFallRules)
-      .add(CasualtiesBelowRegistries.HitLocation, CasualtiesBelowDataDefaults.bootstrapHitLocation)
-
     registryBuilder.add(
       Registries.DAMAGE_TYPE,
       bootstrap => {

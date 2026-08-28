@@ -48,13 +48,13 @@ object PainCalc {
 
   /** Impact pain granted to one limb by a fall, per half-heart of formula damage. */
   def onFall(victim: LivingEntity, damage: Double): Double = {
-    val rules = GameplayDataLookup.fallRules(victim.level().registryAccess(), victim)
+    val rules = GameplayDataLookup.fallRules(victim)
     damage * rules.fallPainPerPoint
   }
 
   /** One-time pain granted when a discrete condition onsets on a limb. */
   def onConditionOnset(victim: LivingEntity, condition: LimbCondition): Double = {
-    val rules = GameplayDataLookup.fallRules(victim.level().registryAccess(), victim)
+    val rules = GameplayDataLookup.fallRules(victim)
     condition match {
       case LimbCondition.Fracture    => rules.fracturePain
       case LimbCondition.Dislocation => rules.dislocationPain

@@ -5,7 +5,7 @@ import net.minecraft.resources.Identifier
 import net.fabricmc.api.ModInitializer
 
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
-import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
@@ -22,7 +22,7 @@ object CasualtiesBelow extends ModInitializer {
   val Logger: Logger = LoggerFactory.getLogger(ModId)
 
   override def onInitialize(): Unit = {
-    CasualtiesBelowRegistries.registerAll()
+    GameplayDataLoaders.registerAll()
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()

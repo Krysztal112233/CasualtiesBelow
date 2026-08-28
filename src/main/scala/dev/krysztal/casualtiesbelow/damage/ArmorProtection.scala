@@ -55,7 +55,7 @@ object ArmorProtection {
 
     // A datapack override matches by item identity and replaces the config formula for the factors
     // it defines — including for pieces with zero armor value, which the fallback path skips.
-    GameplayDataLookup.armorProtection(player.level().registryAccess(), stack) match {
+    GameplayDataLookup.armorProtection(stack) match {
       case Some(entry) =>
         val skinFactor = entry.skinFactor.toScala
           .flatMap(_.evaluate(armor, toughness))

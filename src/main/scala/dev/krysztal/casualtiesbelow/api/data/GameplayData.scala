@@ -21,7 +21,7 @@ import net.minecraft.advancements.predicates.ItemPredicate
 import net.minecraft.core.HolderSet
 import net.minecraft.core.RegistryCodecs
 import net.minecraft.core.registries.Registries
-import net.minecraft.resources.ResourceKey
+import net.minecraft.resources.Identifier
 import net.minecraft.util.ExtraCodecs
 import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.entity.EntityType
@@ -148,7 +148,7 @@ final case class WoundRuleData(
     directLiving: Optional[JBoolean],
     armed: Optional[JBoolean],
     weapon: Optional[ItemPredicate],
-    profile: ResourceKey[WoundProfileData],
+    profile: Identifier,
     scatter: JBoolean,
     forcedPart: Optional[BodyPart],
     priority: Integer
@@ -168,10 +168,7 @@ object WoundRuleData {
           .forGetter(_.directLiving),
         BOOL.optionalFieldOf("armed").forGetter(_.armed),
         ItemPredicate.CODEC.optionalFieldOf("weapon").forGetter(_.weapon),
-        ResourceKey
-          .codec(CasualtiesBelowRegistries.WoundProfile)
-          .fieldOf("profile")
-          .forGetter(_.profile),
+        Identifier.CODEC.fieldOf("profile").forGetter(_.profile),
         BOOL.optionalFieldOf("scatter", false).forGetter(_.scatter),
         BodyPart.Codec.optionalFieldOf("forced_part").forGetter(_.forcedPart),
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
@@ -266,7 +263,7 @@ object FallRulesData {
   val DefaultFracturePain = 50.0
   val DefaultDislocationPain = 30.0
 
-  /** Compiled defaults used when no registry entry matches the victim. */
+  /** Compiled defaults used when no datapack entry matches the victim. */
   val Fallback: FallRulesData = FallRulesData(HolderSet.empty[EntityType[?]]())
 
   // The primary codec writes every tuning value so generated defaults are self-documenting. The
@@ -376,7 +373,7 @@ object HitLocationData {
     BodyPart.LegRight -> 0.1
   )
 
-  /** Compiled defaults used when no registry entry matches the victim. */
+  /** Compiled defaults used when no datapack entry matches the victim. */
   val Fallback: HitLocationData = HitLocationData(
     HolderSet.empty[EntityType[?]](),
     DefaultLegsBelow,

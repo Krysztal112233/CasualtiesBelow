@@ -36,7 +36,7 @@ import dev.krysztal.casualtiesbelow.progression.StarvationProgression
   * carries no hit-location information: the affected part is guessed from hit geometry (see
   * [[HitLocation]]). What kind of wound a hit inflicts — bite, cut, blunt, pierce, burn, blast — is
   * classified from the damage source by [[WoundProfiles]] (rule-driven; see the
-  * `casualtiesbelow:wound_rule` registry).
+  * `casualtiesbelow/wound_rule` datapack entries).
   */
 object LimbDamage {
 
@@ -177,10 +177,10 @@ object LimbDamage {
     *
     *   - worn boots cushion the whole impact (the `[fall]` cushion formula)
     *   - any damage: both legs lose muscle health and gain pain
-    *   - above the registry scrape threshold: skin scrape and external bleeding capped by skin
+    *   - above the datapack scrape threshold: skin scrape and external bleeding capped by skin
     *     damage
-    *   - at the registry dislocation threshold: one random leg is dislocated
-    *   - at the registry fracture threshold: one random leg fractures instead, with recovery time
+    *   - at the datapack dislocation threshold: one random leg is dislocated
+    *   - at the datapack fracture threshold: one random leg fractures instead, with recovery time
     *     scaling with the damage; worn leggings blunt the impact for these condition rolls (the
     *     `[fall]` protection formula)
     *
@@ -195,7 +195,7 @@ object LimbDamage {
     val cushioned = damage * (1.0 - bootsCushion(player))
     if (cushioned <= 0.0) return
 
-    val rules = GameplayDataLookup.fallRules(player.registryAccess(), player)
+    val rules = GameplayDataLookup.fallRules(player)
     val severeLeg =
       if (player.getRandom.nextBoolean()) BodyPart.LegLeft else BodyPart.LegRight
 
@@ -275,7 +275,7 @@ object LimbDamage {
     }
   }
 
-  /** Severe fall injury rules for the picked leg: fracture above the registry fracture threshold,
+  /** Severe fall injury rules for the picked leg: fracture above the datapack fracture threshold,
     * dislocation above its dislocation threshold — discrete condition onsets carrying a fixed
     * one-time pain grant ([[PainCalc.onConditionOnset]]), independent of impact pain.
     *

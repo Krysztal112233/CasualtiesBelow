@@ -2,39 +2,93 @@ package dev.krysztal.casualtiesbelow.datagen
 
 import java.util.concurrent.CompletableFuture
 
+import com.mojang.serialization.Codec
 import net.minecraft.core.HolderLookup
-import net.minecraft.core.Registry
-import net.minecraft.resources.ResourceKey
+import net.minecraft.data.CachedOutput
+import net.minecraft.data.DataProvider
+import net.minecraft.data.PackOutput
+import net.minecraft.resources.Identifier
 
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
-import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider
 
-import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
+import dev.krysztal.casualtiesbelow.api.data.FallRulesData
+import dev.krysztal.casualtiesbelow.api.data.HitLocationData
+import dev.krysztal.casualtiesbelow.api.data.WoundProfileData
+import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
-/** Emits all built-in entries for the mod's synced gameplay-data registries. */
+/** Writes built-in keyed gameplay data to the same paths consumed by the reload listeners. */
 final class GameplayDataProvider(
     output: FabricPackOutput,
     registries: CompletableFuture[HolderLookup.Provider]
-) extends FabricDynamicRegistryProvider(output, registries) {
+) extends DataProvider {
 
-  override protected def configure(
-      registries: HolderLookup.Provider,
-      entries: FabricDynamicRegistryProvider.Entries
-  ): Unit = {
-    addAll(registries, entries, CasualtiesBelowRegistries.WoundProfile)
-    addAll(registries, entries, CasualtiesBelowRegistries.WoundRule)
-    addAll(registries, entries, CasualtiesBelowRegistries.ArmorProtection)
-    addAll(registries, entries, CasualtiesBelowRegistries.FallRules)
-    addAll(registries, entries, CasualtiesBelowRegistries.HitLocation)
-    // Discomfort intentionally has no built-in entries; tier tags remain its base data.
+  override def run(cache: CachedOutput): CompletableFuture[?] = {
+    registries.thenCompose { lookup =>
+      val writes =
+        saveAll(
+          cache,
+          lookup,
+          "wound_profile",
+          WoundProfileData.Codec,
+          CasualtiesBelowDataDefaults.WoundProfiles
+        ) ++
+          saveAll(
+            cache,
+            lookup,
+            "wound_rule",
+            WoundRuleData.Codec,
+            CasualtiesBelowDataDefaults.woundRules(lookup)
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "armor_protection",
+            ArmorProtectionData.Codec,
+            CasualtiesBelowDataDefaults.ArmorProtection
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "discomfort",
+            DiscomfortData.Codec,
+            CasualtiesBelowDataDefaults.Discomfort
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "fall_rules",
+            FallRulesData.Codec,
+            CasualtiesBelowDataDefaults.FallRules
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "hit_location",
+            HitLocationData.Codec,
+            CasualtiesBelowDataDefaults.HitLocations
+          )
+
+      CompletableFuture.allOf(writes*)
+    }
   }
 
-  private def addAll[T](
+  private def saveAll[T](
+      cache: CachedOutput,
       registries: HolderLookup.Provider,
-      entries: FabricDynamicRegistryProvider.Entries,
-      key: ResourceKey[? <: Registry[T]]
-  ): Unit = {
-    entries.addAll(registries.lookupOrThrow(key))
+      segment: String,
+      codec: Codec[T],
+      entries: Map[Identifier, T]
+  ): List[CompletableFuture[?]] = {
+    val paths = output.createPathProvider(
+      PackOutput.Target.DATA_PACK,
+      s"${CasualtiesBelow.ModId}/$segment"
+    )
+    entries.toList.map { (id, value) =>
+      DataProvider.saveStable(cache, registries, codec, value, paths.json(id))
+    }
   }
 
   override def getName(): String = "Casualties: Below gameplay data"

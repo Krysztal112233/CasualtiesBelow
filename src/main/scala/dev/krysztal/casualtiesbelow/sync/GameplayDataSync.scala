@@ -15,6 +15,7 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.client.ClientRegistryAccess
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents
 import io.netty.buffer.ByteBuf
@@ -28,11 +29,17 @@ final case class GameplayDataPayload(json: String) extends CustomPacketPayload {
   *
   * Sent from [[ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS]], which fires per player right before
   * the vanilla tag and recipe packets — both on join (play phase, before the recipe sync that
-  * triggers JEI's start) and on every successful datapack reload. This is the canonical hook for
-  * datapack→client sync (Fabric PR #2265; NeoForge's OnDatapackSyncEvent shares the semantics):
-  * [[ServerLifecycleEvents.END_DATA_PACK_RELOAD]] runs *after* the recipe sync and would leave
-  * recipe viewers reading a stale snapshot. Config hot reloads (Forge Config API Port watches the
-  * file) rebroadcast to all online players as well.
+  * triggers JEI's start) and on every datapack reload. This is the canonical hook for
+  * datapack→client sync (Fabric PR #2265; NeoForge's OnDatapackSyncEvent shares the semantics).
+  *
+  * On `/reload` that hook fires *before* the vanilla tag broadcast, so an entry referencing a tag
+  * key ADDED by that same reload cannot resolve on the client yet and is skipped (per-entry
+  * isolation in `GameplayDataStores`). A corrective resend from
+  * [[ServerLifecycleEvents.END_DATA_PACK_RELOAD]] — which fires after the tag packet is enqueued —
+  * delivers the complete payload immediately afterwards. END_DATA_PACK_RELOAD alone would be too
+  * late for the primary send: it runs after the recipe sync, leaving recipe viewers with stale
+  * data. Config hot reloads (Forge Config API Port watches the file) rebroadcast to all online
+  * players as well.
   */
 object GameplayDataSync {
 
@@ -55,6 +62,10 @@ object GameplayDataSync {
     ServerLifecycleEvents.SYNC_DATA_PACK_CONTENTS.register { (player, _) =>
       send(player)
     }
+    // Corrective resend after the reload's tag broadcast; see the class doc.
+    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register { (current, _, success) =>
+      if (success) current.getPlayerList.getPlayers.forEach(send(_))
+    }
     ServerLifecycleEvents.SERVER_STARTED.register(s => server = Some(s))
     ServerLifecycleEvents.SERVER_STOPPED.register(_ => server = None)
 
@@ -69,14 +80,22 @@ object GameplayDataSync {
   }
 
   private def send(player: ServerPlayer): Unit = {
-    ServerPlayNetworking.send(player, GameplayDataPayload(GameplayDataSnapshot.capture().toJson))
+    val json = GameplayDataSnapshot.capture().toJson(player.registryAccess())
+    ServerPlayNetworking.send(player, GameplayDataPayload(json))
   }
 
   /** Client-side registration (receiver + disconnect cleanup). */
   def registerClient(): Unit = {
     ClientPlayNetworking.registerGlobalReceiver(
       PayloadId,
-      (payload, _) => GameplayDataSnapshot.receive(payload.json)
+      (payload, _) =>
+        ClientRegistryAccess.current match {
+          case Some(access) => GameplayDataSnapshot.receive(payload.json, access)
+          case None         =>
+            CasualtiesBelow.Logger.warn(
+              "Ignoring gameplay data sync because no client level registry access is available"
+            )
+        }
     )
     ClientPlayConnectionEvents.DISCONNECT.register { (_, _) =>
       GameplayDataSnapshot.clearSynced()

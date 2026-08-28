@@ -5,7 +5,11 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import net.minecraft.core.HolderLookup
+
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 import com.google.gson.JsonArray
@@ -14,11 +18,11 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 
-/** The server-effective config-derived gameplay numbers.
+/** The server-effective config-derived gameplay numbers and six datapack-defined data maps.
   *
-  * The server is authoritative for all gameplay numbers, but displays and client-side prediction
-  * need to know what the server will do. Per-object gameplay data is synchronized separately by the
-  * dynamic registries and is intentionally not mirrored in this snapshot.
+  * The server is authoritative, but displays and client-side prediction need the same content. The
+  * per-object maps are codec-encoded into this snapshot with a registry-aware context and decoded
+  * against the current client level before publication.
   */
 final case class GameplayDataSnapshot(
     maxBloodVolume: Double,
@@ -35,10 +39,11 @@ final case class GameplayDataSnapshot(
     vomitMinChancePerTick: Double,
     vomitMaxChancePerTick: Double,
     vomitRelief: Double,
-    vomitReliefSpreadFraction: Double
+    vomitReliefSpreadFraction: Double,
+    gameplayData: GameplayDataStore
 ) {
 
-  def toJson: String = {
+  def toJson(lookup: HolderLookup.Provider): String = {
     jsonObject(
       "vitals" -> Some(
         jsonObject(
@@ -66,7 +71,8 @@ final case class GameplayDataSnapshot(
           "vomitRelief" -> Some(JsonPrimitive(vomitRelief)),
           "vomitReliefSpreadFraction" -> Some(JsonPrimitive(vomitReliefSpreadFraction))
         )
-      )
+      ),
+      "data" -> Some(GameplayDataStores.encode(gameplayData, lookup))
     ).toString
   }
 
@@ -99,21 +105,26 @@ object GameplayDataSnapshot {
     */
   def current: GameplayDataSnapshot = synced.getOrElse(capture())
 
-  /** Stores a snapshot received from the server. Malformed payloads are logged and ignored, keeping
-    * the previous state.
+  /** Decodes and stores a snapshot received from the server. Malformed payloads are logged and
+    * ignored, keeping the previous config and per-object data together.
     */
-  def receive(json: String): Unit = {
-    Try(fromJson(json)) match {
-      case Success(snapshot) => synced = Some(snapshot)
-      case Failure(e)        =>
+  def receive(json: String, lookup: HolderLookup.Provider): Unit = {
+    Try(fromJson(json, lookup)) match {
+      case Success(snapshot) =>
+        GameplayDataStores.setSynced(snapshot.gameplayData)
+        synced = Some(snapshot)
+      case Failure(e) =>
         CasualtiesBelow.Logger.warn("Ignoring malformed gameplay data sync: {}", e.getMessage)
     }
   }
 
-  def clearSynced(): Unit = synced = None
+  def clearSynced(): Unit = {
+    synced = None
+    GameplayDataStores.clearSynced()
+  }
 
-  /** Builds the snapshot from the effective local config. Used both by the server to fill the sync
-    * payload and by the client as fallback.
+  /** Builds the snapshot from the effective local config and the current reload-listener maps. Used
+    * both by the server to fill the sync payload and by the client as fallback.
     */
   def capture(): GameplayDataSnapshot = {
     val config = CasualtiesBelowConfig
@@ -139,14 +150,18 @@ object GameplayDataSnapshot {
         config.DiscomfortVomitMinChancePerTick.get()
       ),
       vomitRelief = config.DiscomfortVomitRelief.get(),
-      vomitReliefSpreadFraction = config.DiscomfortVomitReliefSpreadFraction.get()
+      vomitReliefSpreadFraction = config.DiscomfortVomitReliefSpreadFraction.get(),
+      gameplayData = GameplayDataStores.server
     )
   }
 
-  /** Decodes both current and older snapshots. Missing sections or fields use the local config so a
+  /** Decodes both current and older snapshots. Missing sections or fields use local state so a
     * partial payload cannot break client prediction while connecting across a transition.
     */
-  private def fromJson(json: String): GameplayDataSnapshot = {
+  private def fromJson(
+      json: String,
+      lookup: HolderLookup.Provider
+  ): GameplayDataSnapshot = {
     val fallback = capture()
     val root = JsonParser.parseString(json).getAsJsonObject
 
@@ -174,6 +189,7 @@ object GameplayDataSnapshot {
     val vitals = section("vitals")
     val armor = section("armor")
     val discomfort = section("discomfort")
+    val gameplayData = GameplayDataStores.decode(section("data"), lookup, fallback.gameplayData)
 
     GameplayDataSnapshot(
       maxBloodVolume = optDouble(vitals, "maxBloodVolume", fallback.maxBloodVolume),
@@ -222,7 +238,8 @@ object GameplayDataSnapshot {
         discomfort,
         "vomitReliefSpreadFraction",
         fallback.vomitReliefSpreadFraction
-      )
+      ),
+      gameplayData = gameplayData
     )
   }
 }

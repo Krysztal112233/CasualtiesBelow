@@ -6,7 +6,7 @@ import net.minecraft.core.RegistryAccess
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 
-/** Access to the dynamic registries synced into the current client level. */
+/** Registry-aware decode context for the gameplay-data sync payload. */
 @Environment(EnvType.CLIENT)
 object ClientRegistryAccess {
   def current: Option[RegistryAccess] = {

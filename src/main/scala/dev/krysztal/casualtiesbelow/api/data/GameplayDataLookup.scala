@@ -1,67 +1,57 @@
 package dev.krysztal.casualtiesbelow.api.data
 
-import scala.jdk.CollectionConverters.*
-import scala.jdk.OptionConverters.*
-
-import net.minecraft.core.Registry
-import net.minecraft.core.RegistryAccess
-import net.minecraft.resources.ResourceKey
+import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.ItemStack
 
-/** Deterministic lookups shared by gameplay consumers of the synced dynamic registries. */
+/** Deterministic lookups shared by gameplay consumers of the reload-listener stores. */
 object GameplayDataLookup {
 
-  /** Registry entries ordered by descending priority, then ascending registry id. */
+  /** Entries ordered by descending priority, then ascending datapack id. */
   def orderedEntries[T](
-      access: RegistryAccess,
-      registryKey: ResourceKey[? <: Registry[T]]
-  )(priority: T => Int): List[(ResourceKey[T], T)] = {
-    access
-      .lookup(registryKey)
-      .toScala
-      .toList
-      .flatMap(_.listElements().iterator().asScala)
-      .map(holder => holder.key() -> holder.value())
-      .sortBy { (key, value) => (-priority(value).toLong, key.identifier().toString) }
+      entries: Map[Identifier, T]
+  )(priority: T => Int): List[(Identifier, T)] = {
+    entries.toList.sortBy { (id, value) => (-priority(value).toLong, id.toString) }
   }
 
   /** Resolves one entry without throwing when a datapack removed it. */
-  def entry[T](
-      access: RegistryAccess,
-      registryKey: ResourceKey[? <: Registry[T]],
-      entryKey: ResourceKey[T]
-  ): Option[T] = {
-    access
-      .lookup(registryKey)
-      .toScala
-      .flatMap(_.get(entryKey).toScala)
-      .map(_.value())
-  }
+  def entry[T](entries: Map[Identifier, T], id: Identifier): Option[T] = entries.get(id)
 
-  def fallRules(access: RegistryAccess, entity: Entity): FallRulesData = {
-    orderedEntries(access, CasualtiesBelowRegistries.FallRules)(_.priority.intValue())
+  def fallRules(
+      entity: Entity,
+      store: GameplayDataStore = GameplayDataStores.server
+  ): FallRulesData = {
+    orderedEntries(store.fallRules)(_.priority.intValue())
       .collectFirst {
         case (_, rules) if rules.entities.contains(entityTypeHolder(entity)) => rules
       }
       .getOrElse(FallRulesData.Fallback)
   }
 
-  def hitLocation(access: RegistryAccess, entity: Entity): HitLocationData = {
-    orderedEntries(access, CasualtiesBelowRegistries.HitLocation)(_.priority.intValue())
+  def hitLocation(
+      entity: Entity,
+      store: GameplayDataStore = GameplayDataStores.server
+  ): HitLocationData = {
+    orderedEntries(store.hitLocations)(_.priority.intValue())
       .collectFirst {
         case (_, rules) if rules.entities.contains(entityTypeHolder(entity)) => rules
       }
       .getOrElse(HitLocationData.Fallback)
   }
 
-  def armorProtection(access: RegistryAccess, stack: ItemStack): Option[ArmorProtectionData] = {
-    orderedEntries(access, CasualtiesBelowRegistries.ArmorProtection)(_.priority.intValue())
+  def armorProtection(
+      stack: ItemStack,
+      store: GameplayDataStore = GameplayDataStores.server
+  ): Option[ArmorProtectionData] = {
+    orderedEntries(store.armorProtection)(_.priority.intValue())
       .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }
   }
 
-  def discomfort(access: RegistryAccess, stack: ItemStack): Option[DiscomfortData] = {
-    orderedEntries(access, CasualtiesBelowRegistries.Discomfort)(_.priority.intValue())
+  def discomfort(
+      stack: ItemStack,
+      store: GameplayDataStore = GameplayDataStores.server
+  ): Option[DiscomfortData] = {
+    orderedEntries(store.discomfort)(_.priority.intValue())
       .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }
   }
 

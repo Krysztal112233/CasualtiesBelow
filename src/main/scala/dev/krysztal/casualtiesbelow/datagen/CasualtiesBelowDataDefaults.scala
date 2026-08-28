@@ -11,9 +11,10 @@ import net.minecraft.advancements.predicates.DataComponentMatchers
 import net.minecraft.advancements.predicates.ItemPredicate
 import net.minecraft.advancements.predicates.MinMaxBounds
 import net.minecraft.advancements.predicates.entity.EntityPredicate
+import net.minecraft.core.HolderLookup
 import net.minecraft.core.HolderSet
 import net.minecraft.core.registries.Registries
-import net.minecraft.data.worldgen.BootstrapContext
+import net.minecraft.resources.Identifier
 import net.minecraft.resources.ResourceKey
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.tags.TagKey
@@ -23,38 +24,36 @@ import net.minecraft.world.entity.EntityType
 import net.minecraft.world.entity.EntityTypes
 import net.minecraft.world.item.Items
 
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.api.data.CasualtiesBelowRegistries
+import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
 import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.FormulaSource
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 import dev.krysztal.casualtiesbelow.api.data.WoundProfileData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
-/** Built-in entries for the mod's datapack registries. These values deliberately duplicate the
-  * compiled consumer fallbacks so deleting an entry remains safe without changing defaults.
+/** Built-in entries for the mod's six keyed gameplay-data directories. These values deliberately
+  * duplicate the compiled consumer fallbacks so deleting an entry remains safe without changing
+  * defaults.
   */
 object CasualtiesBelowDataDefaults {
-  private val WoundProfiles = List(
-    ("bite", WoundProfileData(1.5, 2.0, 0.1, 4.0)),
-    ("cut", WoundProfileData(2.0, 3.0, 0.2, 4.0)),
-    ("blunt", WoundProfileData(0.0, 3.0, 0.0, 4.0)),
-    ("pierce", WoundProfileData(3.0, 2.0, 0.15, 5.0)),
-    ("burn", WoundProfileData(1.0, 0.2, 0.0, 2.0)),
-    ("prick", WoundProfileData(1.5, 0.0, 0.05, 1.0)),
-    ("blast", WoundProfileData(2.0, 2.0, 0.25, 6.0))
-  )
+  val WoundProfiles: Map[Identifier, WoundProfileData] = List(
+    "bite" -> WoundProfileData(1.5, 2.0, 0.1, 4.0),
+    "cut" -> WoundProfileData(2.0, 3.0, 0.2, 4.0),
+    "blunt" -> WoundProfileData(0.0, 3.0, 0.0, 4.0),
+    "pierce" -> WoundProfileData(3.0, 2.0, 0.15, 5.0),
+    "burn" -> WoundProfileData(1.0, 0.2, 0.0, 2.0),
+    "prick" -> WoundProfileData(1.5, 0.0, 0.05, 1.0),
+    "blast" -> WoundProfileData(2.0, 2.0, 0.25, 6.0)
+  ).map((id, value) => entryId(id) -> value).toMap
 
-  def bootstrapWoundProfiles(context: BootstrapContext[WoundProfileData]): Unit = {
-    WoundProfiles.foreach { (id, profile) => context.register(woundProfileKey(id), profile) }
-  }
-
-  def bootstrapWoundRules(context: BootstrapContext[WoundRuleData]): Unit = {
-    val damageTypes = context.lookup(Registries.DAMAGE_TYPE)
-    val entityTypes = context.lookup(Registries.ENTITY_TYPE)
-    val items = context.lookup(Registries.ITEM)
+  def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
+    val damageTypes = registries.lookupOrThrow(Registries.DAMAGE_TYPE)
+    val entityTypes = registries.lookupOrThrow(Registries.ENTITY_TYPE)
+    val items = registries.lookupOrThrow(Registries.ITEM)
 
     def damageSet(keys: ResourceKey[DamageType]*): HolderSet[DamageType] =
       HolderSet.direct(keys.map(damageTypes.getOrThrow).asJava)
@@ -88,7 +87,7 @@ object CasualtiesBelowDataDefaults {
       DataComponentMatchers.ANY
     )
 
-    val rules = List(
+    List(
       "fire" -> rule(
         "burn",
         damageTypes = Some(damageTag(DamageTypeTags.IS_FIRE)),
@@ -158,14 +157,12 @@ object CasualtiesBelowDataDefaults {
         armed = Some(false),
         priority = 0
       )
-    )
-
-    rules.foreach { (id, value) => context.register(woundRuleKey(id), value) }
+    ).map((id, value) => entryId(id) -> value).toMap
   }
 
-  def bootstrapArmorProtection(context: BootstrapContext[ArmorProtectionData]): Unit = {
+  val ArmorProtection: Map[Identifier, ArmorProtectionData] = {
     // (material, worn pieces, skin factor formula, muscle factor formula)
-    val sets = List(
+    List(
       (
         "leather",
         List(Items.LEATHER_HELMET, Items.LEATHER_CHESTPLATE, Items.LEATHER_LEGGINGS),
@@ -196,55 +193,43 @@ object CasualtiesBelowDataDefaults {
         "max(0.05, 1 - armor*0.12 - toughness*0.03)",
         "1 - (1-skinFactor)*0.65"
       )
-    )
-    sets.foreach { (material, pieces, skin, muscle) =>
-      context.register(
-        CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.ArmorProtection, material),
-        ArmorProtectionData(
-          HolderSet.direct(pieces.map(_.builtInRegistryHolder()).asJava),
-          Optional.of(FormulaSource(skin, Seq("armor", "toughness"))),
-          Optional.of(FormulaSource(muscle, Seq("armor", "toughness", "skinFactor"))),
-          0
-        )
+    ).map { (material, pieces, skin, muscle) =>
+      entryId(material) -> ArmorProtectionData(
+        HolderSet.direct(pieces.map(_.builtInRegistryHolder()).asJava),
+        Optional.of(FormulaSource(skin, Seq("armor", "toughness"))),
+        Optional.of(FormulaSource(muscle, Seq("armor", "toughness", "skinFactor"))),
+        0
       )
-    }
+    }.toMap
   }
 
-  def bootstrapDiscomfort(
-      context: BootstrapContext[dev.krysztal.casualtiesbelow.api.data.DiscomfortData]
-  ): Unit = ()
+  val Discomfort: Map[Identifier, DiscomfortData] = Map.empty
 
-  def bootstrapFallRules(context: BootstrapContext[FallRulesData]): Unit = {
-    context.register(
-      CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.FallRules, "player"),
-      FallRulesData(PlayerEntities)
+  val FallRules: Map[Identifier, FallRulesData] = Map(
+    entryId("player") -> FallRulesData(PlayerEntities)
+  )
+
+  val HitLocations: Map[Identifier, HitLocationData] = Map(
+    entryId("player") -> HitLocationData(
+      PlayerEntities,
+      legsBelow = 0.35,
+      headAbove = 1.0,
+      fallbackWeights = Map(
+        BodyPart.Torso -> 0.5,
+        BodyPart.Head -> 0.1,
+        BodyPart.ArmLeft -> 0.1,
+        BodyPart.ArmRight -> 0.1,
+        BodyPart.LegLeft -> 0.1,
+        BodyPart.LegRight -> 0.1
+      ),
+      priority = 0
     )
-  }
-
-  def bootstrapHitLocation(context: BootstrapContext[HitLocationData]): Unit = {
-    context.register(
-      CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.HitLocation, "player"),
-      HitLocationData(
-        PlayerEntities,
-        legsBelow = 0.35,
-        headAbove = 1.0,
-        fallbackWeights = Map(
-          BodyPart.Torso -> 0.5,
-          BodyPart.Head -> 0.1,
-          BodyPart.ArmLeft -> 0.1,
-          BodyPart.ArmRight -> 0.1,
-          BodyPart.LegLeft -> 0.1,
-          BodyPart.LegRight -> 0.1
-        ),
-        priority = 0
-      )
-    )
-  }
+  )
 
   /** All six player body parts share one entity set; the intrusive holder is the canonical
-    * reference, no bootstrap lookup needed.
+    * reference, no registry lookup needed.
     */
-  private val PlayerEntities: HolderSet[EntityType[?]] =
+  private lazy val PlayerEntities: HolderSet[EntityType[?]] =
     HolderSet.direct(JList.of(EntityTypes.PLAYER.builtInRegistryHolder()))
 
   private def rule(
@@ -263,17 +248,13 @@ object CasualtiesBelowDataDefaults {
     optionalBoxed(directLiving),
     optionalBoxed(armed),
     optional(weapon),
-    woundProfileKey(profile),
+    entryId(profile),
     scatter,
     optional(forcedPart),
     priority
   )
 
-  private def woundProfileKey(id: String): ResourceKey[WoundProfileData] =
-    CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.WoundProfile, id)
-
-  private def woundRuleKey(id: String): ResourceKey[WoundRuleData] =
-    CasualtiesBelowRegistries.entryKey(CasualtiesBelowRegistries.WoundRule, id)
+  private def entryId(path: String): Identifier = CasualtiesBelow.ofIdentifier(path)
 
   private def optional[T](value: Option[T]): Optional[T] =
     value.fold(Optional.empty[T]())(Optional.of)
