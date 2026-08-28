@@ -1,5 +1,9 @@
 package dev.krysztal.casualtiesbelow.api.body
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.Codec.STRING
+import com.mojang.serialization.DataResult
+
 /** Player body parts tracked by the mod. Vanilla has no hit-location concept; damage is attributed
   * to a part by our own logic.
   */
@@ -14,6 +18,15 @@ enum BodyPart(val id: String) {
 
 object BodyPart {
   val byId: Map[String, BodyPart] = values.map(p => p.id -> p).toMap
+
+  val Codec: Codec[BodyPart] = STRING.comapFlatMap(
+    id =>
+      byId
+        .get(id)
+        .map(DataResult.success)
+        .getOrElse(DataResult.error(() => s"Unknown body part: $id")),
+    _.id
+  )
 
   val Legs: List[BodyPart] = List(LegLeft, LegRight)
   val Arms: List[BodyPart] = List(ArmLeft, ArmRight)
