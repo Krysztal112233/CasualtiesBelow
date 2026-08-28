@@ -2,6 +2,10 @@ package dev.krysztal.casualtiesbelow.config
 
 import java.util.function.Predicate
 
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 
 import com.ezylang.evalex.Expression
@@ -37,11 +41,11 @@ final class FormulaConfigValue(
   private val validator: Predicate[Object] = (value: Object) =>
     value match {
       case source: String =>
-        try {
+        Try {
           FormulaConfigValue.compile(source, variables).evaluate()
-          true
-        } catch {
-          case e: Exception =>
+        } match {
+          case Success(_) => true
+          case Failure(e) =>
             CasualtiesBelow.Logger.warn(
               "Unable to parse expression '{}' for config '{}': {}",
               source,
@@ -88,11 +92,8 @@ final class FormulaConfigValue(
       values.length == variables.length,
       s"expected ${variables.length} values (${variables.mkString(", ")}), got ${values.length}"
     )
-    try {
-      evaluateWith(expression(), values)
-    } catch {
-      case _: Exception => evaluateWith(defaultExpression, values)
-    }
+    Try(evaluateWith(expression(), values))
+      .getOrElse(evaluateWith(defaultExpression, values))
   }
 
   private def evaluateWith(expression: Expression, values: Seq[Double]): Double = {
