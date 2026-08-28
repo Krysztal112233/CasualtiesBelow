@@ -140,6 +140,6 @@ object PainShock {
   }
 
   private def finite(value: Double): Double = {
-    if (java.lang.Double.isFinite(value)) value else 0.0
+    if (value.isFinite) value else 0.0
   }
 }

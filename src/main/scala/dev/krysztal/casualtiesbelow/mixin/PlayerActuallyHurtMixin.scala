@@ -43,6 +43,6 @@ abstract class PlayerActuallyHurtMixin {
     val targetHealth =
       if (source.is(CasualtiesBelowTags.BypassesHealthRedirect)) vanillaHealth
       else player.getHealth
-    original.call(player, java.lang.Float.valueOf(targetHealth))
+    original.call(player, targetHealth)
   }
 }

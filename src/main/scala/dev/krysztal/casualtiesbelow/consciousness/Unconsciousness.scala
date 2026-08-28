@@ -64,26 +64,24 @@ object Unconsciousness {
     * a latched player is handled separately by PlayerMixin.isImmobile.
     */
   def tickMovementRestriction(player: ServerPlayer): Unit = {
-    val attribute = player.getAttribute(Attributes.MOVEMENT_SPEED)
-    if (attribute == null) {
-      return
-    }
-    val value =
-      if (player.isAlive && !player.isCreative && !player.isSpectator) {
-        severity(player)
-      } else {
-        0.0
-      }
-    if (value > 0.0) {
-      attribute.addOrUpdateTransientModifier(
-        new AttributeModifier(
-          SlownessModifierId,
-          -value,
-          AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+    Option(player.getAttribute(Attributes.MOVEMENT_SPEED)).foreach { attribute =>
+      val value =
+        if (player.isAlive && !player.isCreative && !player.isSpectator) {
+          severity(player)
+        } else {
+          0.0
+        }
+      if (value > 0.0) {
+        attribute.addOrUpdateTransientModifier(
+          new AttributeModifier(
+            SlownessModifierId,
+            -value,
+            AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
+          )
         )
-      )
-    } else {
-      attribute.removeModifier(SlownessModifierId)
+      } else {
+        attribute.removeModifier(SlownessModifierId)
+      }
     }
   }
 
