@@ -9,6 +9,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
 import com.mojang.serialization.Codec.BOOL
 import com.mojang.serialization.Codec.INT
@@ -29,6 +30,8 @@ import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
+import dev.krysztal.casualtiesbelow.api.wound.WoundApplicationData
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 
 import com.ezylang.evalex.Expression
@@ -74,6 +77,22 @@ private[casualtiesbelow] object GameplayCodecs {
         DataResult.error(() => s"weights is missing: ${missing.map(_.id).mkString(", ")}")
       } else if (!total.isFinite || total > 1.0 + 1.0e-9) {
         DataResult.error(() => s"weights must sum to at most 1.0, got $total")
+      } else DataResult.success(weights)
+    })
+
+  /** V2 body-part weights are sparse and normalized by consumers. At least one positive weight is
+    * required; zero-valued entries remain legal so generated or transformed data can preserve a
+    * complete body-part map without changing its meaning.
+    */
+  val SparseBodyPartWeights: Codec[Map[BodyPart, Double]] = unboundedMap(
+    BodyPart.Codec,
+    NonNegativeDouble
+  )
+    .xmap(_.asScala.toMap, _.asJava)
+    .validate(weights => {
+      val total = weights.values.sum
+      if (weights.isEmpty || !total.isFinite || total <= 0.0) {
+        DataResult.error(() => s"weights must contain positive finite mass, got $total")
       } else DataResult.success(weights)
     })
 }
@@ -145,8 +164,64 @@ object FormulaSource {
   )
 }
 
-/** One ordered damage-source classification rule. Optional matchers are ANDed by consumers. */
-final case class WoundRuleData(
+/** V2 damage-source and victim matchers. Optional fields are ANDed; entries within a damage-type
+  * selector are ORed, and excluded types are applied last.
+  */
+final case class WoundMatchData(
+    damageTypes: Optional[DamageTypeSelector],
+    excludedDamageTypes: Optional[DamageTypeSelector],
+    victims: Optional[HolderSet[EntityType[?]]],
+    predicate: Optional[DamageSourcePredicate],
+    directLiving: Optional[JBoolean],
+    armed: Optional[JBoolean],
+    weapon: Optional[ItemPredicate]
+)
+
+object WoundMatchData {
+  val Empty: WoundMatchData = WoundMatchData(
+    Optional.empty(),
+    Optional.empty(),
+    Optional.empty(),
+    Optional.empty(),
+    Optional.empty(),
+    Optional.empty(),
+    Optional.empty()
+  )
+
+  val Codec: Codec[WoundMatchData] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        DamageTypeSelector.Codec.optionalFieldOf("damage_types").forGetter(_.damageTypes),
+        DamageTypeSelector.Codec
+          .optionalFieldOf("excluded_damage_types")
+          .forGetter(_.excludedDamageTypes),
+        RegistryCodecs
+          .homogeneousList(Registries.ENTITY_TYPE)
+          .optionalFieldOf("victims")
+          .forGetter(_.victims),
+        DamageSourcePredicate.CODEC.optionalFieldOf("predicate").forGetter(_.predicate),
+        BOOL.optionalFieldOf("direct_living").forGetter(_.directLiving),
+        BOOL.optionalFieldOf("armed").forGetter(_.armed),
+        ItemPredicate.CODEC.optionalFieldOf("weapon").forGetter(_.weapon)
+      )
+      .apply(instance, WoundMatchData.apply)
+  )
+}
+
+/** One ordered wound rule. V2 rules contain an explicit matcher object and an ordered application
+  * list; legacy rules remain decodable during the transition.
+  */
+sealed trait WoundRuleData {
+  def priority: Integer
+}
+
+final case class WoundRuleV2Data(
+    woundMatch: WoundMatchData,
+    applications: List[WoundApplicationData],
+    priority: Integer
+) extends WoundRuleData
+
+final case class LegacyWoundRuleData(
     damageTypes: Optional[HolderSet[DamageType]],
     predicate: Optional[DamageSourcePredicate],
     directLiving: Optional[JBoolean],
@@ -157,7 +232,7 @@ final case class WoundRuleData(
     forcedPart: Optional[BodyPart],
     weights: Optional[Map[BodyPart, Double]],
     priority: Integer
-)
+) extends WoundRuleData
 
 object WoundRuleData {
   val DefaultWeights: Map[BodyPart, Double] = Map(
@@ -177,7 +252,19 @@ object WoundRuleData {
     BodyPart.LegRight -> 0.5
   )
 
-  val Codec: Codec[WoundRuleData] = RecordCodecBuilder.create(instance =>
+  private val V2Codec: Codec[WoundRuleV2Data] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        WoundMatchData.Codec
+          .optionalFieldOf("match", WoundMatchData.Empty)
+          .forGetter(_.woundMatch),
+        WoundApplicationData.NonEmptyListCodec.fieldOf("applications").forGetter(_.applications),
+        INT.optionalFieldOf("priority", 0).forGetter(_.priority)
+      )
+      .apply(instance, WoundRuleV2Data.apply)
+  )
+
+  private val LegacyCodec: Codec[LegacyWoundRuleData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         RegistryCodecs
@@ -196,7 +283,45 @@ object WoundRuleData {
         GameplayCodecs.BodyPartWeights.optionalFieldOf("weights").forGetter(_.weights),
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
       )
-      .apply(instance, WoundRuleData.apply)
+      .apply(instance, LegacyWoundRuleData.apply)
+  )
+
+  val Codec: Codec[WoundRuleData] = com.mojang.serialization.Codec
+    .either(V2Codec, LegacyCodec)
+    .xmap(
+      _.map(
+        (rule: WoundRuleV2Data) => rule: WoundRuleData,
+        (rule: LegacyWoundRuleData) => rule: WoundRuleData
+      ),
+      {
+        case rule: WoundRuleV2Data     => Either.left(rule)
+        case rule: LegacyWoundRuleData => Either.right(rule)
+      }
+    )
+
+  /** Source-compatible constructor for existing built-in defaults while they are migrated. */
+  def apply(
+      damageTypes: Optional[HolderSet[DamageType]],
+      predicate: Optional[DamageSourcePredicate],
+      directLiving: Optional[JBoolean],
+      armed: Optional[JBoolean],
+      weapon: Optional[ItemPredicate],
+      profile: Identifier,
+      scatter: JBoolean,
+      forcedPart: Optional[BodyPart],
+      weights: Optional[Map[BodyPart, Double]],
+      priority: Integer
+  ): WoundRuleData = LegacyWoundRuleData(
+    damageTypes,
+    predicate,
+    directLiving,
+    armed,
+    weapon,
+    profile,
+    scatter,
+    forcedPart,
+    weights,
+    priority
   )
 }
 

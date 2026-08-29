@@ -1,9 +1,21 @@
 {
-  "damage_types": [
-    "minecraft:arrow",
-    "minecraft:trident",
-    "minecraft:mob_projectile"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:pierce",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
   ],
-  "priority": 80,
-  "profile": "casualtiesbelow:pierce"
+  "match": {
+    "damage_types": [
+      "minecraft:arrow",
+      "minecraft:trident",
+      "minecraft:mob_projectile"
+    ]
+  },
+  "priority": 80
 }

@@ -1,5 +1,17 @@
 {
-  "armed": false,
-  "direct_living": true,
-  "profile": "casualtiesbelow:bite"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:bite",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "armed": false,
+    "direct_living": true
+  }
 }

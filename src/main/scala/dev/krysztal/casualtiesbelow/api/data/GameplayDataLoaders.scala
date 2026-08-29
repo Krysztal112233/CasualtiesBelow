@@ -9,7 +9,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile as WoundProfileEntry
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 
-/** Reload-listener stores for the six datapack-defined gameplay data types. */
+/** Reload-listener stores for the datapack-defined gameplay data types. */
 object GameplayDataLoaders {
   val WoundProfile = GameplayDataLoader[WoundProfileEntry]("wound_profile", WoundProfileEntry.Codec)
   val WoundRule = GameplayDataLoader[WoundRuleData]("wound_rule", WoundRuleData.Codec)
@@ -28,11 +28,11 @@ object GameplayDataLoaders {
     register("discomfort", Discomfort)
     register("fall_rules", FallRules)
     register("hit_location", HitLocation)
-    // A reload can add or remove profile definitions; reset the one-time warning dedup so a
-    // reference broken again by a later reload warns again instead of staying silently ignored.
-    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((_, _, _) =>
-      WoundProfiles.clearWarnedMissingProfiles()
-    )
+    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((_, _, successful) => {
+      if (successful) WoundProfiles.rebuild()
+    })
+    ServerLifecycleEvents.SERVER_STARTED.register(_ => WoundProfiles.rebuild())
+    ServerLifecycleEvents.SERVER_STOPPED.register(_ => WoundProfiles.clear())
   }
 
   private def register[T](segment: String, loader: GameplayDataLoader[T]): Unit = {

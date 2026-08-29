@@ -49,5 +49,9 @@ final class DamageTypeTagProvider(
     builder(CasualtiesBelowTags.BlastSources)
       .forceAddTag(DamageTypeTags.IS_EXPLOSION)
       .add(DamageTypes.WITHER_SKULL)
+
+    // `#minecraft:is_fall` also includes pearl and stalagmite damage, which deliberately use
+    // localized prick/pierce rules. This semantic tag starts with exact fall impact only.
+    builder(CasualtiesBelowTags.FallImpacts).add(DamageTypes.FALL)
   }
 }

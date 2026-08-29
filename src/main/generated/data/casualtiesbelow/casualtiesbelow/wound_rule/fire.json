@@ -1,13 +1,17 @@
 {
-  "damage_types": "#minecraft:is_fire",
-  "priority": 100,
-  "profile": "casualtiesbelow:burn",
-  "weights": {
-    "arm_left": 0.1,
-    "arm_right": 0.1,
-    "head": 0.1,
-    "leg_left": 0.1,
-    "leg_right": 0.1,
-    "torso": 0.5
-  }
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:burn",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "damage_types": "#minecraft:is_fire"
+  },
+  "priority": 100
 }

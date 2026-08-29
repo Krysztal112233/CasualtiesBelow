@@ -4,6 +4,7 @@ import java.lang.Boolean
 import java.util.Collections
 import java.util.WeakHashMap
 
+import net.minecraft.resources.Identifier
 import net.minecraft.util.RandomSource
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.player.Player
@@ -78,13 +79,28 @@ object LimbInjuries {
       damage: Double,
       condition: Option[LimbCondition] = None,
       pain: Double = 0.0,
-      jitter: Double = 3.0
+      jitter: Double = 3.0,
+      ruleId: Option[Identifier] = None,
+      profileId: Option[Identifier] = None,
+      applicationType: Option[Identifier] = None,
+      role: Option[String] = None
   )(mutate: (LimbStats, Double) => Unit): Boolean = {
     val body = CasualtiesBelowComponents.Body.get(player)
     val random = player.getRandom
 
     val effectiveDamage = (damage + rollJitter(random, jitter)).max(0.0)
-    val context = LimbInjuryContext(player, part, source, effectiveDamage, condition, pain)
+    val context = LimbInjuryContext(
+      player,
+      part,
+      source,
+      effectiveDamage,
+      condition,
+      pain,
+      ruleId,
+      profileId,
+      applicationType,
+      role
+    )
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return false
 
     val grantedPain = (context.pain + rollJitter(random, jitter)).max(0.0)

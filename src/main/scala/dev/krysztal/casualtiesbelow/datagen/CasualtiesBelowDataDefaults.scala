@@ -15,7 +15,6 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.core.HolderSet
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.Identifier
-import net.minecraft.resources.ResourceKey
 import net.minecraft.tags.DamageTypeTags
 import net.minecraft.tags.TagKey
 import net.minecraft.world.damagesource.DamageType
@@ -29,13 +28,29 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
-import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.FormulaSource
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
+import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
+import dev.krysztal.casualtiesbelow.api.data.WoundRuleV2Data
+import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
+import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
+import dev.krysztal.casualtiesbelow.api.wound.ExactDamageType
+import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
+import dev.krysztal.casualtiesbelow.api.wound.HitLocationTargetData
+import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
+import dev.krysztal.casualtiesbelow.api.wound.PairedImpactApplicationData
+import dev.krysztal.casualtiesbelow.api.wound.PairedImpactData
+import dev.krysztal.casualtiesbelow.api.wound.ScatterApplicationData
+import dev.krysztal.casualtiesbelow.api.wound.SpillImpactData
+import dev.krysztal.casualtiesbelow.api.wound.TaggedDamageType
+import dev.krysztal.casualtiesbelow.api.wound.WeightedTargetData
+import dev.krysztal.casualtiesbelow.api.wound.WoundApplicationData
+import dev.krysztal.casualtiesbelow.api.wound.WoundContributionData
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
+import dev.krysztal.casualtiesbelow.api.wound.WoundSeverityPolicy
 
-/** Built-in entries for the mod's six keyed gameplay-data directories. */
+/** Built-in entries for the mod's keyed gameplay-data directories. */
 object CasualtiesBelowDataDefaults {
   val WoundProfiles: Map[Identifier, WoundProfile] = List(
     "bite" -> WoundProfile(1.5, 2.0, 0.1, 4.0),
@@ -49,15 +64,14 @@ object CasualtiesBelowDataDefaults {
   ).map((id, value) => entryId(id) -> value).toMap
 
   def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
-    val damageTypes = registries.lookupOrThrow(Registries.DAMAGE_TYPE)
     val entityTypes = registries.lookupOrThrow(Registries.ENTITY_TYPE)
     val items = registries.lookupOrThrow(Registries.ITEM)
 
-    def damageSet(keys: ResourceKey[DamageType]*): HolderSet[DamageType] =
-      HolderSet.direct(keys.map(damageTypes.getOrThrow).asJava)
+    def exact(keys: net.minecraft.resources.ResourceKey[DamageType]*): DamageTypeSelector =
+      DamageTypeSelector(keys.map(ExactDamageType.apply).toList)
 
-    def damageTag(tag: TagKey[DamageType]): HolderSet[DamageType] =
-      damageTypes.getOrThrow(tag)
+    def tagged(tag: TagKey[DamageType]): DamageTypeSelector =
+      DamageTypeSelector(List(TaggedDamageType(tag)))
 
     def entityPredicate(entityType: EntityType[?]): DamageSourcePredicate = {
       val direct = EntityPredicate.Builder.entity().of(entityTypes, entityType).build()
@@ -87,90 +101,83 @@ object CasualtiesBelowDataDefaults {
 
     List(
       "fire" -> rule(
-        "burn",
-        damageTypes = Some(damageTag(DamageTypeTags.IS_FIRE)),
-        weights = Some(WoundRuleData.DefaultWeights),
+        localized("burn"),
+        damageTypes = Some(tagged(DamageTypeTags.IS_FIRE)),
         priority = 100
       ),
       "explosion" -> rule(
-        "blast",
-        damageTypes = Some(damageTag(CasualtiesBelowTags.BlastSources)),
-        scatter = true,
+        scatter("blast"),
+        damageTypes = Some(tagged(CasualtiesBelowTags.BlastSources)),
         priority = 90
       ),
       "piercing_projectile" -> rule(
-        "pierce",
+        localized("pierce"),
         damageTypes =
-          Some(damageSet(DamageTypes.ARROW, DamageTypes.TRIDENT, DamageTypes.MOB_PROJECTILE)),
+          Some(exact(DamageTypes.ARROW, DamageTypes.TRIDENT, DamageTypes.MOB_PROJECTILE)),
         priority = 80
       ),
       "falling_pierce" -> rule(
-        "pierce",
-        damageTypes = Some(damageSet(DamageTypes.FALLING_STALACTITE)),
-        forcedPart = Some(BodyPart.Head),
+        localized("pierce", FixedTargetData(BodyPart.Head)),
+        damageTypes = Some(exact(DamageTypes.FALLING_STALACTITE)),
         priority = 70
       ),
       "falling_crush" -> rule(
-        "blunt",
-        damageTypes = Some(damageSet(DamageTypes.FALLING_ANVIL, DamageTypes.FALLING_BLOCK)),
-        forcedPart = Some(BodyPart.Head),
+        localized("blunt", FixedTargetData(BodyPart.Head)),
+        damageTypes = Some(exact(DamageTypes.FALLING_ANVIL, DamageTypes.FALLING_BLOCK)),
         priority = 70
       ),
       "fall" -> rule(
-        "fall",
-        damageTypes = Some(damageSet(DamageTypes.FALL)),
-        weights = Some(WoundRuleData.DefaultFallWeights),
+        fallImpact,
+        damageTypes = Some(tagged(CasualtiesBelowTags.FallImpacts)),
+        victims = Some(PlayerEntities),
         priority = 60
       ),
       "prick" -> rule(
-        "prick",
-        damageTypes = Some(damageSet(DamageTypes.CACTUS, DamageTypes.SWEET_BERRY_BUSH)),
-        weights = Some(WoundRuleData.DefaultWeights),
+        localized("prick"),
+        damageTypes = Some(exact(DamageTypes.CACTUS, DamageTypes.SWEET_BERRY_BUSH)),
         priority = 60
       ),
       "sonic_boom" -> rule(
-        "blunt",
-        damageTypes = Some(damageSet(DamageTypes.SONIC_BOOM)),
+        localized("blunt"),
+        damageTypes = Some(exact(DamageTypes.SONIC_BOOM)),
         priority = 50
       ),
       "stalagmite" -> rule(
-        "pierce",
-        damageTypes = Some(damageSet(DamageTypes.STALAGMITE)),
-        weights = Some(WoundRuleData.DefaultWeights),
+        localized("pierce"),
+        damageTypes = Some(exact(DamageTypes.STALAGMITE)),
         priority = 45
       ),
       "evoker_fangs" -> rule(
-        "pierce",
-        damageTypes = Some(damageSet(DamageTypes.INDIRECT_MAGIC)),
+        localized("pierce"),
+        damageTypes = Some(exact(DamageTypes.INDIRECT_MAGIC)),
         predicate = Some(entityPredicate(EntityTypes.EVOKER_FANGS)),
         priority = 40
       ),
       "ender_pearl" -> rule(
-        "prick",
-        damageTypes = Some(damageSet(DamageTypes.ENDER_PEARL)),
-        weights = Some(WoundRuleData.DefaultWeights),
+        localized("prick"),
+        damageTypes = Some(exact(DamageTypes.ENDER_PEARL)),
         priority = 35
       ),
       "melee_sharp" -> rule(
-        "cut",
+        localized("cut"),
         directLiving = Some(true),
         weapon = Some(sharpWeapon),
         priority = 30
       ),
       "melee_slam" -> rule(
-        "blunt",
+        localized("blunt"),
         predicate = Some(entityTagPredicate(CasualtiesBelowTags.BluntMeleeEntities)),
         directLiving = Some(true),
         priority = 20
       ),
       "melee_armed" -> rule(
-        "blunt",
+        localized("blunt"),
         directLiving = Some(true),
         armed = Some(true),
         priority = 10
       ),
       "melee_bare" -> rule(
-        "bite",
+        localized("bite"),
         directLiving = Some(true),
         armed = Some(false),
         priority = 0
@@ -223,20 +230,6 @@ object CasualtiesBelowDataDefaults {
 
   val Discomfort: Map[Identifier, DiscomfortData] = Map.empty
 
-  val FallRules: Map[Identifier, FallRulesData] = Map(
-    entryId("player") -> FallRulesData(
-      PlayerEntities,
-      pairedFraction = FallRulesData.DefaultPairedFraction,
-      secondaryThreshold = FallRulesData.DefaultSecondaryThreshold,
-      secondaryFraction = FallRulesData.DefaultSecondaryFraction,
-      dislocationThreshold = FallRulesData.DefaultDislocationThreshold,
-      fractureThreshold = FallRulesData.DefaultFractureThreshold,
-      fractureBaseRecoveryTicks = FallRulesData.DefaultFractureBaseRecoveryTicks,
-      fracturePain = FallRulesData.DefaultFracturePain,
-      dislocationPain = FallRulesData.DefaultDislocationPain
-    )
-  )
-
   val HitLocations: Map[Identifier, HitLocationData] = Map(
     entryId("player") -> HitLocationData(
       PlayerEntities,
@@ -253,28 +246,65 @@ object CasualtiesBelowDataDefaults {
     HolderSet.direct(JList.of(EntityTypes.PLAYER.builtInRegistryHolder()))
 
   private def rule(
-      profile: String,
-      damageTypes: Option[HolderSet[DamageType]] = None,
+      application: WoundApplicationData,
+      damageTypes: Option[DamageTypeSelector] = None,
+      excludedDamageTypes: Option[DamageTypeSelector] = None,
+      victims: Option[HolderSet[EntityType[?]]] = None,
       predicate: Option[DamageSourcePredicate] = None,
       directLiving: Option[Boolean] = None,
       armed: Option[Boolean] = None,
       weapon: Option[ItemPredicate] = None,
-      scatter: Boolean = false,
-      forcedPart: Option[BodyPart] = None,
-      weights: Option[Map[BodyPart, Double]] = None,
       priority: Int = 0
-  ): WoundRuleData = WoundRuleData(
-    optional(damageTypes),
-    optional(predicate),
-    optionalBoxed(directLiving),
-    optionalBoxed(armed),
-    optional(weapon),
-    entryId(profile),
-    scatter,
-    optional(forcedPart),
-    optional(weights),
+  ): WoundRuleData = WoundRuleV2Data(
+    WoundMatchData(
+      optional(damageTypes),
+      optional(excludedDamageTypes),
+      optional(victims),
+      optional(predicate),
+      optionalBoxed(directLiving),
+      optionalBoxed(armed),
+      optional(weapon)
+    ),
+    List(application),
     priority
   )
+
+  private def localized(
+      profile: String,
+      target: dev.krysztal.casualtiesbelow.api.wound.WoundTargetData = HitLocationTargetData(
+        WoundRuleData.DefaultWeights
+      )
+  ): WoundApplicationData =
+    LocalizedApplicationData(List(wound(profile)), target)
+
+  private def scatter(profile: String): WoundApplicationData =
+    ScatterApplicationData(List(wound(profile)), minCount = 2, maxCount = 3)
+
+  private def fallImpact: WoundApplicationData = PairedImpactApplicationData(
+    List(wound("fall")),
+    WoundSeverityPolicy.FallImpact,
+    WeightedTargetData(WoundRuleData.DefaultFallWeights),
+    Optional.of(PairedImpactData(1.0)),
+    Optional.of(SpillImpactData(above = 8.0, count = 1, fraction = 0.5)),
+    List(
+      ConditionStepData(
+        dev.krysztal.casualtiesbelow.api.body.LimbCondition.Fracture,
+        atLeast = 10.0,
+        pain = 50.0,
+        Optional.of(Integer.valueOf(24000))
+      ),
+      ConditionStepData(
+        dev.krysztal.casualtiesbelow.api.body.LimbCondition.Dislocation,
+        atLeast = 8.0,
+        pain = 30.0,
+        Optional.empty()
+      )
+    ),
+    JBoolean.TRUE
+  )
+
+  private def wound(profile: String): WoundContributionData =
+    WoundContributionData(entryId(profile), severityMultiplier = 1.0)
 
   private def entryId(path: String): Identifier = CasualtiesBelow.ofIdentifier(path)
 

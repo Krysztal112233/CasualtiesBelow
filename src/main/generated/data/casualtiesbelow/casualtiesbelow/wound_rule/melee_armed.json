@@ -1,6 +1,18 @@
 {
-  "armed": true,
-  "direct_living": true,
-  "priority": 10,
-  "profile": "casualtiesbelow:blunt"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:blunt",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "armed": true,
+    "direct_living": true
+  },
+  "priority": 10
 }

@@ -1,9 +1,24 @@
 {
-  "damage_types": [
-    "minecraft:falling_anvil",
-    "minecraft:falling_block"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "target": {
+        "type": "casualtiesbelow:fixed",
+        "part": "head"
+      },
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:blunt",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
   ],
-  "forced_part": "head",
-  "priority": 70,
-  "profile": "casualtiesbelow:blunt"
+  "match": {
+    "damage_types": [
+      "minecraft:falling_anvil",
+      "minecraft:falling_block"
+    ]
+  },
+  "priority": 70
 }

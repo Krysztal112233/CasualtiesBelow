@@ -18,7 +18,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.google.gson.JsonPrimitive
 
-/** The server-effective config-derived gameplay numbers and six datapack-defined data maps.
+/** The server-effective config-derived gameplay numbers and datapack-defined data maps.
   *
   * The server is authoritative, but displays and client-side prediction need the same content. The
   * per-object maps are codec-encoded into this snapshot with a registry-aware context and decoded
@@ -45,6 +45,7 @@ final case class GameplayDataSnapshot(
 
   def toJson(lookup: HolderLookup.Provider): String = {
     jsonObject(
+      "schemaVersion" -> Some(JsonPrimitive(GameplayDataSnapshot.CurrentSchemaVersion)),
       "vitals" -> Some(
         jsonObject(
           "maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)),
@@ -94,6 +95,8 @@ final case class GameplayDataSnapshot(
 }
 
 object GameplayDataSnapshot {
+
+  private val CurrentSchemaVersion = 2
 
   /** The latest snapshot received from the server, if any. Cleared on disconnect. */
   @volatile private var synced: Option[GameplayDataSnapshot] = None
@@ -182,6 +185,13 @@ object GameplayDataSnapshot {
   ): GameplayDataSnapshot = {
     val fallback = capture()
     val root = JsonParser.parseString(json).getAsJsonObject
+    val schemaVersion =
+      Option(root.get("schemaVersion")).map(_.getAsInt).getOrElse(1)
+    if (schemaVersion < 1 || schemaVersion > CurrentSchemaVersion) {
+      throw IllegalArgumentException(
+        s"Unsupported gameplay data schema version $schemaVersion (current: $CurrentSchemaVersion)"
+      )
+    }
 
     def section(name: String): Option[JsonObject] = {
       Option(root.get(name)).filter(_.isJsonObject).map(_.getAsJsonObject)

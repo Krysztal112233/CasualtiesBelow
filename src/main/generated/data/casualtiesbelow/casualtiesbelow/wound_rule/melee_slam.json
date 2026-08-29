@@ -1,10 +1,22 @@
 {
-  "direct_living": true,
-  "predicate": {
-    "direct_entity": {
-      "minecraft:entity_type": "#casualtiesbelow:blunt_melee"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:blunt",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "direct_living": true,
+    "predicate": {
+      "direct_entity": {
+        "minecraft:entity_type": "#casualtiesbelow:blunt_melee"
+      }
     }
   },
-  "priority": 20,
-  "profile": "casualtiesbelow:blunt"
+  "priority": 20
 }

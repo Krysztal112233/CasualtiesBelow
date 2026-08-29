@@ -1,4 +1,5 @@
 {
+  "type": "casualtiesbelow:linear",
   "bleed_rate_per_wound": 0.5,
   "muscle_per_point": 4.0,
   "pain_per_point": 6.0,

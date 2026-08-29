@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.api.event
 
+import net.minecraft.resources.Identifier
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.player.Player
 
@@ -28,6 +29,15 @@ import dev.krysztal.casualtiesbelow.api.body.LimbCondition
   *   the pain this injury application will grant the limb (capped at the limb maximum on
   *   application). Listeners may adjust it before returning — including to zero. Defaults: impact
   *   injuries scale with the damage; condition onsets grant a fixed one-time amount.
+  * @param ruleId
+  *   the matching wound-rule id, when this injury came from datapack wound attribution
+  * @param profileId
+  *   the contributing wound-profile id; absent for a standalone condition onset
+  * @param applicationType
+  *   the namespaced wound-application type that emitted this injury
+  * @param role
+  *   the injury's role within that application (`localized`, `scatter`, `primary`, `paired`,
+  *   `spill`, or `condition`)
   */
 final case class LimbInjuryContext(
     player: Player,
@@ -35,7 +45,11 @@ final case class LimbInjuryContext(
     source: DamageSource,
     damage: Double,
     condition: Option[LimbCondition],
-    var pain: Double
+    var pain: Double,
+    ruleId: Option[Identifier] = None,
+    profileId: Option[Identifier] = None,
+    applicationType: Option[Identifier] = None,
+    role: Option[String] = None
 )
 
 /** Fired before an injury is applied to a limb, once per affected limb. Return `false` to cancel

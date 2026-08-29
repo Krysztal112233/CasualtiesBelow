@@ -27,6 +27,12 @@ object CasualtiesBelowTags {
   val BlastSources: TagKey[DamageType] =
     TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("blast_sources"))
 
+  /** Impact sources that use the paired-limb application. Kept narrower than vanilla's broad
+    * `is_fall` tag, whose pearl and stalagmite damage retain separate wound profiles.
+    */
+  val FallImpacts: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("fall_impacts"))
+
   /** Melee weapons that cut skin open (swords, axes by default). */
   val SharpMeleeItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelow.ofIdentifier("sharp_melee"))

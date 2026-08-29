@@ -14,7 +14,6 @@ import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
-import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
@@ -55,13 +54,6 @@ final class GameplayDataProvider(
             "discomfort",
             DiscomfortData.Codec,
             CasualtiesBelowDataDefaults.Discomfort
-          ) ++
-          saveAll(
-            cache,
-            lookup,
-            "fall_rules",
-            FallRulesData.Codec,
-            CasualtiesBelowDataDefaults.FallRules
           ) ++
           saveAll(
             cache,

@@ -1,8 +1,20 @@
 {
-  "direct_living": true,
-  "priority": 30,
-  "profile": "casualtiesbelow:cut",
-  "weapon": {
-    "items": "#casualtiesbelow:sharp_melee"
-  }
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:cut",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "direct_living": true,
+    "weapon": {
+      "items": "#casualtiesbelow:sharp_melee"
+    }
+  },
+  "priority": 30
 }

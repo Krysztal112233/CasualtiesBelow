@@ -1,6 +1,21 @@
 {
-  "damage_types": "minecraft:falling_stalactite",
-  "forced_part": "head",
-  "priority": 70,
-  "profile": "casualtiesbelow:pierce"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "target": {
+        "type": "casualtiesbelow:fixed",
+        "part": "head"
+      },
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:pierce",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "damage_types": "minecraft:falling_stalactite"
+  },
+  "priority": 70
 }

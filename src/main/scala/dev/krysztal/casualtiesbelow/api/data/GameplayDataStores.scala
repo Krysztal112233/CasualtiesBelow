@@ -18,7 +18,7 @@ import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
-/** One immutable view of all six datapack-defined gameplay data types. */
+/** One immutable view of all datapack-defined gameplay data types. */
 final case class GameplayDataStore(
     woundProfiles: Map[Identifier, WoundProfile],
     woundRules: Map[Identifier, WoundRuleData],
@@ -35,7 +35,7 @@ final case class GameplayDataStore(
 object GameplayDataStores {
   @volatile private var synced: Option[GameplayDataStore] = None
 
-  /** Fresh view of the six server-data reload listeners. */
+  /** Fresh view of the server-data reload listeners. */
   def server: GameplayDataStore = GameplayDataStore(
     woundProfiles = GameplayDataLoaders.WoundProfile.byId,
     woundRules = GameplayDataLoaders.WoundRule.byId,
@@ -52,7 +52,7 @@ object GameplayDataStores {
 
   private[casualtiesbelow] def clearSynced(): Unit = synced = None
 
-  /** Encodes all six maps with the same registry-aware codecs used by the reload listeners. */
+  /** Encodes all maps with the same registry-aware codecs used by the reload listeners. */
   private[casualtiesbelow] def encode(
       store: GameplayDataStore,
       lookup: HolderLookup.Provider

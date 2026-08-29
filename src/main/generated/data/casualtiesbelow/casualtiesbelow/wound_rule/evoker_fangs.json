@@ -1,10 +1,22 @@
 {
-  "damage_types": "minecraft:indirect_magic",
-  "predicate": {
-    "direct_entity": {
-      "minecraft:entity_type": "minecraft:evoker_fangs"
+  "applications": [
+    {
+      "type": "casualtiesbelow:localized",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:pierce",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "damage_types": "minecraft:indirect_magic",
+    "predicate": {
+      "direct_entity": {
+        "minecraft:entity_type": "minecraft:evoker_fangs"
+      }
     }
   },
-  "priority": 40,
-  "profile": "casualtiesbelow:pierce"
+  "priority": 40
 }

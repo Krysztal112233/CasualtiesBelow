@@ -1,13 +1,51 @@
 {
-  "damage_types": "minecraft:fall",
-  "priority": 60,
-  "profile": "casualtiesbelow:fall",
-  "weights": {
-    "arm_left": 0.0,
-    "arm_right": 0.0,
-    "head": 0.0,
-    "leg_left": 0.5,
-    "leg_right": 0.5,
-    "torso": 0.0
-  }
+  "applications": [
+    {
+      "type": "casualtiesbelow:paired_impact",
+      "condition_ladder": [
+        {
+          "at_least": 10.0,
+          "base_recovery_ticks": 24000,
+          "condition": "fracture",
+          "pain": 50.0
+        },
+        {
+          "at_least": 8.0,
+          "condition": "dislocation",
+          "pain": 30.0
+        }
+      ],
+      "legacy_fall_rules": true,
+      "paired": {
+        "fraction": 1.0
+      },
+      "primary": {
+        "type": "casualtiesbelow:weighted",
+        "weights": {
+          "arm_left": 0.0,
+          "arm_right": 0.0,
+          "head": 0.0,
+          "leg_left": 0.5,
+          "leg_right": 0.5,
+          "torso": 0.0
+        }
+      },
+      "severity_policy": "casualtiesbelow:fall_impact",
+      "spill": {
+        "above": 8.0,
+        "fraction": 0.5
+      },
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:fall",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "damage_types": "#casualtiesbelow:fall_impacts",
+    "victims": "minecraft:player"
+  },
+  "priority": 60
 }

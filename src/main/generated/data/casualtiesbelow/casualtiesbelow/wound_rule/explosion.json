@@ -1,6 +1,17 @@
 {
-  "damage_types": "#casualtiesbelow:blast_sources",
-  "priority": 90,
-  "profile": "casualtiesbelow:blast",
-  "scatter": true
+  "applications": [
+    {
+      "type": "casualtiesbelow:scatter",
+      "wounds": [
+        {
+          "profile": "casualtiesbelow:blast",
+          "severity_multiplier": 1.0
+        }
+      ]
+    }
+  ],
+  "match": {
+    "damage_types": "#casualtiesbelow:blast_sources"
+  },
+  "priority": 90
 }
