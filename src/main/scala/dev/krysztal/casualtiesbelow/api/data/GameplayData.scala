@@ -13,8 +13,8 @@ import com.mojang.serialization.Codec
 import com.mojang.serialization.Codec.BOOL
 import com.mojang.serialization.Codec.INT
 import com.mojang.serialization.Codec.unboundedMap
-import com.mojang.serialization.Codec.withAlternative
 import com.mojang.serialization.DataResult
+import com.mojang.serialization.MapCodec
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.advancements.predicates.DamageSourcePredicate
 import net.minecraft.advancements.predicates.ItemPredicate
@@ -34,7 +34,7 @@ import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import com.ezylang.evalex.Expression
 
 /** Shared codec validation for datapack-defined gameplay values. */
-private[data] object GameplayCodecs {
+private[casualtiesbelow] object GameplayCodecs {
   val NonNegativeDouble: Codec[Double] = Codec.DOUBLE.comapFlatMap(
     value =>
       if (JDouble.isFinite(value) && value >= 0.0) DataResult.success(value)
@@ -57,6 +57,25 @@ private[data] object GameplayCodecs {
       else DataResult.error(() => s"Expected a finite number in (0, 1], got $value"),
     identity
   )
+
+  /** Decodes an absent field to `defaultValue` while always encoding the field. */
+  def defaultedField[A](codec: Codec[A], name: String, defaultValue: A): MapCodec[A] =
+    MapCodec.of(codec.fieldOf(name), codec.optionalFieldOf(name, defaultValue))
+
+  val BodyPartWeights: Codec[Map[BodyPart, Double]] = unboundedMap(
+    BodyPart.Codec,
+    NonNegativeDouble
+  )
+    .xmap(_.asScala.toMap, _.asJava)
+    .validate(weights => {
+      val missing = BodyPart.values.toSet -- weights.keySet
+      val total = weights.values.sum
+      if (missing.nonEmpty) {
+        DataResult.error(() => s"weights is missing: ${missing.map(_.id).mkString(", ")}")
+      } else if (!total.isFinite || total > 1.0 + 1.0e-9) {
+        DataResult.error(() => s"weights must sum to at most 1.0, got $total")
+      } else DataResult.success(weights)
+    })
 }
 
 /** An EvalEx formula source loaded from a datapack. Compilation is lazy for normal use; the codec
@@ -126,29 +145,6 @@ object FormulaSource {
   )
 }
 
-/** Datapack-defined coefficients for one wound kind. */
-final case class WoundProfileData(
-    skinPerPoint: Double,
-    musclePerPoint: Double,
-    bleedRatePerWound: Double,
-    painPerPoint: Double
-)
-
-object WoundProfileData {
-  val Codec: Codec[WoundProfileData] = RecordCodecBuilder.create(instance =>
-    instance
-      .group(
-        GameplayCodecs.NonNegativeDouble.fieldOf("skin_per_point").forGetter(_.skinPerPoint),
-        GameplayCodecs.NonNegativeDouble.fieldOf("muscle_per_point").forGetter(_.musclePerPoint),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("bleed_rate_per_wound")
-          .forGetter(_.bleedRatePerWound),
-        GameplayCodecs.NonNegativeDouble.fieldOf("pain_per_point").forGetter(_.painPerPoint)
-      )
-      .apply(instance, WoundProfileData.apply)
-  )
-}
-
 /** One ordered damage-source classification rule. Optional matchers are ANDed by consumers. */
 final case class WoundRuleData(
     damageTypes: Optional[HolderSet[DamageType]],
@@ -159,10 +155,28 @@ final case class WoundRuleData(
     profile: Identifier,
     scatter: JBoolean,
     forcedPart: Optional[BodyPart],
+    weights: Optional[Map[BodyPart, Double]],
     priority: Integer
 )
 
 object WoundRuleData {
+  val DefaultWeights: Map[BodyPart, Double] = Map(
+    BodyPart.Torso -> 0.5,
+    BodyPart.Head -> 0.1,
+    BodyPart.ArmLeft -> 0.1,
+    BodyPart.ArmRight -> 0.1,
+    BodyPart.LegLeft -> 0.1,
+    BodyPart.LegRight -> 0.1
+  )
+  val DefaultFallWeights: Map[BodyPart, Double] = Map(
+    BodyPart.Head -> 0.0,
+    BodyPart.Torso -> 0.0,
+    BodyPart.ArmLeft -> 0.0,
+    BodyPart.ArmRight -> 0.0,
+    BodyPart.LegLeft -> 0.5,
+    BodyPart.LegRight -> 0.5
+  )
+
   val Codec: Codec[WoundRuleData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
@@ -179,6 +193,7 @@ object WoundRuleData {
         Identifier.CODEC.fieldOf("profile").forGetter(_.profile),
         BOOL.optionalFieldOf("scatter", false).forGetter(_.scatter),
         BodyPart.Codec.optionalFieldOf("forced_part").forGetter(_.forcedPart),
+        GameplayCodecs.BodyPartWeights.optionalFieldOf("weights").forGetter(_.weights),
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
       )
       .apply(instance, WoundRuleData.apply)
@@ -243,12 +258,11 @@ object DiscomfortData {
   )
 }
 
-/** Per-entity fall location, threshold-spill, and condition rules. Standard tissue and impact pain
+/** Per-entity fall pairing, threshold-spill, and condition rules. Standard tissue and impact pain
   * coefficients live in the classified fall wound profile.
   */
 final case class FallRulesData(
     entities: HolderSet[EntityType[?]],
-    primaryWeights: Map[BodyPart, Double] = FallRulesData.DefaultPrimaryWeights,
     pairedFraction: Double = FallRulesData.DefaultPairedFraction,
     secondaryThreshold: Double = FallRulesData.DefaultSecondaryThreshold,
     secondaryFraction: Double = FallRulesData.DefaultSecondaryFraction,
@@ -261,14 +275,6 @@ final case class FallRulesData(
 )
 
 object FallRulesData {
-  val DefaultPrimaryWeights: Map[BodyPart, Double] = Map(
-    BodyPart.Head -> 0.0,
-    BodyPart.Torso -> 0.0,
-    BodyPart.ArmLeft -> 0.0,
-    BodyPart.ArmRight -> 0.0,
-    BodyPart.LegLeft -> 0.5,
-    BodyPart.LegRight -> 0.5
-  )
   val DefaultPairedFraction = 1.0
   val DefaultSecondaryThreshold = 8.0
   val DefaultSecondaryFraction = 0.5
@@ -281,56 +287,6 @@ object FallRulesData {
   /** Compiled defaults used when no datapack entry matches the victim. */
   val Fallback: FallRulesData = FallRulesData(HolderSet.empty[EntityType[?]]())
 
-  private val PrimaryWeightsCodec: Codec[Map[BodyPart, Double]] = unboundedMap(
-    BodyPart.Codec,
-    GameplayCodecs.NonNegativeDouble
-  )
-    .xmap(_.asScala.toMap, _.asJava)
-    .validate(weights => {
-      val missing = BodyPart.values.toSet -- weights.keySet
-      val total = weights.values.sum
-      if (missing.nonEmpty) {
-        DataResult.error(() => s"primary_weights is missing: ${missing.map(_.id).mkString(", ")}")
-      } else if (!total.isFinite || total > 1.0 + 1.0e-9) {
-        DataResult.error(() => s"primary_weights must sum to at most 1.0, got $total")
-      } else DataResult.success(weights)
-    })
-
-  // The primary codec writes every tuning value so generated defaults are self-documenting. The
-  // alternative accepts concise datapack entries and supplies the compiled defaults on decode.
-  private val FullCodec: Codec[FallRulesData] = RecordCodecBuilder.create(instance =>
-    instance
-      .group(
-        RegistryCodecs
-          .homogeneousList(Registries.ENTITY_TYPE)
-          .fieldOf("entities")
-          .forGetter(_.entities),
-        PrimaryWeightsCodec.fieldOf("primary_weights").forGetter(_.primaryWeights),
-        GameplayCodecs.PositiveUnitDouble.fieldOf("paired_fraction").forGetter(_.pairedFraction),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("secondary_threshold")
-          .forGetter(_.secondaryThreshold),
-        GameplayCodecs.PositiveUnitDouble
-          .fieldOf("secondary_fraction")
-          .forGetter(_.secondaryFraction),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("dislocation_threshold")
-          .forGetter(_.dislocationThreshold),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("fracture_threshold")
-          .forGetter(_.fractureThreshold),
-        ExtraCodecs.NON_NEGATIVE_INT
-          .fieldOf("fracture_base_recovery_ticks")
-          .forGetter(_.fractureBaseRecoveryTicks),
-        GameplayCodecs.NonNegativeDouble.fieldOf("fracture_pain").forGetter(_.fracturePain),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("dislocation_pain")
-          .forGetter(_.dislocationPain),
-        INT.optionalFieldOf("priority", 0).forGetter(_.priority)
-      )
-      .apply(instance, FallRulesData.apply)
-  )
-
   private val DefaultsCodec: Codec[FallRulesData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
@@ -338,88 +294,89 @@ object FallRulesData {
           .homogeneousList(Registries.ENTITY_TYPE)
           .fieldOf("entities")
           .forGetter(_.entities),
-        PrimaryWeightsCodec
-          .optionalFieldOf("primary_weights", DefaultPrimaryWeights)
-          .forGetter(_.primaryWeights),
-        GameplayCodecs.PositiveUnitDouble
-          .optionalFieldOf("paired_fraction", DefaultPairedFraction)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.PositiveUnitDouble,
+            "paired_fraction",
+            DefaultPairedFraction
+          )
           .forGetter(_.pairedFraction),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("secondary_threshold", DefaultSecondaryThreshold)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.NonNegativeDouble,
+            "secondary_threshold",
+            DefaultSecondaryThreshold
+          )
           .forGetter(_.secondaryThreshold),
-        GameplayCodecs.PositiveUnitDouble
-          .optionalFieldOf("secondary_fraction", DefaultSecondaryFraction)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.PositiveUnitDouble,
+            "secondary_fraction",
+            DefaultSecondaryFraction
+          )
           .forGetter(_.secondaryFraction),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("dislocation_threshold", DefaultDislocationThreshold)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.NonNegativeDouble,
+            "dislocation_threshold",
+            DefaultDislocationThreshold
+          )
           .forGetter(_.dislocationThreshold),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("fracture_threshold", DefaultFractureThreshold)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.NonNegativeDouble,
+            "fracture_threshold",
+            DefaultFractureThreshold
+          )
           .forGetter(_.fractureThreshold),
-        ExtraCodecs.NON_NEGATIVE_INT
-          .optionalFieldOf("fracture_base_recovery_ticks", DefaultFractureBaseRecoveryTicks)
+        GameplayCodecs
+          .defaultedField(
+            ExtraCodecs.NON_NEGATIVE_INT,
+            "fracture_base_recovery_ticks",
+            DefaultFractureBaseRecoveryTicks
+          )
           .forGetter(_.fractureBaseRecoveryTicks),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("fracture_pain", DefaultFracturePain)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.NonNegativeDouble,
+            "fracture_pain",
+            DefaultFracturePain
+          )
           .forGetter(_.fracturePain),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("dislocation_pain", DefaultDislocationPain)
+        GameplayCodecs
+          .defaultedField(
+            GameplayCodecs.NonNegativeDouble,
+            "dislocation_pain",
+            DefaultDislocationPain
+          )
           .forGetter(_.dislocationPain),
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
       )
       .apply(instance, FallRulesData.apply)
   )
 
-  val Codec: Codec[FallRulesData] = withAlternative(
-    FullCodec,
-    DefaultsCodec
-  )
+  val Codec: Codec[FallRulesData] = DefaultsCodec
 }
 
-/** Per-entity hit geometry and weighted fallback distribution. */
+/** Per-entity hit geometry bands. */
 final case class HitLocationData(
     entities: HolderSet[EntityType[?]],
     legsBelow: Double,
     headAbove: Double,
-    fallbackWeights: Map[BodyPart, Double],
     priority: Integer
 )
 
 object HitLocationData {
   val DefaultLegsBelow = 0.35
   val DefaultHeadAbove = 1.0
-  val DefaultFallbackWeights: Map[BodyPart, Double] = Map(
-    BodyPart.Torso -> 0.5,
-    BodyPart.Head -> 0.1,
-    BodyPart.ArmLeft -> 0.1,
-    BodyPart.ArmRight -> 0.1,
-    BodyPart.LegLeft -> 0.1,
-    BodyPart.LegRight -> 0.1
-  )
 
   /** Compiled defaults used when no datapack entry matches the victim. */
   val Fallback: HitLocationData = HitLocationData(
     HolderSet.empty[EntityType[?]](),
     DefaultLegsBelow,
     DefaultHeadAbove,
-    DefaultFallbackWeights,
     0
   )
-
-  private val WeightsCodec: Codec[Map[BodyPart, Double]] = unboundedMap(
-    BodyPart.Codec,
-    GameplayCodecs.NonNegativeDouble
-  )
-    .xmap(_.asScala.toMap, _.asJava)
-    .validate(weights => {
-      val missing = BodyPart.values.toSet -- weights.keySet
-      val total = weights.values.sum
-      if (missing.nonEmpty) {
-        DataResult.error(() => s"fallback_weights is missing: ${missing.map(_.id).mkString(", ")}")
-      } else if (!total.isFinite || total > 1.0 + 1.0e-9) {
-        DataResult.error(() => s"fallback_weights must sum to at most 1.0, got $total")
-      } else DataResult.success(weights)
-    })
 
   val Codec: Codec[HitLocationData] = RecordCodecBuilder.create(instance =>
     instance
@@ -430,7 +387,6 @@ object HitLocationData {
           .forGetter(_.entities),
         GameplayCodecs.UnitDouble.fieldOf("legs_below").forGetter(_.legsBelow),
         GameplayCodecs.NonNegativeDouble.fieldOf("head_above").forGetter(_.headAbove),
-        WeightsCodec.fieldOf("fallback_weights").forGetter(_.fallbackWeights),
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
       )
       .apply(instance, HitLocationData.apply)

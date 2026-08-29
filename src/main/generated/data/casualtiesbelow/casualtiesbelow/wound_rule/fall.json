@@ -1,5 +1,13 @@
 {
   "damage_types": "minecraft:fall",
   "priority": 60,
-  "profile": "casualtiesbelow:fall"
+  "profile": "casualtiesbelow:fall",
+  "weights": {
+    "arm_left": 0.0,
+    "arm_right": 0.0,
+    "head": 0.0,
+    "leg_left": 0.5,
+    "leg_right": 0.5,
+    "torso": 0.0
+  }
 }

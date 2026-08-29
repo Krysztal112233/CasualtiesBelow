@@ -4,5 +4,13 @@
     "minecraft:sweet_berry_bush"
   ],
   "priority": 60,
-  "profile": "casualtiesbelow:prick"
+  "profile": "casualtiesbelow:prick",
+  "weights": {
+    "arm_left": 0.1,
+    "arm_right": 0.1,
+    "head": 0.1,
+    "leg_left": 0.1,
+    "leg_right": 0.1,
+    "torso": 0.5
+  }
 }

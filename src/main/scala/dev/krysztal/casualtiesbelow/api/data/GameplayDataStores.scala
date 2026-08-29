@@ -13,13 +13,14 @@ import net.minecraft.resources.Identifier
 import net.minecraft.resources.RegistryOps
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 
 /** One immutable view of all six datapack-defined gameplay data types. */
 final case class GameplayDataStore(
-    woundProfiles: Map[Identifier, WoundProfileData],
+    woundProfiles: Map[Identifier, WoundProfile],
     woundRules: Map[Identifier, WoundRuleData],
     armorProtection: Map[Identifier, ArmorProtectionData],
     discomfort: Map[Identifier, DiscomfortData],
@@ -58,7 +59,7 @@ object GameplayDataStores {
   ): JsonObject = {
     val ops = RegistryOps.create(JsonOps.INSTANCE, lookup)
     val root = new JsonObject
-    root.add("wound_profile", encodeSection(store.woundProfiles, WoundProfileData.Codec, ops))
+    root.add("wound_profile", encodeSection(store.woundProfiles, WoundProfile.Codec, ops))
     root.add("wound_rule", encodeSection(store.woundRules, WoundRuleData.Codec, ops))
     root.add(
       "armor_protection",
@@ -83,7 +84,7 @@ object GameplayDataStores {
   ): GameplayDataStore = {
     val ops = RegistryOps.create(JsonOps.INSTANCE, lookup)
     GameplayDataStore(
-      woundProfiles = decodeSection(root, "wound_profile", WoundProfileData.Codec, ops)
+      woundProfiles = decodeSection(root, "wound_profile", WoundProfile.Codec, ops)
         .getOrElse(fallback.woundProfiles),
       woundRules = decodeSection(root, "wound_rule", WoundRuleData.Codec, ops)
         .getOrElse(fallback.woundRules),

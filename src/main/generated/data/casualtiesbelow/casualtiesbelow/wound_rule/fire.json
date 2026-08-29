@@ -1,5 +1,13 @@
 {
   "damage_types": "#minecraft:is_fire",
   "priority": 100,
-  "profile": "casualtiesbelow:burn"
+  "profile": "casualtiesbelow:burn",
+  "weights": {
+    "arm_left": 0.1,
+    "arm_right": 0.1,
+    "head": 0.1,
+    "leg_left": 0.1,
+    "leg_right": 0.1,
+    "torso": 0.5
+  }
 }

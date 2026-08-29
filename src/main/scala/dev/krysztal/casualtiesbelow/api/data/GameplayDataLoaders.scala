@@ -6,11 +6,12 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.resource.v1.DataResourceLoader
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile as WoundProfileEntry
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 
 /** Reload-listener stores for the six datapack-defined gameplay data types. */
 object GameplayDataLoaders {
-  val WoundProfile = GameplayDataLoader[WoundProfileData]("wound_profile", WoundProfileData.Codec)
+  val WoundProfile = GameplayDataLoader[WoundProfileEntry]("wound_profile", WoundProfileEntry.Codec)
   val WoundRule = GameplayDataLoader[WoundRuleData]("wound_rule", WoundRuleData.Codec)
   val ArmorProtection = GameplayDataLoader[ArmorProtectionData](
     "armor_protection",

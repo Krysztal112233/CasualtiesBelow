@@ -20,6 +20,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 import dev.krysztal.casualtiesbelow.api.wound.HitLocation
 import dev.krysztal.casualtiesbelow.api.wound.Wound
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
@@ -71,7 +72,9 @@ object LimbDamage {
       case Some(wound) if wound.scatter =>
         applyScatter(player, source, damage, wound.profile)
       case Some(wound) =>
-        val part = wound.forcedPart.getOrElse(HitLocation.pick(player, source))
+        val part = wound.forcedPart.getOrElse(
+          HitLocation.pick(player, source, wound.weights.getOrElse(WoundRuleData.DefaultWeights))
+        )
         applyWound(player, part, source, damage, wound.profile)
     }
   }
@@ -152,7 +155,10 @@ object LimbDamage {
     if (severity <= 0.0) return
 
     val rules = GameplayDataLookup.fallRules(player)
-    val primary = pickPrimaryPart(player, rules)
+    val primary = HitLocation.weightedPart(
+      player,
+      wound.weights.getOrElse(WoundRuleData.DefaultWeights)
+    )
     val wounded = scala.collection.mutable.LinkedHashSet.empty[BodyPart]
     if (applyWound(player, primary, source, severity, wound.profile)) {
       wounded += primary
@@ -204,25 +210,6 @@ object LimbDamage {
     case BodyPart.ArmLeft  => Some(BodyPart.ArmRight)
     case BodyPart.ArmRight => Some(BodyPart.ArmLeft)
     case _                 => None
-  }
-
-  /** Picks from the fall-rules weights. Scaling the roll to sub-unit mass is equivalent to
-    * re-rolling the unassigned portion until a defined part wins; an all-zero map falls back to the
-    * torso.
-    */
-  private def pickPrimaryPart(player: Player, rules: FallRulesData): BodyPart = {
-    val total = BodyPart.values.map(part => rules.primaryWeights.getOrElse(part, 0.0)).sum
-    if (total <= 0.0) return BodyPart.Torso
-
-    val roll = player.getRandom.nextDouble() * total
-    var cumulative = 0.0
-    BodyPart.values
-      .find { part =>
-        cumulative += rules.primaryWeights.getOrElse(part, 0.0)
-        roll < cumulative
-      }
-      .orElse(BodyPart.values.reverse.find(part => rules.primaryWeights.getOrElse(part, 0.0) > 0.0))
-      .getOrElse(BodyPart.Torso)
   }
 
   /** Fraction of the fall impact absorbed by worn boots (0 without). */

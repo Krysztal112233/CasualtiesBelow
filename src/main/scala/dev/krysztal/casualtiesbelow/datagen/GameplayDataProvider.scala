@@ -16,8 +16,8 @@ import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
 import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
-import dev.krysztal.casualtiesbelow.api.data.WoundProfileData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 
 /** Writes built-in keyed gameplay data to the same paths consumed by the reload listeners. */
 final class GameplayDataProvider(
@@ -32,7 +32,7 @@ final class GameplayDataProvider(
           cache,
           lookup,
           "wound_profile",
-          WoundProfileData.Codec,
+          WoundProfile.Codec,
           CasualtiesBelowDataDefaults.WoundProfiles
         ) ++
           saveAll(

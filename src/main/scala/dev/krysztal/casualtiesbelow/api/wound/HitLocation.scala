@@ -9,19 +9,23 @@ import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 
 /** Guesses the body part a hit landed on from hit geometry — vanilla damage carries no hit-location
-  * information. Geometry and positionless-hit weights come from the matching `hit_location`
-  * datapack entry for the victim's entity type.
+  * information. Geometry bands come from the matching `hit_location` datapack entry for the
+  * victim's entity type; positionless-hit weights come from the classified wound rule.
   */
 object HitLocation {
 
-  /** Picks the body part hit on `victim` by `source`. Falls back to a weighted random part when the
-    * source carries no position information.
+  /** Picks the body part hit on `victim` by `source`. Falls back to the rule's weighted random part
+    * when the source carries no position information.
     */
-  def pick(victim: LivingEntity, source: DamageSource): BodyPart = {
+  def pick(
+      victim: LivingEntity,
+      source: DamageSource,
+      positionlessWeights: Map[BodyPart, Double]
+  ): BodyPart = {
     val rules = GameplayDataLookup.hitLocation(victim)
     hitOrigin(source) match {
       case Some(origin) => locate(victim, origin, rules)
-      case None         => randomPart(victim, rules)
+      case None         => weightedPart(victim, positionlessWeights)
     }
   }
 
@@ -70,26 +74,30 @@ object HitLocation {
   }
 
   /** Weighted random part for hits without position information. Weight mass below one is treated
-    * as a re-roll (implemented by scaling the roll to the defined mass).
+    * as a re-roll (implemented by scaling the roll to the defined mass); an all-zero map falls back
+    * to the torso.
     */
-  private def randomPart(victim: LivingEntity, rules: HitLocationData): BodyPart = {
-    val total = FallbackOrder.map(part => rules.fallbackWeights.getOrElse(part, 0.0)).sum
+  private[casualtiesbelow] def weightedPart(
+      victim: LivingEntity,
+      weights: Map[BodyPart, Double]
+  ): BodyPart = {
+    val total = WeightedOrder.map(part => weights.getOrElse(part, 0.0)).sum
     if (total <= 0.0) return BodyPart.Torso
 
     val rollMass = if (math.abs(total - 1.0) <= 1.0e-9) 1.0 else total
     val roll = victim.getRandom.nextDouble() * rollMass
     var cumulative = 0.0
-    FallbackOrder
+    WeightedOrder
       .find { part =>
-        cumulative += rules.fallbackWeights.getOrElse(part, 0.0)
+        cumulative += weights.getOrElse(part, 0.0)
         roll < cumulative
       }
-      .orElse(FallbackOrder.reverse.find(part => rules.fallbackWeights.getOrElse(part, 0.0) > 0.0))
+      .orElse(WeightedOrder.reverse.find(part => weights.getOrElse(part, 0.0) > 0.0))
       .getOrElse(BodyPart.Torso)
   }
 
-  // This order preserves the previous default bands exactly.
-  private val FallbackOrder = List(
+  // This order preserves the previous positionless fallback distribution exactly.
+  private val WeightedOrder = List(
     BodyPart.Torso,
     BodyPart.Head,
     BodyPart.ArmLeft,

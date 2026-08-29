@@ -32,23 +32,20 @@ import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
 import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.FormulaSource
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
-import dev.krysztal.casualtiesbelow.api.data.WoundProfileData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 
-/** Built-in entries for the mod's six keyed gameplay-data directories. These values deliberately
-  * duplicate the compiled consumer fallbacks so deleting an entry remains safe without changing
-  * defaults.
-  */
+/** Built-in entries for the mod's six keyed gameplay-data directories. */
 object CasualtiesBelowDataDefaults {
-  val WoundProfiles: Map[Identifier, WoundProfileData] = List(
-    "bite" -> WoundProfileData(1.5, 2.0, 0.1, 4.0),
-    "cut" -> WoundProfileData(2.0, 3.0, 0.2, 4.0),
-    "blunt" -> WoundProfileData(0.0, 3.0, 0.0, 4.0),
-    "pierce" -> WoundProfileData(3.0, 2.0, 0.15, 5.0),
-    "burn" -> WoundProfileData(1.0, 0.2, 0.0, 2.0),
-    "prick" -> WoundProfileData(1.5, 0.0, 0.05, 1.0),
-    "blast" -> WoundProfileData(2.0, 2.0, 0.25, 6.0),
-    "fall" -> WoundProfileData(4.0, 4.0, 0.5, 6.0)
+  val WoundProfiles: Map[Identifier, WoundProfile] = List(
+    "bite" -> WoundProfile(1.5, 2.0, 0.1, 4.0),
+    "cut" -> WoundProfile(2.0, 3.0, 0.2, 4.0),
+    "blunt" -> WoundProfile(0.0, 3.0, 0.0, 4.0),
+    "pierce" -> WoundProfile(3.0, 2.0, 0.15, 5.0),
+    "burn" -> WoundProfile(1.0, 0.2, 0.0, 2.0),
+    "prick" -> WoundProfile(1.5, 0.0, 0.05, 1.0),
+    "blast" -> WoundProfile(2.0, 2.0, 0.25, 6.0),
+    "fall" -> WoundProfile(4.0, 4.0, 0.5, 6.0)
   ).map((id, value) => entryId(id) -> value).toMap
 
   def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
@@ -92,6 +89,7 @@ object CasualtiesBelowDataDefaults {
       "fire" -> rule(
         "burn",
         damageTypes = Some(damageTag(DamageTypeTags.IS_FIRE)),
+        weights = Some(WoundRuleData.DefaultWeights),
         priority = 100
       ),
       "explosion" -> rule(
@@ -121,11 +119,13 @@ object CasualtiesBelowDataDefaults {
       "fall" -> rule(
         "fall",
         damageTypes = Some(damageSet(DamageTypes.FALL)),
+        weights = Some(WoundRuleData.DefaultFallWeights),
         priority = 60
       ),
       "prick" -> rule(
         "prick",
         damageTypes = Some(damageSet(DamageTypes.CACTUS, DamageTypes.SWEET_BERRY_BUSH)),
+        weights = Some(WoundRuleData.DefaultWeights),
         priority = 60
       ),
       "sonic_boom" -> rule(
@@ -136,6 +136,7 @@ object CasualtiesBelowDataDefaults {
       "stalagmite" -> rule(
         "pierce",
         damageTypes = Some(damageSet(DamageTypes.STALAGMITE)),
+        weights = Some(WoundRuleData.DefaultWeights),
         priority = 45
       ),
       "evoker_fangs" -> rule(
@@ -147,6 +148,7 @@ object CasualtiesBelowDataDefaults {
       "ender_pearl" -> rule(
         "prick",
         damageTypes = Some(damageSet(DamageTypes.ENDER_PEARL)),
+        weights = Some(WoundRuleData.DefaultWeights),
         priority = 35
       ),
       "melee_sharp" -> rule(
@@ -224,33 +226,22 @@ object CasualtiesBelowDataDefaults {
   val FallRules: Map[Identifier, FallRulesData] = Map(
     entryId("player") -> FallRulesData(
       PlayerEntities,
-      primaryWeights = Map(
-        BodyPart.Head -> 0.0,
-        BodyPart.Torso -> 0.0,
-        BodyPart.ArmLeft -> 0.0,
-        BodyPart.ArmRight -> 0.0,
-        BodyPart.LegLeft -> 0.5,
-        BodyPart.LegRight -> 0.5
-      ),
-      pairedFraction = 1.0,
-      secondaryThreshold = 8.0,
-      secondaryFraction = 0.5
+      pairedFraction = FallRulesData.DefaultPairedFraction,
+      secondaryThreshold = FallRulesData.DefaultSecondaryThreshold,
+      secondaryFraction = FallRulesData.DefaultSecondaryFraction,
+      dislocationThreshold = FallRulesData.DefaultDislocationThreshold,
+      fractureThreshold = FallRulesData.DefaultFractureThreshold,
+      fractureBaseRecoveryTicks = FallRulesData.DefaultFractureBaseRecoveryTicks,
+      fracturePain = FallRulesData.DefaultFracturePain,
+      dislocationPain = FallRulesData.DefaultDislocationPain
     )
   )
 
   val HitLocations: Map[Identifier, HitLocationData] = Map(
     entryId("player") -> HitLocationData(
       PlayerEntities,
-      legsBelow = 0.35,
-      headAbove = 1.0,
-      fallbackWeights = Map(
-        BodyPart.Torso -> 0.5,
-        BodyPart.Head -> 0.1,
-        BodyPart.ArmLeft -> 0.1,
-        BodyPart.ArmRight -> 0.1,
-        BodyPart.LegLeft -> 0.1,
-        BodyPart.LegRight -> 0.1
-      ),
+      legsBelow = HitLocationData.DefaultLegsBelow,
+      headAbove = HitLocationData.DefaultHeadAbove,
       priority = 0
     )
   )
@@ -270,6 +261,7 @@ object CasualtiesBelowDataDefaults {
       weapon: Option[ItemPredicate] = None,
       scatter: Boolean = false,
       forcedPart: Option[BodyPart] = None,
+      weights: Option[Map[BodyPart, Double]] = None,
       priority: Int = 0
   ): WoundRuleData = WoundRuleData(
     optional(damageTypes),
@@ -280,6 +272,7 @@ object CasualtiesBelowDataDefaults {
     entryId(profile),
     scatter,
     optional(forcedPart),
+    optional(weights),
     priority
   )
 

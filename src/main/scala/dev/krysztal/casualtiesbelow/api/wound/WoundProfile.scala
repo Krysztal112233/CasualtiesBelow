@@ -4,6 +4,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.jdk.OptionConverters.*
 
+import com.mojang.serialization.Codec
+import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -12,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.data.GameplayCodecs
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
@@ -28,14 +31,30 @@ final case class WoundProfile(
     painPerPoint: Double
 )
 
+object WoundProfile {
+  val Codec: Codec[WoundProfile] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        GameplayCodecs.NonNegativeDouble.fieldOf("skin_per_point").forGetter(_.skinPerPoint),
+        GameplayCodecs.NonNegativeDouble.fieldOf("muscle_per_point").forGetter(_.musclePerPoint),
+        GameplayCodecs.NonNegativeDouble
+          .fieldOf("bleed_rate_per_wound")
+          .forGetter(_.bleedRatePerWound),
+        GameplayCodecs.NonNegativeDouble.fieldOf("pain_per_point").forGetter(_.painPerPoint)
+      )
+      .apply(instance, WoundProfile.apply)
+  )
+}
+
 /** A classified hit: its profile, whether the damage scatters as shrapnel across several random
-  * body parts (explosions) instead of striking one located part, and whether the hit is forced onto
-  * a specific part regardless of geometry (falling objects always land on the head).
+  * body parts (explosions), whether it is forced onto a specific part regardless of geometry
+  * (falling objects always land on the head), and optional weights for positionless hits.
   */
 final case class Wound(
     profile: WoundProfile,
     scatter: Boolean,
-    forcedPart: Option[BodyPart] = None
+    forcedPart: Option[BodyPart] = None,
+    weights: Option[Map[BodyPart, Double]] = None
 )
 
 /** Evaluates datapack-defined wound rules against incoming damage sources. Rules are considered by
@@ -82,18 +101,14 @@ object WoundProfiles {
   ): Option[Wound] = {
     GameplayDataLookup
       .entry(store.woundProfiles, rule.profile)
-      .map { profile =>
+      .map(profile =>
         Wound(
-          WoundProfile(
-            profile.skinPerPoint,
-            profile.musclePerPoint,
-            profile.bleedRatePerWound,
-            profile.painPerPoint
-          ),
+          profile,
           rule.scatter.booleanValue(),
-          rule.forcedPart.toScala
+          rule.forcedPart.toScala,
+          rule.weights.toScala
         )
-      }
+      )
       .orElse {
         if (WarnedMissingProfiles.add(rule.profile)) {
           CasualtiesBelow.Logger.warn(

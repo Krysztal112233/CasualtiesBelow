@@ -1,13 +1,5 @@
 {
   "entities": "minecraft:player",
-  "fallback_weights": {
-    "arm_left": 0.1,
-    "arm_right": 0.1,
-    "head": 0.1,
-    "leg_left": 0.1,
-    "leg_right": 0.1,
-    "torso": 0.5
-  },
   "head_above": 1.0,
   "legs_below": 0.35
 }
