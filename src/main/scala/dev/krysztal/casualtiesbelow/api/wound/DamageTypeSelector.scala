@@ -7,6 +7,7 @@ import scala.util.Try
 
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
+import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.Identifier
@@ -34,7 +35,7 @@ final case class TaggedDamageType(tag: TagKey[DamageType]) extends DamageTypeSel
 }
 
 object DamageTypeSelectorEntry {
-  val Codec: Codec[DamageTypeSelectorEntry] = com.mojang.serialization.Codec.STRING.comapFlatMap(
+  val Codec: Codec[DamageTypeSelectorEntry] = MCodec.STRING.comapFlatMap(
     parse,
     _.serialized
   )
@@ -66,7 +67,7 @@ object DamageTypeSelector {
     .listOf()
     .xmap(_.asScala.toList, _.asJava)
 
-  val Codec: Codec[DamageTypeSelector] = com.mojang.serialization.Codec
+  val Codec: Codec[DamageTypeSelector] = MCodec
     .either(DamageTypeSelectorEntry.Codec, ListCodec)
     .xmap(
       _.map(entry => DamageTypeSelector(List(entry)), DamageTypeSelector.apply),

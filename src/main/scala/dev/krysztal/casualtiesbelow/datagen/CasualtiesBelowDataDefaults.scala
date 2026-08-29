@@ -32,7 +32,6 @@ import dev.krysztal.casualtiesbelow.api.data.FormulaSource
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleV2Data
 import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
 import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
 import dev.krysztal.casualtiesbelow.api.wound.ExactDamageType
@@ -255,7 +254,7 @@ object CasualtiesBelowDataDefaults {
       armed: Option[Boolean] = None,
       weapon: Option[ItemPredicate] = None,
       priority: Int = 0
-  ): WoundRuleData = WoundRuleV2Data(
+  ): WoundRuleData = WoundRuleData(
     WoundMatchData(
       optional(damageTypes),
       optional(excludedDamageTypes),
@@ -299,8 +298,7 @@ object CasualtiesBelowDataDefaults {
         pain = 30.0,
         Optional.empty()
       )
-    ),
-    JBoolean.TRUE
+    )
   )
 
   private def wound(profile: String): WoundContributionData =

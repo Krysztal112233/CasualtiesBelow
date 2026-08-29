@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.api.wound
 
-import java.lang.Boolean as JBoolean
 import java.util.Optional
 
 import scala.jdk.CollectionConverters.*
@@ -8,6 +7,7 @@ import scala.jdk.OptionConverters.*
 
 import com.mojang.datafixers.util.Either
 import com.mojang.serialization.Codec
+import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
@@ -37,7 +37,7 @@ object WoundContributionData {
   )
 
   val NonEmptyListCodec: Codec[List[WoundContributionData]] =
-    com.mojang.serialization.Codec
+    MCodec
       .list(Codec)
       .xmap(
         _.asScala.toList,
@@ -94,10 +94,10 @@ object WoundTargetData {
       .apply(instance, (_, weights) => WeightedTargetData(weights))
   )
 
-  val Codec: Codec[WoundTargetData] = com.mojang.serialization.Codec
+  val Codec: Codec[WoundTargetData] = MCodec
     .either(
       HitLocationCodec,
-      com.mojang.serialization.Codec.either(FixedCodec, WeightedCodec)
+      MCodec.either(FixedCodec, WeightedCodec)
     )
     .xmap(
       _.map(
@@ -179,7 +179,7 @@ final case class ConditionStepData(
 
 object ConditionStepData {
   private val ConditionCodec: Codec[LimbCondition] =
-    com.mojang.serialization.Codec.STRING.comapFlatMap(
+    MCodec.STRING.comapFlatMap(
       {
         case "fracture"    => DataResult.success(LimbCondition.Fracture)
         case "dislocation" => DataResult.success(LimbCondition.Dislocation)
@@ -240,8 +240,7 @@ final case class PairedImpactApplicationData(
     primary: WoundTargetData,
     paired: Optional[PairedImpactData],
     spill: Optional[SpillImpactData],
-    conditionLadder: List[ConditionStepData],
-    legacyFallRules: JBoolean
+    conditionLadder: List[ConditionStepData]
 ) extends WoundApplicationData
 
 object WoundApplicationData {
@@ -292,7 +291,7 @@ object WoundApplicationData {
   )
 
   private val ConditionLadderCodec: Codec[List[ConditionStepData]] =
-    com.mojang.serialization.Codec
+    MCodec
       .list(ConditionStepData.Codec)
       .xmap(_.asScala.toList, _.asJava)
       .validate(validateConditionLadder)
@@ -311,30 +310,26 @@ object WoundApplicationData {
           SpillImpactData.Codec.optionalFieldOf("spill").forGetter(_.spill),
           ConditionLadderCodec
             .optionalFieldOf("condition_ladder", List.empty)
-            .forGetter(_.conditionLadder),
-          com.mojang.serialization.Codec.BOOL
-            .optionalFieldOf("legacy_fall_rules", false)
-            .forGetter(_.legacyFallRules)
+            .forGetter(_.conditionLadder)
         )
         .apply(
           instance,
-          (_, wounds, policy, primary, paired, spill, conditions, legacy) =>
+          (_, wounds, policy, primary, paired, spill, conditions) =>
             PairedImpactApplicationData(
               wounds,
               policy,
               primary,
               paired,
               spill,
-              conditions,
-              legacy
+              conditions
             )
         )
     )
 
-  val Codec: Codec[WoundApplicationData] = com.mojang.serialization.Codec
+  val Codec: Codec[WoundApplicationData] = MCodec
     .either(
       LocalizedCodec,
-      com.mojang.serialization.Codec.either(ScatterCodec, PairedImpactCodec)
+      MCodec.either(ScatterCodec, PairedImpactCodec)
     )
     .xmap(
       _.map(
@@ -353,7 +348,7 @@ object WoundApplicationData {
     )
 
   val NonEmptyListCodec: Codec[List[WoundApplicationData]] =
-    com.mojang.serialization.Codec
+    MCodec
       .list(Codec)
       .xmap(
         _.asScala.toList,

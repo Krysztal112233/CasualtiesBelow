@@ -6,7 +6,6 @@ import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.CombatRules
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.damagesource.DamageTypes
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
@@ -17,8 +16,6 @@ import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
-import dev.krysztal.casualtiesbelow.api.data.FallRulesData
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 import dev.krysztal.casualtiesbelow.api.wound.ClassifiedWoundRule
 import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
 import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
@@ -26,8 +23,7 @@ import dev.krysztal.casualtiesbelow.api.wound.HitLocation
 import dev.krysztal.casualtiesbelow.api.wound.HitLocationTargetData
 import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
 import dev.krysztal.casualtiesbelow.api.wound.PairedImpactApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.ResolvedLegacyWoundApplication
-import dev.krysztal.casualtiesbelow.api.wound.ResolvedTypedWoundApplication
+import dev.krysztal.casualtiesbelow.api.wound.ResolvedWoundApplication
 import dev.krysztal.casualtiesbelow.api.wound.ResolvedWoundContribution
 import dev.krysztal.casualtiesbelow.api.wound.ScatterApplicationData
 import dev.krysztal.casualtiesbelow.api.wound.SpillImpactData
@@ -58,23 +54,11 @@ object WoundApplications {
       damage: Double,
       rule: ClassifiedWoundRule
   ): Unit = {
-    rule.applications.foreach {
-      case application: ResolvedTypedWoundApplication =>
-        executeTyped(
-          DamageContext(player, source, damage, rule.ruleId, applicationType(application.data)),
-          application
-        )
-      case application: ResolvedLegacyWoundApplication =>
-        executeLegacy(
-          DamageContext(
-            player,
-            source,
-            damage,
-            rule.ruleId,
-            legacyApplicationType(source, application)
-          ),
-          application
-        )
+    rule.applications.foreach { application =>
+      executeTyped(
+        DamageContext(player, source, damage, rule.ruleId, applicationType(application.data)),
+        application
+      )
     }
   }
 
@@ -84,18 +68,9 @@ object WoundApplications {
     case _: PairedImpactApplicationData => WoundApplicationData.PairedImpactType
   }
 
-  private def legacyApplicationType(
-      source: DamageSource,
-      application: ResolvedLegacyWoundApplication
-  ) = {
-    if (source.is(DamageTypes.FALL)) WoundApplicationData.PairedImpactType
-    else if (application.scatter) WoundApplicationData.ScatterType
-    else WoundApplicationData.LocalizedType
-  }
-
   private def executeTyped(
       context: DamageContext,
-      resolved: ResolvedTypedWoundApplication
+      resolved: ResolvedWoundApplication
   ): Unit = {
     resolved.data match {
       case application: LocalizedApplicationData =>
@@ -104,41 +79,7 @@ object WoundApplications {
       case application: ScatterApplicationData =>
         applyScatter(context, resolved.wounds, application)
       case application: PairedImpactApplicationData =>
-        val options = pairedOptions(application, resolved.legacyFallRules, context.player)
-        applyPairedImpact(context, resolved.wounds, options)
-    }
-  }
-
-  private def executeLegacy(
-      context: DamageContext,
-      application: ResolvedLegacyWoundApplication
-  ): Unit = {
-    val wound = ResolvedWoundContribution(application.profileId, application.profile, 1.0)
-    if (context.source.is(DamageTypes.FALL)) {
-      val rules = matchingLegacyFallRules(application.fallRules, context.player)
-        .getOrElse(FallRulesData.Fallback)
-      val options = PairedOptions(
-        WeightedTargetData(application.weights.getOrElse(WoundRuleData.DefaultWeights)),
-        Some(rules.pairedFraction),
-        Some(SpillImpactData(rules.secondaryThreshold, 1, rules.secondaryFraction)),
-        legacyConditions(rules),
-        WoundSeverityPolicy.FallImpact
-      )
-      applyPairedImpact(context, List(wound), options)
-    } else if (application.scatter) {
-      applyScatter(
-        context,
-        List(wound),
-        ScatterApplicationData(List.empty, 2, 3)
-      )
-    } else {
-      val target = application.forcedPart
-        .map(FixedTargetData.apply)
-        .getOrElse(
-          HitLocationTargetData(application.weights.getOrElse(WoundRuleData.DefaultWeights))
-        )
-      val part = pickTarget(context.player, context.source, target)
-      applyContributions(context, part, context.damage, List(wound), "localized")
+        applyPairedImpact(context, resolved.wounds, pairedOptions(application))
     }
   }
 
@@ -283,53 +224,15 @@ object WoundApplications {
     case WeightedTargetData(weights)    => HitLocation.weightedPart(player, weights)
   }
 
-  private def pairedOptions(
-      application: PairedImpactApplicationData,
-      legacyRules: List[FallRulesData],
-      player: ServerPlayer
-  ): PairedOptions = {
-    matchingLegacyFallRules(legacyRules, player)
-      .map(rules =>
-        PairedOptions(
-          application.primary,
-          Some(rules.pairedFraction),
-          Some(SpillImpactData(rules.secondaryThreshold, 1, rules.secondaryFraction)),
-          legacyConditions(rules),
-          application.severityPolicy
-        )
-      )
-      .getOrElse(
-        PairedOptions(
-          application.primary,
-          application.paired.toScala.map(_.fraction),
-          application.spill.toScala,
-          application.conditionLadder,
-          application.severityPolicy
-        )
-      )
-  }
-
-  private def matchingLegacyFallRules(
-      rules: List[FallRulesData],
-      player: ServerPlayer
-  ): Option[FallRulesData] = {
-    rules.find(_.entities.contains(player.typeHolder()))
-  }
-
-  private def legacyConditions(rules: FallRulesData): List[ConditionStepData] = List(
-    ConditionStepData(
-      LimbCondition.Fracture,
-      rules.fractureThreshold,
-      rules.fracturePain,
-      java.util.Optional.of(rules.fractureBaseRecoveryTicks)
-    ),
-    ConditionStepData(
-      LimbCondition.Dislocation,
-      rules.dislocationThreshold,
-      rules.dislocationPain,
-      java.util.Optional.empty()
+  private def pairedOptions(application: PairedImpactApplicationData): PairedOptions = {
+    PairedOptions(
+      application.primary,
+      application.paired.toScala.map(_.fraction),
+      application.spill.toScala,
+      application.conditionLadder,
+      application.severityPolicy
     )
-  )
+  }
 
   private def woundSeverity(
       player: ServerPlayer,

@@ -24,7 +24,6 @@ final case class GameplayDataStore(
     woundRules: Map[Identifier, WoundRuleData],
     armorProtection: Map[Identifier, ArmorProtectionData],
     discomfort: Map[Identifier, DiscomfortData],
-    fallRules: Map[Identifier, FallRulesData],
     hitLocations: Map[Identifier, HitLocationData]
 )
 
@@ -41,7 +40,6 @@ object GameplayDataStores {
     woundRules = GameplayDataLoaders.WoundRule.byId,
     armorProtection = GameplayDataLoaders.ArmorProtection.byId,
     discomfort = GameplayDataLoaders.Discomfort.byId,
-    fallRules = GameplayDataLoaders.FallRules.byId,
     hitLocations = GameplayDataLoaders.HitLocation.byId
   )
 
@@ -66,7 +64,6 @@ object GameplayDataStores {
       encodeSection(store.armorProtection, ArmorProtectionData.Codec, ops)
     )
     root.add("discomfort", encodeSection(store.discomfort, DiscomfortData.Codec, ops))
-    root.add("fall_rules", encodeSection(store.fallRules, FallRulesData.Codec, ops))
     root.add("hit_location", encodeSection(store.hitLocations, HitLocationData.Codec, ops))
     root
   }
@@ -92,8 +89,6 @@ object GameplayDataStores {
         .getOrElse(fallback.armorProtection),
       discomfort = decodeSection(root, "discomfort", DiscomfortData.Codec, ops)
         .getOrElse(fallback.discomfort),
-      fallRules = decodeSection(root, "fall_rules", FallRulesData.Codec, ops)
-        .getOrElse(fallback.fallRules),
       hitLocations = decodeSection(root, "hit_location", HitLocationData.Codec, ops)
         .getOrElse(fallback.hitLocations)
     )

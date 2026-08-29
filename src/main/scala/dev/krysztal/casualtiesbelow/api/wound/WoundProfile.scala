@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.api.wound
 import scala.jdk.OptionConverters.*
 
 import com.mojang.serialization.Codec
+import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
@@ -12,16 +13,11 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.GameplayCodecs
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.api.data.LegacyWoundRuleData
-import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleV2Data
 
 /** How one damage kind wounds a limb: skin integrity and muscle health lost per half-heart of
   * damage, external bleeding rate granted per wound (zero = the wound never bleeds, e.g. burns
@@ -73,25 +69,13 @@ final case class ResolvedWoundContribution(
     severityMultiplier: Double
 )
 
-sealed trait ResolvedWoundApplication
-
-final case class ResolvedTypedWoundApplication(
-    data: WoundApplicationData,
-    wounds: List[ResolvedWoundContribution],
-    legacyFallRules: List[FallRulesData]
-) extends ResolvedWoundApplication
-
-/** Compatibility adapter for the original flat wound-rule schema. Its exact-fall behavior is
-  * isolated here; native V2 applications never inspect a hard-coded damage type.
+/** One fully resolved typed application: every contribution's profile has been resolved against the
+  * current gameplay-data view.
   */
-final case class ResolvedLegacyWoundApplication(
-    profileId: Identifier,
-    profile: WoundProfile,
-    scatter: Boolean,
-    forcedPart: Option[BodyPart] = None,
-    weights: Option[Map[BodyPart, Double]] = None,
-    fallRules: List[FallRulesData] = List.empty
-) extends ResolvedWoundApplication
+final case class ResolvedWoundApplication(
+    data: WoundApplicationData,
+    wounds: List[ResolvedWoundContribution]
+)
 
 final case class ClassifiedWoundRule(
     ruleId: Identifier,
@@ -134,26 +118,8 @@ object WoundProfiles {
     val directLiving =
       source.isDirect && Option(source.getDirectEntity).exists(_.isInstanceOf[LivingEntity])
 
-    rule match {
-      case current: WoundRuleV2Data =>
-        matchesV2(current.woundMatch, level, player, source, directLiving, weapon)
-      case legacy: LegacyWoundRuleData =>
-        legacy.damageTypes.toScala.forall(_.contains(source.typeHolder())) &&
-        legacy.predicate.toScala.forall(_.matches(level, player.position(), source)) &&
-        legacy.directLiving.toScala.forall(_.booleanValue() == directLiving) &&
-        legacy.armed.toScala.forall(_.booleanValue() == weapon.isDefined) &&
-        legacy.weapon.toScala.forall(predicate => weapon.exists(predicate.test))
-    }
-  }
+    val woundMatch = rule.woundMatch
 
-  private def matchesV2(
-      woundMatch: WoundMatchData,
-      level: ServerLevel,
-      player: ServerPlayer,
-      source: DamageSource,
-      directLiving: Boolean,
-      weapon: Option[net.minecraft.world.item.ItemStack]
-  ): Boolean = {
     woundMatch.damageTypes.toScala.forall(_.matches(source)) &&
     woundMatch.excludedDamageTypes.toScala.forall(!_.matches(source)) &&
     woundMatch.victims.toScala.forall(_.contains(player.typeHolder())) &&
@@ -168,11 +134,9 @@ object WoundProfiles {
     */
   private[casualtiesbelow] def rebuild(): Unit = synchronized {
     val store = GameplayDataStores.server
-    val fallRules =
-      GameplayDataLookup.orderedEntries(store.fallRules)(_.priority.intValue()).map(_._2)
     compiled = GameplayDataLookup
       .orderedEntries(store.woundRules)(_.priority.intValue())
-      .flatMap { (ruleId, rule) => compileRule(ruleId, rule, store, fallRules) }
+      .flatMap { (ruleId, rule) => compileRule(ruleId, rule, store) }
     initialized = true
     CasualtiesBelow.Logger.info("Compiled {} wound rules", Int.box(compiled.size))
   }
@@ -189,42 +153,19 @@ object WoundProfiles {
   private def compileRule(
       ruleId: Identifier,
       rule: WoundRuleData,
-      store: GameplayDataStore,
-      fallRules: List[FallRulesData]
+      store: GameplayDataStore
   ): Option[CompiledRule] = {
-    rule match {
-      case current: WoundRuleV2Data =>
-        val resolved = current.applications.map(application =>
-          resolveApplication(ruleId, application, store, fallRules)
-        )
-        if (resolved.forall(_.isDefined)) {
-          Some(CompiledRule(ruleId, rule, resolved.flatten))
-        } else None
-      case legacy: LegacyWoundRuleData =>
-        resolveProfile(ruleId, legacy.profile, store).map { profile =>
-          CompiledRule(
-            ruleId,
-            rule,
-            List(
-              ResolvedLegacyWoundApplication(
-                legacy.profile,
-                profile,
-                legacy.scatter.booleanValue(),
-                legacy.forcedPart.toScala,
-                legacy.weights.toScala,
-                fallRules
-              )
-            )
-          )
-        }
-    }
+    val resolved =
+      rule.applications.map(application => resolveApplication(ruleId, application, store))
+    if (resolved.forall(_.isDefined)) {
+      Some(CompiledRule(ruleId, rule, resolved.flatten))
+    } else None
   }
 
   private def resolveApplication(
       ruleId: Identifier,
       application: WoundApplicationData,
-      store: GameplayDataStore,
-      fallRules: List[FallRulesData]
+      store: GameplayDataStore
   ): Option[ResolvedWoundApplication] = {
     val resolved = application.wounds.map { wound =>
       resolveProfile(ruleId, wound.profile, store).map(profile =>
@@ -232,12 +173,7 @@ object WoundProfiles {
       )
     }
     if (resolved.forall(_.isDefined)) {
-      val legacy = application match {
-        case paired: PairedImpactApplicationData if paired.legacyFallRules.booleanValue() =>
-          fallRules
-        case _ => List.empty
-      }
-      Some(ResolvedTypedWoundApplication(application, resolved.flatten, legacy))
+      Some(ResolvedWoundApplication(application, resolved.flatten))
     } else None
   }
 

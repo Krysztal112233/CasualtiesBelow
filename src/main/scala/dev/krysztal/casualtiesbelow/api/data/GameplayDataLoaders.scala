@@ -18,7 +18,6 @@ object GameplayDataLoaders {
     ArmorProtectionData.Codec
   )
   val Discomfort = GameplayDataLoader[DiscomfortData]("discomfort", DiscomfortData.Codec)
-  val FallRules = GameplayDataLoader[FallRulesData]("fall_rules", FallRulesData.Codec)
   val HitLocation = GameplayDataLoader[HitLocationData]("hit_location", HitLocationData.Codec)
 
   def registerAll(): Unit = {
@@ -26,7 +25,6 @@ object GameplayDataLoaders {
     register("wound_rule", WoundRule)
     register("armor_protection", ArmorProtection)
     register("discomfort", Discomfort)
-    register("fall_rules", FallRules)
     register("hit_location", HitLocation)
     ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((_, _, successful) => {
       if (successful) WoundProfiles.rebuild()

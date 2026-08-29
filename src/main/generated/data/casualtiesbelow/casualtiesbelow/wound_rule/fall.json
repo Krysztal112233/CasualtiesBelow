@@ -15,7 +15,6 @@
           "pain": 30.0
         }
       ],
-      "legacy_fall_rules": true,
       "paired": {
         "fraction": 1.0
       },

@@ -17,17 +17,6 @@ object GameplayDataLookup {
   /** Resolves one entry without throwing when a datapack removed it. */
   def entry[T](entries: Map[Identifier, T], id: Identifier): Option[T] = entries.get(id)
 
-  def fallRules(
-      entity: Entity,
-      store: GameplayDataStore = GameplayDataStores.server
-  ): FallRulesData = {
-    orderedEntries(store.fallRules)(_.priority.intValue())
-      .collectFirst {
-        case (_, rules) if rules.entities.contains(entityTypeHolder(entity)) => rules
-      }
-      .getOrElse(FallRulesData.Fallback)
-  }
-
   def hitLocation(
       entity: Entity,
       store: GameplayDataStore = GameplayDataStores.server
