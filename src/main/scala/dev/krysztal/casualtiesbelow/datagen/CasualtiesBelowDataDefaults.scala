@@ -57,7 +57,7 @@ object CasualtiesBelowDataDefaults {
     "cut" -> WoundProfile(2.0, 3.0, 0.2, 4.0),
     "blunt" -> WoundProfile(0.0, 3.0, 0.0, 4.0),
     "pierce" -> WoundProfile(3.0, 2.0, 0.15, 5.0),
-    "burn" -> WoundProfile(1.0, 0.2, 0.0, 2.0),
+    "burn" -> WoundProfile(4.0, 2, 0.1, 2.0),
     "prick" -> WoundProfile(1.5, 0.0, 0.05, 1.0),
     "blast" -> WoundProfile(2.0, 2.0, 0.25, 6.0),
     "fall" -> WoundProfile(4.0, 4.0, 0.5, 6.0)
@@ -101,7 +101,11 @@ object CasualtiesBelowDataDefaults {
 
     List(
       "fire" -> rule(
-        localized("burn", hemostasis = Some(HemostasisData(0.2, 0.25))),
+        localized(
+          "burn",
+          target = HitLocationTargetData(FirePositionlessWeights),
+          hemostasis = Some(HemostasisData(0.2, 0.25))
+        ),
         damageTypes = Some(tagged(DamageTypeTags.IS_FIRE)),
         priority = 100
       ),
@@ -244,6 +248,15 @@ object CasualtiesBelowDataDefaults {
     */
   private lazy val PlayerEntities: HolderSet[EntityType[?]] =
     HolderSet.direct(JList.of(EntityTypes.PLAYER.builtInRegistryHolder()))
+
+  private val FirePositionlessWeights: Map[BodyPart, Double] = Map(
+    BodyPart.Torso -> 0.2,
+    BodyPart.Head -> 0.16,
+    BodyPart.ArmLeft -> 0.16,
+    BodyPart.ArmRight -> 0.16,
+    BodyPart.LegLeft -> 0.16,
+    BodyPart.LegRight -> 0.16
+  )
 
   private def rule(
       application: WoundApplicationData,

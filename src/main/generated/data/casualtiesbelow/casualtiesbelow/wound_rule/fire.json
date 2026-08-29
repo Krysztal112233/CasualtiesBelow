@@ -2,6 +2,17 @@
   "applications": [
     {
       "type": "casualtiesbelow:localized",
+      "target": {
+        "type": "casualtiesbelow:hit_location",
+        "weights": {
+          "arm_left": 0.16,
+          "arm_right": 0.16,
+          "head": 0.16,
+          "leg_left": 0.16,
+          "leg_right": 0.16,
+          "torso": 0.2
+        }
+      },
       "wounds": [
         {
           "hemostasis": {
