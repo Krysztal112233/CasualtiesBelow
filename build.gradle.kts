@@ -16,6 +16,10 @@ base {
 
 loom {
     runs.configureEach {
+        // CI/runtime smokes can isolate all mutable game state from the developer's `run/` tree.
+        runDirectory.set(
+            layout.projectDirectory.dir(providers.gradleProperty("smoke_run_dir").getOrElse("run")),
+        )
         // Export transformed classes for mixin inspection and retain failed targets for diagnosis.
         systemProperties.put("mixin.debug.export", "true")
         systemProperties.put("mixin.dumpTargetOnFailure", "true")
@@ -83,6 +87,11 @@ dependencies {
     // Compile-time Scala 3 library; kept in sync with the version bundled by krysztal-language-scala,
     // which provides it at runtime.
     compileOnly("org.scala-lang:scala3-library_3:${property("scala_version")}")
+    testImplementation("org.scala-lang:scala3-library_3:${property("scala_version")}")
+
+    testImplementation(platform("org.junit:junit-bom:${property("junit_version")}"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -101,6 +110,15 @@ tasks.withType<ScalaCompile>().configureEach {
     // Explicit nulls: Java members annotated @Nullable (JSpecify) become hard T | Null and
     // must be null-checked before dereference; unannotated Java types stay flexible.
     scalaCompileOptions.additionalParameters.add("-Yexplicit-nulls")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    val isolatedTestRunDir = layout.buildDirectory.dir("test-run")
+    workingDir(isolatedTestRunDir)
+    doFirst {
+        isolatedTestRunDir.get().asFile.mkdirs()
+    }
 }
 
 spotless {
