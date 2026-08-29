@@ -277,7 +277,7 @@ object LimbDamage {
       source,
       severity,
       Some(condition),
-      PainCalc.onConditionOnset(player, condition)
+      PainCalc.onConditionOnset(condition, rules.fracturePain, rules.dislocationPain)
     ) { (stats, effectiveDamage) =>
       if (condition == LimbCondition.Fracture) {
         stats.fractureRecoveryTicks = Some(

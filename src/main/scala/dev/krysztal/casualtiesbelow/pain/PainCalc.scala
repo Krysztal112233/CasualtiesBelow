@@ -1,12 +1,9 @@
 package dev.krysztal.casualtiesbelow.pain
 
-import net.minecraft.world.entity.LivingEntity
-
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 import dev.krysztal.casualtiesbelow.api.body.LimbStats
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
@@ -41,17 +38,20 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it
   *     server-side, client-side results are presentation-only.
   *
-  * Wound grants come from the classified profile; fall condition grants come from the victim's
-  * matching `fall_rules` entry. Aggregation strategy remains global config-driven math.
+  * Wound grants come from the classified profile; callers supply fixed condition grants from the
+  * applicable gameplay rules. Aggregation strategy remains global config-driven math.
   */
 object PainCalc {
 
   /** One-time pain granted when a discrete condition onsets on a limb. */
-  def onConditionOnset(victim: LivingEntity, condition: LimbCondition): Double = {
-    val rules = GameplayDataLookup.fallRules(victim)
+  def onConditionOnset(
+      condition: LimbCondition,
+      fracturePain: Double,
+      dislocationPain: Double
+  ): Double = {
     condition match {
-      case LimbCondition.Fracture    => rules.fracturePain
-      case LimbCondition.Dislocation => rules.dislocationPain
+      case LimbCondition.Fracture    => fracturePain
+      case LimbCondition.Dislocation => dislocationPain
     }
   }
 
