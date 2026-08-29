@@ -50,7 +50,10 @@ final class WoundDataCodecTest {
         |    {
         |      "type": "casualtiesbelow:localized",
         |      "target": {"type": "casualtiesbelow:fixed", "part": "head"},
-        |      "wounds": [{"profile": "casualtiesbelow:prick"}]
+        |      "wounds": [{
+        |        "profile": "casualtiesbelow:prick",
+        |        "hemostasis": {"chance": 0.2, "reduction_fraction": 0.25}
+        |      }]
         |    },
         |    {
         |      "type": "casualtiesbelow:scatter",
@@ -74,8 +77,12 @@ final class WoundDataCodecTest {
 
     val rule = decoded
     assertEquals(3, rule.applications.size)
-    assertInstanceOf(classOf[LocalizedApplicationData], rule.applications.head)
-    assertInstanceOf(classOf[ScatterApplicationData], rule.applications(1))
+    val localized = assertInstanceOf(classOf[LocalizedApplicationData], rule.applications.head)
+    val hemostasis = localized.wounds.head.hemostasis.orElseThrow()
+    assertEquals(0.2, hemostasis.chance, 1.0e-9)
+    assertEquals(0.25, hemostasis.reductionFraction, 1.0e-9)
+    val scatter = assertInstanceOf(classOf[ScatterApplicationData], rule.applications(1))
+    assertTrue(scatter.wounds.head.hemostasis.isEmpty)
     assertInstanceOf(classOf[PairedImpactApplicationData], rule.applications(2))
     assertEquals(2, rule.woundMatch.damageTypes.orElseThrow().entries.size)
     assertEquals(250, rule.priority.intValue())
@@ -95,6 +102,18 @@ final class WoundDataCodecTest {
         |    "min_count": 5,
         |    "max_count": 2,
         |    "wounds": [{"profile": "casualtiesbelow:blast"}]
+        |  }]
+        |}""".stripMargin
+    )
+    assertDecodeFails(
+      WoundRuleData.Codec,
+      """{
+        |  "applications": [{
+        |    "type": "casualtiesbelow:localized",
+        |    "wounds": [{
+        |      "profile": "casualtiesbelow:burn",
+        |      "hemostasis": {"chance": 0.0, "reduction_fraction": 0.25}
+        |    }]
         |  }]
         |}""".stripMargin
     )
