@@ -49,6 +49,14 @@ private[data] object GameplayCodecs {
       else DataResult.error(() => s"Expected a finite number in [0, 1], got $value"),
     identity
   )
+
+  val PositiveUnitDouble: Codec[Double] = Codec.DOUBLE.comapFlatMap(
+    value =>
+      if (JDouble.isFinite(value) && value > 0.0 && value <= 1.0)
+        DataResult.success(value)
+      else DataResult.error(() => s"Expected a finite number in (0, 1], got $value"),
+    identity
+  )
 }
 
 /** An EvalEx formula source loaded from a datapack. Compilation is lazy for normal use; the codec
@@ -235,36 +243,58 @@ object DiscomfortData {
   )
 }
 
-/** Per-entity fall impact and condition rules. */
+/** Per-entity fall location, threshold-spill, and condition rules. Standard tissue and impact pain
+  * coefficients live in the classified fall wound profile.
+  */
 final case class FallRulesData(
     entities: HolderSet[EntityType[?]],
-    muscleDamagePerPoint: Double = FallRulesData.DefaultMuscleDamagePerPoint,
-    scrapeThreshold: Double = FallRulesData.DefaultScrapeThreshold,
-    scrapePerPoint: Double = FallRulesData.DefaultScrapePerPoint,
+    primaryWeights: Map[BodyPart, Double] = FallRulesData.DefaultPrimaryWeights,
+    pairedFraction: Double = FallRulesData.DefaultPairedFraction,
+    secondaryThreshold: Double = FallRulesData.DefaultSecondaryThreshold,
+    secondaryFraction: Double = FallRulesData.DefaultSecondaryFraction,
     dislocationThreshold: Double = FallRulesData.DefaultDislocationThreshold,
     fractureThreshold: Double = FallRulesData.DefaultFractureThreshold,
     fractureBaseRecoveryTicks: Integer = FallRulesData.DefaultFractureBaseRecoveryTicks,
-    fallBleedingRatePerWound: Double = FallRulesData.DefaultFallBleedingRatePerWound,
-    fallPainPerPoint: Double = FallRulesData.DefaultFallPainPerPoint,
     fracturePain: Double = FallRulesData.DefaultFracturePain,
     dislocationPain: Double = FallRulesData.DefaultDislocationPain,
     priority: Integer = 0
 )
 
 object FallRulesData {
-  val DefaultMuscleDamagePerPoint = 4.0
-  val DefaultScrapeThreshold = 4.0
-  val DefaultScrapePerPoint = 4.0
+  val DefaultPrimaryWeights: Map[BodyPart, Double] = Map(
+    BodyPart.Head -> 0.0,
+    BodyPart.Torso -> 0.0,
+    BodyPart.ArmLeft -> 0.0,
+    BodyPart.ArmRight -> 0.0,
+    BodyPart.LegLeft -> 0.5,
+    BodyPart.LegRight -> 0.5
+  )
+  val DefaultPairedFraction = 1.0
+  val DefaultSecondaryThreshold = 8.0
+  val DefaultSecondaryFraction = 0.5
   val DefaultDislocationThreshold = 8.0
   val DefaultFractureThreshold = 10.0
   val DefaultFractureBaseRecoveryTicks = 24000
-  val DefaultFallBleedingRatePerWound = 0.5
-  val DefaultFallPainPerPoint = 6.0
   val DefaultFracturePain = 50.0
   val DefaultDislocationPain = 30.0
 
   /** Compiled defaults used when no datapack entry matches the victim. */
   val Fallback: FallRulesData = FallRulesData(HolderSet.empty[EntityType[?]]())
+
+  private val PrimaryWeightsCodec: Codec[Map[BodyPart, Double]] = unboundedMap(
+    BodyPart.Codec,
+    GameplayCodecs.NonNegativeDouble
+  )
+    .xmap(_.asScala.toMap, _.asJava)
+    .validate(weights => {
+      val missing = BodyPart.values.toSet -- weights.keySet
+      val total = weights.values.sum
+      if (missing.nonEmpty) {
+        DataResult.error(() => s"primary_weights is missing: ${missing.map(_.id).mkString(", ")}")
+      } else if (!total.isFinite || total > 1.0 + 1.0e-9) {
+        DataResult.error(() => s"primary_weights must sum to at most 1.0, got $total")
+      } else DataResult.success(weights)
+    })
 
   // The primary codec writes every tuning value so generated defaults are self-documenting. The
   // alternative accepts concise datapack entries and supplies the compiled defaults on decode.
@@ -275,11 +305,14 @@ object FallRulesData {
           .homogeneousList(Registries.ENTITY_TYPE)
           .fieldOf("entities")
           .forGetter(_.entities),
+        PrimaryWeightsCodec.fieldOf("primary_weights").forGetter(_.primaryWeights),
+        GameplayCodecs.PositiveUnitDouble.fieldOf("paired_fraction").forGetter(_.pairedFraction),
         GameplayCodecs.NonNegativeDouble
-          .fieldOf("muscle_damage_per_point")
-          .forGetter(_.muscleDamagePerPoint),
-        GameplayCodecs.NonNegativeDouble.fieldOf("scrape_threshold").forGetter(_.scrapeThreshold),
-        GameplayCodecs.NonNegativeDouble.fieldOf("scrape_per_point").forGetter(_.scrapePerPoint),
+          .fieldOf("secondary_threshold")
+          .forGetter(_.secondaryThreshold),
+        GameplayCodecs.PositiveUnitDouble
+          .fieldOf("secondary_fraction")
+          .forGetter(_.secondaryFraction),
         GameplayCodecs.NonNegativeDouble
           .fieldOf("dislocation_threshold")
           .forGetter(_.dislocationThreshold),
@@ -289,12 +322,6 @@ object FallRulesData {
         ExtraCodecs.NON_NEGATIVE_INT
           .fieldOf("fracture_base_recovery_ticks")
           .forGetter(_.fractureBaseRecoveryTicks),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("fall_bleeding_rate_per_wound")
-          .forGetter(_.fallBleedingRatePerWound),
-        GameplayCodecs.NonNegativeDouble
-          .fieldOf("fall_pain_per_point")
-          .forGetter(_.fallPainPerPoint),
         GameplayCodecs.NonNegativeDouble.fieldOf("fracture_pain").forGetter(_.fracturePain),
         GameplayCodecs.NonNegativeDouble
           .fieldOf("dislocation_pain")
@@ -311,15 +338,18 @@ object FallRulesData {
           .homogeneousList(Registries.ENTITY_TYPE)
           .fieldOf("entities")
           .forGetter(_.entities),
+        PrimaryWeightsCodec
+          .optionalFieldOf("primary_weights", DefaultPrimaryWeights)
+          .forGetter(_.primaryWeights),
+        GameplayCodecs.PositiveUnitDouble
+          .optionalFieldOf("paired_fraction", DefaultPairedFraction)
+          .forGetter(_.pairedFraction),
         GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("muscle_damage_per_point", DefaultMuscleDamagePerPoint)
-          .forGetter(_.muscleDamagePerPoint),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("scrape_threshold", DefaultScrapeThreshold)
-          .forGetter(_.scrapeThreshold),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("scrape_per_point", DefaultScrapePerPoint)
-          .forGetter(_.scrapePerPoint),
+          .optionalFieldOf("secondary_threshold", DefaultSecondaryThreshold)
+          .forGetter(_.secondaryThreshold),
+        GameplayCodecs.PositiveUnitDouble
+          .optionalFieldOf("secondary_fraction", DefaultSecondaryFraction)
+          .forGetter(_.secondaryFraction),
         GameplayCodecs.NonNegativeDouble
           .optionalFieldOf("dislocation_threshold", DefaultDislocationThreshold)
           .forGetter(_.dislocationThreshold),
@@ -329,12 +359,6 @@ object FallRulesData {
         ExtraCodecs.NON_NEGATIVE_INT
           .optionalFieldOf("fracture_base_recovery_ticks", DefaultFractureBaseRecoveryTicks)
           .forGetter(_.fractureBaseRecoveryTicks),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("fall_bleeding_rate_per_wound", DefaultFallBleedingRatePerWound)
-          .forGetter(_.fallBleedingRatePerWound),
-        GameplayCodecs.NonNegativeDouble
-          .optionalFieldOf("fall_pain_per_point", DefaultFallPainPerPoint)
-          .forGetter(_.fallPainPerPoint),
         GameplayCodecs.NonNegativeDouble
           .optionalFieldOf("fracture_pain", DefaultFracturePain)
           .forGetter(_.fracturePain),

@@ -1,0 +1,5 @@
+{
+  "damage_types": "minecraft:stalagmite",
+  "priority": 45,
+  "profile": "casualtiesbelow:pierce"
+}

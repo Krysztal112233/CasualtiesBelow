@@ -47,7 +47,8 @@ object CasualtiesBelowDataDefaults {
     "pierce" -> WoundProfileData(3.0, 2.0, 0.15, 5.0),
     "burn" -> WoundProfileData(1.0, 0.2, 0.0, 2.0),
     "prick" -> WoundProfileData(1.5, 0.0, 0.05, 1.0),
-    "blast" -> WoundProfileData(2.0, 2.0, 0.25, 6.0)
+    "blast" -> WoundProfileData(2.0, 2.0, 0.25, 6.0),
+    "fall" -> WoundProfileData(4.0, 4.0, 0.5, 6.0)
   ).map((id, value) => entryId(id) -> value).toMap
 
   def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
@@ -117,6 +118,11 @@ object CasualtiesBelowDataDefaults {
         forcedPart = Some(BodyPart.Head),
         priority = 70
       ),
+      "fall" -> rule(
+        "fall",
+        damageTypes = Some(damageSet(DamageTypes.FALL)),
+        priority = 60
+      ),
       "prick" -> rule(
         "prick",
         damageTypes = Some(damageSet(DamageTypes.CACTUS, DamageTypes.SWEET_BERRY_BUSH)),
@@ -127,11 +133,21 @@ object CasualtiesBelowDataDefaults {
         damageTypes = Some(damageSet(DamageTypes.SONIC_BOOM)),
         priority = 50
       ),
+      "stalagmite" -> rule(
+        "pierce",
+        damageTypes = Some(damageSet(DamageTypes.STALAGMITE)),
+        priority = 45
+      ),
       "evoker_fangs" -> rule(
         "pierce",
         damageTypes = Some(damageSet(DamageTypes.INDIRECT_MAGIC)),
         predicate = Some(entityPredicate(EntityTypes.EVOKER_FANGS)),
         priority = 40
+      ),
+      "ender_pearl" -> rule(
+        "prick",
+        damageTypes = Some(damageSet(DamageTypes.ENDER_PEARL)),
+        priority = 35
       ),
       "melee_sharp" -> rule(
         "cut",
@@ -206,7 +222,20 @@ object CasualtiesBelowDataDefaults {
   val Discomfort: Map[Identifier, DiscomfortData] = Map.empty
 
   val FallRules: Map[Identifier, FallRulesData] = Map(
-    entryId("player") -> FallRulesData(PlayerEntities)
+    entryId("player") -> FallRulesData(
+      PlayerEntities,
+      primaryWeights = Map(
+        BodyPart.Head -> 0.0,
+        BodyPart.Torso -> 0.0,
+        BodyPart.ArmLeft -> 0.0,
+        BodyPart.ArmRight -> 0.0,
+        BodyPart.LegLeft -> 0.5,
+        BodyPart.LegRight -> 0.5
+      ),
+      pairedFraction = 1.0,
+      secondaryThreshold = 8.0,
+      secondaryFraction = 0.5
+    )
   )
 
   val HitLocations: Map[Identifier, HitLocationData] = Map(

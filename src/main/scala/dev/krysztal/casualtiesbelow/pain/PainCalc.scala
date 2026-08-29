@@ -31,26 +31,20 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *
   * Two kinds of pain exist:
   *
-  *   - '''grants''' — pain injected into one limb by an injury: impact pain from falls ([[onFall]])
-  *     and from wound profiles (`WoundProfile.painPerPoint`, applied by `LimbDamage`), both scaling
-  *     with the damage, and discrete condition onsets ([[onConditionOnset]], fixed one-time
-  *     amounts). Grants flow through the limb injury event context (`LimbInjuryContext.pain`) so
-  *     listeners can adjust them; capping at the limb maximum happens at the application site.
+  *   - '''grants''' — pain injected into one limb by an injury: impact pain from wound profiles
+  *     (`WoundProfile.painPerPoint`, applied by `LimbDamage`) scales with damage, while discrete
+  *     condition onsets ([[onConditionOnset]]) carry fixed one-time amounts. Grants flow through
+  *     the limb injury event context (`LimbInjuryContext.pain`) so listeners can adjust them;
+  *     capping at the limb maximum happens at the application site.
   *   - '''derivations''' — whole-body pain ([[total]]), computed on demand from per-limb pain and
   *     never stored. The limbs are the single source of truth (already synced to clients), so both
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it
   *     server-side, client-side results are presentation-only.
   *
-  * Fall and condition grants come from the victim's matching `fall_rules` entry; aggregation
-  * strategy remains global config-driven math.
+  * Wound grants come from the classified profile; fall condition grants come from the victim's
+  * matching `fall_rules` entry. Aggregation strategy remains global config-driven math.
   */
 object PainCalc {
-
-  /** Impact pain granted to one limb by a fall, per half-heart of formula damage. */
-  def onFall(victim: LivingEntity, damage: Double): Double = {
-    val rules = GameplayDataLookup.fallRules(victim)
-    damage * rules.fallPainPerPoint
-  }
 
   /** One-time pain granted when a discrete condition onsets on a limb. */
   def onConditionOnset(victim: LivingEntity, condition: LimbCondition): Double = {

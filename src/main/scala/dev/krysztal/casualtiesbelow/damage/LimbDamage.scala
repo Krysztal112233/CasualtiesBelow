@@ -1,15 +1,16 @@
 package dev.krysztal.casualtiesbelow.damage
 
 import net.minecraft.core.component.DataComponents
-import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.tags.DamageTypeTags
+import net.minecraft.world.damagesource.CombatRules
 import net.minecraft.world.damagesource.DamageSource
+import net.minecraft.world.damagesource.DamageTypes
 import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
+import net.minecraft.world.item.enchantment.EnchantmentHelper
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
@@ -20,6 +21,7 @@ import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 import dev.krysztal.casualtiesbelow.api.data.FallRulesData
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.wound.HitLocation
+import dev.krysztal.casualtiesbelow.api.wound.Wound
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
@@ -28,15 +30,10 @@ import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.pain.PainCalc
 import dev.krysztal.casualtiesbelow.progression.StarvationProgression
 
-/** Attributes incoming damage to body parts.
-  *
-  * Fall damage is attributed in [[onFallDamage]] (hooked from `LivingEntity.causeFallDamage`, where
-  * the impact context — fall distance, damage modifier, formula output — is available). Other
-  * damage goes through [[afterDamage]] (Fabric's `ServerLivingEntityEvents.AFTER_DAMAGE`), which
-  * carries no hit-location information: the affected part is guessed from hit geometry (see
-  * [[HitLocation]]). What kind of wound a hit inflicts — bite, cut, blunt, pierce, burn, blast — is
-  * classified from the damage source by [[WoundProfiles]] (rule-driven; see the
-  * `casualtiesbelow/wound_rule` datapack entries).
+/** Attributes incoming damage to body parts from Fabric's post-damage event. Damage kinds are
+  * classified by datapack wound rules, then every standard wound flows through [[applyWound]].
+  * Exact `minecraft:fall` impacts additionally use their data-driven primary location, mitigation,
+  * spill, and condition rules; other sources use hit geometry (see [[HitLocation]]).
   */
 object LimbDamage {
 
@@ -44,50 +41,8 @@ object LimbDamage {
     ServerLivingEntityEvents.AFTER_DAMAGE.register(afterDamage)
   }
 
-  /** Invoked from `LivingEntity.causeFallDamage` (see `LivingEntityMixin`). Attributes fall damage
-    * to the legs when the impact actually dealt damage (`damaged` is the method's return value:
-    * false for creative flight, slime-block landings, zero-damage falls, etc.).
-    *
-    * Server-side and players only: the body component exists on players and is authoritative on the
-    * server.
-    *
-    * Note: `fallDistance` here is the raw method argument; `causeFallDamage` internally shortens it
-    * during post-impulse grace (wind charges, mace smashes). In that edge case the limb attribution
-    * slightly overshoots — accepted for now.
-    */
-  def onFallDamage(
-      entity: LivingEntity,
-      fallDistance: Double,
-      damageModifier: Float,
-      source: DamageSource,
-      damaged: Boolean
-  ): Unit = {
-    val player = entity match {
-      case player: ServerPlayer => player
-      case _                    => return
-    }
-    val isEligibleFall = damaged && isFallDamage(source) && player.level().isInstanceOf[ServerLevel]
-    if (!isEligibleFall) return
-
-    if (player.isCreative || player.isSpectator) return
-
-    // Players always use the custom formula (see FallDamageFormula.appliesTo), so the
-    // severity can be recomputed deterministically from the same inputs.
-    val damage = FallDamageFormula
-      .calculateCustom(player, fallDistance, damageModifier)
-      .toDouble
-    if (damage > 0.0) {
-      // Sync is automatic: applied injuries mark the player dirty, flushed at tick end
-      // (see LimbInjuries.register).
-      attributeFallDamage(player, source, damage)
-    }
-
-  }
-
   /** Invoked after a living entity takes damage, before armor/enchantment reduction, and only when
     * the entity survives. Server-side only (`LivingEntity.hurtServer`).
-    *
-    * Fall damage is skipped here: it is already attributed with richer context in [[onFallDamage]].
     */
   private val afterDamage: ServerLivingEntityEvents.AfterDamage =
     (entity, source, _, damageTaken, blocked) => onAfterDamage(entity, source, damageTaken, blocked)
@@ -104,14 +59,15 @@ object LimbDamage {
       case _                    => return
     }
     if (player.isCreative || player.isSpectator) return
-    if (isFallDamage(source)) return
     if (blocked) return
     if (damageTaken <= 0) return
 
     StarvationProgression.onAfterDamage(player, source, damageTaken)
     val damage = damageTaken.toDouble
     WoundProfiles.classify(player.level(), player, source) match {
-      case None                         => ()
+      case None                                       => ()
+      case Some(wound) if source.is(DamageTypes.FALL) =>
+        applyFall(player, source, damage, wound)
       case Some(wound) if wound.scatter =>
         applyScatter(player, source, damage, wound.profile)
       case Some(wound) =>
@@ -120,16 +76,10 @@ object LimbDamage {
     }
   }
 
-  /** Whether the source is fall damage. Vanilla's `IS_FALL` tag also covers ender pearls and
-    * stalagmites.
-    */
-  def isFallDamage(source: DamageSource): Boolean =
-    source.is(DamageTypeTags.IS_FALL)
-
   /** Applies a wound profile to one located part: skin loss (with bleeding if the profile bleeds,
     * capped linearly by the post-hit skin integrity), muscle loss, and pain proportional to the
-    * damage. Sync is automatic: applied injuries mark the player dirty, flushed at tick end (see
-    * [[LimbInjuries.register]]).
+    * damage. Returns whether the central injury event accepted the wound. Sync is automatic:
+    * applied injuries mark the player dirty, flushed at tick end (see [[LimbInjuries.register]]).
     */
   private def applyWound(
       player: Player,
@@ -137,7 +87,7 @@ object LimbDamage {
       source: DamageSource,
       damage: Double,
       profile: WoundProfile
-  ): Unit = {
+  ): Boolean = {
     val mitigated = ArmorProtection.mitigate(player, part, source, profile)
     LimbInjuries(player, part, source, damage, pain = damage * mitigated.painPerPoint) {
       (stats, effectiveDamage) =>
@@ -177,44 +127,102 @@ object LimbDamage {
     }
   }
 
-  /** Maps fall damage (in half-hearts, as produced by [[FallDamageFormula]]) to leg injuries:
-    *
-    *   - worn boots cushion the whole impact (the `[fall]` cushion formula)
-    *   - any damage: both legs lose muscle health and gain pain
-    *   - above the datapack scrape threshold: skin scrape and external bleeding capped by skin
-    *     damage
-    *   - at the datapack dislocation threshold: one random leg is dislocated
-    *   - at the datapack fracture threshold: one random leg fractures instead, with recovery time
-    *     scaling with the damage; worn leggings blunt the impact for these condition rolls (the
-    *     `[fall]` protection formula)
-    *
-    * Impact and condition values come from the matching `fall_rules` entry; equipment factors stay
-    * in config formulas.
+  /** Attributes an exact `minecraft:fall` through the classified profile. Vanilla magic mitigation
+    * (including Feather Falling and Protection) is applied first, then worn boots cushion the
+    * remaining severity. One weighted primary part always receives the standard wound, a paired
+    * limb receives a fractional matching wound, and sufficiently severe impacts spill onto one
+    * otherwise unwounded part. Conditions are independently applied to the primary part only.
     */
-  private def attributeFallDamage(
+  private def applyFall(
       player: ServerPlayer,
       source: DamageSource,
-      damage: Double
+      damage: Double,
+      wound: Wound
   ): Unit = {
-    val cushioned = damage * (1.0 - bootsCushion(player))
-    if (cushioned <= 0.0) return
+    val enchantmentProtection =
+      EnchantmentHelper.getDamageProtection(player.level(), player, source)
+    val afterEnchantments =
+      if (enchantmentProtection > 0.0f) {
+        CombatRules.getDamageAfterMagicAbsorb(damage.toFloat, enchantmentProtection).toDouble
+      } else {
+        damage
+      }
+    val enchantmentRatio = (afterEnchantments / damage).max(0.0)
+    val severity = damage * enchantmentRatio * (1.0 - bootsCushion(player))
+    if (severity <= 0.0) return
 
     val rules = GameplayDataLookup.fallRules(player)
-    val severeLeg =
-      if (player.getRandom.nextBoolean()) BodyPart.LegLeft else BodyPart.LegRight
-
-    // General impact on both legs, then the severe injury on the randomly picked leg — the severe
-    // leg effectively suffers two injuries, each cancellable on its own.
-    BodyPart.Legs.foreach { leg =>
-      applyFallInjury(player, leg, source, cushioned, rules)
+    val primary = pickPrimaryPart(player, rules)
+    val wounded = scala.collection.mutable.LinkedHashSet.empty[BodyPart]
+    if (applyWound(player, primary, source, severity, wound.profile)) {
+      wounded += primary
     }
-    applySevereFallInjury(
+    pairedPart(primary).foreach { partner =>
+      if (
+        applyWound(
+          player,
+          partner,
+          source,
+          severity * rules.pairedFraction,
+          wound.profile
+        )
+      ) {
+        wounded += partner
+      }
+    }
+
+    if (severity > rules.secondaryThreshold) {
+      val candidates = BodyPart.values.filterNot(part => part == primary || wounded.contains(part))
+      if (candidates.nonEmpty) {
+        val secondary = candidates(player.getRandom.nextInt(candidates.length))
+        if (
+          applyWound(
+            player,
+            secondary,
+            source,
+            severity * rules.secondaryFraction,
+            wound.profile
+          )
+        ) {
+          wounded += secondary
+        }
+      }
+    }
+
+    applyFallCondition(
       player,
-      severeLeg,
+      primary,
       source,
-      cushioned * (1.0 - leggingsProtection(player)),
+      severity * (1.0 - leggingsProtection(player)),
       rules
     )
+  }
+
+  private def pairedPart(part: BodyPart): Option[BodyPart] = part match {
+    case BodyPart.LegLeft  => Some(BodyPart.LegRight)
+    case BodyPart.LegRight => Some(BodyPart.LegLeft)
+    case BodyPart.ArmLeft  => Some(BodyPart.ArmRight)
+    case BodyPart.ArmRight => Some(BodyPart.ArmLeft)
+    case _                 => None
+  }
+
+  /** Picks from the fall-rules weights. Scaling the roll to sub-unit mass is equivalent to
+    * re-rolling the unassigned portion until a defined part wins; an all-zero map falls back to the
+    * torso.
+    */
+  private def pickPrimaryPart(player: Player, rules: FallRulesData): BodyPart = {
+    val total = BodyPart.values.map(part => rules.primaryWeights.getOrElse(part, 0.0)).sum
+    if (total <= 0.0) return BodyPart.Torso
+
+    val roll = player.getRandom.nextDouble() * total
+    var cumulative = 0.0
+    BodyPart.values
+      .find { part =>
+        cumulative += rules.primaryWeights.getOrElse(part, 0.0)
+        roll < cumulative
+      }
+      .orElse(BodyPart.values.reverse.find(part => rules.primaryWeights.getOrElse(part, 0.0) > 0.0))
+      .getOrElse(BodyPart.Torso)
   }
 
   /** Fraction of the fall impact absorbed by worn boots (0 without). */
@@ -252,55 +260,24 @@ object LimbDamage {
     }
   }
 
-  /** Fall impact rules for one leg: muscle health, impact pain ([[PainCalc.onFall]] via the injury
-    * context), skin scrape, and bleeding capped linearly by the post-impact skin integrity.
-    * Application mechanics (context, event, commit) live in [[LimbInjuries.apply]].
+  /** Fall-specific fracture/dislocation ladder on the primary part. Threshold comparison uses the
+    * leggings-blunted primary severity. The condition onset remains a separate central injury event
+    * with its fixed one-time pain grant; spill wounds never call this path.
     */
-  private def applyFallInjury(
+  private def applyFallCondition(
       player: ServerPlayer,
-      leg: BodyPart,
+      part: BodyPart,
       source: DamageSource,
-      damage: Double,
+      severity: Double,
       rules: FallRulesData
   ): Unit = {
-    LimbInjuries(player, leg, source, damage, pain = PainCalc.onFall(player, damage)) {
-      (stats, effectiveDamage) =>
-        stats.muscleHealth =
-          (stats.muscleHealth - effectiveDamage * rules.muscleDamagePerPoint).max(0.0)
+    if (severity < rules.dislocationThreshold) return
 
-        if (effectiveDamage > rules.scrapeThreshold) {
-          BleedingCalc.applyWound(
-            stats,
-            (effectiveDamage - rules.scrapeThreshold) * rules.scrapePerPoint,
-            rules.fallBleedingRatePerWound,
-            player.getRandom
-          )
-        }
-    }
-  }
-
-  /** Severe fall injury rules for the picked leg: fracture above the datapack fracture threshold,
-    * dislocation above its dislocation threshold — discrete condition onsets carrying a fixed
-    * one-time pain grant ([[PainCalc.onConditionOnset]]), independent of impact pain.
-    *
-    * Onset guards prevent re-granting: an already-fractured leg takes no new condition, and an
-    * already-dislocated leg is not re-dislocated (a dislocated leg can still progress to a
-    * fracture).
-    */
-  private def applySevereFallInjury(
-      player: ServerPlayer,
-      leg: BodyPart,
-      source: DamageSource,
-      damage: Double,
-      rules: FallRulesData
-  ): Unit = {
-    if (damage < rules.dislocationThreshold) return
-
-    val current = CasualtiesBelowComponents.Body.get(player).stats(leg)
+    val current = CasualtiesBelowComponents.Body.get(player).stats(part)
     if (current.fractureRecoveryTicks.isDefined) return
 
     val condition =
-      if (damage >= rules.fractureThreshold) {
+      if (severity >= rules.fractureThreshold) {
         LimbCondition.Fracture
       } else {
         if (current.dislocated) return
@@ -309,9 +286,9 @@ object LimbDamage {
 
     LimbInjuries(
       player,
-      leg,
+      part,
       source,
-      damage,
+      severity,
       Some(condition),
       PainCalc.onConditionOnset(player, condition)
     ) { (stats, effectiveDamage) =>
@@ -325,5 +302,4 @@ object LimbDamage {
       }
     }
   }
-
 }

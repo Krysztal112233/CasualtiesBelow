@@ -7,7 +7,6 @@ import net.minecraft.world.entity.LivingEntity
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
-import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue
@@ -16,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
-/** Replaces vanilla's linear fall damage calculation with the configured power curve, and routes
-  * fall impacts into limb injury attribution.
+/** Replaces vanilla's linear fall damage calculation with the configured power curve and adapts
+  * successful vanilla death-protection returns to the mod's physiology state.
   */
 @Mixin(value = Array(classOf[LivingEntity]), remap = false)
 abstract class LivingEntityMixin {
@@ -37,29 +36,6 @@ abstract class LivingEntityMixin {
     } else {
       original
     }
-  }
-
-  /** `calculateFallDamage` stays side-effect free (mob AI calls it for fall prediction); the actual
-    * impact is observed here, at the only vanilla call site that applies the damage.
-    */
-  @Inject(
-    method = Array("causeFallDamage"),
-    at = Array(new At(value = "RETURN")),
-    remap = false
-  )
-  private def casualtiesbelow$causeFallDamage(
-      fallDistance: Double,
-      damageModifier: Float,
-      damageSource: DamageSource,
-      ci: CallbackInfoReturnable[Boolean]
-  ): Unit = {
-    LimbDamage.onFallDamage(
-      this.asInstanceOf[LivingEntity],
-      fallDistance,
-      damageModifier,
-      damageSource,
-      ci.getReturnValue
-    )
   }
 
   /** Vanilla has already consumed the death-protection item and applied its effects at RETURN.

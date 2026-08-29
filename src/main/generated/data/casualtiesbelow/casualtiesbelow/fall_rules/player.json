@@ -2,12 +2,18 @@
   "dislocation_pain": 30.0,
   "dislocation_threshold": 8.0,
   "entities": "minecraft:player",
-  "fall_bleeding_rate_per_wound": 0.5,
-  "fall_pain_per_point": 6.0,
   "fracture_base_recovery_ticks": 24000,
   "fracture_pain": 50.0,
   "fracture_threshold": 10.0,
-  "muscle_damage_per_point": 4.0,
-  "scrape_per_point": 4.0,
-  "scrape_threshold": 4.0
+  "paired_fraction": 1.0,
+  "primary_weights": {
+    "arm_left": 0.0,
+    "arm_right": 0.0,
+    "head": 0.0,
+    "leg_left": 0.5,
+    "leg_right": 0.5,
+    "torso": 0.0
+  },
+  "secondary_fraction": 0.5,
+  "secondary_threshold": 8.0
 }

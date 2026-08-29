@@ -1,0 +1,5 @@
+{
+  "damage_types": "minecraft:fall",
+  "priority": 60,
+  "profile": "casualtiesbelow:fall"
+}
