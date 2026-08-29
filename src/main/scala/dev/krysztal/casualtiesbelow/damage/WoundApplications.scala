@@ -198,17 +198,28 @@ object WoundApplications {
       applicationType = Some(context.applicationType),
       role = Some(role)
     ) { (stats, effectiveDamage) =>
+      val skinDamage = effectiveDamage * mitigated.skinPerPoint
       if (mitigated.bleedRatePerWound > 0.0) {
         BleedingCalc.applyWound(
           stats,
-          effectiveDamage * mitigated.skinPerPoint,
+          skinDamage,
           mitigated.bleedRatePerWound,
           context.player.getRandom
         )
-      } else if (mitigated.skinPerPoint > 0.0) {
-        stats.skinIntegrity =
-          (stats.skinIntegrity - effectiveDamage * mitigated.skinPerPoint).max(0.0)
+      } else if (skinDamage > 0.0) {
+        stats.skinIntegrity = (stats.skinIntegrity - skinDamage).max(0.0)
       }
+
+      wound.hemostasis.foreach { hemostasis =>
+        if (
+          skinDamage > 0.0 &&
+          stats.externalBleedingRate > 0.0 &&
+          context.player.getRandom.nextDouble() < hemostasis.chance
+        ) {
+          BleedingCalc.applyHemostasis(stats, hemostasis.reductionFraction)
+        }
+      }
+
       stats.muscleHealth =
         (stats.muscleHealth - effectiveDamage * mitigated.musclePerPoint).max(0.0)
     }

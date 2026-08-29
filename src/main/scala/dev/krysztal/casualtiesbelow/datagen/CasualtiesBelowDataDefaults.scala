@@ -36,6 +36,7 @@ import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
 import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
 import dev.krysztal.casualtiesbelow.api.wound.ExactDamageType
 import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
+import dev.krysztal.casualtiesbelow.api.wound.HemostasisData
 import dev.krysztal.casualtiesbelow.api.wound.HitLocationTargetData
 import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
 import dev.krysztal.casualtiesbelow.api.wound.PairedImpactApplicationData
@@ -100,7 +101,7 @@ object CasualtiesBelowDataDefaults {
 
     List(
       "fire" -> rule(
-        localized("burn"),
+        localized("burn", hemostasis = Some(HemostasisData(0.2, 0.25))),
         damageTypes = Some(tagged(DamageTypeTags.IS_FIRE)),
         priority = 100
       ),
@@ -272,9 +273,10 @@ object CasualtiesBelowDataDefaults {
       profile: String,
       target: dev.krysztal.casualtiesbelow.api.wound.WoundTargetData = HitLocationTargetData(
         WoundRuleData.DefaultWeights
-      )
+      ),
+      hemostasis: Option[HemostasisData] = None
   ): WoundApplicationData =
-    LocalizedApplicationData(List(wound(profile)), target)
+    LocalizedApplicationData(List(wound(profile, hemostasis)), target)
 
   private def scatter(profile: String): WoundApplicationData =
     ScatterApplicationData(List(wound(profile)), minCount = 2, maxCount = 3)
@@ -301,8 +303,15 @@ object CasualtiesBelowDataDefaults {
     )
   )
 
-  private def wound(profile: String): WoundContributionData =
-    WoundContributionData(entryId(profile), severityMultiplier = 1.0)
+  private def wound(
+      profile: String,
+      hemostasis: Option[HemostasisData] = None
+  ): WoundContributionData =
+    WoundContributionData(
+      entryId(profile),
+      severityMultiplier = 1.0,
+      hemostasis = optional(hemostasis)
+    )
 
   private def entryId(path: String): Identifier = CasualtiesBelow.ofIdentifier(path)
 

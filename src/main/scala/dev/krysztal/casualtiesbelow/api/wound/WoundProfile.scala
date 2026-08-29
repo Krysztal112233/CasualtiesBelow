@@ -66,7 +66,8 @@ object WoundProfile {
 final case class ResolvedWoundContribution(
     profileId: Identifier,
     profile: WoundProfile,
-    severityMultiplier: Double
+    severityMultiplier: Double,
+    hemostasis: Option[HemostasisData]
 )
 
 /** One fully resolved typed application: every contribution's profile has been resolved against the
@@ -169,7 +170,12 @@ object WoundProfiles {
   ): Option[ResolvedWoundApplication] = {
     val resolved = application.wounds.map { wound =>
       resolveProfile(ruleId, wound.profile, store).map(profile =>
-        ResolvedWoundContribution(wound.profile, profile, wound.severityMultiplier)
+        ResolvedWoundContribution(
+          wound.profile,
+          profile,
+          wound.severityMultiplier,
+          wound.hemostasis.toScala
+        )
       )
     }
     if (resolved.forall(_.isDefined)) {

@@ -35,6 +35,14 @@ object BleedingCalc {
       (stats.externalBleedingRate + rolledRate.max(0.0)).min(cap(stats.skinIntegrity))
   }
 
+  /** Removes a fraction of the limb's current external bleeding rate. The defensive clamp keeps
+    * internal callers safe even though datapack codecs already constrain the fraction to `(0, 1]`.
+    */
+  def applyHemostasis(stats: LimbStats, reductionFraction: Double): Unit = {
+    val retainedFraction = 1.0 - reductionFraction.max(0.0).min(1.0)
+    stats.externalBleedingRate = (stats.externalBleedingRate * retainedFraction).max(0.0)
+  }
+
   /** Maximum external bleeding rate for the given skin integrity: linear from zero on intact skin
     * to the configured maximum on fully destroyed skin. Clamping makes this safe for malformed or
     * legacy component values outside the normal 0–100 range.

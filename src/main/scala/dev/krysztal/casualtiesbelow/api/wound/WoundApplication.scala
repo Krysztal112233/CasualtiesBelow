@@ -19,10 +19,33 @@ import dev.krysztal.casualtiesbelow.api.body.LimbCondition
 import dev.krysztal.casualtiesbelow.api.data.GameplayCodecs
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
+/** An optional wound side effect that can cauterize existing external bleeding on the same limb.
+  * Each accepted wound with positive skin damage rolls once; success removes the configured
+  * fraction of the limb's current bleeding rate.
+  */
+final case class HemostasisData(chance: Double, reductionFraction: Double)
+
+object HemostasisData {
+  val Codec: Codec[HemostasisData] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        GameplayCodecs.PositiveUnitDouble.fieldOf("chance").forGetter(_.chance),
+        GameplayCodecs.PositiveUnitDouble
+          .fieldOf("reduction_fraction")
+          .forGetter(_.reductionFraction)
+      )
+      .apply(instance, HemostasisData.apply)
+  )
+}
+
 /** One profile contribution made by an application. Multiple contributions let one damage source
   * produce, for example, both a puncture and a burn without re-applying vanilla health damage.
   */
-final case class WoundContributionData(profile: Identifier, severityMultiplier: Double)
+final case class WoundContributionData(
+    profile: Identifier,
+    severityMultiplier: Double,
+    hemostasis: Optional[HemostasisData] = Optional.empty()
+)
 
 object WoundContributionData {
   val Codec: Codec[WoundContributionData] = RecordCodecBuilder.create(instance =>
@@ -31,7 +54,8 @@ object WoundContributionData {
         Identifier.CODEC.fieldOf("profile").forGetter(_.profile),
         GameplayCodecs
           .defaultedField(GameplayCodecs.NonNegativeDouble, "severity_multiplier", 1.0)
-          .forGetter(_.severityMultiplier)
+          .forGetter(_.severityMultiplier),
+        HemostasisData.Codec.optionalFieldOf("hemostasis").forGetter(_.hemostasis)
       )
       .apply(instance, WoundContributionData.apply)
   )
