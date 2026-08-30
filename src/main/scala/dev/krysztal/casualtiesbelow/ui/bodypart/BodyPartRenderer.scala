@@ -4,11 +4,11 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.player.LocalPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 
 /** Renders one body part of the body diagram at a given screen rect, reflecting the part's
-  * [[LimbStats]] (damage coloring, hover highlight). Trembling is the caller's concern — the given
-  * rect already includes the tremble offset.
+  * [[LimbSnapshot]] (damage coloring, hover highlight). Trembling is the caller's concern — the
+  * given rect already includes the tremble offset.
   *
   * Implementations: [[SkinBodyPartRenderer]] (default, draws the player skin's texture regions) and
   * [[BlockBodyPartRenderer]] (fallback, solid-color blocks).
@@ -24,7 +24,7 @@ trait BodyPartRenderer {
       graphics: GuiGraphicsExtractor,
       player: LocalPlayer,
       part: BodyPart,
-      stats: Option[LimbStats],
+      stats: Option[LimbSnapshot],
       hovered: Boolean,
       x: Int,
       y: Int,

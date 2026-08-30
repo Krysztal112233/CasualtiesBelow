@@ -4,21 +4,22 @@ import net.minecraft.resources.Identifier
 
 import net.fabricmc.api.ModInitializer
 
-import dev.krysztal.casualtiesbelow.api.LimbInjuries
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLoaders
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.immune.ZombieAttackImmuneDrain
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSync
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 object CasualtiesBelow extends ModInitializer {
-  val ModId = "casualtiesbelow"
+  val ModId: String = CasualtiesBelowApi.ModId
   val Logger: Logger = LoggerFactory.getLogger(ModId)
 
   override def onInitialize(): Unit = {
@@ -26,19 +27,19 @@ object CasualtiesBelow extends ModInitializer {
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()
-    // InjuryProgression must run before LimbInjuries' end-of-tick flush (registration order =
+    // InjuryProgression must run before the body's end-of-tick flush (registration order =
     // event order) so its dirty marks ship in the same tick.
     InjuryProgression.register()
     Unconsciousness.register()
-    // Same tick-ordering constraint as InjuryProgression: before LimbInjuries' flush.
+    // Same tick-ordering constraint as InjuryProgression: before the body flush.
     Discomfort.register()
-    LimbInjuries.register()
+    BodyMutations.register()
     ZombieAttackImmuneDrain.register()
     GameplayDataSync.register()
     Logger.info("Casualties: Below initialized")
   }
 
   def ofIdentifier(path: String): Identifier =
-    Identifier.fromNamespaceAndPath(ModId, path)
+    CasualtiesBelowApi.id(path)
 
 }

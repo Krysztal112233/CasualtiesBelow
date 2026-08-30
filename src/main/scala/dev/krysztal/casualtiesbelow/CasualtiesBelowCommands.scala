@@ -5,6 +5,7 @@ import java.lang.Double
 import java.lang.Integer
 
 import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.BoolArgumentType
@@ -24,11 +25,15 @@ import net.minecraft.server.level.ServerPlayer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.component.BodyMutations
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.component.PhysiologyReset
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
@@ -168,12 +173,12 @@ object CasualtiesBelowCommands {
   private def setBranches(): List[LiteralArgumentBuilder[CommandSourceStack]] = List(
     valueBranch(
       "muscle_health",
-      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
       classOf[Double]
     ) { (s, v) => s.muscleHealth = v },
     valueBranch(
       "skin_integrity",
-      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
       classOf[Double]
     ) { (s, v) => s.skinIntegrity = v },
     valueBranch("dislocated", BoolArgumentType.bool(), classOf[Boolean]) { (s, v) =>
@@ -189,7 +194,7 @@ object CasualtiesBelowCommands {
     ),
     clearableBranch(
       "infection_progress",
-      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
       classOf[Double]
     )(
       { (s, v) => s.infectionProgress = Some(v.doubleValue) },
@@ -202,7 +207,7 @@ object CasualtiesBelowCommands {
     ) { (s, v) => s.externalBleedingRate = v },
     valueBranch(
       "pain",
-      DoubleArgumentType.doubleArg(0.0, LimbStats.MaxValue),
+      DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
       classOf[Double]
     ) { (s, v) => s.pain = v }
   )
@@ -211,21 +216,19 @@ object CasualtiesBelowCommands {
       name: String,
       argType: ArgumentType[V],
       valueClass: Class[V]
-  )(mutate: (LimbStats, V) => Unit): LiteralArgumentBuilder[CommandSourceStack] = {
+  )(mutate: (MutableLimbState, V) => Unit): LiteralArgumentBuilder[CommandSourceStack] = {
     Commands
       .literal(name)
       .`then`(
         Commands.argument("value", argType).executes { ctx =>
           val value = ctx.getArgument("value", valueClass)
-          mutateTargets(ctx) { (player, comp, part) =>
-            val stats = comp.stats(part).copy()
-            mutate(stats, value)
-            comp.setStats(part, stats)
-            CasualtiesBelowComponents.Body.sync(player)
+          mutateTargets(ctx) { (player, part) =>
+            val result = BodyMutations.mutate(player, part) { state => mutate(state, value) }
+            BodyMutations.syncNow(player)
             ctx.getSource.sendSuccess(
               () =>
                 Component.literal(
-                  s"${player.getName.getString} ${part.id}.$name = ${statValue(stats, name)}"
+                  s"${player.getName.getString} ${part.id}.$name = ${statValue(result.after, name)}"
                 ),
               false
             )
@@ -239,16 +242,14 @@ object CasualtiesBelowCommands {
       argType: ArgumentType[V],
       valueClass: Class[V]
   )(
-      set: (LimbStats, V) => Unit,
-      clear: LimbStats => Unit
+      set: (MutableLimbState, V) => Unit,
+      clear: MutableLimbState => Unit
   ): LiteralArgumentBuilder[CommandSourceStack] = {
     valueBranch(name, argType, valueClass)(set).`then`(
       Commands.literal("clear").executes { ctx =>
-        mutateTargets(ctx) { (player, comp, part) =>
-          val stats = comp.stats(part).copy()
-          clear(stats)
-          comp.setStats(part, stats)
-          CasualtiesBelowComponents.Body.sync(player)
+        mutateTargets(ctx) { (player, part) =>
+          BodyMutations.mutate(player, part)(clear)
+          BodyMutations.syncNow(player)
           ctx.getSource.sendSuccess(
             () => Component.literal(s"${player.getName.getString} ${part.id}.$name = none"),
             false
@@ -287,17 +288,17 @@ object CasualtiesBelowCommands {
 
   private def mutateTargets(
       ctx: CommandContext[CommandSourceStack]
-  )(action: (ServerPlayer, BodyComponent, BodyPart) => Unit): Int = {
+  )(action: (ServerPlayer, BodyPart) => Unit): Int = {
     val part = getPart(ctx)
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
-    players.foreach { player => action(player, CasualtiesBelowComponents.Body.get(player), part) }
+    players.foreach { player => action(player, part) }
     players.size
   }
 
   private def recoverTargets(ctx: CommandContext[CommandSourceStack]): Int = {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     players.foreach { player =>
-      CasualtiesBelowComponents.reset(player)
+      PhysiologyReset.reset(player)
       ctx.getSource.sendSuccess(
         () => Component.literal(s"Fully recovered ${player.getName.getString}"),
         false
@@ -313,7 +314,7 @@ object CasualtiesBelowCommands {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     val src = ctx.getSource
     players.foreach { player =>
-      val vitals = CasualtiesBelowComponents.Vitals.get(player)
+      val vitals = ComponentAccess.vitals(player)
       val name = player.getName.getString
       stat match {
         case Some(s) =>
@@ -342,30 +343,30 @@ object CasualtiesBelowCommands {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     val src = ctx.getSource
     players.foreach { player =>
-      val vitals = CasualtiesBelowComponents.Vitals.get(player)
+      val vitals = ComponentAccess.vitals(player)
       name match {
         case "immune_health" =>
-          vitals.immuneHealth = value.min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+          VitalsMutations.setImmuneHealth(vitals, value)
         case "consciousness" =>
           ConsciousnessProgression.applyAuthoritativeEdit(player, vitals, value)
         case "pain_shock_load" =>
-          PainShock.applyAuthoritativeEdit(vitals, value)
+          PainShock.applyAuthoritativeEdit(player, vitals, value)
         case "adrenaline" =>
-          Adrenaline.applyAuthoritativeEdit(vitals, value)
-          PainShock.reconcileAfterAdrenalineEdit(vitals)
+          Adrenaline.applyAuthoritativeEdit(player, vitals, value)
+          PainShock.reconcileAfterAdrenalineEdit(player, vitals)
         case "blood_oxygen" =>
-          vitals.bloodOxygen = value.min(VitalsComponent.MaxBloodOxygen)
+          VitalsMutations.setBloodOxygen(vitals, value)
         case "blood_volume" =>
-          vitals.bloodVolume = value.min(CasualtiesBelowConfig.MaxBloodVolume.get())
+          VitalsMutations.setBloodVolume(vitals, value)
         case "sepsis" =>
-          vitals.sepsis = value.min(CasualtiesBelowConfig.MaxSepsis.get())
+          VitalsMutations.setSepsis(vitals, value)
         case "discomfort" =>
-          vitals.discomfort = value.min(CasualtiesBelowConfig.MaxDiscomfort.get())
+          VitalsMutations.setDiscomfort(vitals, value)
       }
       if (name != "consciousness") {
         ConsciousnessProgression.reconcileAfterEdit(player, vitals)
       }
-      CasualtiesBelowComponents.Vitals.sync(player)
+      VitalsMutations.syncNow(player)
       src.sendSuccess(
         () =>
           Component.literal(s"${player.getName.getString} $name = ${vitalsValue(vitals, name)}"),
@@ -375,13 +376,13 @@ object CasualtiesBelowCommands {
     players.size
   }
 
-  private def vitalsValue(vitals: VitalsComponent, stat: String): String = stat match {
+  private def vitalsValue(vitals: VitalsComponentImpl, stat: String): String = stat match {
     case "immune_health"          => f"${vitals.immuneHealth}%.1f"
     case "consciousness"          => f"${vitals.consciousness}%.1f"
     case "pain_shock_load"        => f"${vitals.painShockLoad}%.1f"
     case "pain_shock_stage"       => vitals.painShockStage.id
     case "adrenaline"             => f"${vitals.adrenaline}%.1f"
-    case "adrenaline_grace_ticks" => vitals.adrenalineGraceTicks.toString
+    case "adrenaline_grace_ticks" => VitalsMutations.adrenalineGraceTicks(vitals).toString
     case "blood_oxygen"           => f"${vitals.bloodOxygen}%.1f"
     case "blood_volume"           => f"${vitals.bloodVolume}%.1f mL"
     case "sepsis"                 => f"${vitals.sepsis}%.1f"
@@ -392,17 +393,20 @@ object CasualtiesBelowCommands {
 
   private def getPart(ctx: CommandContext[CommandSourceStack]): BodyPart = {
     val name = StringArgumentType.getString(ctx, "part")
-    BodyPart.byId.getOrElse(name, throw UnknownPart.create())
+    BodyPart.fromId(name).toScala.getOrElse(throw UnknownPart.create())
   }
 
-  private def statValue(stats: LimbStats, stat: String): String = stat match {
+  private def statValue(stats: LimbSnapshot, stat: String): String = stat match {
     case "muscle_health"           => f"${stats.muscleHealth}%.1f"
     case "skin_integrity"          => f"${stats.skinIntegrity}%.1f"
     case "dislocated"              => stats.dislocated.toString
     case "fracture_recovery_ticks" =>
-      stats.fractureRecoveryTicks.map(t => s"$t ticks").getOrElse("none")
+      if (stats.fractureRecoveryTicks.isPresent)
+        s"${stats.fractureRecoveryTicks.getAsInt} ticks"
+      else "none"
     case "infection_progress" =>
-      stats.infectionProgress.map(p => f"$p%.1f").getOrElse("none")
+      if (stats.infectionProgress.isPresent) f"${stats.infectionProgress.getAsDouble}%.1f"
+      else "none"
     case "external_bleeding_rate" => f"${stats.externalBleedingRate}%.2f mL/tick"
     case "pain"                   => f"${stats.pain}%.1f"
     case _                        => throw UnknownStat.create()

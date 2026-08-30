@@ -18,17 +18,25 @@ import net.minecraft.world.level.storage.ValueOutput
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
-final class BodyComponentImpl(val player: Player) extends BodyComponent {
+import org.ladysnake.cca.api.v3.component.CopyableComponent
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
+
+final class BodyComponentImpl(val player: Player)
+    extends BodyComponent
+    with CopyableComponent[BodyComponent]
+    with AutoSyncedComponent {
   private val limbs =
-    Map.from(BodyPart.values.map(_ -> LimbStats()))
+    Map.from(BodyPart.values.map(_ -> MutableLimbState()))
 
-  override def stats(part: BodyPart): LimbStats = limbs(part).copy()
+  override def stats(part: BodyPart): LimbSnapshot = limbs(part).snapshot
 
-  override def setStats(part: BodyPart, stats: LimbStats): Unit = {
-    limbs(part) = stats.copy()
+  private[casualtiesbelow] def mutableCopy(part: BodyPart): MutableLimbState = limbs(part).copy()
+
+  private[casualtiesbelow] def replace(part: BodyPart, state: MutableLimbState): Unit = {
+    limbs(part) = MutableLimbState.normalize(state)
     reconcileMovementModifiers()
   }
 
@@ -36,7 +44,7 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
       other: BodyComponent,
       registryLookup: HolderLookup.Provider
   ): Unit = {
-    BodyPart.values.foreach { p => setStats(p, other.stats(p)) }
+    BodyPart.values.foreach { part => replace(part, MutableLimbState.from(other.stats(part))) }
   }
 
   override def writeData(out: ValueOutput): Unit = {
@@ -61,8 +69,9 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     BodyPart.values.foreach { part =>
       in.child(part.id).ifPresent { child =>
         val s = limbs(part)
-        s.muscleHealth = child.getDoubleOr(BodyComponentImpl.MuscleHealthKey, LimbStats.MaxValue)
-        s.skinIntegrity = child.getDoubleOr(BodyComponentImpl.SkinIntegrityKey, LimbStats.MaxValue)
+        s.muscleHealth = child.getDoubleOr(BodyComponentImpl.MuscleHealthKey, LimbSnapshot.MaxValue)
+        s.skinIntegrity =
+          child.getDoubleOr(BodyComponentImpl.SkinIntegrityKey, LimbSnapshot.MaxValue)
         s.fractureRecoveryTicks =
           child.getInt(BodyComponentImpl.FractureRecoveryTicksKey).toScala.map(_.intValue)
         s.infectionProgress = child
@@ -72,6 +81,7 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
         s.dislocated = child.getBooleanOr(BodyComponentImpl.DislocatedKey, false)
         s.externalBleedingRate = child.getDoubleOr(BodyComponentImpl.ExternalBleedingRateKey, 0.0)
         s.pain = child.getDoubleOr(BodyComponentImpl.PainKey, 0.0)
+        limbs(part) = MutableLimbState.normalize(s)
       }
     }
     reconcileMovementModifiers()
@@ -89,7 +99,7 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
     * slow natural regeneration. Creative and spectator players retain their limb state but suppress
     * both layers until they return to survival or adventure mode.
     */
-  override private[casualtiesbelow] def reconcileMovementModifiers(): Unit = {
+  private[casualtiesbelow] def reconcileMovementModifiers(): Unit = {
     if (player.level().isClientSide()) return
 
     val restrictionsApply = !player.isCreative && !player.isSpectator
@@ -97,7 +107,7 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
       if (!restrictionsApply) {
         0.0
       } else {
-        BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+        BodyTopology.Legs.foldLeft(0.0) { (total, p) =>
           val s = limbs(p)
           val fractureShare =
             if (s.fractureRecoveryTicks.isDefined) BodyComponentImpl.FracturePenaltyMultiplier
@@ -110,12 +120,12 @@ final class BodyComponentImpl(val player: Player) extends BodyComponent {
       if (!restrictionsApply) {
         0.0
       } else {
-        BodyPart.Legs.foldLeft(0.0) { (total, p) =>
+        BodyTopology.Legs.foldLeft(0.0) { (total, p) =>
           val healthFraction =
-            (limbs(p).muscleHealth / LimbStats.MaxValue).max(0.0).min(1.0)
+            (limbs(p).muscleHealth / LimbSnapshot.MaxValue).max(0.0).min(1.0)
           val deficit = 1.0 - healthFraction
           total + deficit * deficit
-        } / BodyPart.Legs.size
+        } / BodyTopology.Legs.size
       }
 
     reconcileAttribute(

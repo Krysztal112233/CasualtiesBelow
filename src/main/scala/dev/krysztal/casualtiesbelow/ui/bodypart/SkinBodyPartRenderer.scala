@@ -7,7 +7,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.PlayerModelType
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.ui.Argb
 
 /** Default [[BodyPartRenderer]]: each part blits the matching front-face region of the player's
@@ -34,7 +34,7 @@ object SkinBodyPartRenderer extends BodyPartRenderer {
       graphics: GuiGraphicsExtractor,
       player: LocalPlayer,
       part: BodyPart,
-      stats: Option[LimbStats],
+      stats: Option[LimbSnapshot],
       hovered: Boolean,
       x: Int,
       y: Int,
@@ -50,8 +50,8 @@ object SkinBodyPartRenderer extends BodyPartRenderer {
     val tint = stats match {
       case Some(s) =>
         val damage = math.max(
-          1.0 - s.skinIntegrity / LimbStats.MaxValue,
-          1.0 - s.muscleHealth / LimbStats.MaxValue
+          1.0 - s.skinIntegrity / LimbSnapshot.MaxValue,
+          1.0 - s.muscleHealth / LimbSnapshot.MaxValue
         )
         Argb.lerp(0xffffffff, DamagedTintColor, damage)
       case None => 0xffffffff

@@ -11,10 +11,10 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 
 /** Armor as a wound barrier: armor covering the struck body part transforms the wound profile —
   * skin damage and bleeding are mostly blocked (teeth, claws and blades fail to break skin), while
@@ -89,11 +89,11 @@ object ArmorProtection {
       skinFactor: Double,
       muscleFactor: Double
   ): WoundProfile = {
-    WoundProfile(
-      profile.skinPerPoint * skinFactor,
-      profile.musclePerPoint * muscleFactor,
-      profile.bleedRatePerWound * skinFactor,
-      profile.painPerPoint * muscleFactor
+    profile.copy(
+      skinPerPoint = profile.skinPerPoint * skinFactor,
+      musclePerPoint = profile.musclePerPoint * muscleFactor,
+      bleedRatePerWound = profile.bleedRatePerWound * skinFactor,
+      painPerPoint = profile.painPerPoint * muscleFactor
     )
   }
 

@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.pain
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
@@ -15,7 +15,7 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   /** The worst single pain; additional injuries don't add up. */
   case Max
 
-  /** Plain sum of all limb pains (clamped to [[LimbStats.MaxValue]] like every strategy). */
+  /** Plain sum of all limb pains (clamped to [[LimbSnapshot.MaxValue]] like every strategy). */
   case Sum
 
   /** Geometric-decay sum over descending-sorted pains; see [[PainCalc.total]]. Honors the
@@ -31,9 +31,9 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *   - '''grants''' — pain injected into one limb by an injury: impact pain from wound profiles
   *     (`WoundProfile.painPerPoint`, applied by `WoundApplications`) scales with damage, while
   *     discrete condition onsets ([[onConditionOnset]]) carry fixed one-time amounts. Grants flow
-  *     through the limb injury event context (`LimbInjuryContext.pain`) after internal acute-pain
-  *     mitigation, so listeners can adjust them; capping at the limb maximum happens at the
-  *     application site.
+  *     through the limb injury event context (`LimbInjuryContext.basePain`) after internal
+  *     acute-pain mitigation, so listeners can adjust them; capping at the limb maximum happens at
+  *     the application site.
   *   - '''derivations''' — whole-body pain ([[total]]), computed on demand from per-limb pain and
   *     never stored. The limbs are the single source of truth (already synced to clients), so both
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it
@@ -68,7 +68,7 @@ object PainCalc {
       case TotalPainStrategy.Sum       => values.sum
       case TotalPainStrategy.Geometric => geometric(values)
     }
-    math.min(result, LimbStats.MaxValue)
+    math.min(result, LimbSnapshot.MaxValue)
   }
 
   /** `min(100, Σ pᵢ·dⁱ)` over pains ≥ the filter threshold, sorted descending; if all are filtered

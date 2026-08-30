@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.wound
+package dev.krysztal.casualtiesbelow.data.schema
 
 import java.util.Optional
 
@@ -16,8 +16,6 @@ import net.minecraft.util.ExtraCodecs
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
-import dev.krysztal.casualtiesbelow.api.data.GameplayCodecs
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
 /** An optional wound side effect that can cauterize existing external bleeding on the same limb.
   * Each accepted wound with positive skin damage rolls once; success removes the configured
@@ -104,7 +102,7 @@ object WoundTargetData {
     instance
       .group(
         exactType(FixedType).fieldOf("type").forGetter(_ => ()),
-        BodyPart.Codec.fieldOf("part").forGetter(_.part)
+        GameplayCodecs.BodyPartCodec.fieldOf("part").forGetter(_.part)
       )
       .apply(instance, (_, part) => FixedTargetData(part))
   )

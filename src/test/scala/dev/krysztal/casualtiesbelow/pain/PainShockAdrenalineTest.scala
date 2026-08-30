@@ -12,11 +12,11 @@ final class PainShockAdrenalineTest {
   private val Effective = 95.0
 
   @Test
-  def deferredAppendsWithoutChangingExistingPublicOrdinals(): Unit = {
+  def stagesFollowTheEpisodeLifecycleOrder(): Unit = {
     assertEquals(0, PainShockStage.Stable.ordinal)
-    assertEquals(1, PainShockStage.Collapsed.ordinal)
-    assertEquals(2, PainShockStage.Recovering.ordinal)
-    assertEquals(3, PainShockStage.Deferred.ordinal)
+    assertEquals(1, PainShockStage.Deferred.ordinal)
+    assertEquals(2, PainShockStage.Collapsed.ordinal)
+    assertEquals(3, PainShockStage.Recovering.ordinal)
   }
 
   @Test

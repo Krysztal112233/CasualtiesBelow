@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistr
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Single-row blood-volume bar replacing vanilla hearts in their original HUD slot, with the
   * current synchronized volume centered in mL.

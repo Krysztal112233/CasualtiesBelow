@@ -9,10 +9,10 @@ import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.pain.PainCalc
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
   * panel: an always-visible vitals section (consciousness, blood oxygen, immune health) on top and
@@ -234,7 +234,7 @@ object MedicalPanel {
       label: Component,
       value: Double,
       badThreshold: Double,
-      maxValue: Double = LimbStats.MaxValue
+      maxValue: Double = LimbSnapshot.MaxValue
   ): Int = {
     val nextY = extractStatRow(
       graphics,
@@ -288,12 +288,13 @@ object MedicalPanel {
     * health panel, which hides inactive statuses). All are bad conditions, so callers draw the
     * values red.
     */
-  private def conditionRows(stats: LimbStats): List[(Component, Component)] = {
+  private def conditionRows(stats: LimbSnapshot): List[(Component, Component)] = {
     def stat(id: String): Component =
       Component.translatable(s"screen.casualtiesbelow.body_status.stat.$id")
 
     val rows = List(
-      stats.fractureRecoveryTicks.map { ticks =>
+      Option.when(stats.fractureRecoveryTicks.isPresent) {
+        val ticks = stats.fractureRecoveryTicks.getAsInt
         stat("fracture") -> Component.translatable(
           "screen.casualtiesbelow.body_status.value.minutes",
           f"${ticks / 20.0 / 60.0}%.1f"
@@ -302,7 +303,8 @@ object MedicalPanel {
       Option.when(stats.dislocated) {
         stat("dislocated") -> Component.translatable("gui.yes")
       },
-      stats.infectionProgress.map { progress =>
+      Option.when(stats.infectionProgress.isPresent) {
+        val progress = stats.infectionProgress.getAsDouble
         stat("infection") -> Component.literal(f"$progress%.0f%%")
       },
       Option.when(stats.externalBleedingRate > 0.0) {

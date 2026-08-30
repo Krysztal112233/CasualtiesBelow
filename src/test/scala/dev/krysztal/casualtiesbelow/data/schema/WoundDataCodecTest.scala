@@ -1,12 +1,10 @@
-package dev.krysztal.casualtiesbelow.api.wound
+package dev.krysztal.casualtiesbelow.data.schema
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.JsonOps
 import net.minecraft.SharedConstants
 import net.minecraft.server.Bootstrap
-
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,10 +19,21 @@ final class WoundDataCodecTest {
   Bootstrap.bootStrap()
 
   @Test
-  def legacyLinearProfileDefaultsAndReencodesItsType(): Unit = {
+  def linearProfileRequiresAndReencodesItsType(): Unit = {
+    assertDecodeFails(
+      WoundProfile.Codec,
+      """{
+        |  "skin_per_point": 2.0,
+        |  "muscle_per_point": 3.0,
+        |  "bleed_rate_per_wound": 0.2,
+        |  "pain_per_point": 4.0
+        |}""".stripMargin
+    )
+
     val profile = decode(
       WoundProfile.Codec,
       """{
+        |  "type": "casualtiesbelow:linear",
         |  "skin_per_point": 2.0,
         |  "muscle_per_point": 3.0,
         |  "bleed_rate_per_wound": 0.2,

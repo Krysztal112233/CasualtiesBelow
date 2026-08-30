@@ -18,13 +18,12 @@ import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
+import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.discomfort.Discomfort
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 import mezz.jei.api.IModPlugin
 import mezz.jei.api.JeiPlugin
@@ -44,7 +43,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   override def registerRecipes(registration: IRecipeRegistration): Unit = {
     given data: GameplayDataSnapshot = GameplayDataSnapshot.current
-    given store: GameplayDataStore = GameplayDataStores.client
+    given store: GameplayDataStore = data.gameplayData
 
     registerDiscomfort(registration)
     registerArmor(registration)

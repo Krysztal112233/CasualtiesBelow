@@ -1,8 +1,8 @@
 package dev.krysztal.casualtiesbelow.api.body
 
-import com.mojang.serialization.Codec
-import com.mojang.serialization.Codec.STRING
-import com.mojang.serialization.DataResult
+import java.util.Optional
+
+import scala.jdk.OptionConverters.*
 
 /** Player body parts tracked by the mod. Vanilla has no hit-location concept; damage is attributed
   * to a part by our own logic.
@@ -17,29 +17,7 @@ enum BodyPart(val id: String) {
 }
 
 object BodyPart {
-  val byId: Map[String, BodyPart] = values.map(p => p.id -> p).toMap
+  private val ById: Map[String, BodyPart] = values.map(p => p.id -> p).toMap
 
-  val Codec: Codec[BodyPart] = STRING.comapFlatMap(
-    id =>
-      byId
-        .get(id)
-        .map(DataResult.success)
-        .getOrElse(DataResult.error(() => s"Unknown body part: $id")),
-    _.id
-  )
-
-  val Legs: List[BodyPart] = List(LegLeft, LegRight)
-  val Arms: List[BodyPart] = List(ArmLeft, ArmRight)
-
-  /** Anatomical adjacency for infection contagion: a star with the torso as the hub, so an
-    * infection in an extremity must pass through the torso to reach another extremity.
-    */
-  val Adjacent: Map[BodyPart, List[BodyPart]] = Map(
-    Head -> List(Torso),
-    Torso -> List(Head, ArmLeft, ArmRight, LegLeft, LegRight),
-    ArmLeft -> List(Torso),
-    ArmRight -> List(Torso),
-    LegLeft -> List(Torso),
-    LegRight -> List(Torso)
-  )
+  def fromId(id: String): Optional[BodyPart] = ById.get(id).toJava
 }

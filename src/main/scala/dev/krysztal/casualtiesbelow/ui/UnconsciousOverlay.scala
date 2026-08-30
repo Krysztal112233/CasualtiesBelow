@@ -14,7 +14,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Circular wake-progress indicator shown while the synced unconscious latch is active.
   *

@@ -1,11 +1,15 @@
 package dev.krysztal.casualtiesbelow.progression
 
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
+import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 
@@ -23,7 +27,7 @@ object ConsciousnessProgression {
   /** Advances consciousness and reconciles its hysteretic state. Returns whether either stored
     * value changed.
     */
-  def tick(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
+  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     val step = vitals.painShockStage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
@@ -36,7 +40,7 @@ object ConsciousnessProgression {
           effectiveFloor(vitals)
         )
     }
-    applyStep(player, vitals, step)
+    applyStep(player, vitals, step, PhysiologyChangeCause.Progression)
   }
 
   /** Applies an authoritative external consciousness edit, such as an admin command, and
@@ -44,7 +48,7 @@ object ConsciousnessProgression {
     */
   def applyAuthoritativeEdit(
       player: ServerPlayer,
-      vitals: VitalsComponent,
+      vitals: VitalsComponentImpl,
       consciousness: Double
   ): Boolean = {
     val step = vitals.painShockStage match {
@@ -58,13 +62,13 @@ object ConsciousnessProgression {
           effectiveFloor(vitals)
         )
     }
-    applyStep(player, vitals, step)
+    applyStep(player, vitals, step, PhysiologyChangeCause.AdminEdit)
   }
 
   /** Reconciles the discrete state after another authoritative vitals edit changed the active
     * physiological pressure (for example blood oxygen).
     */
-  def reconcileAfterEdit(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
+  def reconcileAfterEdit(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     val step = vitals.painShockStage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
@@ -76,14 +80,19 @@ object ConsciousnessProgression {
           effectiveFloor(vitals)
         )
     }
-    applyStep(player, vitals, step)
+    applyStep(player, vitals, step, PhysiologyChangeCause.AdminEdit)
   }
 
   /** Explicit recovery reset. Unlike fresh death-respawn component construction, this is an
     * authoritative state change and therefore emits the same wake event as physiological recovery.
     */
-  def resetHealthy(player: ServerPlayer, vitals: VitalsComponent): Boolean = {
-    applyStep(player, vitals, ConsciousnessStep(VitalsComponent.MaxValue, false))
+  def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
+    applyStep(
+      player,
+      vitals,
+      ConsciousnessStep(VitalsComponent.MaxValue, false),
+      PhysiologyChangeCause.Reset
+    )
   }
 
   /** Reconciles a successful hypoxia death-protection rescue at no less than the configured wake
@@ -92,7 +101,7 @@ object ConsciousnessProgression {
     */
   private[casualtiesbelow] def restoreAfterHypoxiaDeathProtection(
       player: ServerPlayer,
-      vitals: VitalsComponent
+      vitals: VitalsComponentImpl
   ): Boolean = {
     val wakeThreshold = configuredWakeThreshold
     val step = vitals.painShockStage match {
@@ -106,7 +115,7 @@ object ConsciousnessProgression {
           effectiveFloor(vitals)
         )
     }
-    applyStep(player, vitals, step)
+    applyStep(player, vitals, step, PhysiologyChangeCause.HypoxiaDeathProtection)
   }
 
   private def configuredWakeThreshold: Double = {
@@ -117,14 +126,14 @@ object ConsciousnessProgression {
       .min(VitalsComponent.MaxValue)
   }
 
-  private def effectiveFloor(vitals: VitalsComponent): Double = {
+  private def effectiveFloor(vitals: VitalsComponentImpl): Double = {
     vitals.painShockStage match {
       case PainShockStage.Recovering => 0.0
       case _                         => CasualtiesBelowConfig.ConsciousnessFloor.get()
     }
   }
 
-  private def currentPressure(vitals: VitalsComponent): ConsciousnessPressure = {
+  private def currentPressure(vitals: VitalsComponentImpl): ConsciousnessPressure = {
     hypoxiaPressure(
       vitals.bloodOxygen,
       CasualtiesBelowConfig.BloodOxygenHypoxiaThreshold.get(),
@@ -138,23 +147,27 @@ object ConsciousnessProgression {
 
   private def applyStep(
       player: ServerPlayer,
-      vitals: VitalsComponent,
-      step: ConsciousnessStep
+      vitals: VitalsComponentImpl,
+      step: ConsciousnessStep,
+      cause: Identifier
   ): Boolean = {
     val previousConsciousness = vitals.consciousness
     val previousUnconscious = vitals.unconscious
-    vitals.applyConsciousnessState(step.consciousness, step.unconscious)
+    VitalsMutations.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
 
     if (step.unconscious != previousUnconscious) {
       if (step.unconscious) Unconsciousness.onEntered(player)
       ConsciousnessStateChangeCallback.EVENT
         .invoker()
         .onConsciousnessStateChange(
-          ConsciousnessStateChangeContext(
+          new ConsciousnessStateChangeContext(
             player,
+            previousConsciousness,
+            step.consciousness,
             previousUnconscious,
             step.unconscious,
-            step.consciousness
+            vitals.painShockStage,
+            cause
           )
         )
     }

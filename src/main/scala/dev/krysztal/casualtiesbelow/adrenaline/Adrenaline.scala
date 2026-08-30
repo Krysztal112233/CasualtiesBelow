@@ -4,11 +4,17 @@ import java.lang.Boolean as JBoolean
 import java.util.Collections
 import java.util.WeakHashMap
 
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedCallback
+import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedContext
+import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Server authority for the temporary adrenaline reserve and its post-stimulus grace window.
@@ -29,8 +35,8 @@ object Adrenaline {
   /** Adds one configured rule amount and refreshes grace. Returns whether either server state value
     * changed. The reserve change is batched into InjuryProgression's single vitals sync.
     */
-  def grant(player: ServerPlayer, amount: Double): Boolean = {
-    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+  def grant(player: ServerPlayer, amount: Double, cause: Identifier): Boolean = {
+    val vitals = ComponentAccess.vitals(player)
     val previous = storedState(vitals)
     val next = grantState(
       previous,
@@ -39,7 +45,10 @@ object Adrenaline {
       CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get()
     )
     applyState(vitals, next)
-    if (next.amount != previous.amount) DirtyPlayers.add(player)
+    if (next.amount != previous.amount) {
+      DirtyPlayers.add(player)
+      emitAmountChange(player, previous.amount, next.amount, cause)
+    }
     next != previous
   }
 
@@ -47,7 +56,7 @@ object Adrenaline {
     * sentinel described in the class documentation. Returns a throttled client-sync hint: integer
     * reserve crossings and the final transition to zero, never hidden grace-only changes.
     */
-  def tick(vitals: VitalsComponent): Boolean = {
+  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     val rawAmount = vitals.adrenaline
     val previous = storedState(vitals)
     val next = advanceState(
@@ -56,6 +65,9 @@ object Adrenaline {
       CasualtiesBelowConfig.AdrenalineDecayPerTick.get()
     )
     applyState(vitals, next)
+    if (next.amount != previous.amount) {
+      emitAmountChange(player, previous.amount, next.amount, PhysiologyChangeCause.AdrenalineDecay)
+    }
 
     rawAmount != previous.amount ||
     math.floor(previous.amount) != math.floor(next.amount) ||
@@ -65,7 +77,11 @@ object Adrenaline {
   /** Debug/admin edit. A positive value represents a fresh stimulus and receives a full grace
     * window; zero clears both fields. The caller owns immediate shock reconciliation and sync.
     */
-  def applyAuthoritativeEdit(vitals: VitalsComponent, requestedAmount: Double): Boolean = {
+  def applyAuthoritativeEdit(
+      player: ServerPlayer,
+      vitals: VitalsComponentImpl,
+      requestedAmount: Double
+  ): Boolean = {
     val previous = storedState(vitals)
     val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.MaxAdrenaline.get())
     val next =
@@ -76,10 +92,19 @@ object Adrenaline {
         )
       } else AdrenalineState.Empty
     applyState(vitals, next)
+    if (next.amount != previous.amount) {
+      emitAmountChange(player, previous.amount, next.amount, PhysiologyChangeCause.AdminEdit)
+    }
     next != previous
   }
 
-  def reset(vitals: VitalsComponent): Unit = applyState(vitals, AdrenalineState.Empty)
+  def reset(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
+    val previous = storedState(vitals)
+    applyState(vitals, AdrenalineState.Empty)
+    if (previous.amount != 0.0) {
+      emitAmountChange(player, previous.amount, 0.0, PhysiologyChangeCause.Reset)
+    }
+  }
 
   /** Finite, config-bounded server value used by the pain-shock threshold calculation. */
   def currentAmount(vitals: VitalsComponent): Double =
@@ -173,13 +198,29 @@ object Adrenaline {
     if (amount > 0.0) AdrenalineState(amount, 0) else AdrenalineState.Empty
   }
 
-  private def storedState(vitals: VitalsComponent): AdrenalineState =
-    normalizeStoredState(vitals.adrenaline, vitals.adrenalineGraceTicks)
+  private def storedState(vitals: VitalsComponentImpl): AdrenalineState =
+    normalizeStoredState(vitals.adrenaline, VitalsMutations.adrenalineGraceTicks(vitals))
 
-  private def applyState(vitals: VitalsComponent, state: AdrenalineState): Unit = {
-    if (vitals.adrenaline != state.amount || vitals.adrenalineGraceTicks != state.graceTicks) {
-      vitals.applyAdrenalineState(state.amount, state.graceTicks)
+  private def applyState(vitals: VitalsComponentImpl, state: AdrenalineState): Unit = {
+    if (
+      vitals.adrenaline != state.amount ||
+      VitalsMutations.adrenalineGraceTicks(vitals) != state.graceTicks
+    ) {
+      VitalsMutations.applyAdrenalineState(vitals, state.amount, state.graceTicks)
     }
+  }
+
+  private def emitAmountChange(
+      player: ServerPlayer,
+      previousAmount: Double,
+      amount: Double,
+      cause: Identifier
+  ): Unit = {
+    AdrenalineChangedCallback.EVENT
+      .invoker()
+      .onAdrenalineChanged(
+        new AdrenalineChangedContext(player, previousAmount, amount, cause)
+      )
   }
 
   private def normalizeAmount(amount: Double, maximum: Double): Double = {

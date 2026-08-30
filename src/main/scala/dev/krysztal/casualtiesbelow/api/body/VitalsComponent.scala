@@ -1,7 +1,6 @@
 package dev.krysztal.casualtiesbelow.api.body
 
-import org.ladysnake.cca.api.v3.component.CopyableComponent
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
+import org.ladysnake.cca.api.v8.component.CardinalComponent
 
 /** Whole-player vitals: immune health, consciousness, hidden pain-shock load and phase, temporary
   * adrenaline, blood oxygen, blood volume, hidden terminal-hypoxia exposure and totem hemostasis,
@@ -13,61 +12,19 @@ import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
   * fully oxygenated player rather than a clinical saturation percentage: less blood lowers how much
   * oxygen the body can carry.
   *
-  * `Double` rather than `Float` for the same reason as [[LimbStats]]: per-tick accumulation
-  * precision.
+  * `Double` rather than `Float` preserves per-tick accumulation precision.
   */
-trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSyncedComponent {
-  var immuneHealth: Double
-
-  /** Read-only outside the centralized consciousness authority; the scalar and latch always mutate
-    * as one reconciled state.
-    */
+trait VitalsComponent extends CardinalComponent {
+  def immuneHealth: Double
   def consciousness: Double
   def unconscious: Boolean
-
-  /** Package-internal mutation hook used only by the centralized consciousness authority. The
-    * scalar and latch always mutate as one reconciled state.
-    */
-  private[casualtiesbelow] def applyConsciousnessState(
-      consciousness: Double,
-      unconscious: Boolean
-  ): Unit
-
-  /** Hidden whole-body load and discrete phase owned by the pain-shock progression authority. */
   def painShockLoad: Double
   def painShockStage: PainShockStage
-
-  private[casualtiesbelow] def applyPainShockState(
-      load: Double,
-      stage: PainShockStage
-  ): Unit
-
-  /** Temporary reserve used only to raise the pain-shock collapse threshold. The hidden grace timer
-    * is kept package-internal so integrations cannot treat it as a second public vital.
-    */
   def adrenaline: Double
-  private[casualtiesbelow] def adrenalineGraceTicks: Int
-
-  private[casualtiesbelow] def applyAdrenalineState(
-      amount: Double,
-      graceTicks: Int
-  ): Unit
-
-  var bloodOxygen: Double
-  var bloodVolume: Double
-
-  /** Consecutive terminal-exposure ticks while oxygen is zero and breathing remains blocked. */
-  def hypoxiaExposureTicks: Int
-
-  private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit
-
-  /** Remaining ticks of the hidden, server-authoritative post-totem hemostasis window. */
-  def totemHemostasisTicks: Int
-
-  private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit
-
-  var sepsis: Double
-  var discomfort: Double
+  def bloodOxygen: Double
+  def bloodVolume: Double
+  def sepsis: Double
+  def discomfort: Double
 }
 
 object VitalsComponent {

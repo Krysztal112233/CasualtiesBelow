@@ -1,27 +1,28 @@
 package dev.krysztal.casualtiesbelow.api.event
 
+import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
 
-/** Context for one server-authoritative unconsciousness transition.
-  *
-  * Carried as an object so future transition metadata can be added without changing listener
-  * signatures. This event is observational and cannot cancel the physiological state change.
-  */
-final case class ConsciousnessStateChangeContext(
-    player: ServerPlayer,
-    wasUnconscious: Boolean,
-    isUnconscious: Boolean,
-    consciousness: Double
+import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+
+/** One server-authoritative transition into or out of unconsciousness. */
+final class ConsciousnessStateChangeContext(
+    val player: ServerPlayer,
+    val previousConsciousness: Double,
+    val consciousness: Double,
+    val wasUnconscious: Boolean,
+    val isUnconscious: Boolean,
+    val painShockStage: PainShockStage,
+    val cause: Identifier
 )
 
-/** Fired once after a player actually enters unconsciousness or wakes from it.
+/** Fired after a player actually enters unconsciousness or wakes from it.
   *
-  * Server-side only. Ordinary component loading, lossless copying, and fresh death-respawn
-  * construction do not fire this event. Explicit recovery resets do fire when they wake the player.
-  * Listeners must not mutate the player's vitals component re-entrantly.
+  * Component loading, component copying, and fresh construction do not fire this event. It is
+  * observational; listeners must not mutate the player's vitals re-entrantly.
   */
 trait ConsciousnessStateChangeCallback {
   def onConsciousnessStateChange(context: ConsciousnessStateChangeContext): Unit

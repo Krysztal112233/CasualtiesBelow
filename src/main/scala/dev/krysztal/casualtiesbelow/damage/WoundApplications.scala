@@ -13,33 +13,32 @@ import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
-import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.api.wound.ClassifiedWoundRule
-import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
-import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
-import dev.krysztal.casualtiesbelow.api.wound.HitLocation
-import dev.krysztal.casualtiesbelow.api.wound.HitLocationTargetData
-import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.PairedImpactApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.ResolvedWoundApplication
-import dev.krysztal.casualtiesbelow.api.wound.ResolvedWoundContribution
-import dev.krysztal.casualtiesbelow.api.wound.ScatterApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.SpillImpactData
-import dev.krysztal.casualtiesbelow.api.wound.WeightedTargetData
-import dev.krysztal.casualtiesbelow.api.wound.WoundApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.WoundSeverityPolicy
-import dev.krysztal.casualtiesbelow.api.wound.WoundTargetData
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
+import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
+import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.HitLocationTargetData
+import dev.krysztal.casualtiesbelow.data.schema.LocalizedApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.PairedImpactApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.ScatterApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.SpillImpactData
+import dev.krysztal.casualtiesbelow.data.schema.WeightedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.WoundApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.WoundSeverityPolicy
+import dev.krysztal.casualtiesbelow.data.schema.WoundTargetData
+import dev.krysztal.casualtiesbelow.internal.data.ClassifiedWoundRule
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.data.HitLocation
+import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundApplication
+import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundContribution
 
 /** Executes the typed applications of one classified damage event. All body mutation still passes
-  * through [[LimbInjuries]], preserving per-limb armor, jitter, callbacks, and batched sync.
+  * through [[LimbInjuryService]], preserving per-limb armor, jitter, callbacks, and batched sync.
   */
 object WoundApplications {
 
@@ -242,7 +241,7 @@ object WoundApplications {
       wound.profile,
       context.gameplayData
     )
-    LimbInjuries.applyWithPainMultiplier(
+    LimbInjuryService.applyWithPainMultiplier(
       context.player,
       part,
       context.source,
@@ -350,10 +349,10 @@ object WoundApplications {
 
     val step = selected.get
     val current = CasualtiesBelowComponents.Body.get(context.player).stats(part)
-    if (current.fractureRecoveryTicks.isDefined) return
+    if (current.fractureRecoveryTicks.isPresent) return
     if (step.condition == LimbCondition.Dislocation && current.dislocated) return
 
-    LimbInjuries.applyWithPainMultiplier(
+    LimbInjuryService.applyWithPainMultiplier(
       context.player,
       part,
       context.source,

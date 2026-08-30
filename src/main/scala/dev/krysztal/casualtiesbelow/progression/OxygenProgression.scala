@@ -5,6 +5,8 @@ import net.minecraft.world.level.gamerules.GameRules
 
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Couples vanilla breath, in-wall suffocation, and custom blood volume into blood oxygen.
@@ -25,7 +27,7 @@ object OxygenProgression {
     */
   private[progression] def tick(
       player: ServerPlayer,
-      vitals: VitalsComponent
+      vitals: VitalsComponentImpl
   ): OxygenProgressionResult = {
     val inWall = player.isInWall
     val exhaustedAir =
@@ -48,7 +50,10 @@ object OxygenProgression {
     val breathingBlocked = inWall || exhaustedAir
     val boundedDeprivationRate = finiteNonNegative(deprivationRate)
     val previousOxygen = vitals.bloodOxygen
-    vitals.bloodOxygen = nextBloodOxygen(vitals, breathingBlocked, boundedDeprivationRate)
+    VitalsMutations.setBloodOxygen(
+      vitals,
+      nextBloodOxygen(vitals, breathingBlocked, boundedDeprivationRate)
+    )
     OxygenProgressionResult(
       changed = !same(previousOxygen, vitals.bloodOxygen),
       breathingBlocked = breathingBlocked,

@@ -6,11 +6,11 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.damage.DamageMatcher
+import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 
 final case class ClassifiedAdrenalineRule(ruleId: Identifier, amount: Double)
 
@@ -55,7 +55,7 @@ object AdrenalineRules {
     if (vitals.unconscious) return false
 
     classify(player.level(), player, source, store).exists(rule =>
-      Adrenaline.grant(player, rule.amount)
+      Adrenaline.grant(player, rule.amount, rule.ruleId)
     )
   }
 

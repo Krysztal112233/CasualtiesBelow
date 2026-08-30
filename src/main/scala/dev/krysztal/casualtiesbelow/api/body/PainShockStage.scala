@@ -1,5 +1,9 @@
 package dev.krysztal.casualtiesbelow.api.body
 
+import java.util.Optional
+
+import scala.jdk.OptionConverters.*
+
 /** Server-authored phase of one pain-shock episode.
   *
   * [[Stable]] accumulates hidden shock load without changing consciousness. Adrenaline can hold a
@@ -11,14 +15,13 @@ package dev.krysztal.casualtiesbelow.api.body
   */
 enum PainShockStage(val id: String) {
   case Stable extends PainShockStage("stable")
+  case Deferred extends PainShockStage("deferred")
   case Collapsed extends PainShockStage("collapsed")
   case Recovering extends PainShockStage("recovering")
-  // Appended to retain the ordinals of the three pre-adrenaline public enum cases.
-  case Deferred extends PainShockStage("deferred")
 }
 
 object PainShockStage {
   private val ById: Map[String, PainShockStage] = values.map(stage => stage.id -> stage).toMap
 
-  def byId(id: String): Option[PainShockStage] = ById.get(id)
+  def fromId(id: String): Optional[PainShockStage] = ById.get(id).toJava
 }

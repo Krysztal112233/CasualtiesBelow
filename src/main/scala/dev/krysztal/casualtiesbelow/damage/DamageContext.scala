@@ -4,7 +4,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 
 /** Immutable provenance shared by every application produced from one classified damage event. */
 private[casualtiesbelow] final case class DamageContext(

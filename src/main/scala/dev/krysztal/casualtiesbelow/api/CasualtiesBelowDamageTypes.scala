@@ -6,8 +6,6 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.level.Level
 
-import dev.krysztal.casualtiesbelow.CasualtiesBelow
-
 /** The mod's own damage types, registered as datapack JSON under
   * `data/casualtiesbelow/damage_type/`.
   */
@@ -19,26 +17,26 @@ object CasualtiesBelowDamageTypes {
     * or hurt cooldown, but vanilla death protection may still provide one rescue window.
     */
   val BloodLoss: ResourceKey[DamageType] =
-    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("blood_loss"))
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("blood_loss"))
 
   /** Fatal sepsis, dealt when sepsis compresses the effective blood volume cap to zero. Same
     * gear/effect/cooldown bypasses as [[BloodLoss]], plus `bypasses_invulnerability`, so death
     * protection cannot rescue it.
     */
   val Sepsis: ResourceKey[DamageType] =
-    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("sepsis"))
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("sepsis"))
 
   /** Fatal terminal hypoxia after sustained zero oxygen while breathing remains blocked. It has the
     * same gear/effect/cooldown bypasses as blood loss and remains death-protection eligible.
     */
   val Hypoxia: ResourceKey[DamageType] =
-    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("hypoxia"))
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("hypoxia"))
 
   /** Fatal starvation when an accepted vanilla food pulse drains blood to zero on Hard. It has the
     * same gear/effect/cooldown bypasses as blood loss and remains death-protection eligible.
     */
   val Starvation: ResourceKey[DamageType] =
-    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelow.ofIdentifier("starvation"))
+    ResourceKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("starvation"))
 
   /** A sourceless blood-loss damage instance. */
   def bloodLoss(level: Level): DamageSource =

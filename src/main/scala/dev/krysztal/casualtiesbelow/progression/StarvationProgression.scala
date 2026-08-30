@@ -10,8 +10,8 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.damagesource.DamageTypes
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Translates accepted vanilla starvation pulses into bounded blood loss.
@@ -63,7 +63,7 @@ object StarvationProgression {
     */
   private[progression] def consume(
       player: ServerPlayer,
-      vitals: VitalsComponent,
+      vitals: VitalsComponentImpl,
       maximum: Double
   ): StarvationResult = {
     val damage = queuedDamage.remove(player.getUUID).getOrElse(0.0)

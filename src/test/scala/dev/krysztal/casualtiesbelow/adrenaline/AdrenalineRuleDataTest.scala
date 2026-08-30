@@ -6,8 +6,8 @@ import net.minecraft.SharedConstants
 import net.minecraft.resources.Identifier
 import net.minecraft.server.Bootstrap
 
-import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
-import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
+import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.data.schema.WoundMatchData
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

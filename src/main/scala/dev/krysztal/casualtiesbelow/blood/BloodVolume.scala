@@ -1,6 +1,8 @@
 package dev.krysztal.casualtiesbelow.blood
 
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Bounded mutations of the server-authoritative blood volume.
@@ -31,21 +33,21 @@ object BloodVolume {
   }
 
   /** Reconciles blood into `[0, maximum]`; returns whether the stored value changed. */
-  def clamp(vitals: VitalsComponent, maximum: Double): Boolean = {
+  def clamp(vitals: VitalsComponentImpl, maximum: Double): Boolean = {
     val boundedMaximum = nonNegative(maximum)
     val next = normalizedVolume(vitals.bloodVolume, boundedMaximum)
     if (same(vitals.bloodVolume, next)) return false
 
-    vitals.bloodVolume = next
+    VitalsMutations.setBloodVolume(vitals, next)
     true
   }
 
   /** Restores a finite non-negative amount without exceeding `maximum`; returns the actual gain. */
-  def restore(vitals: VitalsComponent, amount: Double, maximum: Double): Double = {
+  def restore(vitals: VitalsComponentImpl, amount: Double, maximum: Double): Double = {
     val boundedMaximum = nonNegative(maximum)
     val current = normalizedVolume(vitals.bloodVolume, boundedMaximum)
     val next = (current + mutationAmount(amount)).min(boundedMaximum)
-    vitals.bloodVolume = next
+    VitalsMutations.setBloodVolume(vitals, next)
     next - current
   }
 
@@ -53,7 +55,7 @@ object BloodVolume {
     * loss. The floor is normalized into `[0, maximum]` and never raises blood already below it.
     */
   def drain(
-      vitals: VitalsComponent,
+      vitals: VitalsComponentImpl,
       amount: Double,
       maximum: Double,
       floor: Double = 0.0
@@ -63,7 +65,7 @@ object BloodVolume {
     val current = normalizedVolume(vitals.bloodVolume, boundedMaximum)
     val effectiveFloor = boundedFloor.min(current)
     val next = (current - mutationAmount(amount)).max(effectiveFloor)
-    vitals.bloodVolume = next
+    VitalsMutations.setBloodVolume(vitals, next)
     current - next
   }
 

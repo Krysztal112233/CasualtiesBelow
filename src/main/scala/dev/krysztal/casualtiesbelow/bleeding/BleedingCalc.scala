@@ -2,7 +2,7 @@ package dev.krysztal.casualtiesbelow.bleeding
 
 import net.minecraft.util.RandomSource
 
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** External-wound and bleeding calculations shared by damage attribution and injury progression.
@@ -20,7 +20,7 @@ object BleedingCalc {
     * damage is not a wound and does nothing.
     */
   def applyWound(
-      stats: LimbStats,
+      stats: MutableLimbState,
       skinDamage: Double,
       bleedingRate: Double,
       random: RandomSource
@@ -38,7 +38,7 @@ object BleedingCalc {
   /** Removes a fraction of the limb's current external bleeding rate. The defensive clamp keeps
     * internal callers safe even though datapack codecs already constrain the fraction to `(0, 1]`.
     */
-  def applyHemostasis(stats: LimbStats, reductionFraction: Double): Unit = {
+  def applyHemostasis(stats: MutableLimbState, reductionFraction: Double): Unit = {
     val retainedFraction = 1.0 - reductionFraction.max(0.0).min(1.0)
     stats.externalBleedingRate = (stats.externalBleedingRate * retainedFraction).max(0.0)
   }
@@ -49,7 +49,7 @@ object BleedingCalc {
     */
   def cap(skinIntegrity: Double): Double = {
     val skinDamageFraction =
-      (1.0 - skinIntegrity / LimbStats.MaxValue).max(0.0).min(1.0)
+      (1.0 - skinIntegrity / MutableLimbState.MaxValue).max(0.0).min(1.0)
     CasualtiesBelowConfig.MaxExternalBleedingRate.get() * skinDamageFraction
   }
 }

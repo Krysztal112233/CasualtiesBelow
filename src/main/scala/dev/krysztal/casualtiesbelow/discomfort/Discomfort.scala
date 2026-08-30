@@ -18,12 +18,14 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Probability distribution used when sampling a food's discomfort dose around its mean. */
 enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
@@ -88,7 +90,9 @@ object Discomfort {
       case serverPlayer: ServerPlayer =>
         val store = GameplayDataStores.server(serverPlayer.level().getServer)
         (GameplayDataSnapshot.capture(store), store)
-      case _ => (GameplayDataSnapshot.current, GameplayDataStores.client)
+      case _ =>
+        val snapshot = GameplayDataSnapshot.current
+        (snapshot, snapshot.gameplayData)
     }
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     if (vitals.discomfort < data.refusalThreshold) return true
@@ -105,7 +109,7 @@ object Discomfort {
       case None                    => ()
       case Some(mean) if mean <= 0 => ()
       case Some(mean)              =>
-        val vitals = CasualtiesBelowComponents.Vitals.get(player)
+        val vitals = ComponentAccess.vitals(player)
         var amount = sample(mean, player.getRandom)
         if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
           amount *= CasualtiesBelowConfig.DiscomfortNauseousMultiplier.get()
@@ -119,9 +123,11 @@ object Discomfort {
         ) {
           amount *= CasualtiesBelowConfig.DiscomfortPoorConditionMultiplier.get()
         }
-        vitals.discomfort =
+        VitalsMutations.setDiscomfort(
+          vitals,
           (vitals.discomfort + amount).min(CasualtiesBelowConfig.MaxDiscomfort.get())
-        CasualtiesBelowComponents.Vitals.sync(player)
+        )
+        VitalsMutations.syncNow(player)
     }
   }
 
@@ -138,7 +144,7 @@ object Discomfort {
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
-    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    val vitals = ComponentAccess.vitals(player)
 
     // Decay: fast while merely queasy ("tough it out"), slow once actually sick, so high
     // discomfort asks for active resolution (or a vomit) instead of being waited out.
@@ -149,8 +155,8 @@ object Discomfort {
         } else {
           CasualtiesBelowConfig.DiscomfortDecayHighPerSecond.get()
         }
-      vitals.discomfort = (vitals.discomfort - rate / 20.0).max(0.0)
-      if (syncTick) CasualtiesBelowComponents.Vitals.sync(player)
+      VitalsMutations.setDiscomfort(vitals, (vitals.discomfort - rate / 20.0).max(0.0))
+      if (syncTick) VitalsMutations.syncNow(player)
     }
 
     if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
@@ -162,7 +168,7 @@ object Discomfort {
     }
   }
 
-  private def vomit(player: ServerPlayer, vitals: VitalsComponent): Unit = {
+  private def vomit(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val food = player.getFoodData
     food.setFoodLevel(
       (food.getFoodLevel - CasualtiesBelowConfig.DiscomfortVomitHungerPenalty.get()).max(0)
@@ -173,7 +179,10 @@ object Discomfort {
         .floatValue)
         .max(0.0f)
     )
-    vitals.discomfort = (vitals.discomfort - sampleVomitRelief(player.getRandom)).max(0.0)
+    VitalsMutations.setDiscomfort(
+      vitals,
+      (vitals.discomfort - sampleVomitRelief(player.getRandom)).max(0.0)
+    )
     player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, VomitNauseaTicks, 1))
     player
       .level()
@@ -185,7 +194,7 @@ object Discomfort {
         1.0f,
         0.8f
       )
-    CasualtiesBelowComponents.Vitals.sync(player)
+    VitalsMutations.syncNow(player)
   }
 
   private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {

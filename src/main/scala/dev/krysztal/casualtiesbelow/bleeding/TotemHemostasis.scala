@@ -2,9 +2,10 @@ package dev.krysztal.casualtiesbelow.bleeding
 
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Physiological blood adapter after vanilla death protection rescues blood loss or starvation.
@@ -20,7 +21,7 @@ object TotemHemostasis {
     * has already consumed the protection item and applied its normal effects before this runs.
     */
   def activate(player: ServerPlayer): Unit = {
-    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    val vitals = ComponentAccess.vitals(player)
     val effectiveMaxBlood = BloodVolume.effectiveMaximum(vitals)
     val restoreFraction =
       CasualtiesBelowConfig.TotemBloodRestoreFraction
@@ -30,16 +31,16 @@ object TotemHemostasis {
         .min(1.0)
     val restoredBlood = effectiveMaxBlood * restoreFraction
     BloodVolume.restore(vitals, restoredBlood, effectiveMaxBlood)
-    vitals.applyTotemHemostasisTicks(configuredDurationTicks)
-    CasualtiesBelowComponents.Vitals.sync(player)
+    VitalsMutations.applyTotemHemostasisTicks(vitals, configuredDurationTicks)
+    VitalsMutations.syncNow(player)
   }
 
   /** Multiplier applied to this tick's summed external bleeding. At activation it is `1 - initial
     * reduction`, then approaches one linearly as the timer expires.
     */
-  def bleedingMultiplier(vitals: VitalsComponent): Double = {
+  def bleedingMultiplier(vitals: VitalsComponentImpl): Double = {
     val duration = configuredDurationTicks
-    val remaining = normalizeRemainingTicks(vitals.totemHemostasisTicks)
+    val remaining = normalizeRemainingTicks(VitalsMutations.totemHemostasisTicks(vitals))
     if (duration <= 0 || remaining <= 0) return 1.0
 
     val initialReduction =
@@ -48,13 +49,13 @@ object TotemHemostasis {
   }
 
   /** Advances the hidden countdown without forcing a client sync. */
-  def tick(vitals: VitalsComponent): Unit = {
-    val remaining = normalizeRemainingTicks(vitals.totemHemostasisTicks)
-    vitals.applyTotemHemostasisTicks((remaining - 1).max(0))
+  def tick(vitals: VitalsComponentImpl): Unit = {
+    val remaining = normalizeRemainingTicks(VitalsMutations.totemHemostasisTicks(vitals))
+    VitalsMutations.applyTotemHemostasisTicks(vitals, (remaining - 1).max(0))
   }
 
-  def reset(vitals: VitalsComponent): Unit = {
-    vitals.applyTotemHemostasisTicks(0)
+  def reset(vitals: VitalsComponentImpl): Unit = {
+    VitalsMutations.applyTotemHemostasisTicks(vitals, 0)
   }
 
   private[casualtiesbelow] def normalizeRemainingTicks(ticks: Int): Int = {

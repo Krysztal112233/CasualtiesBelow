@@ -1,10 +1,11 @@
 package dev.krysztal.casualtiesbelow.immune
 
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.EntityTypeTags
-import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.event.LimbInjuryCallback
+import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Zombie-family hits drain immune health, once per hit with no cooldown: getting mobbed is
@@ -12,33 +13,32 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   * feedback by design: only external attacks drain immune health — infections, bleeding and pain
   * never do, so the infection loop cannot spiral.
   *
-  * Implemented as a [[LimbInjuryCallback]] listener: the drain happens alongside the injury, and
-  * this listener never cancels it.
+  * Implemented as a [[TraumaStartedCallback]] listener so scatter, paired impacts, conditions, and
+  * multiple profiles from one hit cannot multiply the drain.
   */
 object ZombieAttackImmuneDrain {
 
   def register(): Unit =
-    LimbInjuryCallback.EVENT.register { context =>
+    TraumaStartedCallback.EVENT.register { context =>
       val isZombieHit =
         Option(context.source.getEntity).exists(_.is(EntityTypeTags.ZOMBIES))
-      if (isZombieHit) {
+      if (context.woundsAllowed && isZombieHit) {
         drain(context.player)
       }
-      true
     }
 
   /** Drains immune health by the configured amount rolled with proportional jitter (`drain × (1 ±
     * jitter)`), floored at zero.
     */
-  private def drain(player: Player): Unit = {
-    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+  private def drain(player: ServerPlayer): Unit = {
+    val vitals = ComponentAccess.vitals(player)
     val base = CasualtiesBelowConfig.ZombieHitImmuneDrain.get()
     val jitter = CasualtiesBelowConfig.ZombieHitImmuneDrainJitter.get()
     val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter
     val next = (vitals.immuneHealth - base * roll).max(0.0)
     if (next == vitals.immuneHealth) return
 
-    vitals.immuneHealth = next
-    CasualtiesBelowComponents.Vitals.sync(player)
+    VitalsMutations.setImmuneHealth(vitals, next)
+    VitalsMutations.syncNow(player)
   }
 }

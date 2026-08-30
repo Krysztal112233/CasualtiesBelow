@@ -7,7 +7,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 
-import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
+import dev.krysztal.casualtiesbelow.data.schema.WoundMatchData
 
 /** Shared evaluator for datapack damage matchers. Wound and adrenaline rules deliberately share
   * this language while keeping independent priority chains and event effects.

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.sync
+package dev.krysztal.casualtiesbelow.internal.sync
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Failure
@@ -9,9 +9,9 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.server.MinecraftServer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -99,50 +99,55 @@ object GameplayDataSnapshot {
 
   private val CurrentSchemaVersion = 2
 
-  /** The latest snapshot received from the server, if any. Cleared on disconnect. */
-  @volatile private var synced: Option[GameplayDataSnapshot] = None
+  private final case class ClientState(
+      rawJson: Option[String],
+      snapshot: Option[GameplayDataSnapshot]
+  )
 
-  /** The raw JSON of the latest received payload, kept so it can be re-decoded when tag contents
-    * arrive after the payload (see [[rereceive]]). Cleared on disconnect.
+  private val EmptyClientState = ClientState(None, None)
+
+  /** The raw payload and decoded snapshot are published together so readers can never observe
+    * values belonging to different server resource generations.
     */
-  @volatile private var lastReceivedJson: Option[String] = None
+  @volatile private var clientState: ClientState = EmptyClientState
 
   /** What client-side displays and prediction should read: the server's snapshot when connected,
-    * else the local configuration. Server logic must NOT read this: `synced` belongs to the logical
-    * client (singleplayer shares the JVM), so the server always captures from its installed
-    * resource generation instead.
+    * else the local configuration. Server logic must NOT read this client state (singleplayer
+    * shares the JVM), so the server always captures from its installed resource generation instead.
     */
-  def current: GameplayDataSnapshot = synced.getOrElse(capture(GameplayDataStore.Empty))
+  def current: GameplayDataSnapshot = {
+    clientState.snapshot.getOrElse(capture(GameplayDataStore.Empty))
+  }
 
   /** Decodes and stores a snapshot received from the server. Malformed payloads are logged and
     * ignored, keeping the previous config and per-object data together. The raw payload is kept
     * either way so [[rereceive]] can retry it against fresher tag contents.
     */
-  def receive(json: String, lookup: HolderLookup.Provider): Unit = {
-    lastReceivedJson = Some(json)
+  def receive(json: String, lookup: HolderLookup.Provider): Unit = this.synchronized {
+    val previous = clientState
     Try(fromJson(json, lookup)) match {
-      case Success(snapshot) =>
-        GameplayDataStores.setSynced(snapshot.gameplayData)
-        synced = Some(snapshot)
-      case Failure(e) =>
-        CasualtiesBelow.Logger.warn("Ignoring malformed gameplay data sync: {}", e.getMessage)
+      case Success(snapshot) => clientState = ClientState(Some(json), Some(snapshot))
+      case Failure(error)    =>
+        clientState = previous.copy(rawJson = Some(json))
+        CasualtiesBelow.Logger.warn(
+          "Ignoring malformed gameplay data sync; retaining the previous complete snapshot: {}",
+          error.getMessage
+        )
     }
   }
 
   /** Re-decodes the latest received payload against the given (fresh) registry access. On a
     * dedicated-server `/reload`, the vanilla tag packet is processed (and `TAGS_LOADED` fires)
-    * after this payload arrives: entries referencing tag keys ADDED by that reload were skipped on
-    * the first pass and decode on this one — before the following recipe packet triggers JEI's
-    * rebuild. No-op when nothing was received (e.g. before join or after disconnect).
+    * after this payload arrives: a payload referencing tag keys added by that reload is rejected as
+    * a whole on the first pass and can decode here before the following recipe packet triggers
+    * JEI's rebuild. No-op when nothing was received (e.g. before join or after disconnect).
     */
   def rereceive(lookup: HolderLookup.Provider): Unit = {
-    lastReceivedJson.foreach(receive(_, lookup))
+    clientState.rawJson.foreach(receive(_, lookup))
   }
 
-  def clearSynced(): Unit = {
-    synced = None
-    lastReceivedJson = None
-    GameplayDataStores.clearSynced()
+  def clearSynced(): Unit = this.synchronized {
+    clientState = EmptyClientState
   }
 
   /** Builds the authoritative snapshot from the server's installed resource generation. */
@@ -182,98 +187,77 @@ object GameplayDataSnapshot {
     )
   }
 
-  /** Decodes both current and older snapshots. Missing sections or fields use local state so a
-    * partial payload cannot break client prediction while connecting across a transition.
+  /** Decodes only the current complete snapshot shape. The mod has no released wire contract yet,
+    * so combining an incomplete payload with local values would only conceal a broken generation.
     */
   private def fromJson(
       json: String,
       lookup: HolderLookup.Provider
   ): GameplayDataSnapshot = {
-    val fallback = synced.getOrElse(capture(GameplayDataStore.Empty))
     val root = JsonParser.parseString(json).getAsJsonObject
-    val schemaVersion =
-      Option(root.get("schemaVersion")).map(_.getAsInt).getOrElse(1)
-    if (schemaVersion < 1 || schemaVersion > CurrentSchemaVersion) {
+    val schemaVersion = required(root, "schemaVersion").getAsInt
+    if (schemaVersion != CurrentSchemaVersion) {
       throw IllegalArgumentException(
         s"Unsupported gameplay data schema version $schemaVersion (current: $CurrentSchemaVersion)"
       )
     }
 
-    def section(name: String): Option[JsonObject] = {
-      Option(root.get(name)).filter(_.isJsonObject).map(_.getAsJsonObject)
+    def section(name: String): JsonObject = {
+      val value = required(root, name)
+      if (!value.isJsonObject) {
+        throw IllegalArgumentException(s"Gameplay data field '$name' must be an object")
+      }
+      value.getAsJsonObject
     }
-    def optDouble(section: Option[JsonObject], key: String, default: => Double): Double = {
-      section.flatMap(obj => Option(obj.get(key))).map(_.getAsDouble).getOrElse(default)
+
+    def requiredDouble(section: JsonObject, key: String): Double = {
+      required(section, key).getAsDouble
     }
-    def optString(section: Option[JsonObject], key: String, default: => String): String = {
-      section.flatMap(obj => Option(obj.get(key))).map(_.getAsString).getOrElse(default)
+
+    def requiredString(section: JsonObject, key: String): String = {
+      required(section, key).getAsString
     }
-    def optDoubles(
-        section: Option[JsonObject],
-        key: String,
-        default: => List[Double]
-    ): List[Double] = {
-      section
-        .flatMap(obj => Option(obj.getAsJsonArray(key)))
-        .map(_.asScala.map(_.getAsDouble).toList)
-        .filter(_.nonEmpty)
-        .getOrElse(default)
+
+    def requiredDoubles(section: JsonObject, key: String): List[Double] = {
+      val value = required(section, key)
+      if (!value.isJsonArray) {
+        throw IllegalArgumentException(s"Gameplay data field '$key' must be an array")
+      }
+      val values = value.getAsJsonArray.asScala.map(_.getAsDouble).toList
+      if (values.isEmpty) {
+        throw IllegalArgumentException(s"Gameplay data field '$key' must not be empty")
+      }
+      values
     }
 
     val vitals = section("vitals")
     val armor = section("armor")
     val discomfort = section("discomfort")
-    val gameplayData = GameplayDataStores.decode(section("data"), lookup, fallback.gameplayData)
+    val gameplayData = GameplayDataStores.decode(section("data"), lookup)
 
     GameplayDataSnapshot(
-      maxBloodVolume = optDouble(vitals, "maxBloodVolume", fallback.maxBloodVolume),
-      bloodOxygenHypoxiaThreshold = optDouble(
-        vitals,
-        "bloodOxygenHypoxiaThreshold",
-        fallback.bloodOxygenHypoxiaThreshold
-      ),
-      unconsciousWakeThreshold = optDouble(
-        vitals,
-        "unconsciousWakeThreshold",
-        fallback.unconsciousWakeThreshold
-      ),
-      shockCollapseThreshold = optDouble(
-        vitals,
-        "shockCollapseThreshold",
-        fallback.shockCollapseThreshold
-      ),
-      armorSkinFormula = optString(armor, "skinFormula", fallback.armorSkinFormula),
-      armorMuscleFormula = optString(armor, "muscleFormula", fallback.armorMuscleFormula),
-      maxDiscomfort = optDouble(discomfort, "maxValue", fallback.maxDiscomfort),
-      discomfortLevelMeans = optDoubles(
-        discomfort,
-        "levelMeans",
-        fallback.discomfortLevelMeans
-      ),
-      nauseaThreshold = optDouble(discomfort, "nausea", fallback.nauseaThreshold),
-      refusalThreshold = optDouble(discomfort, "refusal", fallback.refusalThreshold),
-      vomitChanceThreshold = optDouble(
-        discomfort,
-        "vomitChanceThreshold",
-        fallback.vomitChanceThreshold
-      ),
-      vomitMinChancePerTick = optDouble(
-        discomfort,
-        "vomitMinChancePerTick",
-        fallback.vomitMinChancePerTick
-      ),
-      vomitMaxChancePerTick = optDouble(
-        discomfort,
-        "vomitMaxChancePerTick",
-        fallback.vomitMaxChancePerTick
-      ),
-      vomitRelief = optDouble(discomfort, "vomitRelief", fallback.vomitRelief),
-      vomitReliefSpreadFraction = optDouble(
-        discomfort,
-        "vomitReliefSpreadFraction",
-        fallback.vomitReliefSpreadFraction
-      ),
+      maxBloodVolume = requiredDouble(vitals, "maxBloodVolume"),
+      bloodOxygenHypoxiaThreshold = requiredDouble(vitals, "bloodOxygenHypoxiaThreshold"),
+      unconsciousWakeThreshold = requiredDouble(vitals, "unconsciousWakeThreshold"),
+      shockCollapseThreshold = requiredDouble(vitals, "shockCollapseThreshold"),
+      armorSkinFormula = requiredString(armor, "skinFormula"),
+      armorMuscleFormula = requiredString(armor, "muscleFormula"),
+      maxDiscomfort = requiredDouble(discomfort, "maxValue"),
+      discomfortLevelMeans = requiredDoubles(discomfort, "levelMeans"),
+      nauseaThreshold = requiredDouble(discomfort, "nausea"),
+      refusalThreshold = requiredDouble(discomfort, "refusal"),
+      vomitChanceThreshold = requiredDouble(discomfort, "vomitChanceThreshold"),
+      vomitMinChancePerTick = requiredDouble(discomfort, "vomitMinChancePerTick"),
+      vomitMaxChancePerTick = requiredDouble(discomfort, "vomitMaxChancePerTick"),
+      vomitRelief = requiredDouble(discomfort, "vomitRelief"),
+      vomitReliefSpreadFraction = requiredDouble(discomfort, "vomitReliefSpreadFraction"),
       gameplayData = gameplayData
     )
+  }
+
+  private def required(objectValue: JsonObject, key: String): JsonElement = {
+    Option(objectValue.get(key)).getOrElse {
+      throw IllegalArgumentException(s"Missing gameplay data field '$key'")
+    }
   }
 }

@@ -1,13 +1,21 @@
-package dev.krysztal.casualtiesbelow.api.data
+package dev.krysztal.casualtiesbelow.internal.data
 
 import net.minecraft.server.packs.resources.PreparableReloadListener.SharedState
 
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.resource.v1.DataResourceLoader
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader
 import net.fabricmc.fabric.api.resource.v1.reloader.SimpleReloadListener
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.wound.WoundProfile as WoundProfileEntry
+import dev.krysztal.casualtiesbelow.api.event.GameplayDataReloadedCallback
+import dev.krysztal.casualtiesbelow.api.event.GameplayDataReloadedContext
+import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.WoundProfile as WoundProfileEntry
+import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
 
 /** One reload transaction for all datapack-defined gameplay data types. */
 object GameplayDataLoaders {
@@ -28,6 +36,13 @@ object GameplayDataLoaders {
     DataResourceLoader
       .get()
       .registerReloadListener(CasualtiesBelow.ofIdentifier("gameplay_data"), ReloadListener)
+    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register { (server, _, success) =>
+      if (success) {
+        GameplayDataReloadedCallback.EVENT
+          .invoker()
+          .onGameplayDataReloaded(new GameplayDataReloadedContext(server))
+      }
+    }
   }
 
   private object ReloadListener extends SimpleReloadListener[GameplayDataState] {

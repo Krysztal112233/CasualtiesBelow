@@ -26,42 +26,42 @@ import net.minecraft.world.item.Items
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
-import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
-import dev.krysztal.casualtiesbelow.api.data.FormulaSource
-import dev.krysztal.casualtiesbelow.api.data.HitLocationData
-import dev.krysztal.casualtiesbelow.api.data.WoundMatchData
-import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
-import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
-import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
-import dev.krysztal.casualtiesbelow.api.wound.ExactDamageType
-import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
-import dev.krysztal.casualtiesbelow.api.wound.HemostasisData
-import dev.krysztal.casualtiesbelow.api.wound.HitLocationTargetData
-import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.PairedImpactApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.PairedImpactData
-import dev.krysztal.casualtiesbelow.api.wound.ScatterApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.SpillImpactData
-import dev.krysztal.casualtiesbelow.api.wound.TaggedDamageType
-import dev.krysztal.casualtiesbelow.api.wound.WeightedTargetData
-import dev.krysztal.casualtiesbelow.api.wound.WoundApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.WoundContributionData
-import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
-import dev.krysztal.casualtiesbelow.api.wound.WoundSeverityPolicy
+import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
+import dev.krysztal.casualtiesbelow.data.schema.DamageTypeSelector
+import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.ExactDamageType
+import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.FormulaSource
+import dev.krysztal.casualtiesbelow.data.schema.HemostasisData
+import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.HitLocationTargetData
+import dev.krysztal.casualtiesbelow.data.schema.LocalizedApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.PairedImpactApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.PairedImpactData
+import dev.krysztal.casualtiesbelow.data.schema.ScatterApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.SpillImpactData
+import dev.krysztal.casualtiesbelow.data.schema.TaggedDamageType
+import dev.krysztal.casualtiesbelow.data.schema.WeightedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.WoundApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.WoundContributionData
+import dev.krysztal.casualtiesbelow.data.schema.WoundMatchData
+import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
+import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
+import dev.krysztal.casualtiesbelow.data.schema.WoundSeverityPolicy
 
 /** Built-in entries for the mod's keyed gameplay-data directories. */
 object CasualtiesBelowDataDefaults {
   val WoundProfiles: Map[Identifier, WoundProfile] = List(
-    "bite" -> WoundProfile(1.5, 2.0, 0.1, 4.0),
-    "cut" -> WoundProfile(2.0, 3.0, 0.2, 4.0),
-    "blunt" -> WoundProfile(0.0, 3.0, 0.0, 4.0),
-    "pierce" -> WoundProfile(3.0, 2.0, 0.15, 5.0),
-    "burn" -> WoundProfile(4.0, 2, 0.1, 2.0),
-    "prick" -> WoundProfile(1.5, 0.0, 0.05, 1.0),
-    "blast" -> WoundProfile(2.0, 2.0, 0.25, 6.0),
-    "fall" -> WoundProfile(4.0, 4.0, 0.5, 6.0)
+    "bite" -> WoundProfile.linear(1.5, 2.0, 0.1, 4.0),
+    "cut" -> WoundProfile.linear(2.0, 3.0, 0.2, 4.0),
+    "blunt" -> WoundProfile.linear(0.0, 3.0, 0.0, 4.0),
+    "pierce" -> WoundProfile.linear(3.0, 2.0, 0.15, 5.0),
+    "burn" -> WoundProfile.linear(4.0, 2, 0.1, 2.0),
+    "prick" -> WoundProfile.linear(1.5, 0.0, 0.05, 1.0),
+    "blast" -> WoundProfile.linear(2.0, 2.0, 0.25, 6.0),
+    "fall" -> WoundProfile.linear(4.0, 4.0, 0.5, 6.0)
   ).map((id, value) => entryId(id) -> value).toMap
 
   def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
@@ -383,7 +383,7 @@ object CasualtiesBelowDataDefaults {
 
   private def localized(
       profile: String,
-      target: dev.krysztal.casualtiesbelow.api.wound.WoundTargetData = HitLocationTargetData(
+      target: dev.krysztal.casualtiesbelow.data.schema.WoundTargetData = HitLocationTargetData(
         WoundRuleData.DefaultWeights
       ),
       hemostasis: Option[HemostasisData] = None

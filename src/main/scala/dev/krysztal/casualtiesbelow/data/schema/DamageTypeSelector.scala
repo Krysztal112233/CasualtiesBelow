@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.wound
+package dev.krysztal.casualtiesbelow.data.schema
 
 import scala.jdk.CollectionConverters.*
 import scala.util.Failure

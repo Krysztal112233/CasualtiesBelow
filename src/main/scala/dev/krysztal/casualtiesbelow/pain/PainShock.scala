@@ -1,9 +1,17 @@
 package dev.krysztal.casualtiesbelow.pain
 
+import net.minecraft.resources.Identifier
+import net.minecraft.server.level.ServerPlayer
+
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedCallback
+import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedContext
+import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Hidden pain-shock load and its discrete collapse/recovery lifecycle.
@@ -26,11 +34,15 @@ object PainShock {
   /** Advances load from current whole-body pain and reconciles the shock phase. Returns whether the
     * phase changed or stable load crossed an integer boundary and therefore requires a vitals sync.
     */
-  def tick(body: BodyComponent, vitals: VitalsComponent): Boolean = {
+  def tick(
+      player: ServerPlayer,
+      body: BodyComponent,
+      vitals: VitalsComponentImpl
+  ): Boolean = {
     val previousLoad = normalizeLoad(vitals.painShockLoad)
     val previousStage = vitals.painShockStage
     val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
-    applyLoad(vitals, previousLoad, nextLoad) ||
+    applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression) ||
     (isWarningStage(previousStage) && crossedInteger(previousLoad, nextLoad))
   }
 
@@ -38,7 +50,7 @@ object PainShock {
     * player, clamping residual load to the configured post-wake cap. Returns whether the phase
     * changed.
     */
-  def finishRecovery(vitals: VitalsComponent): Boolean = {
+  def finishRecovery(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     if (vitals.painShockStage != PainShockStage.Recovering || vitals.unconscious) {
       return false
     }
@@ -46,28 +58,63 @@ object PainShock {
     val wakeLoadCap =
       CasualtiesBelowConfig.ShockWakeLoadCap.get().doubleValue.max(0.0).min(MaxLoad)
     val retainedLoad = normalizeLoad(vitals.painShockLoad).min(wakeLoadCap)
-    vitals.applyPainShockState(retainedLoad, PainShockStage.Stable)
+    val previousLoad = normalizeLoad(vitals.painShockLoad)
+    val previousStage = vitals.painShockStage
+    VitalsMutations.applyPainShockState(vitals, retainedLoad, PainShockStage.Stable)
+    emitStageChange(
+      player,
+      previousStage,
+      PainShockStage.Stable,
+      previousLoad,
+      retainedLoad,
+      PhysiologyChangeCause.Recovery
+    )
     true
   }
 
   /** Authoritative debug edit. The old and new load values preserve the same directional threshold
     * semantics as physiological progression.
     */
-  def applyAuthoritativeEdit(vitals: VitalsComponent, requestedLoad: Double): Boolean = {
+  def applyAuthoritativeEdit(
+      player: ServerPlayer,
+      vitals: VitalsComponentImpl,
+      requestedLoad: Double
+  ): Boolean = {
     val previousLoad = normalizeLoad(vitals.painShockLoad)
-    applyLoad(vitals, previousLoad, normalizeLoad(requestedLoad))
+    applyLoad(
+      player,
+      vitals,
+      previousLoad,
+      normalizeLoad(requestedLoad),
+      PhysiologyChangeCause.AdminEdit
+    )
   }
 
   /** Reconciles a threshold-only change (for example an admin adrenaline edit) without inventing a
     * load direction. Collapsed/recovering episodes retain their existing direction memory.
     */
-  def reconcileAfterAdrenalineEdit(vitals: VitalsComponent): Boolean = {
+  def reconcileAfterAdrenalineEdit(
+      player: ServerPlayer,
+      vitals: VitalsComponentImpl
+  ): Boolean = {
     val load = normalizeLoad(vitals.painShockLoad)
-    applyLoad(vitals, load, load)
+    applyLoad(player, vitals, load, load, PhysiologyChangeCause.AdrenalineEdit)
   }
 
-  def resetHealthy(vitals: VitalsComponent): Unit = {
-    vitals.applyPainShockState(0.0, PainShockStage.Stable)
+  def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
+    val previousLoad = normalizeLoad(vitals.painShockLoad)
+    val previousStage = vitals.painShockStage
+    VitalsMutations.applyPainShockState(vitals, 0.0, PainShockStage.Stable)
+    if (previousStage != PainShockStage.Stable) {
+      emitStageChange(
+        player,
+        previousStage,
+        PainShockStage.Stable,
+        previousLoad,
+        0.0,
+        PhysiologyChangeCause.Reset
+      )
+    }
   }
 
   /** Normalizes persisted/copy state without firing consciousness events. */
@@ -120,9 +167,11 @@ object PainShock {
   ): (Double, PainShockStage) = (normalizeLoad(savedLoad), savedStage)
 
   private def applyLoad(
-      vitals: VitalsComponent,
+      player: ServerPlayer,
+      vitals: VitalsComponentImpl,
       previousLoad: Double,
-      nextLoad: Double
+      nextLoad: Double,
+      cause: Identifier
   ): Boolean = {
     val previousStage = vitals.painShockStage
     val baseThreshold = collapseThreshold
@@ -134,9 +183,34 @@ object PainShock {
     val nextStage =
       transition(previousStage, previousLoad, nextLoad, baseThreshold, effectiveThreshold)
     if (nextLoad != vitals.painShockLoad || nextStage != previousStage) {
-      vitals.applyPainShockState(nextLoad, nextStage)
+      VitalsMutations.applyPainShockState(vitals, nextLoad, nextStage)
+    }
+    if (nextStage != previousStage) {
+      emitStageChange(player, previousStage, nextStage, previousLoad, nextLoad, cause)
     }
     nextStage != previousStage
+  }
+
+  private def emitStageChange(
+      player: ServerPlayer,
+      previousStage: PainShockStage,
+      stage: PainShockStage,
+      previousLoad: Double,
+      load: Double,
+      cause: Identifier
+  ): Unit = {
+    PainShockStageChangedCallback.EVENT
+      .invoker()
+      .onPainShockStageChanged(
+        new PainShockStageChangedContext(
+          player,
+          previousStage,
+          stage,
+          previousLoad,
+          load,
+          cause
+        )
+      )
   }
 
   private[casualtiesbelow] def transition(

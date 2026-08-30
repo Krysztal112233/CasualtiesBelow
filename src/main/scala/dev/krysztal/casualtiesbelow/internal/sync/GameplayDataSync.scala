@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.sync
+package dev.krysztal.casualtiesbelow.internal.sync
 
 import java.nio.charset.StandardCharsets
 
@@ -34,12 +34,11 @@ final case class GameplayDataPayload(json: String) extends CustomPacketPayload {
   * datapack→client sync (Fabric PR #2265; NeoForge's OnDatapackSyncEvent shares the semantics).
   *
   * On `/reload` that hook fires *before* the vanilla tag broadcast, so an entry referencing a tag
-  * key ADDED by that same reload cannot resolve on the client yet and is skipped (per-entry
-  * isolation in `GameplayDataStores`). The client therefore keeps the raw payload and re-decodes it
-  * from [[CommonLifecycleEvents.TAGS_LOADED]] — which fires after the pending tags are applied but
-  * before the recipe packet that triggers JEI's rebuild — so the skipped entries decode in time.
-  * Config hot reloads (Forge Config API Port watches the file) rebroadcast to all online players as
-  * well.
+  * key ADDED by that same reload cannot resolve on the client yet. The client rejects that whole
+  * candidate, retains its previous complete snapshot, and re-decodes the raw payload from
+  * [[CommonLifecycleEvents.TAGS_LOADED]] — which fires after the pending tags are applied but
+  * before the recipe packet that triggers JEI's rebuild. Config hot reloads (Forge Config API Port
+  * watches the file) rebroadcast to all online players as well.
   */
 object GameplayDataSync {
 

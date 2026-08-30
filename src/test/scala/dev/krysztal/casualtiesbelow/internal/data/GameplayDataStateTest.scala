@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.data
+package dev.krysztal.casualtiesbelow.internal.data
 
 import net.minecraft.SharedConstants
 import net.minecraft.resources.Identifier
@@ -7,10 +7,13 @@ import net.minecraft.server.Bootstrap
 import net.fabricmc.fabric.api.resource.v1.DataResourceStore
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
-import dev.krysztal.casualtiesbelow.api.wound.LocalizedApplicationData
-import dev.krysztal.casualtiesbelow.api.wound.WoundContributionData
-import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
+import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.LocalizedApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.WoundContributionData
+import dev.krysztal.casualtiesbelow.data.schema.WoundMatchData
+import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
+import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -43,7 +46,7 @@ final class GameplayDataStateTest {
 
   private def gameplayData(amount: Double, includeWoundProfile: Boolean): GameplayDataStore = {
     val woundProfiles =
-      if (includeWoundProfile) Map(ProfileId -> WoundProfile(1.0, 2.0, 0.1, 3.0))
+      if (includeWoundProfile) Map(ProfileId -> WoundProfile.linear(1.0, 2.0, 0.1, 3.0))
       else Map.empty
     GameplayDataStore.Empty.copy(
       woundProfiles = woundProfiles,

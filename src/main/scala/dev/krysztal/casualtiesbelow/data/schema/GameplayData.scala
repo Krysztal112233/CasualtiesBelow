@@ -1,10 +1,11 @@
-package dev.krysztal.casualtiesbelow.api.data
+package dev.krysztal.casualtiesbelow.data.schema
 
 import java.lang.Boolean as JBoolean
 import java.lang.Double as JDouble
 import java.util.Optional
 
 import scala.jdk.CollectionConverters.*
+import scala.jdk.OptionConverters.*
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -12,6 +13,7 @@ import scala.util.Try
 import com.mojang.serialization.Codec
 import com.mojang.serialization.Codec.BOOL
 import com.mojang.serialization.Codec.INT
+import com.mojang.serialization.Codec.STRING
 import com.mojang.serialization.Codec.unboundedMap
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.MapCodec
@@ -28,8 +30,6 @@ import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.wound.DamageTypeSelector
-import dev.krysztal.casualtiesbelow.api.wound.WoundApplicationData
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 
 import com.ezylang.evalex.Expression
@@ -50,6 +50,16 @@ private[casualtiesbelow] object GameplayCodecs {
       .validate(validatePositiveUnit)
       .xmap(_.doubleValue(), JDouble.valueOf)
 
+  val BodyPartCodec: Codec[BodyPart] = STRING.comapFlatMap(
+    id =>
+      BodyPart
+        .fromId(id)
+        .toScala
+        .map(DataResult.success)
+        .getOrElse(DataResult.error(() => s"Unknown body part: $id")),
+    _.id
+  )
+
   /** Decodes an absent field to `defaultValue` while always encoding the field. */
   def defaultedField[A](codec: Codec[A], name: String, defaultValue: A): MapCodec[A] =
     MapCodec.of(codec.fieldOf(name), codec.optionalFieldOf(name, defaultValue))
@@ -59,7 +69,7 @@ private[casualtiesbelow] object GameplayCodecs {
     * complete body-part map without changing its meaning.
     */
   val SparseBodyPartWeights: Codec[Map[BodyPart, Double]] = unboundedMap(
-    BodyPart.Codec,
+    BodyPartCodec,
     NonNegativeDouble
   )
     .xmap(_.asScala.toMap, _.asJava)
@@ -155,9 +165,9 @@ object FormulaSource {
   )
 }
 
-/** Shared damage-source and victim matchers. The historical name is retained as public API even
-  * though both wound and adrenaline rules use it. Optional fields are ANDed; entries within a
-  * damage-type selector are ORed, and excluded types are applied last.
+/** Shared damage-source and victim matcher schema used by both wound and adrenaline rules. Optional
+  * fields are ANDed; entries within a damage-type selector are ORed, and excluded types are applied
+  * last.
   */
 final case class WoundMatchData(
     damageTypes: Optional[DamageTypeSelector],

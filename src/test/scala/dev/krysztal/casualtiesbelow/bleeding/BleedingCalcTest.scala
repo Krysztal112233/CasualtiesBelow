@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.bleeding
 
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.component.MutableLimbState
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -9,7 +9,7 @@ final class BleedingCalcTest {
 
   @Test
   def hemostasisReducesTheCurrentRateByFraction(): Unit = {
-    val stats = LimbStats(externalBleedingRate = 0.2)
+    val stats = MutableLimbState(externalBleedingRate = 0.2)
 
     BleedingCalc.applyHemostasis(stats, 0.25)
 
@@ -18,7 +18,7 @@ final class BleedingCalcTest {
 
   @Test
   def fullHemostasisClampsTheRateToZero(): Unit = {
-    val stats = LimbStats(externalBleedingRate = 0.2)
+    val stats = MutableLimbState(externalBleedingRate = 0.2)
 
     BleedingCalc.applyHemostasis(stats, 1.0)
 

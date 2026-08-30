@@ -4,7 +4,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.player.LocalPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.ui.Argb
 
 /** Fallback [[BodyPartRenderer]]: each part is a solid block with a 1px outline (adjacent parts
@@ -29,7 +29,7 @@ object BlockBodyPartRenderer extends BodyPartRenderer {
       graphics: GuiGraphicsExtractor,
       player: LocalPlayer,
       part: BodyPart,
-      stats: Option[LimbStats],
+      stats: Option[LimbSnapshot],
       hovered: Boolean,
       x: Int,
       y: Int,
@@ -38,14 +38,22 @@ object BlockBodyPartRenderer extends BodyPartRenderer {
   ): Unit = {
     val outlineColor = stats match {
       case Some(s) =>
-        Argb.lerp(OutlineColor, SkinDamagedOutlineColor, 1.0 - s.skinIntegrity / LimbStats.MaxValue)
+        Argb.lerp(
+          OutlineColor,
+          SkinDamagedOutlineColor,
+          1.0 - s.skinIntegrity / LimbSnapshot.MaxValue
+        )
       case None => OutlineColor
     }
     graphics.fill(x, y, x + width, y + height, outlineColor)
 
     val baseFillColor = stats match {
       case Some(s) =>
-        Argb.lerp(FillColor, MuscleDamagedFillColor, 1.0 - s.muscleHealth / LimbStats.MaxValue)
+        Argb.lerp(
+          FillColor,
+          MuscleDamagedFillColor,
+          1.0 - s.muscleHealth / LimbSnapshot.MaxValue
+        )
       case None => FillColor
     }
     val fillColor =

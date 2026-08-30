@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerPlayerGameMode
 import net.minecraft.world.level.GameType
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.component.BodyMutations
 
 import org.spongepowered.asm.mixin.Final
 import org.spongepowered.asm.mixin.Mixin
@@ -35,7 +36,7 @@ abstract class ServerPlayerGameModeMixin {
       cir: CallbackInfoReturnable[Boolean]
   ): Unit = {
     if (cir.getReturnValue) {
-      CasualtiesBelowComponents.Body.get(player).reconcileMovementModifiers()
+      BodyMutations.reconcileMovementModifiers(player)
     }
   }
 }

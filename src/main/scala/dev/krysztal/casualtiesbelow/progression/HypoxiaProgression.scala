@@ -2,9 +2,10 @@ package dev.krysztal.casualtiesbelow.progression
 
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.
@@ -17,15 +18,17 @@ object HypoxiaProgression {
 
   /** Advances terminal exposure and returns whether its positive configured duration has elapsed.
     */
-  def tick(vitals: VitalsComponent, breathingBlocked: Boolean): Boolean = {
+  def tick(vitals: VitalsComponentImpl, breathingBlocked: Boolean): Boolean = {
     if (!breathingBlocked) {
       reset(vitals)
       return false
     }
     if (vitals.bloodOxygen > 0.0) return false
 
-    val next = (normalizeExposureTicks(vitals.hypoxiaExposureTicks) + 1).min(configuredDuration)
-    vitals.applyHypoxiaExposureTicks(next)
+    val next =
+      (normalizeExposureTicks(VitalsMutations.hypoxiaExposureTicks(vitals)) + 1)
+        .min(configuredDuration)
+    VitalsMutations.applyHypoxiaExposureTicks(vitals, next)
     next >= configuredDuration
   }
 
@@ -34,15 +37,15 @@ object HypoxiaProgression {
     * pain shock and inadequate blood oxygen retain their normal authority.
     */
   def onDeathProtection(player: ServerPlayer): Unit = {
-    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    val vitals = ComponentAccess.vitals(player)
     reset(vitals)
-    vitals.bloodOxygen = BloodVolume.oxygenCarryingCapacity(vitals)
+    VitalsMutations.setBloodOxygen(vitals, BloodVolume.oxygenCarryingCapacity(vitals))
     ConsciousnessProgression.restoreAfterHypoxiaDeathProtection(player, vitals)
-    CasualtiesBelowComponents.Vitals.sync(player)
+    VitalsMutations.syncNow(player)
   }
 
-  def reset(vitals: VitalsComponent): Unit = {
-    vitals.applyHypoxiaExposureTicks(0)
+  def reset(vitals: VitalsComponentImpl): Unit = {
+    VitalsMutations.applyHypoxiaExposureTicks(vitals, 0)
   }
 
   private[casualtiesbelow] def normalizeExposureTicks(ticks: Int): Int = {

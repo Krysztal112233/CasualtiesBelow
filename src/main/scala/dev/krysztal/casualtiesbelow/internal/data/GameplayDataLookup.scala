@@ -1,8 +1,12 @@
-package dev.krysztal.casualtiesbelow.api.data
+package dev.krysztal.casualtiesbelow.internal.data
 
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.ItemStack
+
+import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 
 /** Deterministic lookups shared by gameplay consumers of the reload-listener stores. */
 object GameplayDataLookup {

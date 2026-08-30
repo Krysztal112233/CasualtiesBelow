@@ -18,31 +18,44 @@ import dev.krysztal.casualtiesbelow.pain.PainShock
 import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
 import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
 
-final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
-  var immuneHealth: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
+import org.ladysnake.cca.api.v3.component.CopyableComponent
+import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
+
+final class VitalsComponentImpl(val player: Player)
+    extends VitalsComponent
+    with CopyableComponent[VitalsComponent]
+    with AutoSyncedComponent {
+  private var immuneHealthState: Double = CasualtiesBelowConfig.MaxImmuneHealth.get()
   private var consciousnessState: Double = VitalsComponent.MaxValue
   private var unconsciousState: Boolean = false
   private var painShockLoadState: Double = 0.0
   private var painShockStageState: PainShockStage = PainShockStage.Stable
   private var adrenalineState: Double = 0.0
   private var adrenalineGraceTicksState: Int = 0
-  var bloodOxygen: Double = VitalsComponent.MaxBloodOxygen
-  var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
+  private var bloodOxygenState: Double = VitalsComponent.MaxBloodOxygen
+  private var bloodVolumeState: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
   private var hypoxiaExposureTicksState: Int = 0
   private var totemHemostasisTicksState: Int = 0
-  var sepsis: Double = 0.0
-  var discomfort: Double = 0.0
+  private var sepsisState: Double = 0.0
+  private var discomfortState: Double = 0.0
 
   override def copyFrom(
       other: VitalsComponent,
       registryLookup: HolderLookup.Provider
   ): Unit = {
-    immuneHealth = other.immuneHealth
+    val source = other match {
+      case component: VitalsComponentImpl => component
+      case component                      =>
+        throw IllegalArgumentException(
+          s"Unexpected vitals component implementation: ${component.getClass.getName}"
+        )
+    }
+    setImmuneHealth(source.immuneHealth)
     val normalizedAdrenaline =
       if (player.level().isClientSide()) {
-        Adrenaline.normalizeSyncedState(other.adrenaline, other.adrenalineGraceTicks)
+        Adrenaline.normalizeSyncedState(source.adrenaline, source.adrenalineGraceTicks)
       } else {
-        Adrenaline.normalizeStoredState(other.adrenaline, other.adrenalineGraceTicks)
+        Adrenaline.normalizeStoredState(source.adrenaline, source.adrenalineGraceTicks)
       }
     applyAdrenalineState(normalizedAdrenaline.amount, normalizedAdrenaline.graceTicks)
     val (normalizedShockLoad, normalizedShockStage) =
@@ -52,37 +65,43 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
         PainShock.normalizeStoredState(
           other.painShockLoad,
           other.painShockStage,
-          Some(other.unconscious),
+          Some(source.unconscious),
           normalizedAdrenaline.amount
         )
       }
     applyPainShockState(normalizedShockLoad, normalizedShockStage)
     val (normalizedConsciousness, normalizedUnconscious) =
       ConsciousnessProgression.normalizeStoredState(
-        other.consciousness,
-        Some(other.unconscious),
+        source.consciousness,
+        Some(source.unconscious),
         if (player.level().isClientSide()) 0.0
         else CasualtiesBelowConfig.ConsciousnessFloor.get(),
         normalizedShockStage
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
-    bloodOxygen = other.bloodOxygen
-    bloodVolume = other.bloodVolume
+    setBloodOxygen(source.bloodOxygen)
+    setBloodVolume(source.bloodVolume)
     applyHypoxiaExposureTicks(
-      HypoxiaProgression.normalizeExposureTicks(other.hypoxiaExposureTicks)
+      HypoxiaProgression.normalizeExposureTicks(source.hypoxiaExposureTicks)
     )
     applyTotemHemostasisTicks(
-      TotemHemostasis.normalizeRemainingTicks(other.totemHemostasisTicks)
+      TotemHemostasis.normalizeRemainingTicks(source.totemHemostasisTicks)
     )
-    sepsis = other.sepsis
-    discomfort = other.discomfort
+    setSepsis(source.sepsis)
+    setDiscomfort(source.discomfort)
+  }
+
+  override def immuneHealth: Double = immuneHealthState
+
+  private[casualtiesbelow] def setImmuneHealth(value: Double): Unit = {
+    immuneHealthState = bounded(value, CasualtiesBelowConfig.MaxImmuneHealth.get())
   }
 
   override def consciousness: Double = consciousnessState
 
   override def unconscious: Boolean = unconsciousState
 
-  override private[casualtiesbelow] def applyConsciousnessState(
+  private[casualtiesbelow] def applyConsciousnessState(
       consciousness: Double,
       unconscious: Boolean
   ): Unit = {
@@ -94,7 +113,7 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
 
   override def painShockStage: PainShockStage = painShockStageState
 
-  override private[casualtiesbelow] def applyPainShockState(
+  private[casualtiesbelow] def applyPainShockState(
       load: Double,
       stage: PainShockStage
   ): Unit = {
@@ -104,10 +123,10 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
 
   override def adrenaline: Double = adrenalineState
 
-  override private[casualtiesbelow] def adrenalineGraceTicks: Int =
+  private[casualtiesbelow] def adrenalineGraceTicks: Int =
     adrenalineGraceTicksState
 
-  override private[casualtiesbelow] def applyAdrenalineState(
+  private[casualtiesbelow] def applyAdrenalineState(
       amount: Double,
       graceTicks: Int
   ): Unit = {
@@ -115,16 +134,40 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     adrenalineGraceTicksState = graceTicks
   }
 
-  override def hypoxiaExposureTicks: Int = hypoxiaExposureTicksState
+  private[casualtiesbelow] def hypoxiaExposureTicks: Int = hypoxiaExposureTicksState
 
-  override private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
+  private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
     hypoxiaExposureTicksState = ticks
   }
 
-  override def totemHemostasisTicks: Int = totemHemostasisTicksState
+  private[casualtiesbelow] def totemHemostasisTicks: Int = totemHemostasisTicksState
 
-  override private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
+  private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
     totemHemostasisTicksState = ticks
+  }
+
+  override def bloodOxygen: Double = bloodOxygenState
+
+  private[casualtiesbelow] def setBloodOxygen(value: Double): Unit = {
+    bloodOxygenState = bounded(value, VitalsComponent.MaxBloodOxygen)
+  }
+
+  override def bloodVolume: Double = bloodVolumeState
+
+  private[casualtiesbelow] def setBloodVolume(value: Double): Unit = {
+    bloodVolumeState = bounded(value, CasualtiesBelowConfig.MaxBloodVolume.get())
+  }
+
+  override def sepsis: Double = sepsisState
+
+  private[casualtiesbelow] def setSepsis(value: Double): Unit = {
+    sepsisState = bounded(value, CasualtiesBelowConfig.MaxSepsis.get())
+  }
+
+  override def discomfort: Double = discomfortState
+
+  private[casualtiesbelow] def setDiscomfort(value: Double): Unit = {
+    discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.get())
   }
 
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
@@ -146,9 +189,11 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   }
 
   override def readData(in: ValueInput): Unit = {
-    immuneHealth = in.getDoubleOr(
-      VitalsComponentImpl.ImmuneHealthKey,
-      CasualtiesBelowConfig.MaxImmuneHealth.get()
+    setImmuneHealth(
+      in.getDoubleOr(
+        VitalsComponentImpl.ImmuneHealthKey,
+        CasualtiesBelowConfig.MaxImmuneHealth.get()
+      )
     )
     val savedUnconscious =
       in.read(VitalsComponentImpl.UnconsciousKey, Codec.BOOL).toScala.map(_.booleanValue)
@@ -166,7 +211,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
       }
     applyAdrenalineState(normalizedAdrenaline.amount, normalizedAdrenaline.graceTicks)
     val savedShockStage = PainShockStage
-      .byId(in.getStringOr(VitalsComponentImpl.PainShockStageKey, PainShockStage.Stable.id))
+      .fromId(in.getStringOr(VitalsComponentImpl.PainShockStageKey, PainShockStage.Stable.id))
+      .toScala
       .getOrElse(PainShockStage.Stable)
     val (normalizedShockLoad, normalizedShockStage) =
       if (player.level().isClientSide()) {
@@ -192,12 +238,15 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
         normalizedShockStage
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
-    bloodOxygen = in.getDoubleOr(
-      VitalsComponentImpl.BloodOxygenKey,
-      VitalsComponent.MaxBloodOxygen
+    setBloodOxygen(
+      in.getDoubleOr(
+        VitalsComponentImpl.BloodOxygenKey,
+        VitalsComponent.MaxBloodOxygen
+      )
     )
-    bloodVolume =
+    setBloodVolume(
       in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
+    )
     applyHypoxiaExposureTicks(
       HypoxiaProgression.normalizeExposureTicks(
         in.getIntOr(VitalsComponentImpl.HypoxiaExposureTicksKey, 0)
@@ -208,8 +257,15 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
         in.getIntOr(VitalsComponentImpl.TotemHemostasisTicksKey, 0)
       )
     )
-    sepsis = in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0)
-    discomfort = in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0)
+    setSepsis(in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0))
+    setDiscomfort(in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0))
+  }
+
+  private def bounded(value: Double, maximum: Double): Double = {
+    val limit = if (maximum.isFinite) maximum.max(0.0) else Double.MaxValue
+    if (value == Double.PositiveInfinity) limit
+    else if (value.isFinite) value.max(0.0).min(limit)
+    else 0.0
   }
 }
 

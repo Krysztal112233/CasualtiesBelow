@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.data
+package dev.krysztal.casualtiesbelow.internal.data
 
 import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
@@ -23,14 +23,14 @@ import com.google.gson.JsonElement
 /** Loads one keyed gameplay-data directory into an immutable map. Pack stacking selects the
   * resource for each id before decoding, and malformed files are skipped independently.
   */
-private[data] final class GameplayDataLoader[T](
+private[internal] final class GameplayDataLoader[T](
     directorySegment: String,
     codec: Codec[T]
 ) {
   private val converter =
     FileToIdConverter.json(s"${CasualtiesBelow.ModId}/$directorySegment")
 
-  private[data] def load(
+  private[internal] def load(
       manager: ResourceManager,
       lookup: HolderLookup.Provider
   ): Map[Identifier, T] = {

@@ -11,7 +11,7 @@ import net.minecraft.util.Util
 import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbStats
+import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
 import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
 
 /** Body status screen, summoned by the open-screen keybind (default: R). Pressing the keybind again
@@ -29,7 +29,7 @@ import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
   * horizontal, see `HumanoidModel.createMesh`). Each part is drawn from the matching region of the
   * player's skin texture (falling back to solid blocks when the skin can't be used).
   *
-  * Each part reflects its synced [[LimbStats]]: damage tints the part red (block rendering maps
+  * Each part reflects its synced [[LimbSnapshot]]: damage tints the part red (block rendering maps
   * outline → skin integrity, fill → muscle health), and the block trembles while the limb is in
   * pain (amplitude scales with pain). The hovered part is brightened, and its stats are shown in
   * the [[MedicalPanel]] docked to the left screen edge.
@@ -261,7 +261,7 @@ object BodyStatusScreen {
     * smooth independently of game tick rate.
     */
   private def trembleOffset(part: BodyPart, pain: Double): (Int, Int) = {
-    val amplitude = pain / LimbStats.MaxValue * MaxTremblePixels
+    val amplitude = pain / LimbSnapshot.MaxValue * MaxTremblePixels
     val t = Util.getMillis().toFloat * TrembleFrequency
     val phase = part.ordinal * 1.37f
     val dx = Mth.sin(t + phase) * amplitude +
