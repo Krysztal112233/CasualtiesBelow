@@ -10,7 +10,6 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
-import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.data.GameplayCodecs
@@ -18,10 +17,10 @@ import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.api.data.WoundRuleData
+import dev.krysztal.casualtiesbelow.damage.DamageMatcher
 
 /** How one damage kind wounds a limb: skin integrity and muscle health lost per half-heart of
-  * damage, external bleeding rate granted per wound (zero = the wound never bleeds, e.g. burns
-  * cauterize), and pain granted per half-heart.
+  * damage, external bleeding rate granted per wound, and pain granted per half-heart.
   */
 final case class WoundProfile(
     skinPerPoint: Double,
@@ -105,29 +104,8 @@ object WoundProfiles {
   ): Option[ClassifiedWoundRule] = {
     ensureCompiled()
     compiled
-      .find(entry => matches(entry.rule, level, player, source))
+      .find(entry => DamageMatcher.matches(entry.rule.woundMatch, level, player, source))
       .map(entry => ClassifiedWoundRule(entry.id, entry.applications))
-  }
-
-  private def matches(
-      rule: WoundRuleData,
-      level: ServerLevel,
-      player: ServerPlayer,
-      source: DamageSource
-  ): Boolean = {
-    val weapon = Option(source.getWeaponItem).filterNot(_.isEmpty)
-    val directLiving =
-      source.isDirect && Option(source.getDirectEntity).exists(_.isInstanceOf[LivingEntity])
-
-    val woundMatch = rule.woundMatch
-
-    woundMatch.damageTypes.toScala.forall(_.matches(source)) &&
-    woundMatch.excludedDamageTypes.toScala.forall(!_.matches(source)) &&
-    woundMatch.victims.toScala.forall(_.contains(player.typeHolder())) &&
-    woundMatch.predicate.toScala.forall(_.matches(level, player.position(), source)) &&
-    woundMatch.directLiving.toScala.forall(_.booleanValue() == directLiving) &&
-    woundMatch.armed.toScala.forall(_.booleanValue() == weapon.isDefined) &&
-    woundMatch.weapon.toScala.forall(predicate => weapon.exists(predicate.test))
   }
 
   /** Rebuilds every rule against one immutable gameplay-data view, then publishes the complete
