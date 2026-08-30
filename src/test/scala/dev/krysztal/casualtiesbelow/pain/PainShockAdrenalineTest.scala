@@ -86,6 +86,7 @@ final class PainShockAdrenalineTest {
       75.0,
       Some(false),
       floor = 10.0,
+      knockoutThreshold = 30.0,
       painShockStage = PainShockStage.Deferred
     )
     assertEquals(75.0, consciousness, 1.0e-9)
