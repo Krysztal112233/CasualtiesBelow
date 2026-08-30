@@ -26,6 +26,7 @@ import net.minecraft.world.item.Items
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
 import dev.krysztal.casualtiesbelow.api.data.FormulaSource
@@ -189,6 +190,84 @@ object CasualtiesBelowDataDefaults {
     ).map((id, value) => entryId(id) -> value).toMap
   }
 
+  /** Event-level adrenaline stimuli. Special attackers replace the generic entity/explosion value;
+    * they never add to it for the same accepted damage event.
+    */
+  def adrenalineRules(
+      registries: HolderLookup.Provider
+  ): Map[Identifier, AdrenalineRuleData] = {
+    val entityTypes = registries.lookupOrThrow(Registries.ENTITY_TYPE)
+
+    def tagged(tag: TagKey[DamageType]): DamageTypeSelector =
+      DamageTypeSelector(List(TaggedDamageType(tag)))
+
+    def entityPredicate(entityType: EntityType[?], direct: Boolean): DamageSourcePredicate = {
+      val entity = EntityPredicate.Builder.entity().of(entityTypes, entityType).build()
+      DamageSourcePredicate(
+        JList.of(),
+        if (direct) Optional.of(entity) else Optional.empty(),
+        if (direct) Optional.empty() else Optional.of(entity),
+        Optional.empty()
+      )
+    }
+
+    val sourceEntityPresent = DamageSourcePredicate(
+      JList.of(),
+      Optional.empty(),
+      Optional.of(EntityPredicate.Builder.entity().build()),
+      Optional.empty()
+    )
+    val explosions = tagged(DamageTypeTags.IS_EXPLOSION)
+
+    List(
+      "ender_dragon" -> adrenalineRule(
+        amount = 40.0,
+        predicate = Some(entityPredicate(EntityTypes.ENDER_DRAGON, direct = false)),
+        priority = 400
+      ),
+      "wither" -> adrenalineRule(
+        amount = 40.0,
+        predicate = Some(entityPredicate(EntityTypes.WITHER, direct = false)),
+        priority = 400
+      ),
+      "wither_skeleton" -> adrenalineRule(
+        amount = 25.0,
+        predicate = Some(entityPredicate(EntityTypes.WITHER_SKELETON, direct = false)),
+        priority = 350
+      ),
+      "creeper" -> adrenalineRule(
+        amount = 30.0,
+        damageTypes = Some(explosions),
+        predicate = Some(entityPredicate(EntityTypes.CREEPER, direct = true)),
+        priority = 300
+      ),
+      "tnt" -> adrenalineRule(
+        amount = 30.0,
+        damageTypes = Some(explosions),
+        predicate = Some(entityPredicate(EntityTypes.TNT, direct = true)),
+        priority = 300
+      ),
+      "tnt_minecart" -> adrenalineRule(
+        amount = 30.0,
+        damageTypes = Some(explosions),
+        predicate = Some(entityPredicate(EntityTypes.TNT_MINECART, direct = true)),
+        priority = 300
+      ),
+      "explosion" -> adrenalineRule(
+        amount = 20.0,
+        damageTypes = Some(explosions),
+        priority = 200
+      ),
+      "entity" -> adrenalineRule(
+        amount = 10.0,
+        damageTypes = Some(tagged(DamageTypeTags.PANIC_CAUSES)),
+        excludedDamageTypes = Some(tagged(DamageTypeTags.PANIC_ENVIRONMENTAL_CAUSES)),
+        predicate = Some(sourceEntityPresent),
+        priority = 100
+      )
+    ).map((id, value) => entryId(id) -> value).toMap
+  }
+
   val ArmorProtection: Map[Identifier, ArmorProtectionData] = {
     // (material, worn pieces, skin factor formula, muscle factor formula)
     List(
@@ -279,6 +358,26 @@ object CasualtiesBelowDataDefaults {
       optional(weapon)
     ),
     List(application),
+    priority
+  )
+
+  private def adrenalineRule(
+      amount: Double,
+      damageTypes: Option[DamageTypeSelector] = None,
+      excludedDamageTypes: Option[DamageTypeSelector] = None,
+      predicate: Option[DamageSourcePredicate] = None,
+      priority: Int
+  ): AdrenalineRuleData = AdrenalineRuleData(
+    WoundMatchData(
+      optional(damageTypes),
+      optional(excludedDamageTypes),
+      Optional.empty(),
+      optional(predicate),
+      Optional.empty(),
+      Optional.empty(),
+      Optional.empty()
+    ),
+    amount,
     priority
   )
 

@@ -36,28 +36,19 @@ import com.ezylang.evalex.Expression
 
 /** Shared codec validation for datapack-defined gameplay values. */
 private[casualtiesbelow] object GameplayCodecs {
-  val NonNegativeDouble: Codec[Double] = Codec.DOUBLE.comapFlatMap(
-    value =>
-      if (JDouble.isFinite(value) && value >= 0.0) DataResult.success(value)
-      else DataResult.error(() => s"Expected a finite, non-negative number, got $value"),
-    identity
-  )
+  val NonNegativeDouble: Codec[Double] =
+    Codec.DOUBLE
+      .validate(validateNonNegative)
+      .xmap(_.doubleValue(), JDouble.valueOf)
 
-  val UnitDouble: Codec[Double] = Codec.DOUBLE.comapFlatMap(
-    value =>
-      if (JDouble.isFinite(value) && value >= 0.0 && value <= 1.0)
-        DataResult.success(value)
-      else DataResult.error(() => s"Expected a finite number in [0, 1], got $value"),
-    identity
-  )
+  val UnitDouble: Codec[Double] = Codec.DOUBLE
+    .validate(validateUnit)
+    .xmap(_.doubleValue(), JDouble.valueOf)
 
-  val PositiveUnitDouble: Codec[Double] = Codec.DOUBLE.comapFlatMap(
-    value =>
-      if (JDouble.isFinite(value) && value > 0.0 && value <= 1.0)
-        DataResult.success(value)
-      else DataResult.error(() => s"Expected a finite number in (0, 1], got $value"),
-    identity
-  )
+  val PositiveUnitDouble: Codec[Double] =
+    Codec.DOUBLE
+      .validate(validatePositiveUnit)
+      .xmap(_.doubleValue(), JDouble.valueOf)
 
   /** Decodes an absent field to `defaultValue` while always encoding the field. */
   def defaultedField[A](codec: Codec[A], name: String, defaultValue: A): MapCodec[A] =
@@ -78,6 +69,23 @@ private[casualtiesbelow] object GameplayCodecs {
         DataResult.error(() => s"weights must contain positive finite mass, got $total")
       } else DataResult.success(weights)
     })
+
+  private def validateNonNegative(value: JDouble): DataResult[JDouble] = {
+    if (JDouble.isFinite(value) && value.doubleValue() >= 0.0) DataResult.success(value)
+    else DataResult.error(() => s"Expected a finite, non-negative number, got $value")
+  }
+
+  private def validateUnit(value: JDouble): DataResult[JDouble] = {
+    if (JDouble.isFinite(value) && value.doubleValue() >= 0.0 && value.doubleValue() <= 1.0)
+      DataResult.success(value)
+    else DataResult.error(() => s"Expected a finite number in [0, 1], got $value")
+  }
+
+  private def validatePositiveUnit(value: JDouble): DataResult[JDouble] = {
+    if (JDouble.isFinite(value) && value.doubleValue() > 0.0 && value.doubleValue() <= 1.0)
+      DataResult.success(value)
+    else DataResult.error(() => s"Expected a finite number in (0, 1], got $value")
+  }
 }
 
 /** An EvalEx formula source loaded from a datapack. Compilation is lazy for normal use; the codec
@@ -147,8 +155,9 @@ object FormulaSource {
   )
 }
 
-/** V2 damage-source and victim matchers. Optional fields are ANDed; entries within a damage-type
-  * selector are ORed, and excluded types are applied last.
+/** Shared damage-source and victim matchers. The historical name is retained as public API even
+  * though both wound and adrenaline rules use it. Optional fields are ANDed; entries within a
+  * damage-type selector are ORed, and excluded types are applied last.
   */
 final case class WoundMatchData(
     damageTypes: Optional[DamageTypeSelector],
@@ -226,6 +235,28 @@ object WoundRuleData {
         INT.optionalFieldOf("priority", 0).forGetter(_.priority)
       )
       .apply(instance, WoundRuleData.apply)
+  )
+}
+
+/** One event-level adrenaline stimulus. Matching rules use the same damage-source language as wound
+  * rules, but form an independent priority chain so one accepted damage event grants at most once.
+  * An explicit zero amount is a valid high-priority override that disables a broader fallback.
+  */
+final case class AdrenalineRuleData(
+    damageMatch: WoundMatchData,
+    amount: Double,
+    priority: Integer
+)
+
+object AdrenalineRuleData {
+  val Codec: Codec[AdrenalineRuleData] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        WoundMatchData.Codec.fieldOf("match").forGetter(_.damageMatch),
+        GameplayCodecs.NonNegativeDouble.fieldOf("amount").forGetter(_.amount),
+        INT.optionalFieldOf("priority", 0).forGetter(_.priority)
+      )
+      .apply(instance, AdrenalineRuleData.apply)
   )
 }
 

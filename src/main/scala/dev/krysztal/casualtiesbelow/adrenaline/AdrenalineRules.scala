@@ -1,0 +1,53 @@
+package dev.krysztal.casualtiesbelow.adrenaline
+
+import net.minecraft.resources.Identifier
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.damagesource.DamageSource
+
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.damage.DamageMatcher
+
+final case class ClassifiedAdrenalineRule(ruleId: Identifier, amount: Double)
+
+/** Selects exactly one event-level stimulus by descending priority and ascending datapack id. Rules
+  * are read from the current immutable gameplay-data store on every event, so `/reload` takes
+  * effect without a second compiled cache.
+  */
+object AdrenalineRules {
+
+  def classify(
+      level: ServerLevel,
+      player: ServerPlayer,
+      source: DamageSource,
+      store: GameplayDataStore = GameplayDataStores.server
+  ): Option[ClassifiedAdrenalineRule] = {
+    select(store.adrenalineRules)(rule =>
+      DamageMatcher.matches(rule.damageMatch, level, player, source)
+    )
+  }
+
+  /** Grants at most once for one AFTER_DAMAGE event. Existing unconsciousness is never reversed or
+    * banked into a later wake-up.
+    */
+  def grantFor(player: ServerPlayer, source: DamageSource): Boolean = {
+    val vitals = CasualtiesBelowComponents.Vitals.get(player)
+    if (vitals.unconscious) return false
+
+    classify(player.level(), player, source).exists(rule => Adrenaline.grant(player, rule.amount))
+  }
+
+  private[casualtiesbelow] def select(
+      entries: Map[Identifier, AdrenalineRuleData]
+  )(matches: AdrenalineRuleData => Boolean): Option[ClassifiedAdrenalineRule] = {
+    GameplayDataLookup
+      .orderedEntries(entries)(_.priority.intValue())
+      .collectFirst {
+        case (id, rule) if matches(rule) => ClassifiedAdrenalineRule(id, rule.amount)
+      }
+  }
+}

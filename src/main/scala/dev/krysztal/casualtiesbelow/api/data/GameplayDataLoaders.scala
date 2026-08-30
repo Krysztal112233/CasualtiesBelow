@@ -13,6 +13,8 @@ import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 object GameplayDataLoaders {
   val WoundProfile = GameplayDataLoader[WoundProfileEntry]("wound_profile", WoundProfileEntry.Codec)
   val WoundRule = GameplayDataLoader[WoundRuleData]("wound_rule", WoundRuleData.Codec)
+  val AdrenalineRule =
+    GameplayDataLoader[AdrenalineRuleData]("adrenaline_rule", AdrenalineRuleData.Codec)
   val ArmorProtection = GameplayDataLoader[ArmorProtectionData](
     "armor_protection",
     ArmorProtectionData.Codec
@@ -23,6 +25,7 @@ object GameplayDataLoaders {
   def registerAll(): Unit = {
     register("wound_profile", WoundProfile)
     register("wound_rule", WoundRule)
+    register("adrenaline_rule", AdrenalineRule)
     register("armor_protection", ArmorProtection)
     register("discomfort", Discomfort)
     register("hit_location", HitLocation)

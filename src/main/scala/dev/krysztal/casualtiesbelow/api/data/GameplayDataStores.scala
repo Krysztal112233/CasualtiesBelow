@@ -24,8 +24,62 @@ final case class GameplayDataStore(
     woundRules: Map[Identifier, WoundRuleData],
     armorProtection: Map[Identifier, ArmorProtectionData],
     discomfort: Map[Identifier, DiscomfortData],
-    hitLocations: Map[Identifier, HitLocationData]
-)
+    hitLocations: Map[Identifier, HitLocationData],
+    adrenalineRules: Map[Identifier, AdrenalineRuleData] = Map.empty
+) {
+
+  /** Binary bridge for integrations compiled against the five-section v2 store. New code should use
+    * the generated six-argument constructor or companion `apply`.
+    */
+  @deprecated("Pass adrenalineRules explicitly", "1.0.0")
+  def this(
+      woundProfiles: Map[Identifier, WoundProfile],
+      woundRules: Map[Identifier, WoundRuleData],
+      armorProtection: Map[Identifier, ArmorProtectionData],
+      discomfort: Map[Identifier, DiscomfortData],
+      hitLocations: Map[Identifier, HitLocationData]
+  ) = this(woundProfiles, woundRules, armorProtection, discomfort, hitLocations, Map.empty)
+
+  /** Retains the old five-argument `copy` descriptor and preserves this store's adrenaline rules.
+    */
+  @deprecated("Pass adrenalineRules explicitly", "1.0.0")
+  def copy(
+      woundProfiles: Map[Identifier, WoundProfile],
+      woundRules: Map[Identifier, WoundRuleData],
+      armorProtection: Map[Identifier, ArmorProtectionData],
+      discomfort: Map[Identifier, DiscomfortData],
+      hitLocations: Map[Identifier, HitLocationData]
+  ): GameplayDataStore =
+    GameplayDataStore(
+      woundProfiles,
+      woundRules,
+      armorProtection,
+      discomfort,
+      hitLocations,
+      adrenalineRules
+    )
+}
+
+object GameplayDataStore {
+
+  /** Source and binary bridge for the pre-adrenaline five-section store constructor. */
+  @deprecated("Pass adrenalineRules explicitly", "1.0.0")
+  def apply(
+      woundProfiles: Map[Identifier, WoundProfile],
+      woundRules: Map[Identifier, WoundRuleData],
+      armorProtection: Map[Identifier, ArmorProtectionData],
+      discomfort: Map[Identifier, DiscomfortData],
+      hitLocations: Map[Identifier, HitLocationData]
+  ): GameplayDataStore =
+    new GameplayDataStore(
+      woundProfiles,
+      woundRules,
+      armorProtection,
+      discomfort,
+      hitLocations,
+      Map.empty
+    )
+}
 
 /** Selects the authoritative loader maps for server logic and the synced maps for client display
   * and prediction. In singleplayer, the JVM-local loader maps are the correct fallback before a
@@ -40,7 +94,8 @@ object GameplayDataStores {
     woundRules = GameplayDataLoaders.WoundRule.byId,
     armorProtection = GameplayDataLoaders.ArmorProtection.byId,
     discomfort = GameplayDataLoaders.Discomfort.byId,
-    hitLocations = GameplayDataLoaders.HitLocation.byId
+    hitLocations = GameplayDataLoaders.HitLocation.byId,
+    adrenalineRules = GameplayDataLoaders.AdrenalineRule.byId
   )
 
   /** Client view: the latest server payload, falling back to the local loader maps. */
@@ -59,6 +114,10 @@ object GameplayDataStores {
     val root = new JsonObject
     root.add("wound_profile", encodeSection(store.woundProfiles, WoundProfile.Codec, ops))
     root.add("wound_rule", encodeSection(store.woundRules, WoundRuleData.Codec, ops))
+    root.add(
+      "adrenaline_rule",
+      encodeSection(store.adrenalineRules, AdrenalineRuleData.Codec, ops)
+    )
     root.add(
       "armor_protection",
       encodeSection(store.armorProtection, ArmorProtectionData.Codec, ops)
@@ -90,7 +149,9 @@ object GameplayDataStores {
       discomfort = decodeSection(root, "discomfort", DiscomfortData.Codec, ops)
         .getOrElse(fallback.discomfort),
       hitLocations = decodeSection(root, "hit_location", HitLocationData.Codec, ops)
-        .getOrElse(fallback.hitLocations)
+        .getOrElse(fallback.hitLocations),
+      adrenalineRules = decodeSection(root, "adrenaline_rule", AdrenalineRuleData.Codec, ops)
+        .getOrElse(fallback.adrenalineRules)
     )
   }
 

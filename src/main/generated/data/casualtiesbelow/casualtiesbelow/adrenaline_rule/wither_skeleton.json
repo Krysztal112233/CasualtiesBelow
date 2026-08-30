@@ -1,0 +1,11 @@
+{
+  "amount": 25.0,
+  "match": {
+    "predicate": {
+      "source_entity": {
+        "minecraft:entity_type": "minecraft:wither_skeleton"
+      }
+    }
+  },
+  "priority": 350
+}

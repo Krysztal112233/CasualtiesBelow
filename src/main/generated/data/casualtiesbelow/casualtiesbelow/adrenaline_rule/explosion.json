@@ -1,0 +1,7 @@
+{
+  "amount": 20.0,
+  "match": {
+    "damage_types": "#minecraft:is_explosion"
+  },
+  "priority": 200
+}

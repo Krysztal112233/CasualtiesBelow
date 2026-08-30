@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
+import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineRules
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.progression.StarvationProgression
 
@@ -32,7 +33,15 @@ object LimbDamage {
       case player: ServerPlayer => player
       case _                    => return
     }
-    if (player.isCreative || player.isSpectator || blocked || damageTaken <= 0) return
+    if (player.isCreative || player.isSpectator || !player.isAlive || damageTaken <= 0) return
+
+    // Adrenaline is an event-level response, not a wound application: scatter, paired impacts, and
+    // multiple wound contributions must never multiply it. A partial shield block may retain
+    // positive damageTaken and still stimulates; a complete block reaches this event with zero.
+    AdrenalineRules.grantFor(player, source)
+
+    // Preserve the existing wound/starvation contract, which excludes every blocked hit.
+    if (blocked) return
 
     StarvationProgression.onAfterDamage(player, source, damageTaken)
     WoundProfiles

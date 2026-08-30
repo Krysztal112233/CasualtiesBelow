@@ -1,0 +1,12 @@
+{
+  "amount": 30.0,
+  "match": {
+    "damage_types": "#minecraft:is_explosion",
+    "predicate": {
+      "direct_entity": {
+        "minecraft:entity_type": "minecraft:tnt_minecart"
+      }
+    }
+  },
+  "priority": 300
+}

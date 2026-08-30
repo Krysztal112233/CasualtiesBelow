@@ -12,6 +12,7 @@ import net.minecraft.resources.Identifier
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.data.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.api.data.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.api.data.DiscomfortData
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
@@ -40,6 +41,13 @@ final class GameplayDataProvider(
             "wound_rule",
             WoundRuleData.Codec,
             CasualtiesBelowDataDefaults.woundRules(lookup)
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "adrenaline_rule",
+            AdrenalineRuleData.Codec,
+            CasualtiesBelowDataDefaults.adrenalineRules(lookup)
           ) ++
           saveAll(
             cache,

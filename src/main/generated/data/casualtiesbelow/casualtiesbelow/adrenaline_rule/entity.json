@@ -1,0 +1,11 @@
+{
+  "amount": 10.0,
+  "match": {
+    "damage_types": "#minecraft:panic_causes",
+    "excluded_damage_types": "#minecraft:panic_environmental_causes",
+    "predicate": {
+      "source_entity": {}
+    }
+  },
+  "priority": 100
+}
