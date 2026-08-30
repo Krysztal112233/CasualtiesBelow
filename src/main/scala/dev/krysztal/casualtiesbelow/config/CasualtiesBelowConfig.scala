@@ -692,6 +692,18 @@ object CasualtiesBelowConfig {
       "Set to zero to keep the reserve visible to APIs while disabling shock protection."
     )
     .defineInRange("shockProtectionPerPoint", 1.0, 0.0, 100.0, classOf[Double])
+  val AdrenalinePainReductionPerPoint: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of acute injury pain prevented per adrenaline point.",
+      "The default 0.005 means 10 reserve prevents 5% of pain from the same accepted hit."
+    )
+    .defineInRange("painReductionPerPoint", 0.005, 0.0, 1.0, classOf[Double])
+  val AdrenalineMaxPainReductionFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum fraction of acute injury pain that adrenaline can prevent.",
+      "This never changes tissue damage, bleeding, or condition onset."
+    )
+    .defineInRange("maxPainReductionFraction", 0.5, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")
