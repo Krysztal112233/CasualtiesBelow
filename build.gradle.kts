@@ -121,6 +121,41 @@ tasks.test {
     }
 }
 
+val apiBoundarySources =
+    fileTree("src/main/scala/dev/krysztal/casualtiesbelow/api") {
+        include("**/*.scala")
+    }
+
+tasks.register("checkApiBoundaries") {
+    group = "verification"
+    description = "Reject dependencies from the supported API package into mod internals"
+    inputs.files(apiBoundarySources)
+
+    doLast {
+        val internalReference =
+            Regex("""dev\.krysztal\.casualtiesbelow\.(?!api(?:\.|$))""")
+        val violations =
+            apiBoundarySources.files
+                .sortedBy { it.path }
+                .flatMap { source ->
+                    source.readLines().mapIndexedNotNull { index, line ->
+                        if (internalReference.containsMatchIn(line)) {
+                            "${source.relativeTo(projectDir)}:${index + 1}: ${line.trim()}"
+                        } else {
+                            null
+                        }
+                    }
+                }
+        check(violations.isEmpty()) {
+            "The API package references implementation code:\n${violations.joinToString("\n")}"
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("checkApiBoundaries")
+}
+
 spotless {
     scala {
         scalafmt("3.11.5").configFile(".scalafmt.conf")
