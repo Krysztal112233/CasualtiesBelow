@@ -41,15 +41,15 @@ object Unconsciousness {
   private val SlownessModifierId = CasualtiesBelow.ofIdentifier("consciousness_slowness")
 
   /** Incapacitation severity of a scalar in [0, 1]: 0 at and above the start threshold, ramping
-    * linearly to 1 at the consciousness floor.
+    * linearly to 1 at the independent knockout threshold.
     */
   def severityOf(consciousness: Double): Double = {
-    val floor = CasualtiesBelowConfig.ConsciousnessFloor.get()
+    val knockout = CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold
     val start = CasualtiesBelowConfig.ConsciousnessIncapacitationStartThreshold.get()
-    if (start <= floor) {
-      if (consciousness <= floor) 1.0 else 0.0
+    if (start <= knockout) {
+      if (consciousness <= knockout) 1.0 else 0.0
     } else {
-      ((start - consciousness) / (start - floor)).max(0.0).min(1.0)
+      ((start - consciousness) / (start - knockout)).max(0.0).min(1.0)
     }
   }
 

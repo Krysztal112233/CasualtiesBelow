@@ -20,7 +20,19 @@ import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
   */
 object CasualtiesBelowConfig {
 
+  private val CurrentPhysiologyBalanceVersion = 1
   private val Builder = new ModConfigSpec.Builder()
+
+  private val PhysiologyBalanceVersion: ConfigValue[Integer] = Builder
+    .comment(
+      "Internal migration marker for physiology balance defaults. Do not edit manually."
+    )
+    .defineInRange(
+      "physiologyBalanceVersion",
+      0,
+      0,
+      CurrentPhysiologyBalanceVersion
+    )
 
   Builder.push("vitals")
   val StartingHealth: ConfigValue[Double] = Builder
@@ -38,17 +50,25 @@ object CasualtiesBelowConfig {
     .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessFloor: ConfigValue[Double] = Builder
     .comment(
-      "Ordinary minimum consciousness value; the unconscious latch engages at this floor.",
+      "Ordinary minimum consciousness value. Knockout is controlled independently by",
+      "consciousnessKnockoutThreshold; this floor only bounds stable physiological progression.",
       "Pain shock is the bounded exception: collapse sets consciousness to literal zero and its",
       "recovery phase permits the scalar to rise from zero before normal floor rules resume."
     )
     .defineInRange("consciousnessFloor", 10.0, 0.0, 100.0, classOf[Double])
+  val ConsciousnessKnockoutThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness at or below which an otherwise awake player becomes unconscious.",
+      "At use time it is kept no lower than consciousnessFloor. Keep the wake threshold above",
+      "this value to preserve hysteresis."
+    )
+    .defineInRange("consciousnessKnockoutThreshold", 30.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessIncapacitationStartThreshold: ConfigValue[Double] = Builder
     .comment(
       "Consciousness below which blackout and movement slowdown ramp in linearly,",
-      "reaching full effect at consciousnessFloor. Must exceed consciousnessFloor."
+      "reaching full effect at consciousnessKnockoutThreshold. Must exceed that threshold."
     )
-    .defineInRange("consciousnessIncapacitationStartThreshold", 30.0, 0.0, 100.0, classOf[Double])
+    .defineInRange("consciousnessIncapacitationStartThreshold", 50.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessMaxDimOpacity: ConfigValue[Double] = Builder
     .comment(
       "Strongest awake dimming opacity (0.0-1.0), approached near the consciousness floor.",
@@ -66,49 +86,49 @@ object CasualtiesBelowConfig {
     .comment(
       "Blood oxygen lost per tick only after the vanilla air supply is fully exhausted.",
       "Respiration and Water Breathing retain their normal effects by delaying or preventing",
-      "that point. At the default rate, a healthy reserve takes about 16.7 seconds of exhausted",
+      "that point. At the default rate, a healthy reserve takes 12.5 seconds of exhausted",
       "air to fall from 100 to zero."
     )
-    .defineInRange("bloodOxygenDepletionPerTick", 0.3, 0.0, 100.0, classOf[Double])
+    .defineInRange("bloodOxygenDepletionPerTick", 0.4, 0.0, 100.0, classOf[Double])
   val BloodOxygenRecoveryPerTick: ConfigValue[Double] = Builder
     .comment(
       "Blood oxygen restored per tick while vanilla air remains available.",
       "Recovery can never exceed the capacity allowed by the current blood volume."
     )
-    .defineInRange("bloodOxygenRecoveryPerTick", 0.5, 0.0, 100.0, classOf[Double])
+    .defineInRange("bloodOxygenRecoveryPerTick", 0.8, 0.0, 100.0, classOf[Double])
   val BloodOxygenHypoxiaThreshold: ConfigValue[Double] = Builder
     .comment(
-      "Blood oxygen below which hypoxia starts lowering consciousness.",
-      "The drain ramps linearly to its maximum at zero oxygen."
+      "Blood oxygen below which client medical displays mark severe hypoxia.",
+      "Consciousness itself follows its oxygen-derived hard ceiling rather than this warning value."
     )
     .defineInRange("bloodOxygenHypoxiaThreshold", 50.0, 0.0, 100.0, classOf[Double])
-  val HypoxiaConsciousnessDrainPerTick: ConfigValue[Double] = Builder
+  val ConsciousnessOxygenCapMultiplier: ConfigValue[Double] = Builder
     .comment(
-      "Maximum consciousness lost per tick from hypoxia, reached at zero blood oxygen."
+      "Multiplier from current blood oxygen to the hard consciousness ceiling.",
+      "The default 1.2 means 25 oxygen caps consciousness at 30 and 50 caps it at 60."
     )
-    .defineInRange("hypoxiaConsciousnessDrainPerTick", 0.4, 0.0, 100.0, classOf[Double])
+    .defineInRange("consciousnessOxygenCapMultiplier", 1.2, 0.0, 100.0, classOf[Double])
   val ConsciousnessRecoveryOxygenThreshold: ConfigValue[Double] = Builder
     .comment(
-      "Blood oxygen at or above which consciousness can recover from hypoxia.",
-      "The effective value is never lower than bloodOxygenHypoxiaThreshold; values between the",
-      "two thresholds form a neutral band."
+      "Blood oxygen at or above which consciousness can recover and waking is no longer blocked.",
+      "Below this value, the oxygen-derived hard ceiling still applies but consciousness cannot rise."
     )
     .defineInRange("consciousnessRecoveryOxygenThreshold", 75.0, 0.0, 100.0, classOf[Double])
   val ConsciousnessRecoveryPerTick: ConfigValue[Double] = Builder
     .comment(
       "Consciousness restored per tick while blood oxygen is above its recovery threshold.",
-      "The default 0.08 restores 1.6 consciousness per second."
+      "The default 0.2 restores 4 consciousness per second."
     )
-    .defineInRange("consciousnessRecoveryPerTick", 0.08, 0.0, 100.0, classOf[Double])
+    .defineInRange("consciousnessRecoveryPerTick", 0.2, 0.0, 100.0, classOf[Double])
   val ConsciousnessWakeThreshold: ConfigValue[Double] = Builder
     .comment(
       "Consciousness at which an unconscious player can wake once no active cause blocks waking.",
-      "Values below it form a hysteresis band with the consciousness-floor knockout point.",
+      "Values below it form a hysteresis band with consciousnessKnockoutThreshold.",
       "The minimum is 0.000001 so waking always requires positive consciousness."
     )
     .defineInRange(
       "consciousnessWakeThreshold",
-      20.0,
+      40.0,
       VitalsComponent.MinimumWakeThreshold,
       VitalsComponent.MaxValue,
       classOf[Double]
@@ -119,6 +139,13 @@ object CasualtiesBelowConfig {
     )
     .gameRestart()
     .defineInRange("maxBloodVolume", 5000.0, 100.0, 100000.0, classOf[Double])
+  val FullOxygenBloodFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of healthy maximum blood volume that can still carry 100 blood oxygen.",
+      "Below this point oxygen capacity falls linearly with blood volume; the default 0.6 means",
+      "3000 mL and above retain full capacity, while 1500 mL can carry at most 50 oxygen."
+    )
+    .defineInRange("fullOxygenBloodFraction", 0.6, 0.000001, 1.0, classOf[Double])
   val BloodDesaturationStartFraction: ConfigValue[Double] = Builder
     .comment(
       "Fraction of healthy maximum blood volume below which the world starts losing color.",
@@ -154,14 +181,14 @@ object CasualtiesBelowConfig {
       "deals its fatal hit (20 ticks = 1 second). Must remain positive; ending the breathing",
       "block resets the hidden persisted exposure timer immediately."
     )
-    .defineInRange("terminalHypoxiaDurationTicks", 200, 1, 72000)
+    .defineInRange("terminalHypoxiaDurationTicks", 160, 1, 72000)
   val InWallBloodOxygenDepletionPerTick: ConfigValue[Double] = Builder
     .comment(
       "Blood oxygen lost per tick while the player's head is in a wall. When exhausted-air",
       "drowning is active simultaneously, only the stronger of this and",
       "vitals.bloodOxygenDepletionPerTick applies."
     )
-    .defineInRange("inWallBloodOxygenDepletionPerTick", 0.5, 0.0, 100.0, classOf[Double])
+    .defineInRange("inWallBloodOxygenDepletionPerTick", 0.6, 0.0, 100.0, classOf[Double])
   val StarvationBloodLossFractionPerDamage: ConfigValue[Double] = Builder
     .comment(
       "Fraction of healthy max blood lost per accepted vanilla starvation damage point.",
@@ -776,6 +803,72 @@ object CasualtiesBelowConfig {
     MaxBloodVolume.get() * (1.0 - (sepsis / MaxSepsis.get()).min(1.0))
   }
 
-  def register(): Unit =
+  /** Cross-field consciousness thresholds used by server progression and synchronized displays. */
+  private[casualtiesbelow] def effectiveConsciousnessFloor: Double = {
+    finiteThreshold(ConsciousnessFloor.get(), 0.0)
+  }
+
+  private[casualtiesbelow] def effectiveConsciousnessKnockoutThreshold: Double = {
+    finiteThreshold(ConsciousnessKnockoutThreshold.get(), effectiveConsciousnessFloor)
+  }
+
+  private[casualtiesbelow] def effectiveConsciousnessWakeThreshold: Double = {
+    val knockout = effectiveConsciousnessKnockoutThreshold
+    val minimumWake =
+      (knockout + VitalsComponent.MinimumWakeThreshold).min(VitalsComponent.MaxValue)
+    finiteThreshold(ConsciousnessWakeThreshold.get(), minimumWake)
+  }
+
+  private def finiteThreshold(
+      value: scala.Double,
+      minimum: scala.Double
+  ): scala.Double = {
+    if (value == scala.Double.PositiveInfinity) VitalsComponent.MaxValue
+    else if (value.isFinite) value.max(minimum).min(VitalsComponent.MaxValue)
+    else minimum
+  }
+
+  def register(): Unit = {
     ConfigRegistry.INSTANCE.register(CasualtiesBelow.ModId, ModConfig.Type.COMMON, Spec)
+    migratePhysiologyBalanceDefaults()
+  }
+
+  /** FCAP preserves every existing valid value when only a spec default changes. Migrate values
+    * that still equal the previous release defaults, while retaining genuinely customized values.
+    * The marker starts at zero so both a pre-marker file and a fresh file take this idempotent
+    * pass; fresh files already contain the new values and therefore only advance the marker.
+    */
+  private def migratePhysiologyBalanceDefaults(): Unit = {
+    if (PhysiologyBalanceVersion.get().intValue >= CurrentPhysiologyBalanceVersion) return
+
+    migratePreviousDefault(ConsciousnessIncapacitationStartThreshold, 30.0, 50.0)
+    migratePreviousDefault(BloodOxygenDepletionPerTick, 0.3, 0.4)
+    migratePreviousDefault(BloodOxygenRecoveryPerTick, 0.5, 0.8)
+    migratePreviousDefault(ConsciousnessRecoveryPerTick, 0.08, 0.2)
+    migratePreviousDefault(ConsciousnessWakeThreshold, 20.0, 40.0)
+    migratePreviousDefault(InWallBloodOxygenDepletionPerTick, 0.5, 0.6)
+    if (TerminalHypoxiaDurationTicks.get().intValue == 200) {
+      TerminalHypoxiaDurationTicks.set(160)
+    }
+
+    PhysiologyBalanceVersion.set(CurrentPhysiologyBalanceVersion)
+    Spec.save()
+    CasualtiesBelow.Logger.info(
+      "Migrated physiology balance defaults to version {}",
+      CurrentPhysiologyBalanceVersion
+    )
+  }
+
+  private def migratePreviousDefault(
+      value: ConfigValue[Double],
+      previousDefault: Double,
+      currentDefault: Double
+  ): Unit = {
+    if (
+      java.lang.Double.doubleToLongBits(value.get().doubleValue) ==
+        java.lang.Double.doubleToLongBits(previousDefault)
+    ) {
+      value.set(currentDefault)
+    }
+  }
 }

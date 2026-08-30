@@ -9,8 +9,11 @@ import org.ladysnake.cca.api.v8.component.CardinalComponent
   * their constants below; adrenaline from 0 to its configured maximum; blood volume is in mL, up to
   * the configured maximum; discomfort runs from 0 to the configured maximum (`[discomfort]
   * maxValue`, default 100). Blood oxygen is normalized oxygen availability relative to a healthy,
-  * fully oxygenated player rather than a clinical saturation percentage: less blood lowers how much
-  * oxygen the body can carry.
+  * fully oxygenated player rather than a clinical saturation percentage: moderate blood loss
+  * retains full carrying capacity, then capacity falls linearly below the configured blood
+  * fraction. Consciousness has a separate ordinary floor, oxygen-derived hard ceiling, knockout
+  * threshold, and higher wake threshold; the `unconscious` latch is therefore not inferred from the
+  * floor.
   *
   * `Double` rather than `Float` preserves per-tick accumulation precision.
   */

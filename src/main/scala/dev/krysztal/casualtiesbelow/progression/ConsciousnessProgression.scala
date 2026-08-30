@@ -36,7 +36,8 @@ object ConsciousnessProgression {
           vitals.unconscious,
           List(currentPressure(vitals)),
           CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
-          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          configuredWakeThreshold,
+          effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
     }
@@ -58,7 +59,8 @@ object ConsciousnessProgression {
           consciousness,
           vitals.unconscious,
           List(currentPressure(vitals)),
-          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          configuredWakeThreshold,
+          effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
     }
@@ -76,7 +78,8 @@ object ConsciousnessProgression {
           vitals.consciousness,
           vitals.unconscious,
           List(currentPressure(vitals)),
-          CasualtiesBelowConfig.ConsciousnessWakeThreshold.get(),
+          configuredWakeThreshold,
+          effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
     }
@@ -112,6 +115,7 @@ object ConsciousnessProgression {
           vitals.unconscious,
           List(currentPressure(vitals)),
           wakeThreshold,
+          effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
     }
@@ -119,29 +123,32 @@ object ConsciousnessProgression {
   }
 
   private def configuredWakeThreshold: Double = {
-    CasualtiesBelowConfig.ConsciousnessWakeThreshold
-      .get()
-      .doubleValue
-      .max(VitalsComponent.MinimumWakeThreshold)
-      .min(VitalsComponent.MaxValue)
+    CasualtiesBelowConfig.effectiveConsciousnessWakeThreshold
+  }
+
+  private def configuredKnockoutThreshold: Double = {
+    CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold
   }
 
   private def effectiveFloor(vitals: VitalsComponentImpl): Double = {
     vitals.painShockStage match {
       case PainShockStage.Recovering => 0.0
-      case _                         => CasualtiesBelowConfig.ConsciousnessFloor.get()
+      case _                         => CasualtiesBelowConfig.effectiveConsciousnessFloor
+    }
+  }
+
+  private def effectiveKnockoutThreshold(vitals: VitalsComponentImpl): Double = {
+    vitals.painShockStage match {
+      case PainShockStage.Recovering => 0.0
+      case _                         => configuredKnockoutThreshold
     }
   }
 
   private def currentPressure(vitals: VitalsComponentImpl): ConsciousnessPressure = {
     hypoxiaPressure(
       vitals.bloodOxygen,
-      CasualtiesBelowConfig.BloodOxygenHypoxiaThreshold.get(),
-      math.max(
-        CasualtiesBelowConfig.BloodOxygenHypoxiaThreshold.get(),
-        CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get()
-      ),
-      CasualtiesBelowConfig.HypoxiaConsciousnessDrainPerTick.get()
+      CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
+      CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
     )
   }
 
@@ -181,20 +188,23 @@ object ConsciousnessProgression {
       pressures: List[ConsciousnessPressure],
       recoveryPerTick: Double,
       wakeThreshold: Double,
+      knockoutThreshold: Double,
       floor: Double
   ): ConsciousnessStep = {
-    val ceiling = pressureCeiling(pressures).max(floor)
-    val bounded = current.max(floor).min(ceiling)
-    val totalLoss = pressures.map(_.lossPerTick.max(0.0)).sum
+    val minimum = finiteInRange(floor, 0.0, VitalsComponent.MaxValue, 0.0)
+    val ceiling = pressureCeiling(pressures).max(minimum)
+    val bounded = normalizedConsciousness(current, minimum, ceiling)
+    val currentAllowsRecovery = current.isFinite || current == Double.PositiveInfinity
+    val totalLoss = pressures.map(pressure => finiteNonNegative(pressure.lossPerTick)).sum
     val next =
       if (totalLoss > 0.0) {
-        (bounded - totalLoss).max(floor)
-      } else if (pressures.exists(_.recoveryBlocked)) {
+        (bounded - totalLoss).max(minimum)
+      } else if (pressures.exists(_.recoveryBlocked) || !currentAllowsRecovery) {
         bounded
       } else {
-        (bounded + recoveryPerTick.max(0.0)).min(ceiling)
+        (bounded + finiteNonNegative(recoveryPerTick)).min(ceiling)
       }
-    reconcile(next, unconscious, pressures, wakeThreshold, floor)
+    reconcile(next, unconscious, pressures, wakeThreshold, knockoutThreshold, minimum)
   }
 
   private[progression] def reconcile(
@@ -202,17 +212,32 @@ object ConsciousnessProgression {
       unconscious: Boolean,
       pressures: List[ConsciousnessPressure],
       wakeThreshold: Double,
+      knockoutThreshold: Double,
       floor: Double
   ): ConsciousnessStep = {
-    val bounded = consciousness.max(floor).min(pressureCeiling(pressures).max(floor))
+    val minimum = finiteInRange(floor, 0.0, VitalsComponent.MaxValue, 0.0)
+    val ceiling = pressureCeiling(pressures).max(minimum)
+    val bounded = normalizedConsciousness(consciousness, minimum, ceiling)
+    val knockout = finiteInRange(
+      knockoutThreshold,
+      minimum,
+      VitalsComponent.MaxValue,
+      minimum
+    )
+    val minimumWake = minimumWakeThreshold(knockout)
+    val wake = finiteInRange(
+      wakeThreshold,
+      minimumWake,
+      VitalsComponent.MaxValue,
+      minimumWake
+    )
     val nextUnconscious =
-      if (!unconscious && bounded <= floor) {
+      if (!unconscious && bounded <= knockout) {
         true
       } else if (
         unconscious &&
-        bounded >= wakeThreshold
-          .max(VitalsComponent.MinimumWakeThreshold)
-          .min(VitalsComponent.MaxValue) &&
+        wake > knockout &&
+        bounded >= wake &&
         !pressures.exists(_.wakeBlocked)
       ) {
         false
@@ -222,9 +247,13 @@ object ConsciousnessProgression {
     ConsciousnessStep(bounded, nextUnconscious)
   }
 
+  private def minimumWakeThreshold(knockoutThreshold: Double): Double = {
+    (knockoutThreshold + VitalsComponent.MinimumWakeThreshold).min(VitalsComponent.MaxValue)
+  }
+
   private def pressureCeiling(pressures: List[ConsciousnessPressure]): Double = {
     pressures
-      .map(_.ceiling)
+      .map(pressure => finiteInRange(pressure.ceiling, 0.0, VitalsComponent.MaxValue, 0.0))
       .minOption
       .getOrElse(VitalsComponent.MaxValue)
       .max(0.0)
@@ -233,25 +262,61 @@ object ConsciousnessProgression {
 
   private[progression] def hypoxiaPressure(
       bloodOxygen: Double,
-      hypoxiaThreshold: Double,
       recoveryThreshold: Double,
-      maximumDrainPerTick: Double
+      oxygenCapMultiplier: Double
   ): ConsciousnessPressure = {
-    val oxygen = bloodOxygen.max(0.0).min(VitalsComponent.MaxBloodOxygen)
-    val hypoxia = hypoxiaThreshold.max(0.0).min(VitalsComponent.MaxBloodOxygen)
-    val recovery = recoveryThreshold.max(hypoxia).min(VitalsComponent.MaxBloodOxygen)
+    val oxygen = finiteInRange(
+      bloodOxygen,
+      0.0,
+      VitalsComponent.MaxBloodOxygen,
+      0.0
+    )
+    val recovery = finiteInRange(
+      recoveryThreshold,
+      0.0,
+      VitalsComponent.MaxBloodOxygen,
+      VitalsComponent.MaxBloodOxygen
+    )
+    val multiplier = finiteNonNegative(oxygenCapMultiplier)
+    val ceiling = finiteInRange(
+      oxygen * multiplier,
+      0.0,
+      VitalsComponent.MaxValue,
+      0.0
+    )
+    ConsciousnessPressure(
+      recoveryBlocked = oxygen < recovery,
+      wakeBlocked = oxygen < recovery,
+      ceiling = ceiling
+    )
+  }
 
-    if (hypoxia > 0.0 && oxygen < hypoxia) {
-      ConsciousnessPressure(
-        lossPerTick = maximumDrainPerTick.max(0.0) * (1.0 - oxygen / hypoxia),
-        recoveryBlocked = true,
-        wakeBlocked = true
-      )
-    } else if (oxygen < recovery) {
-      ConsciousnessPressure(recoveryBlocked = true, wakeBlocked = true)
-    } else {
-      ConsciousnessPressure()
-    }
+  private def finiteNonNegative(value: Double): Double = {
+    if (value == Double.PositiveInfinity) Double.MaxValue
+    else if (value.isFinite) value.max(0.0)
+    else 0.0
+  }
+
+  private def finiteInRange(
+      value: Double,
+      minimum: Double,
+      maximum: Double,
+      fallback: Double
+  ): Double = {
+    if (value == Double.PositiveInfinity) maximum
+    else if (value == Double.NegativeInfinity) minimum
+    else if (value.isFinite) value.max(minimum).min(maximum)
+    else fallback.max(minimum).min(maximum)
+  }
+
+  private def normalizedConsciousness(
+      value: Double,
+      minimum: Double,
+      maximum: Double
+  ): Double = {
+    if (value == Double.PositiveInfinity) maximum
+    else if (value.isFinite) value.max(minimum).min(maximum)
+    else minimum
   }
 
   /** Normalizes serialized or copied state without firing a transition event. Stable physiology
@@ -264,6 +329,7 @@ object ConsciousnessProgression {
       savedConsciousness: Double,
       savedUnconscious: Option[Boolean],
       floor: Double,
+      knockoutThreshold: Double,
       painShockStage: PainShockStage
   ): (Double, Boolean) = {
     if (painShockStage == PainShockStage.Collapsed) {
@@ -286,9 +352,33 @@ object ConsciousnessProgression {
         VitalsComponent.MaxValue
       }
     val consciousness = raw.max(minimum).min(VitalsComponent.MaxValue)
+    val knockout = knockoutThreshold.max(minimum).min(VitalsComponent.MaxValue)
     val unconscious =
       if (painShockStage == PainShockStage.Recovering) true
-      else savedUnconscious.getOrElse(raw <= floor) || raw <= floor
+      else savedUnconscious.getOrElse(consciousness <= knockout) || consciousness <= knockout
+    (consciousness, unconscious)
+  }
+
+  /** Normalizes a server-synchronized client copy without re-deriving the authoritative latch from
+    * local config. Pain-shock stages retain their intrinsic collapsed/recovering invariants.
+    */
+  private[casualtiesbelow] def normalizeSyncedState(
+      savedConsciousness: Double,
+      savedUnconscious: Option[Boolean],
+      painShockStage: PainShockStage
+  ): (Double, Boolean) = {
+    if (painShockStage == PainShockStage.Collapsed) return (0.0, true)
+
+    val raw =
+      if (savedConsciousness.isFinite) savedConsciousness
+      else if (savedConsciousness == Double.PositiveInfinity) VitalsComponent.MaxValue
+      else if (savedConsciousness == Double.NegativeInfinity) 0.0
+      else if (painShockStage == PainShockStage.Recovering || savedUnconscious.contains(true)) 0.0
+      else VitalsComponent.MaxValue
+    val consciousness = raw.max(0.0).min(VitalsComponent.MaxValue)
+    val unconscious =
+      if (painShockStage == PainShockStage.Recovering) true
+      else savedUnconscious.getOrElse(false)
     (consciousness, unconscious)
   }
 }

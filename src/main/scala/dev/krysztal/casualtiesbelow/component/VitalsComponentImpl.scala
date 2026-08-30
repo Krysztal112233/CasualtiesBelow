@@ -71,13 +71,21 @@ final class VitalsComponentImpl(val player: Player)
       }
     applyPainShockState(normalizedShockLoad, normalizedShockStage)
     val (normalizedConsciousness, normalizedUnconscious) =
-      ConsciousnessProgression.normalizeStoredState(
-        source.consciousness,
-        Some(source.unconscious),
-        if (player.level().isClientSide()) 0.0
-        else CasualtiesBelowConfig.ConsciousnessFloor.get(),
-        normalizedShockStage
-      )
+      if (player.level().isClientSide()) {
+        ConsciousnessProgression.normalizeSyncedState(
+          source.consciousness,
+          Some(source.unconscious),
+          normalizedShockStage
+        )
+      } else {
+        ConsciousnessProgression.normalizeStoredState(
+          source.consciousness,
+          Some(source.unconscious),
+          CasualtiesBelowConfig.effectiveConsciousnessFloor,
+          CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold,
+          normalizedShockStage
+        )
+      }
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     setBloodOxygen(source.bloodOxygen)
     setBloodVolume(source.bloodVolume)
@@ -229,14 +237,24 @@ final class VitalsComponentImpl(val player: Player)
         )
       }
     applyPainShockState(normalizedShockLoad, normalizedShockStage)
+    val savedConsciousness =
+      in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue)
     val (normalizedConsciousness, normalizedUnconscious) =
-      ConsciousnessProgression.normalizeStoredState(
-        in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue),
-        savedUnconscious,
-        if (player.level().isClientSide()) 0.0
-        else CasualtiesBelowConfig.ConsciousnessFloor.get(),
-        normalizedShockStage
-      )
+      if (player.level().isClientSide()) {
+        ConsciousnessProgression.normalizeSyncedState(
+          savedConsciousness,
+          savedUnconscious,
+          normalizedShockStage
+        )
+      } else {
+        ConsciousnessProgression.normalizeStoredState(
+          savedConsciousness,
+          savedUnconscious,
+          CasualtiesBelowConfig.effectiveConsciousnessFloor,
+          CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold,
+          normalizedShockStage
+        )
+      }
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
     setBloodOxygen(
       in.getDoubleOr(

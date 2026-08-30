@@ -28,6 +28,7 @@ import com.google.gson.JsonPrimitive
 final case class GameplayDataSnapshot(
     maxBloodVolume: Double,
     bloodOxygenHypoxiaThreshold: Double,
+    consciousnessKnockoutThreshold: Double,
     unconsciousWakeThreshold: Double,
     shockCollapseThreshold: Double,
     armorSkinFormula: String,
@@ -51,6 +52,9 @@ final case class GameplayDataSnapshot(
         jsonObject(
           "maxBloodVolume" -> Some(JsonPrimitive(maxBloodVolume)),
           "bloodOxygenHypoxiaThreshold" -> Some(JsonPrimitive(bloodOxygenHypoxiaThreshold)),
+          "consciousnessKnockoutThreshold" -> Some(
+            JsonPrimitive(consciousnessKnockoutThreshold)
+          ),
           "unconsciousWakeThreshold" -> Some(JsonPrimitive(unconsciousWakeThreshold)),
           "shockCollapseThreshold" -> Some(JsonPrimitive(shockCollapseThreshold))
         )
@@ -97,7 +101,7 @@ final case class GameplayDataSnapshot(
 
 object GameplayDataSnapshot {
 
-  private val CurrentSchemaVersion = 2
+  private val CurrentSchemaVersion = 3
 
   private final case class ClientState(
       rawJson: Option[String],
@@ -163,7 +167,8 @@ object GameplayDataSnapshot {
     GameplayDataSnapshot(
       maxBloodVolume = config.MaxBloodVolume.get(),
       bloodOxygenHypoxiaThreshold = config.BloodOxygenHypoxiaThreshold.get(),
-      unconsciousWakeThreshold = config.ConsciousnessWakeThreshold.get(),
+      consciousnessKnockoutThreshold = config.effectiveConsciousnessKnockoutThreshold,
+      unconsciousWakeThreshold = config.effectiveConsciousnessWakeThreshold,
       shockCollapseThreshold = config.ShockCollapseThreshold.get(),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
@@ -238,6 +243,10 @@ object GameplayDataSnapshot {
     GameplayDataSnapshot(
       maxBloodVolume = requiredDouble(vitals, "maxBloodVolume"),
       bloodOxygenHypoxiaThreshold = requiredDouble(vitals, "bloodOxygenHypoxiaThreshold"),
+      consciousnessKnockoutThreshold = requiredDouble(
+        vitals,
+        "consciousnessKnockoutThreshold"
+      ),
       unconsciousWakeThreshold = requiredDouble(vitals, "unconsciousWakeThreshold"),
       shockCollapseThreshold = requiredDouble(vitals, "shockCollapseThreshold"),
       armorSkinFormula = requiredString(armor, "skinFormula"),

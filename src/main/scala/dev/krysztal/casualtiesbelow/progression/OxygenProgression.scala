@@ -66,16 +66,31 @@ object OxygenProgression {
       breathingBlocked: Boolean,
       deprivationRate: Double
   ): Double = {
-    val capacity = BloodVolume.oxygenCarryingCapacity(vitals)
-    val current = normalizedOxygen(vitals.bloodOxygen, capacity)
+    nextBloodOxygen(
+      vitals.bloodOxygen,
+      BloodVolume.oxygenCarryingCapacity(vitals),
+      breathingBlocked,
+      deprivationRate,
+      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()
+    )
+  }
+
+  private[progression] def nextBloodOxygen(
+      bloodOxygen: Double,
+      carryingCapacity: Double,
+      breathingBlocked: Boolean,
+      deprivationRate: Double,
+      recoveryRate: Double
+  ): Double = {
+    val capacity = normalizedOxygen(carryingCapacity, VitalsComponent.MaxBloodOxygen)
+    val current = normalizedOxygen(bloodOxygen, capacity)
 
     // Oxygen above a newly reduced blood-volume capacity is lost immediately. Active deprivation
     // and recovery remain gradual at their configured rates.
     if (breathingBlocked) {
-      (current - deprivationRate).max(0.0)
+      (current - finiteNonNegative(deprivationRate)).max(0.0)
     } else {
-      (current + finiteNonNegative(CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()))
-        .min(capacity)
+      (current + finiteNonNegative(recoveryRate)).min(capacity)
     }
   }
 

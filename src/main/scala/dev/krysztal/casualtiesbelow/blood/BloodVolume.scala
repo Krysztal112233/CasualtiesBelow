@@ -26,10 +26,32 @@ object BloodVolume {
 
   /** Blood-oxygen carrying capacity represented by the current bounded blood volume. */
   def oxygenCarryingCapacity(vitals: VitalsComponent): Double = {
-    val healthy = healthyMaximum
-    if (healthy <= 0.0) return 0.0
+    oxygenCarryingCapacity(
+      vitals.bloodVolume,
+      healthyMaximum,
+      CasualtiesBelowConfig.FullOxygenBloodFraction.get()
+    )
+  }
 
-    VitalsComponent.MaxBloodOxygen * normalizedVolume(vitals.bloodVolume, healthy) / healthy
+  /** Pure form of the carrying-capacity relationship, exposed to package tests. Blood at or above
+    * `fullOxygenFraction` of healthy volume retains full oxygen capacity; below it, capacity falls
+    * linearly to zero. Zero blood always has zero capacity.
+    */
+  private[blood] def oxygenCarryingCapacity(
+      bloodVolume: Double,
+      healthyMaximum: Double,
+      fullOxygenFraction: Double
+  ): Double = {
+    val healthy = nonNegative(healthyMaximum)
+    val volume = normalizedVolume(bloodVolume, healthy)
+    if (healthy <= 0.0 || volume <= 0.0) return 0.0
+
+    val fraction = normalizedFraction(fullOxygenFraction)
+    if (fraction <= 0.0) return VitalsComponent.MaxBloodOxygen
+
+    val fullCapacityVolume = healthy * fraction
+    (VitalsComponent.MaxBloodOxygen * volume / fullCapacityVolume)
+      .min(VitalsComponent.MaxBloodOxygen)
   }
 
   /** Reconciles blood into `[0, maximum]`; returns whether the stored value changed. */
@@ -87,6 +109,12 @@ object BloodVolume {
   private def nonNegative(value: Double): Double = {
     if (value == Double.PositiveInfinity) Double.MaxValue
     else if (value.isFinite) value.max(0.0)
+    else 0.0
+  }
+
+  private def normalizedFraction(value: Double): Double = {
+    if (value == Double.PositiveInfinity) 1.0
+    else if (value.isFinite) value.max(0.0).min(1.0)
     else 0.0
   }
 

@@ -37,10 +37,10 @@ import dev.krysztal.casualtiesbelow.pain.PainShock
   *     ([[CasualtiesBelowDamageTypes.BloodLoss]]), while a successful death-protection rescue
   *     restores a bounded blood reserve and temporarily reduces actual drain without closing wounds
   *     (see [[TotemHemostasis]])
-  *   - exhausted vanilla air gates blood-oxygen depletion, while custom blood volume sets its
-  *     carrying capacity; hypoxia pressures consciousness, while adequate oxygen permits recovery,
-  *     and sustained pressure can latch the recoverable unconscious state (see
-  *     [[OxygenProgression]], [[ConsciousnessProgression]])
+  *   - exhausted vanilla air gates blood-oxygen depletion; moderate blood loss retains full
+  *     carrying capacity, then capacity falls linearly below its configured fraction; current
+  *     oxygen sets a hard consciousness ceiling, while independent knockout/wake hysteresis owns
+  *     the recoverable unconscious state (see [[OxygenProgression]], [[ConsciousnessProgression]])
   *   - wounds with meaningful skin damage can get infected; the immune system fights infections
   *     with its total capacity split across all infected limbs, against per-limb spread rates
   *     proportional to its complement; past a progress ramp an infection can also seed adjacent
@@ -181,9 +181,9 @@ object InjuryProgression {
     // change already syncs through vitalsChanged, while persistence always writes the live value.
     TotemHemostasis.tick(vitals)
 
-    // Zero blood is fatal before oxygen can drive consciousness to its floor and latch the
-    // recoverable unconscious state. Blood-loss death protection restores blood synchronously in
-    // the vanilla totem path; an unrescued player remains at zero and dies normally.
+    // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
+    // threshold. Blood-loss death protection restores blood synchronously in the vanilla totem
+    // path; an unrescued player remains at zero and dies normally.
     if (vitals.bloodVolume <= 0.0) {
       val fatal =
         if (maxBlood <= 0.0) {
