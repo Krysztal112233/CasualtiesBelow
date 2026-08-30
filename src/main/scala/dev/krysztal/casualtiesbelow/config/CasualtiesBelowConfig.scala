@@ -666,6 +666,34 @@ object CasualtiesBelowConfig {
     .defineInRange("dislocatedWalkingPainPerTick", 0.3, 0.0, 10.0, classOf[Double])
   Builder.pop()
 
+  Builder.push("adrenaline")
+  val MaxAdrenaline: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum temporary adrenaline reserve. Set to zero to disable all adrenaline grants.",
+      "Per-damage-source grant amounts are defined by adrenaline_rule datapack entries."
+    )
+    .defineInRange("maxValue", 100.0, 0.0, 10000.0, classOf[Double])
+  val AdrenalineDecayPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Adrenaline removed per server tick after the combat grace window expires.",
+      "The default 0.1 removes 2 points per second."
+    )
+    .defineInRange("decayPerTick", 0.1, 0.000001, 1000.0, classOf[Double])
+  val AdrenalineCombatGraceTicks: ConfigValue[Integer] = Builder
+    .comment(
+      "Ticks after the latest positive adrenaline stimulus before decay starts.",
+      "Repeated accepted hits refresh this grace window; 100 ticks is 5 seconds."
+    )
+    .defineInRange("combatGraceTicks", 100, 0, 72000)
+  val AdrenalineShockProtectionPerPoint: ConfigValue[Double] = Builder
+    .comment(
+      "Temporary pain-shock threshold added per adrenaline point.",
+      "Effective collapse threshold = shockCollapseThreshold + adrenaline * this value.",
+      "Set to zero to keep the reserve visible to APIs while disabling shock protection."
+    )
+    .defineInRange("shockProtectionPerPoint", 1.0, 0.0, 100.0, classOf[Double])
+  Builder.pop()
+
   Builder.push("fall")
   val FallDamageFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,

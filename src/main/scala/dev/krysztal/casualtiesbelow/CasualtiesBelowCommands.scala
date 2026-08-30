@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
+import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
@@ -63,12 +64,18 @@ object CasualtiesBelowCommands {
       "immune_health",
       "consciousness",
       "pain_shock_load",
+      "adrenaline",
       "blood_oxygen",
       "blood_volume",
       "sepsis",
       "discomfort"
     )
-  private val VitalsStatNames = VitalsEditableStatNames ++ List("pain_shock_stage", "unconscious")
+  private val VitalsStatNames =
+    VitalsEditableStatNames ++ List(
+      "pain_shock_stage",
+      "adrenaline_grace_ticks",
+      "unconscious"
+    )
 
   def register(): Unit = {
     CommandRegistrationCallback.EVENT.register { (dispatcher, _, _) =>
@@ -343,6 +350,9 @@ object CasualtiesBelowCommands {
           ConsciousnessProgression.applyAuthoritativeEdit(player, vitals, value)
         case "pain_shock_load" =>
           PainShock.applyAuthoritativeEdit(vitals, value)
+        case "adrenaline" =>
+          Adrenaline.applyAuthoritativeEdit(vitals, value)
+          PainShock.reconcileAfterAdrenalineEdit(vitals)
         case "blood_oxygen" =>
           vitals.bloodOxygen = value.min(VitalsComponent.MaxBloodOxygen)
         case "blood_volume" =>
@@ -366,16 +376,18 @@ object CasualtiesBelowCommands {
   }
 
   private def vitalsValue(vitals: VitalsComponent, stat: String): String = stat match {
-    case "immune_health"    => f"${vitals.immuneHealth}%.1f"
-    case "consciousness"    => f"${vitals.consciousness}%.1f"
-    case "pain_shock_load"  => f"${vitals.painShockLoad}%.1f"
-    case "pain_shock_stage" => vitals.painShockStage.id
-    case "blood_oxygen"     => f"${vitals.bloodOxygen}%.1f"
-    case "blood_volume"     => f"${vitals.bloodVolume}%.1f mL"
-    case "sepsis"           => f"${vitals.sepsis}%.1f"
-    case "discomfort"       => f"${vitals.discomfort}%.1f"
-    case "unconscious"      => vitals.unconscious.toString
-    case _                  => throw UnknownStat.create()
+    case "immune_health"          => f"${vitals.immuneHealth}%.1f"
+    case "consciousness"          => f"${vitals.consciousness}%.1f"
+    case "pain_shock_load"        => f"${vitals.painShockLoad}%.1f"
+    case "pain_shock_stage"       => vitals.painShockStage.id
+    case "adrenaline"             => f"${vitals.adrenaline}%.1f"
+    case "adrenaline_grace_ticks" => vitals.adrenalineGraceTicks.toString
+    case "blood_oxygen"           => f"${vitals.bloodOxygen}%.1f"
+    case "blood_volume"           => f"${vitals.bloodVolume}%.1f mL"
+    case "sepsis"                 => f"${vitals.sepsis}%.1f"
+    case "discomfort"             => f"${vitals.discomfort}%.1f"
+    case "unconscious"            => vitals.unconscious.toString
+    case _                        => throw UnknownStat.create()
   }
 
   private def getPart(ctx: CommandContext[CommandSourceStack]): BodyPart = {

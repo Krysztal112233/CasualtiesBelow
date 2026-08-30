@@ -219,7 +219,10 @@ object VitalsPostEffect {
   ): Float = {
     val visualStart = CasualtiesBelowConfig.ShockVisualStartLoad.get().toFloat
     val actualLoad = Mth.clamp(vitals.painShockLoad.toFloat, 0.0f, 100.0f)
-    if (vitals.painShockStage != PainShockStage.Stable || actualLoad <= visualStart) {
+    val warningStage =
+      vitals.painShockStage == PainShockStage.Stable ||
+        vitals.painShockStage == PainShockStage.Deferred
+    if (!warningStage || actualLoad <= visualStart) {
       snapShockLoad(player, actualLoad)
       return 0.0f
     }

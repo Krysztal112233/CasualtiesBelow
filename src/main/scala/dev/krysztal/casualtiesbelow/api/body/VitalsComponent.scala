@@ -3,14 +3,15 @@ package dev.krysztal.casualtiesbelow.api.body
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
 
-/** Whole-player vitals: immune health, consciousness, hidden pain-shock load and phase, blood
-  * oxygen, blood volume, hidden terminal-hypoxia exposure and totem hemostasis, sepsis, and
-  * discomfort. Immune health ranges from 0 to the configured maximum (`maxImmuneHealth`, default
-  * 200); consciousness, pain-shock load, and blood oxygen from 0 to their constants below; blood
-  * volume is in mL, up to the configured maximum; discomfort runs from 0 to the configured maximum
-  * (`[discomfort] maxValue`, default 100). Blood oxygen is normalized oxygen availability relative
-  * to a healthy, fully oxygenated player rather than a clinical saturation percentage: less blood
-  * lowers how much oxygen the body can carry.
+/** Whole-player vitals: immune health, consciousness, hidden pain-shock load and phase, temporary
+  * adrenaline, blood oxygen, blood volume, hidden terminal-hypoxia exposure and totem hemostasis,
+  * sepsis, and discomfort. Immune health ranges from 0 to the configured maximum
+  * (`maxImmuneHealth`, default 200); consciousness, pain-shock load, and blood oxygen from 0 to
+  * their constants below; adrenaline from 0 to its configured maximum; blood volume is in mL, up to
+  * the configured maximum; discomfort runs from 0 to the configured maximum (`[discomfort]
+  * maxValue`, default 100). Blood oxygen is normalized oxygen availability relative to a healthy,
+  * fully oxygenated player rather than a clinical saturation percentage: less blood lowers how much
+  * oxygen the body can carry.
   *
   * `Double` rather than `Float` for the same reason as [[LimbStats]]: per-tick accumulation
   * precision.
@@ -39,6 +40,17 @@ trait VitalsComponent extends CopyableComponent[VitalsComponent] with AutoSynced
   private[casualtiesbelow] def applyPainShockState(
       load: Double,
       stage: PainShockStage
+  ): Unit
+
+  /** Temporary reserve used only to raise the pain-shock collapse threshold. The hidden grace timer
+    * is kept package-internal so integrations cannot treat it as a second public vital.
+    */
+  def adrenaline: Double
+  private[casualtiesbelow] def adrenalineGraceTicks: Int
+
+  private[casualtiesbelow] def applyAdrenalineState(
+      amount: Double,
+      graceTicks: Int
   ): Unit
 
   var bloodOxygen: Double

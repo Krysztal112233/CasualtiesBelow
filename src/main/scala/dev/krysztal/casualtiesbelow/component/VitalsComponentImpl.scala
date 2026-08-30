@@ -9,6 +9,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
+import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
@@ -23,6 +24,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
   private var unconsciousState: Boolean = false
   private var painShockLoadState: Double = 0.0
   private var painShockStageState: PainShockStage = PainShockStage.Stable
+  private var adrenalineState: Double = 0.0
+  private var adrenalineGraceTicksState: Int = 0
   var bloodOxygen: Double = VitalsComponent.MaxBloodOxygen
   var bloodVolume: Double = CasualtiesBelowConfig.MaxBloodVolume.get()
   private var hypoxiaExposureTicksState: Int = 0
@@ -35,18 +38,31 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
       registryLookup: HolderLookup.Provider
   ): Unit = {
     immuneHealth = other.immuneHealth
+    val normalizedAdrenaline =
+      if (player.level().isClientSide()) {
+        Adrenaline.normalizeSyncedState(other.adrenaline, other.adrenalineGraceTicks)
+      } else {
+        Adrenaline.normalizeStoredState(other.adrenaline, other.adrenalineGraceTicks)
+      }
+    applyAdrenalineState(normalizedAdrenaline.amount, normalizedAdrenaline.graceTicks)
     val (normalizedShockLoad, normalizedShockStage) =
-      PainShock.normalizeStoredState(
-        other.painShockLoad,
-        other.painShockStage,
-        Some(other.unconscious)
-      )
+      if (player.level().isClientSide()) {
+        PainShock.normalizeSyncedState(other.painShockLoad, other.painShockStage)
+      } else {
+        PainShock.normalizeStoredState(
+          other.painShockLoad,
+          other.painShockStage,
+          Some(other.unconscious),
+          normalizedAdrenaline.amount
+        )
+      }
     applyPainShockState(normalizedShockLoad, normalizedShockStage)
     val (normalizedConsciousness, normalizedUnconscious) =
       ConsciousnessProgression.normalizeStoredState(
         other.consciousness,
         Some(other.unconscious),
-        CasualtiesBelowConfig.ConsciousnessFloor.get(),
+        if (player.level().isClientSide()) 0.0
+        else CasualtiesBelowConfig.ConsciousnessFloor.get(),
         normalizedShockStage
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
@@ -86,6 +102,19 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     painShockStageState = stage
   }
 
+  override def adrenaline: Double = adrenalineState
+
+  override private[casualtiesbelow] def adrenalineGraceTicks: Int =
+    adrenalineGraceTicksState
+
+  override private[casualtiesbelow] def applyAdrenalineState(
+      amount: Double,
+      graceTicks: Int
+  ): Unit = {
+    adrenalineState = amount
+    adrenalineGraceTicksState = graceTicks
+  }
+
   override def hypoxiaExposureTicks: Int = hypoxiaExposureTicksState
 
   override private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
@@ -104,6 +133,8 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     out.putDouble(VitalsComponentImpl.ImmuneHealthKey, immuneHealth)
     out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousness)
     out.putBoolean(VitalsComponentImpl.UnconsciousKey, unconscious)
+    out.putDouble(VitalsComponentImpl.AdrenalineKey, adrenaline)
+    out.putInt(VitalsComponentImpl.AdrenalineGraceTicksKey, adrenalineGraceTicks)
     out.putDouble(VitalsComponentImpl.PainShockLoadKey, painShockLoad)
     out.putString(VitalsComponentImpl.PainShockStageKey, painShockStage.id)
     out.putDouble(VitalsComponentImpl.BloodOxygenKey, bloodOxygen)
@@ -121,21 +152,43 @@ final class VitalsComponentImpl(val player: Player) extends VitalsComponent {
     )
     val savedUnconscious =
       in.read(VitalsComponentImpl.UnconsciousKey, Codec.BOOL).toScala.map(_.booleanValue)
+    val normalizedAdrenaline =
+      if (player.level().isClientSide()) {
+        Adrenaline.normalizeSyncedState(
+          in.getDoubleOr(VitalsComponentImpl.AdrenalineKey, 0.0),
+          in.getIntOr(VitalsComponentImpl.AdrenalineGraceTicksKey, 0)
+        )
+      } else {
+        Adrenaline.normalizeStoredState(
+          in.getDoubleOr(VitalsComponentImpl.AdrenalineKey, 0.0),
+          in.getIntOr(VitalsComponentImpl.AdrenalineGraceTicksKey, 0)
+        )
+      }
+    applyAdrenalineState(normalizedAdrenaline.amount, normalizedAdrenaline.graceTicks)
     val savedShockStage = PainShockStage
       .byId(in.getStringOr(VitalsComponentImpl.PainShockStageKey, PainShockStage.Stable.id))
       .getOrElse(PainShockStage.Stable)
     val (normalizedShockLoad, normalizedShockStage) =
-      PainShock.normalizeStoredState(
-        in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
-        savedShockStage,
-        savedUnconscious
-      )
+      if (player.level().isClientSide()) {
+        PainShock.normalizeSyncedState(
+          in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
+          savedShockStage
+        )
+      } else {
+        PainShock.normalizeStoredState(
+          in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
+          savedShockStage,
+          savedUnconscious,
+          normalizedAdrenaline.amount
+        )
+      }
     applyPainShockState(normalizedShockLoad, normalizedShockStage)
     val (normalizedConsciousness, normalizedUnconscious) =
       ConsciousnessProgression.normalizeStoredState(
         in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue),
         savedUnconscious,
-        CasualtiesBelowConfig.ConsciousnessFloor.get(),
+        if (player.level().isClientSide()) 0.0
+        else CasualtiesBelowConfig.ConsciousnessFloor.get(),
         normalizedShockStage
       )
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
@@ -166,6 +219,8 @@ object VitalsComponentImpl {
   private val ImmuneHealthKey = "immune_health"
   private val ConsciousnessKey = "consciousness"
   private val UnconsciousKey = "unconscious"
+  private val AdrenalineKey = "adrenaline"
+  private val AdrenalineGraceTicksKey = "adrenaline_grace_ticks"
   private val PainShockLoadKey = "pain_shock_load"
   private val PainShockStageKey = "pain_shock_stage"
   private val BloodOxygenKey = "blood_oxygen"

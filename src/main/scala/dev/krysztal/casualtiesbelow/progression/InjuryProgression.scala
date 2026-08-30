@@ -7,6 +7,7 @@ import net.minecraft.world.effect.MobEffects
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
+import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
@@ -85,8 +86,19 @@ object InjuryProgression {
   }
 
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
-    if (player.isCreative || player.isSpectator || !player.isAlive) {
+    if (!player.isAlive) {
       StarvationProgression.discard(player)
+      Adrenaline.discard(player)
+      return
+    }
+    if (player.isCreative || player.isSpectator) {
+      StarvationProgression.discard(player)
+      // A command or another mod can change modes after an accepted survival hit but before this
+      // END_SERVER_TICK pass. Physiology remains frozen in creative/spectator, while the already
+      // committed public reserve still needs its one owner sync.
+      if (Adrenaline.consumeDirty(player)) {
+        CasualtiesBelowComponents.Vitals.sync(player)
+      }
       return
     }
 
@@ -126,9 +138,15 @@ object InjuryProgression {
 
     tickContagion(player, body)
 
-    // Pain shock reads the fully updated per-limb pains for this tick. Stable-load integer
+    // A fresh AFTER_DAMAGE stimulus carries a one-tick sentinel, so aging here preserves its full
+    // amount for this tick's shock decision. Later decay can contract the effective threshold and
+    // collapse Deferred in this same pass. All damage grants still ship in this one vitals sync.
+    var vitalsChanged = Adrenaline.consumeDirty(player)
+    vitalsChanged = Adrenaline.tick(vitals) || vitalsChanged
+
+    // Pain shock reads the fully updated per-limb pains and current adrenaline. Awake-load integer
     // crossings request owner-only warning interpolation syncs; phase transitions sync at once.
-    var vitalsChanged = PainShock.tick(body, vitals)
+    vitalsChanged = PainShock.tick(body, vitals) || vitalsChanged
     vitalsChanged = tickSepsis(vitals, infectionLoad) || vitalsChanged
     vitalsChanged = tickImmune(vitals, player) || vitalsChanged
 
