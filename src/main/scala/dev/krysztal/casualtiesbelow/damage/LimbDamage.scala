@@ -6,7 +6,9 @@ import net.minecraft.world.entity.LivingEntity
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
+import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineRules
+import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.progression.StarvationProgression
 
@@ -39,6 +41,8 @@ object LimbDamage {
     // multiple wound contributions must never multiply it. A partial shield block may retain
     // positive damageTaken and still stimulates; a complete block reaches this event with zero.
     AdrenalineRules.grantFor(player, source)
+    val painMultiplier =
+      AdrenalinePain.currentMultiplier(CasualtiesBelowComponents.Vitals.get(player))
 
     // Preserve the existing wound/starvation contract, which excludes every blocked hit.
     if (blocked) return
@@ -46,6 +50,14 @@ object LimbDamage {
     StarvationProgression.onAfterDamage(player, source, damageTaken)
     WoundProfiles
       .classify(player.level(), player, source)
-      .foreach(rule => WoundApplications.execute(player, source, damageTaken.toDouble, rule))
+      .foreach(rule =>
+        WoundApplications.executeWithPainMultiplier(
+          player,
+          source,
+          damageTaken.toDouble,
+          rule,
+          painMultiplier
+        )
+      )
   }
 }

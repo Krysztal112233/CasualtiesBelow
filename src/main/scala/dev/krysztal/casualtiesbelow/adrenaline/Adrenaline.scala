@@ -15,8 +15,8 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   *
   * A fresh stimulus stores one extra grace tick. The same server-tick progression pass consumes
   * that sentinel without reducing the reserve, so even a configured zero-tick grace lets a hit
-  * protect against pain shock in the tick in which it landed. Later ticks consume the configured
-  * grace and then decay the reserve linearly.
+  * protect against pain shock and reduce acute injury pain in the tick in which it landed. Later
+  * ticks consume the configured grace and then decay the reserve linearly.
   */
 object Adrenaline {
 

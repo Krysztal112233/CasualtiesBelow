@@ -12,6 +12,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 
+import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
@@ -53,10 +54,29 @@ object WoundApplications {
       source: DamageSource,
       damage: Double,
       rule: ClassifiedWoundRule
+  ): Unit = executeWithPainMultiplier(player, source, damage, rule, 1.0)
+
+  /** Internal damage-event path. One post-stimulus multiplier is reused by every application and
+    * contribution emitted from the classified hit.
+    */
+  private[casualtiesbelow] def executeWithPainMultiplier(
+      player: ServerPlayer,
+      source: DamageSource,
+      damage: Double,
+      rule: ClassifiedWoundRule,
+      painMultiplier: Double
   ): Unit = {
+    val normalizedPainMultiplier = AdrenalinePain.normalizeMultiplier(painMultiplier)
     rule.applications.foreach { application =>
       executeTyped(
-        DamageContext(player, source, damage, rule.ruleId, applicationType(application.data)),
+        DamageContext(
+          player,
+          source,
+          damage,
+          rule.ruleId,
+          applicationType(application.data),
+          normalizedPainMultiplier
+        ),
         application
       )
     }
@@ -187,12 +207,15 @@ object WoundApplications {
   ): Boolean = {
     val mitigated =
       ArmorProtection.mitigate(context.player, part, context.source, wound.profile)
-    LimbInjuries(
+    LimbInjuries.applyWithPainMultiplier(
       context.player,
       part,
       context.source,
       damage,
+      condition = None,
       pain = damage * mitigated.painPerPoint,
+      painMultiplier = context.painMultiplier,
+      jitter = 3.0,
       ruleId = Some(context.ruleId),
       profileId = Some(wound.profileId),
       applicationType = Some(context.applicationType),
@@ -295,14 +318,17 @@ object WoundApplications {
     if (current.fractureRecoveryTicks.isDefined) return
     if (step.condition == LimbCondition.Dislocation && current.dislocated) return
 
-    LimbInjuries(
+    LimbInjuries.applyWithPainMultiplier(
       context.player,
       part,
       context.source,
       severity,
-      Some(step.condition),
-      step.pain,
+      condition = Some(step.condition),
+      pain = step.pain,
+      painMultiplier = context.painMultiplier,
+      jitter = 3.0,
       ruleId = Some(context.ruleId),
+      profileId = None,
       applicationType = Some(context.applicationType),
       role = Some("condition")
     ) { (stats, effectiveDamage) =>

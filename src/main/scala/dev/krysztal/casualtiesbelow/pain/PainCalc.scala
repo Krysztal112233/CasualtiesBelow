@@ -31,8 +31,9 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *   - '''grants''' — pain injected into one limb by an injury: impact pain from wound profiles
   *     (`WoundProfile.painPerPoint`, applied by `WoundApplications`) scales with damage, while
   *     discrete condition onsets ([[onConditionOnset]]) carry fixed one-time amounts. Grants flow
-  *     through the limb injury event context (`LimbInjuryContext.pain`) so listeners can adjust
-  *     them; capping at the limb maximum happens at the application site.
+  *     through the limb injury event context (`LimbInjuryContext.pain`) after internal acute-pain
+  *     mitigation, so listeners can adjust them; capping at the limb maximum happens at the
+  *     application site.
   *   - '''derivations''' — whole-body pain ([[total]]), computed on demand from per-limb pain and
   *     never stored. The limbs are the single source of truth (already synced to clients), so both
   *     sides compute the identical value locally; authoritative gameplay decisions must compute it

@@ -10,5 +10,6 @@ private[casualtiesbelow] final case class DamageContext(
     source: DamageSource,
     damage: Double,
     ruleId: Identifier,
-    applicationType: Identifier
+    applicationType: Identifier,
+    painMultiplier: Double
 )

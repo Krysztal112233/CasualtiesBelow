@@ -11,6 +11,7 @@ import net.minecraft.world.entity.player.Player
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
+import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
@@ -84,9 +85,72 @@ object LimbInjuries {
       profileId: Option[Identifier] = None,
       applicationType: Option[Identifier] = None,
       role: Option[String] = None
+  )(mutate: (LimbStats, Double) => Unit): Boolean =
+    applyInternal(
+      player,
+      part,
+      source,
+      damage,
+      condition,
+      pain,
+      painMultiplier = 1.0,
+      jitter,
+      ruleId,
+      profileId,
+      applicationType,
+      role
+    )(mutate)
+
+  /** Internal wound-system path that scales acute pain without changing the public injury API. The
+    * multiplier affects both the base pain visible to callbacks and pain-only jitter; damage jitter
+    * and every non-pain mutation remain unchanged.
+    */
+  private[casualtiesbelow] def applyWithPainMultiplier(
+      player: Player,
+      part: BodyPart,
+      source: DamageSource,
+      damage: Double,
+      condition: Option[LimbCondition],
+      pain: Double,
+      painMultiplier: Double,
+      jitter: Double,
+      ruleId: Option[Identifier],
+      profileId: Option[Identifier],
+      applicationType: Option[Identifier],
+      role: Option[String]
+  )(mutate: (LimbStats, Double) => Unit): Boolean =
+    applyInternal(
+      player,
+      part,
+      source,
+      damage,
+      condition,
+      pain,
+      painMultiplier,
+      jitter,
+      ruleId,
+      profileId,
+      applicationType,
+      role
+    )(mutate)
+
+  private def applyInternal(
+      player: Player,
+      part: BodyPart,
+      source: DamageSource,
+      damage: Double,
+      condition: Option[LimbCondition],
+      pain: Double,
+      painMultiplier: Double,
+      jitter: Double,
+      ruleId: Option[Identifier],
+      profileId: Option[Identifier],
+      applicationType: Option[Identifier],
+      role: Option[String]
   )(mutate: (LimbStats, Double) => Unit): Boolean = {
     val body = CasualtiesBelowComponents.Body.get(player)
     val random = player.getRandom
+    val normalizedPainMultiplier = AdrenalinePain.normalizeMultiplier(painMultiplier)
 
     val effectiveDamage = (damage + rollJitter(random, jitter)).max(0.0)
     val context = LimbInjuryContext(
@@ -95,7 +159,7 @@ object LimbInjuries {
       source,
       effectiveDamage,
       condition,
-      pain,
+      AdrenalinePain.scale(pain, normalizedPainMultiplier),
       ruleId,
       profileId,
       applicationType,
@@ -103,7 +167,11 @@ object LimbInjuries {
     )
     if (!LimbInjuryCallback.EVENT.invoker().onLimbInjury(context)) return false
 
-    val grantedPain = (context.pain + rollJitter(random, jitter)).max(0.0)
+    val grantedPain =
+      (context.pain + AdrenalinePain.scale(
+        rollJitter(random, jitter),
+        normalizedPainMultiplier
+      )).max(0.0)
 
     val stats = body.stats(part)
     stats.pain = (stats.pain + grantedPain).min(LimbStats.MaxValue)

@@ -26,9 +26,10 @@ import dev.krysztal.casualtiesbelow.api.body.LimbCondition
   *   condition onset). Fracture/dislocation onsets are injuries of their own and fire this event
   *   with their condition set.
   * @param pain
-  *   the pain this injury application will grant the limb (capped at the limb maximum on
-  *   application). Listeners may adjust it before returning — including to zero. Defaults: impact
-  *   injuries scale with the damage; condition onsets grant a fixed one-time amount.
+  *   the base pain this injury application will grant the limb, after any internal acute-pain
+  *   multiplier and before random pain jitter (capped at the limb maximum on application).
+  *   Listeners may adjust it before returning — including to zero. Defaults: impact injuries scale
+  *   with the damage; condition onsets grant a fixed one-time amount.
   * @param ruleId
   *   the matching wound-rule id, when this injury came from datapack wound attribution
   * @param profileId
