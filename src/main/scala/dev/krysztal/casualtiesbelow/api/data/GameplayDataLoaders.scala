@@ -1,47 +1,59 @@
 package dev.krysztal.casualtiesbelow.api.data
 
-import net.minecraft.core.HolderLookup
+import net.minecraft.server.packs.resources.PreparableReloadListener.SharedState
 
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.resource.v1.DataResourceLoader
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader
+import net.fabricmc.fabric.api.resource.v1.reloader.SimpleReloadListener
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile as WoundProfileEntry
-import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 
-/** Reload-listener stores for the datapack-defined gameplay data types. */
+/** One reload transaction for all datapack-defined gameplay data types. */
 object GameplayDataLoaders {
-  val WoundProfile = GameplayDataLoader[WoundProfileEntry]("wound_profile", WoundProfileEntry.Codec)
-  val WoundRule = GameplayDataLoader[WoundRuleData]("wound_rule", WoundRuleData.Codec)
-  val AdrenalineRule =
+  private val WoundProfile =
+    GameplayDataLoader[WoundProfileEntry]("wound_profile", WoundProfileEntry.Codec)
+  private val WoundRule = GameplayDataLoader[WoundRuleData]("wound_rule", WoundRuleData.Codec)
+  private val AdrenalineRule =
     GameplayDataLoader[AdrenalineRuleData]("adrenaline_rule", AdrenalineRuleData.Codec)
-  val ArmorProtection = GameplayDataLoader[ArmorProtectionData](
+  private val ArmorProtection = GameplayDataLoader[ArmorProtectionData](
     "armor_protection",
     ArmorProtectionData.Codec
   )
-  val Discomfort = GameplayDataLoader[DiscomfortData]("discomfort", DiscomfortData.Codec)
-  val HitLocation = GameplayDataLoader[HitLocationData]("hit_location", HitLocationData.Codec)
+  private val Discomfort = GameplayDataLoader[DiscomfortData]("discomfort", DiscomfortData.Codec)
+  private val HitLocation =
+    GameplayDataLoader[HitLocationData]("hit_location", HitLocationData.Codec)
 
   def registerAll(): Unit = {
-    register("wound_profile", WoundProfile)
-    register("wound_rule", WoundRule)
-    register("adrenaline_rule", AdrenalineRule)
-    register("armor_protection", ArmorProtection)
-    register("discomfort", Discomfort)
-    register("hit_location", HitLocation)
-    ServerLifecycleEvents.END_DATA_PACK_RELOAD.register((_, _, successful) => {
-      if (successful) WoundProfiles.rebuild()
-    })
-    ServerLifecycleEvents.SERVER_STARTED.register(_ => WoundProfiles.rebuild())
-    ServerLifecycleEvents.SERVER_STOPPED.register(_ => WoundProfiles.clear())
-  }
-
-  private def register[T](segment: String, loader: GameplayDataLoader[T]): Unit = {
     DataResourceLoader
       .get()
-      .registerReloadListener(
-        CasualtiesBelow.ofIdentifier(s"gameplay_data/$segment"),
-        (lookup: HolderLookup.Provider) => loader.bind(lookup)
+      .registerReloadListener(CasualtiesBelow.ofIdentifier("gameplay_data"), ReloadListener)
+  }
+
+  private object ReloadListener extends SimpleReloadListener[GameplayDataState] {
+
+    override protected def prepare(state: SharedState): GameplayDataState = {
+      val manager = state.resourceManager()
+      val lookup = state.get(ResourceLoader.REGISTRY_LOOKUP_KEY)
+      GameplayDataState.compile(
+        GameplayDataStore(
+          woundProfiles = WoundProfile.load(manager, lookup),
+          woundRules = WoundRule.load(manager, lookup),
+          armorProtection = ArmorProtection.load(manager, lookup),
+          discomfort = Discomfort.load(manager, lookup),
+          hitLocations = HitLocation.load(manager, lookup),
+          adrenalineRules = AdrenalineRule.load(manager, lookup)
+        )
       )
+    }
+
+    override protected def apply(prepared: GameplayDataState, state: SharedState): Unit = {
+      // NOTE: Publish into the candidate resource store only; Minecraft installs it after every
+      // reload listener succeeds, so a later failure leaves the live generation untouched.
+      GameplayDataStores.publish(
+        state.get(DataResourceLoader.DATA_RESOURCE_STORE_KEY),
+        prepared
+      )
+    }
   }
 }

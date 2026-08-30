@@ -12,6 +12,7 @@ import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
@@ -38,7 +39,8 @@ object ArmorProtection {
       player: Player,
       part: BodyPart,
       source: DamageSource,
-      profile: WoundProfile
+      profile: WoundProfile,
+      gameplayData: GameplayDataStore
   ): WoundProfile = {
     if (source.is(DamageTypeTags.BYPASSES_ARMOR)) return profile
     val slot = coveringSlot(part)
@@ -55,7 +57,7 @@ object ArmorProtection {
 
     // A datapack override matches by item identity and replaces the config formula for the factors
     // it defines — including for pieces with zero armor value, which the fallback path skips.
-    GameplayDataLookup.armorProtection(stack) match {
+    GameplayDataLookup.armorProtection(stack, gameplayData) match {
       case Some(entry) =>
         val skinFactor = entry.skinFactor.toScala
           .flatMap(_.evaluate(armor, toughness))

@@ -17,6 +17,8 @@ import dev.krysztal.casualtiesbelow.api.LimbInjuries
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.api.wound.ClassifiedWoundRule
 import dev.krysztal.casualtiesbelow.api.wound.ConditionStepData
 import dev.krysztal.casualtiesbelow.api.wound.FixedTargetData
@@ -54,7 +56,16 @@ object WoundApplications {
       source: DamageSource,
       damage: Double,
       rule: ClassifiedWoundRule
-  ): Unit = executeWithPainMultiplier(player, source, damage, rule, 1.0)
+  ): Unit = {
+    executeWithPainMultiplier(
+      player,
+      source,
+      damage,
+      rule,
+      1.0,
+      GameplayDataStores.server(player.level().getServer)
+    )
+  }
 
   /** Internal damage-event path. One post-stimulus multiplier is reused by every application and
     * contribution emitted from the classified hit.
@@ -66,6 +77,24 @@ object WoundApplications {
       rule: ClassifiedWoundRule,
       painMultiplier: Double
   ): Unit = {
+    executeWithPainMultiplier(
+      player,
+      source,
+      damage,
+      rule,
+      painMultiplier,
+      GameplayDataStores.server(player.level().getServer)
+    )
+  }
+
+  private[casualtiesbelow] def executeWithPainMultiplier(
+      player: ServerPlayer,
+      source: DamageSource,
+      damage: Double,
+      rule: ClassifiedWoundRule,
+      painMultiplier: Double,
+      gameplayData: GameplayDataStore
+  ): Unit = {
     val normalizedPainMultiplier = AdrenalinePain.normalizeMultiplier(painMultiplier)
     rule.applications.foreach { application =>
       executeTyped(
@@ -75,7 +104,8 @@ object WoundApplications {
           damage,
           rule.ruleId,
           applicationType(application.data),
-          normalizedPainMultiplier
+          normalizedPainMultiplier,
+          gameplayData
         ),
         application
       )
@@ -94,7 +124,7 @@ object WoundApplications {
   ): Unit = {
     resolved.data match {
       case application: LocalizedApplicationData =>
-        val part = pickTarget(context.player, context.source, application.target)
+        val part = pickTarget(context, application.target)
         applyContributions(context, part, context.damage, resolved.wounds, "localized")
       case application: ScatterApplicationData =>
         applyScatter(context, resolved.wounds, application)
@@ -133,7 +163,7 @@ object WoundApplications {
     )
     if (severity <= 0.0) return
 
-    val primary = pickTarget(context.player, context.source, options.primary)
+    val primary = pickTarget(context, options.primary)
     val wounded = scala.collection.mutable.LinkedHashSet.empty[BodyPart]
     if (applyContributions(context, primary, severity, wounds, "primary")) {
       wounded += primary
@@ -205,8 +235,13 @@ object WoundApplications {
       wound: ResolvedWoundContribution,
       role: String
   ): Boolean = {
-    val mitigated =
-      ArmorProtection.mitigate(context.player, part, context.source, wound.profile)
+    val mitigated = ArmorProtection.mitigate(
+      context.player,
+      part,
+      context.source,
+      wound.profile,
+      context.gameplayData
+    )
     LimbInjuries.applyWithPainMultiplier(
       context.player,
       part,
@@ -249,13 +284,13 @@ object WoundApplications {
   }
 
   private def pickTarget(
-      player: ServerPlayer,
-      source: DamageSource,
+      context: DamageContext,
       target: WoundTargetData
   ): BodyPart = target match {
-    case HitLocationTargetData(weights) => HitLocation.pick(player, source, weights)
-    case FixedTargetData(part)          => part
-    case WeightedTargetData(weights)    => HitLocation.weightedPart(player, weights)
+    case HitLocationTargetData(weights) =>
+      HitLocation.pick(context.player, context.source, weights, context.gameplayData)
+    case FixedTargetData(part)       => part
+    case WeightedTargetData(weights) => HitLocation.weightedPart(context.player, weights)
   }
 
   private def pairedOptions(application: PairedImpactApplicationData): PairedOptions = {

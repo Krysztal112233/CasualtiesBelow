@@ -19,7 +19,7 @@ object GameplayDataLookup {
 
   def hitLocation(
       entity: Entity,
-      store: GameplayDataStore = GameplayDataStores.server
+      store: GameplayDataStore
   ): HitLocationData = {
     orderedEntries(store.hitLocations)(_.priority.intValue())
       .collectFirst {
@@ -30,7 +30,7 @@ object GameplayDataLookup {
 
   def armorProtection(
       stack: ItemStack,
-      store: GameplayDataStore = GameplayDataStores.server
+      store: GameplayDataStore
   ): Option[ArmorProtectionData] = {
     orderedEntries(store.armorProtection)(_.priority.intValue())
       .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }
@@ -38,7 +38,7 @@ object GameplayDataLookup {
 
   def discomfort(
       stack: ItemStack,
-      store: GameplayDataStore = GameplayDataStores.server
+      store: GameplayDataStore
   ): Option[DiscomfortData] = {
     orderedEntries(store.discomfort)(_.priority.intValue())
       .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }

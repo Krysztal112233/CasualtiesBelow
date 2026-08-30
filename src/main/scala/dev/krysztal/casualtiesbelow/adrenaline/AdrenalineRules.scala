@@ -23,8 +23,16 @@ object AdrenalineRules {
   def classify(
       level: ServerLevel,
       player: ServerPlayer,
+      source: DamageSource
+  ): Option[ClassifiedAdrenalineRule] = {
+    classify(level, player, source, GameplayDataStores.server(level.getServer))
+  }
+
+  def classify(
+      level: ServerLevel,
+      player: ServerPlayer,
       source: DamageSource,
-      store: GameplayDataStore = GameplayDataStores.server
+      store: GameplayDataStore
   ): Option[ClassifiedAdrenalineRule] = {
     select(store.adrenalineRules)(rule =>
       DamageMatcher.matches(rule.damageMatch, level, player, source)
@@ -35,10 +43,20 @@ object AdrenalineRules {
     * banked into a later wake-up.
     */
   def grantFor(player: ServerPlayer, source: DamageSource): Boolean = {
+    grantFor(player, source, GameplayDataStores.server(player.level().getServer))
+  }
+
+  private[casualtiesbelow] def grantFor(
+      player: ServerPlayer,
+      source: DamageSource,
+      store: GameplayDataStore
+  ): Boolean = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     if (vitals.unconscious) return false
 
-    classify(player.level(), player, source).exists(rule => Adrenaline.grant(player, rule.amount))
+    classify(player.level(), player, source, store).exists(rule =>
+      Adrenaline.grant(player, rule.amount)
+    )
   }
 
   private[casualtiesbelow] def select(

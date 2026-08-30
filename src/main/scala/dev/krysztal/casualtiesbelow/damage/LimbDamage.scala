@@ -9,6 +9,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineRules
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 import dev.krysztal.casualtiesbelow.progression.StarvationProgression
 
@@ -37,10 +38,14 @@ object LimbDamage {
     }
     if (player.isCreative || player.isSpectator || !player.isAlive || damageTaken <= 0) return
 
+    // NOTE: Capture one installed generation for the whole event so adrenaline, rule resolution,
+    // hit location, and armor cannot observe different datapack generations.
+    val gameplayData = GameplayDataStores.state(player.level().getServer)
+
     // Adrenaline is an event-level response, not a wound application: scatter, paired impacts, and
     // multiple wound contributions must never multiply it. A partial shield block may retain
     // positive damageTaken and still stimulates; a complete block reaches this event with zero.
-    AdrenalineRules.grantFor(player, source)
+    AdrenalineRules.grantFor(player, source, gameplayData.store)
     val painMultiplier =
       AdrenalinePain.currentMultiplier(CasualtiesBelowComponents.Vitals.get(player))
 
@@ -49,14 +54,15 @@ object LimbDamage {
 
     StarvationProgression.onAfterDamage(player, source, damageTaken)
     WoundProfiles
-      .classify(player.level(), player, source)
+      .classify(player.level(), player, source, gameplayData.woundRules)
       .foreach(rule =>
         WoundApplications.executeWithPainMultiplier(
           player,
           source,
           damageTaken.toDouble,
           rule,
-          painMultiplier
+          painMultiplier,
+          gameplayData.store
         )
       )
   }

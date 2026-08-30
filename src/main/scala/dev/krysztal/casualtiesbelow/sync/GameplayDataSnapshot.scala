@@ -6,6 +6,7 @@ import scala.util.Success
 import scala.util.Try
 
 import net.minecraft.core.HolderLookup
+import net.minecraft.server.MinecraftServer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
@@ -108,10 +109,10 @@ object GameplayDataSnapshot {
 
   /** What client-side displays and prediction should read: the server's snapshot when connected,
     * else the local configuration. Server logic must NOT read this: `synced` belongs to the logical
-    * client (singleplayer shares the JVM), so the server always captures the live state via
-    * [[capture]] instead.
+    * client (singleplayer shares the JVM), so the server always captures from its installed
+    * resource generation instead.
     */
-  def current: GameplayDataSnapshot = synced.getOrElse(capture())
+  def current: GameplayDataSnapshot = synced.getOrElse(capture(GameplayDataStore.Empty))
 
   /** Decodes and stores a snapshot received from the server. Malformed payloads are logged and
     * ignored, keeping the previous config and per-object data together. The raw payload is kept
@@ -144,10 +145,15 @@ object GameplayDataSnapshot {
     GameplayDataStores.clearSynced()
   }
 
-  /** Builds the snapshot from the effective local config and the current reload-listener maps. Used
-    * both by the server to fill the sync payload and by the client as fallback.
-    */
-  def capture(): GameplayDataSnapshot = {
+  /** Builds the authoritative snapshot from the server's installed resource generation. */
+  def capture(server: MinecraftServer): GameplayDataSnapshot = {
+    capture(GameplayDataStores.server(server))
+  }
+
+  /** Builds a config snapshot around an already captured gameplay-data generation. */
+  private[casualtiesbelow] def capture(
+      gameplayData: GameplayDataStore
+  ): GameplayDataSnapshot = {
     val config = CasualtiesBelowConfig
     GameplayDataSnapshot(
       maxBloodVolume = config.MaxBloodVolume.get(),
@@ -172,7 +178,7 @@ object GameplayDataSnapshot {
       ),
       vomitRelief = config.DiscomfortVomitRelief.get(),
       vomitReliefSpreadFraction = config.DiscomfortVomitReliefSpreadFraction.get(),
-      gameplayData = GameplayDataStores.server
+      gameplayData = gameplayData
     )
   }
 
@@ -183,7 +189,7 @@ object GameplayDataSnapshot {
       json: String,
       lookup: HolderLookup.Provider
   ): GameplayDataSnapshot = {
-    val fallback = capture()
+    val fallback = synced.getOrElse(capture(GameplayDataStore.Empty))
     val root = JsonParser.parseString(json).getAsJsonObject
     val schemaVersion =
       Option(root.get("schemaVersion")).map(_.getAsInt).getOrElse(1)

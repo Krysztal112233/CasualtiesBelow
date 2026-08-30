@@ -11,9 +11,14 @@ import com.mojang.serialization.JsonOps
 import net.minecraft.core.HolderLookup
 import net.minecraft.resources.Identifier
 import net.minecraft.resources.RegistryOps
+import net.minecraft.server.MinecraftServer
+
+import net.fabricmc.fabric.api.resource.v1.DataResourceStore
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.api.wound.CompiledWoundRules
 import dev.krysztal.casualtiesbelow.api.wound.WoundProfile
+import dev.krysztal.casualtiesbelow.api.wound.WoundProfiles
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -62,6 +67,15 @@ final case class GameplayDataStore(
 
 object GameplayDataStore {
 
+  val Empty: GameplayDataStore = GameplayDataStore(
+    woundProfiles = Map.empty,
+    woundRules = Map.empty,
+    armorProtection = Map.empty,
+    discomfort = Map.empty,
+    hitLocations = Map.empty,
+    adrenalineRules = Map.empty
+  )
+
   /** Source and binary bridge for the pre-adrenaline five-section store constructor. */
   @deprecated("Pass adrenalineRules explicitly", "1.0.0")
   def apply(
@@ -81,25 +95,40 @@ object GameplayDataStore {
     )
 }
 
-/** Selects the authoritative loader maps for server logic and the synced maps for client display
-  * and prediction. In singleplayer, the JVM-local loader maps are the correct fallback before a
-  * sync payload arrives and after disconnect.
+/** One resource-generation-owned view, including derived data compiled from its raw maps. */
+private[casualtiesbelow] final class GameplayDataState private[data] (
+    val store: GameplayDataStore,
+    val woundRules: CompiledWoundRules
+)
+
+private[data] object GameplayDataState {
+  def compile(store: GameplayDataStore): GameplayDataState = {
+    new GameplayDataState(store, WoundProfiles.compile(store))
+  }
+}
+
+/** Selects the current server resource generation or the latest client-synced maps. Each server
+  * generation owns a separate [[GameplayDataState]] through Fabric's [[DataResourceStore]].
   */
 object GameplayDataStores {
+  private[data] val StateKey = new DataResourceStore.Key[GameplayDataState]()
+
   @volatile private var synced: Option[GameplayDataStore] = None
 
-  /** Fresh view of the server-data reload listeners. */
-  def server: GameplayDataStore = GameplayDataStore(
-    woundProfiles = GameplayDataLoaders.WoundProfile.byId,
-    woundRules = GameplayDataLoaders.WoundRule.byId,
-    armorProtection = GameplayDataLoaders.ArmorProtection.byId,
-    discomfort = GameplayDataLoaders.Discomfort.byId,
-    hitLocations = GameplayDataLoaders.HitLocation.byId,
-    adrenalineRules = GameplayDataLoaders.AdrenalineRule.byId
-  )
+  /** Resolves the data attached to the server's currently installed resource generation. */
+  def server(server: MinecraftServer): GameplayDataStore = state(server).store
 
-  /** Client view: the latest server payload, falling back to the local loader maps. */
-  def client: GameplayDataStore = synced.getOrElse(server)
+  /** Client view: the latest server payload, or no datapack entries before one arrives. */
+  def client: GameplayDataStore = synced.getOrElse(GameplayDataStore.Empty)
+
+  private[casualtiesbelow] def state(server: MinecraftServer): GameplayDataState = {
+    server.getOrThrow(StateKey)
+  }
+
+  private[data] def publish(
+      target: DataResourceStore.Mutable,
+      state: GameplayDataState
+  ): Unit = target.put(StateKey, state)
 
   private[casualtiesbelow] def setSynced(store: GameplayDataStore): Unit = synced = Some(store)
 

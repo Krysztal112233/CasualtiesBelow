@@ -82,62 +82,66 @@ final case class ClassifiedWoundRule(
     applications: List[ResolvedWoundApplication]
 )
 
-/** Evaluates datapack-defined wound rules against incoming damage sources. Rules are considered by
-  * descending priority and ascending datapack id; the first complete match with a resolvable wound
-  * profile wins.
-  */
-object WoundProfiles {
-
-  private final case class CompiledRule(
-      id: Identifier,
-      rule: WoundRuleData,
-      applications: List[ResolvedWoundApplication]
-  )
-
-  @volatile private var compiled: List[CompiledRule] = List.empty
-  @volatile private var initialized = false
+/** Wound rules resolved against exactly one gameplay-data generation. */
+private[casualtiesbelow] final class CompiledWoundRules private[wound] (
+    private val rules: List[(Identifier, WoundRuleData, List[ResolvedWoundApplication])]
+) {
 
   def classify(
       level: ServerLevel,
       player: ServerPlayer,
       source: DamageSource
   ): Option[ClassifiedWoundRule] = {
-    ensureCompiled()
-    compiled
-      .find(entry => DamageMatcher.matches(entry.rule.woundMatch, level, player, source))
-      .map(entry => ClassifiedWoundRule(entry.id, entry.applications))
+    rules
+      .find { case (_, rule, _) =>
+        DamageMatcher.matches(rule.woundMatch, level, player, source)
+      }
+      .map { case (id, _, applications) => ClassifiedWoundRule(id, applications) }
   }
 
-  /** Rebuilds every rule against one immutable gameplay-data view, then publishes the complete
-    * ordered result with one volatile write. Hits during reload continue to use the previous view.
-    */
-  private[casualtiesbelow] def rebuild(): Unit = synchronized {
-    val store = GameplayDataStores.server
-    compiled = GameplayDataLookup
+  private[casualtiesbelow] def size: Int = rules.size
+}
+
+/** Evaluates datapack-defined wound rules against incoming damage sources. Rules are considered by
+  * descending priority and ascending datapack id; the first complete match with a resolvable wound
+  * profile wins.
+  */
+object WoundProfiles {
+
+  def classify(
+      level: ServerLevel,
+      player: ServerPlayer,
+      source: DamageSource
+  ): Option[ClassifiedWoundRule] = {
+    classify(level, player, source, GameplayDataStores.state(level.getServer).woundRules)
+  }
+
+  private[casualtiesbelow] def classify(
+      level: ServerLevel,
+      player: ServerPlayer,
+      source: DamageSource,
+      compiled: CompiledWoundRules
+  ): Option[ClassifiedWoundRule] = compiled.classify(level, player, source)
+
+  /** Resolves all profile references while the owning gameplay-data generation is prepared. */
+  private[casualtiesbelow] def compile(store: GameplayDataStore): CompiledWoundRules = {
+    val rules = GameplayDataLookup
       .orderedEntries(store.woundRules)(_.priority.intValue())
       .flatMap { (ruleId, rule) => compileRule(ruleId, rule, store) }
-    initialized = true
+    val compiled = new CompiledWoundRules(rules)
     CasualtiesBelow.Logger.info("Compiled {} wound rules", Int.box(compiled.size))
-  }
-
-  private[casualtiesbelow] def clear(): Unit = synchronized {
-    compiled = List.empty
-    initialized = false
-  }
-
-  private def ensureCompiled(): Unit = {
-    if (!initialized) rebuild()
+    compiled
   }
 
   private def compileRule(
       ruleId: Identifier,
       rule: WoundRuleData,
       store: GameplayDataStore
-  ): Option[CompiledRule] = {
+  ): Option[(Identifier, WoundRuleData, List[ResolvedWoundApplication])] = {
     val resolved =
       rule.applications.map(application => resolveApplication(ruleId, application, store))
     if (resolved.forall(_.isDefined)) {
-      Some(CompiledRule(ruleId, rule, resolved.flatten))
+      Some((ruleId, rule, resolved.flatten))
     } else None
   }
 

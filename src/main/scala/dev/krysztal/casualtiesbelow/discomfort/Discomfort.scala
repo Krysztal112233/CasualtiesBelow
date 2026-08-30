@@ -85,8 +85,10 @@ object Discomfort {
   def allowsEating(player: Player, stack: ItemStack): Boolean = {
     if (player.isCreative || player.isSpectator) return true
     val (data, store) = player match {
-      case _: ServerPlayer => (GameplayDataSnapshot.capture(), GameplayDataStores.server)
-      case _               => (GameplayDataSnapshot.current, GameplayDataStores.client)
+      case serverPlayer: ServerPlayer =>
+        val store = GameplayDataStores.server(serverPlayer.level().getServer)
+        (GameplayDataSnapshot.capture(store), store)
+      case _ => (GameplayDataSnapshot.current, GameplayDataStores.client)
     }
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     if (vitals.discomfort < data.refusalThreshold) return true
@@ -98,7 +100,8 @@ object Discomfort {
     * server when a player finishes eating or drinking something with a food component.
     */
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
-    meanOf(stack, GameplayDataSnapshot.capture(), GameplayDataStores.server) match {
+    val store = GameplayDataStores.server(player.level().getServer)
+    meanOf(stack, GameplayDataSnapshot.capture(store), store) match {
       case None                    => ()
       case Some(mean) if mean <= 0 => ()
       case Some(mean)              =>

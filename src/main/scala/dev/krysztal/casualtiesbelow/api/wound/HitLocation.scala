@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3
 
 import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.api.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.api.data.HitLocationData
 
 /** Guesses the body part a hit landed on from hit geometry — vanilla damage carries no hit-location
@@ -20,9 +21,10 @@ object HitLocation {
   def pick(
       victim: LivingEntity,
       source: DamageSource,
-      positionlessWeights: Map[BodyPart, Double]
+      positionlessWeights: Map[BodyPart, Double],
+      gameplayData: GameplayDataStore
   ): BodyPart = {
-    val rules = GameplayDataLookup.hitLocation(victim)
+    val rules = GameplayDataLookup.hitLocation(victim, gameplayData)
     hitOrigin(source) match {
       case Some(origin) => locate(victim, origin, rules)
       case None         => weightedPart(victim, positionlessWeights)

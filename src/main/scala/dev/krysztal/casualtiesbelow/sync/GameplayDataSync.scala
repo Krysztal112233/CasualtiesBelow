@@ -76,7 +76,8 @@ object GameplayDataSync {
   }
 
   private def send(player: ServerPlayer): Unit = {
-    val json = GameplayDataSnapshot.capture().toJson(player.registryAccess())
+    val json =
+      GameplayDataSnapshot.capture(player.level().getServer).toJson(player.registryAccess())
     ServerPlayNetworking.send(player, GameplayDataPayload(json))
   }
 
