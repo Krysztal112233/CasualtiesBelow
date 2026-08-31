@@ -61,6 +61,14 @@ final class ItemTagProvider(
         itemKey(Items.ROTTEN_FLESH),
         itemKey(Items.SPIDER_EYE)
       )
+
+    // Nourishing soups, priced as one group by food_immune/tag/casualtiesbelow/healthy_soups.
+    builder(CasualtiesBelowTags.HealthySoupsItems)
+      .add(
+        itemKey(Items.MUSHROOM_STEW),
+        itemKey(Items.BEETROOT_SOUP),
+        itemKey(Items.RABBIT_STEW)
+      )
   }
 
   private def itemKey(item: Item) = BuiltInRegistries.ITEM.getResourceKey(item).orElseThrow()

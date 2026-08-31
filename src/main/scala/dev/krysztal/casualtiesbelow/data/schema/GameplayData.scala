@@ -45,6 +45,11 @@ private[casualtiesbelow] object GameplayCodecs {
     .validate(validateUnit)
     .xmap(_.doubleValue(), JDouble.valueOf)
 
+  /** Signed finite double: food immune deltas may be negative. */
+  val FiniteDouble: Codec[Double] = Codec.DOUBLE
+    .validate(validateFinite)
+    .xmap(_.doubleValue(), JDouble.valueOf)
+
   val PositiveUnitDouble: Codec[Double] =
     Codec.DOUBLE
       .validate(validatePositiveUnit)
@@ -89,6 +94,11 @@ private[casualtiesbelow] object GameplayCodecs {
     if (JDouble.isFinite(value) && value.doubleValue() >= 0.0 && value.doubleValue() <= 1.0)
       DataResult.success(value)
     else DataResult.error(() => s"Expected a finite number in [0, 1], got $value")
+  }
+
+  private def validateFinite(value: JDouble): DataResult[JDouble] = {
+    if (JDouble.isFinite(value)) DataResult.success(value)
+    else DataResult.error(() => s"Expected a finite number, got $value")
   }
 
   private def validatePositiveUnit(value: JDouble): DataResult[JDouble] = {
@@ -326,6 +336,21 @@ object DiscomfortData {
     if (data.level.isPresent != data.mean.isPresent) DataResult.success(data)
     else DataResult.error(() => "Exactly one of level or mean is required")
   )
+}
+
+/** Immune effect value of one food item or one item tag. The target is identified by the file path
+  * the value was loaded from: `food_immune/item/<ns>/<path>.json` applies to item `<ns>:<path>`,
+  * and `food_immune/tag/<ns>/<path>.json` applies to every item carrying tag `<ns>:<path>`.
+  * Positive values reward nourishing food, negative values punish contaminated food, and an
+  * explicit zero exempts one item from a tag-borne value.
+  */
+final case class FoodImmuneData(immune: Double)
+
+object FoodImmuneData {
+  val Codec: Codec[FoodImmuneData] = GameplayCodecs.FiniteDouble
+    .fieldOf("immune")
+    .xmap(FoodImmuneData.apply, _.immune)
+    .codec()
 }
 
 /** Per-entity hit geometry bands. */

@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.resource.v1.DataResourceStore
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
@@ -29,6 +30,8 @@ final case class GameplayDataStore(
     woundRules: Map[Identifier, WoundRuleData],
     armorProtection: Map[Identifier, ArmorProtectionData],
     discomfort: Map[Identifier, DiscomfortData],
+    foodImmuneItems: Map[Identifier, FoodImmuneData],
+    foodImmuneTags: Map[Identifier, FoodImmuneData],
     hitLocations: Map[Identifier, HitLocationData],
     adrenalineRules: Map[Identifier, AdrenalineRuleData]
 )
@@ -40,6 +43,8 @@ object GameplayDataStore {
     woundRules = Map.empty,
     armorProtection = Map.empty,
     discomfort = Map.empty,
+    foodImmuneItems = Map.empty,
+    foodImmuneTags = Map.empty,
     hitLocations = Map.empty,
     adrenalineRules = Map.empty
   )
@@ -93,6 +98,8 @@ object GameplayDataStores {
       encodeSection(store.armorProtection, ArmorProtectionData.Codec, ops)
     )
     root.add("discomfort", encodeSection(store.discomfort, DiscomfortData.Codec, ops))
+    root.add("food_immune_item", encodeSection(store.foodImmuneItems, FoodImmuneData.Codec, ops))
+    root.add("food_immune_tag", encodeSection(store.foodImmuneTags, FoodImmuneData.Codec, ops))
     root.add("hit_location", encodeSection(store.hitLocations, HitLocationData.Codec, ops))
     root
   }
@@ -110,6 +117,8 @@ object GameplayDataStores {
       woundRules = decodeSection(root, "wound_rule", WoundRuleData.Codec, ops),
       armorProtection = decodeSection(root, "armor_protection", ArmorProtectionData.Codec, ops),
       discomfort = decodeSection(root, "discomfort", DiscomfortData.Codec, ops),
+      foodImmuneItems = decodeSection(root, "food_immune_item", FoodImmuneData.Codec, ops),
+      foodImmuneTags = decodeSection(root, "food_immune_tag", FoodImmuneData.Codec, ops),
       hitLocations = decodeSection(root, "hit_location", HitLocationData.Codec, ops),
       adrenalineRules = decodeSection(root, "adrenaline_rule", AdrenalineRuleData.Codec, ops)
     )

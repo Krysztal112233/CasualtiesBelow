@@ -33,6 +33,7 @@ import dev.krysztal.casualtiesbelow.data.schema.DamageTypeSelector
 import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
 import dev.krysztal.casualtiesbelow.data.schema.ExactDamageType
 import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.FormulaSource
 import dev.krysztal.casualtiesbelow.data.schema.HemostasisData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
@@ -313,6 +314,51 @@ object CasualtiesBelowDataDefaults {
 
   val Discomfort: Map[Identifier, DiscomfortData] = Map.empty
 
+  /** Built-in food immune table: nourishing staples reward, contaminated raw food drains. Foods
+    * vanilla already punishes with Poison (poison potato, pufferfish, spider eye) carry no entry —
+    * the Poison effect's continuous immune drain is punishment enough; golden apples and milk stay
+    * unlisted while their role is undecided.
+    */
+  /** Built-in food immune table, path-keyed per item: vanilla foods live under the `minecraft`
+    * namespace so datapacks override a single food by replacing its same-path file. Foods vanilla
+    * already punishes with Poison (poison potato, pufferfish, spider eye) carry no entry — the
+    * Poison effect's continuous immune drain is punishment enough; golden apples and milk stay
+    * unlisted while their role is undecided.
+    */
+  val FoodImmuneItems: Map[Identifier, FoodImmuneData] = Map(
+    mcId("cooked_beef") -> FoodImmuneData(2.0),
+    mcId("cooked_porkchop") -> FoodImmuneData(2.0),
+    mcId("cooked_chicken") -> FoodImmuneData(2.0),
+    mcId("cooked_mutton") -> FoodImmuneData(2.0),
+    mcId("cooked_rabbit") -> FoodImmuneData(2.0),
+    mcId("cooked_cod") -> FoodImmuneData(2.0),
+    mcId("cooked_salmon") -> FoodImmuneData(2.0),
+    mcId("bread") -> FoodImmuneData(1.0),
+    mcId("baked_potato") -> FoodImmuneData(1.0),
+    mcId("pumpkin_pie") -> FoodImmuneData(1.0),
+    mcId("carrot") -> FoodImmuneData(1.0),
+    mcId("beetroot") -> FoodImmuneData(1.0),
+    mcId("melon_slice") -> FoodImmuneData(1.0),
+    mcId("golden_carrot") -> FoodImmuneData(5.0),
+    mcId("beef") -> FoodImmuneData(-1.5),
+    mcId("porkchop") -> FoodImmuneData(-1.5),
+    mcId("mutton") -> FoodImmuneData(-1.5),
+    mcId("rabbit") -> FoodImmuneData(-1.5),
+    mcId("cod") -> FoodImmuneData(-1.5),
+    mcId("salmon") -> FoodImmuneData(-1.5),
+    mcId("chicken") -> FoodImmuneData(-2.0),
+    mcId("rotten_flesh") -> FoodImmuneData(-3.0),
+    mcId("tropical_fish") -> FoodImmuneData(-1.0),
+    mcId("potato") -> FoodImmuneData(-0.5)
+  )
+
+  /** Tag-level food immune values; tag membership itself is an ordinary item tag, so packs extend
+    * the group without touching this file.
+    */
+  val FoodImmuneTags: Map[Identifier, FoodImmuneData] = Map(
+    entryId("healthy_soups") -> FoodImmuneData(4.0)
+  )
+
   val HitLocations: Map[Identifier, HitLocationData] = Map(
     entryId("player") -> HitLocationData(
       PlayerEntities,
@@ -426,6 +472,8 @@ object CasualtiesBelowDataDefaults {
     )
 
   private def entryId(path: String): Identifier = CasualtiesBelow.ofIdentifier(path)
+
+  private def mcId(path: String): Identifier = Identifier.withDefaultNamespace(path)
 
   private def optional[T](value: Option[T]): Optional[T] =
     value.fold(Optional.empty[T]())(Optional.of)

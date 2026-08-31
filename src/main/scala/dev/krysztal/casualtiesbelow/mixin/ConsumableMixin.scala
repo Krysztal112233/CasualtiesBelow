@@ -10,15 +10,16 @@ import net.minecraft.world.item.component.Consumable
 import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.immune.FoodImmunity
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
-/** Wires food discomfort into the vanilla consumption flow: refusing to start eating while sick
-  * (`canConsume`, both sides so the prediction matches) and applying the dose once consumption
-  * completes (`onConsume`, server only).
+/** Wires food consequences into the vanilla consumption flow: refusing to start eating while sick
+  * (`canConsume`, both sides so the prediction matches) and applying the discomfort dose and immune
+  * settlement once consumption completes (`onConsume`, server only).
   */
 @Mixin(value = Array(classOf[Consumable]), remap = false)
 abstract class ConsumableMixin {
@@ -43,7 +44,7 @@ abstract class ConsumableMixin {
   }
 
   @Inject(method = Array("onConsume"), at = Array(new At(value = "HEAD")))
-  private def casualtiesbelow$discomfortOnConsume(
+  private def casualtiesbelow$foodConsequencesOnConsume(
       level: Level,
       user: LivingEntity,
       stack: ItemStack,
@@ -52,6 +53,7 @@ abstract class ConsumableMixin {
     (user, level.isClientSide()) match {
       case (player: ServerPlayer, false) if stack.has(DataComponents.FOOD) =>
         Discomfort.onFoodEaten(player, stack)
+        FoodImmunity.onFoodEaten(player, stack)
       case _ => ()
     }
   }

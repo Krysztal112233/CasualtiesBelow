@@ -40,7 +40,7 @@ final class GameplayDataSnapshotTest {
     val json = original.toJson(RegistryAccess.EMPTY)
     val root = JsonParser.parseString(json).getAsJsonObject
 
-    assertEquals(4, root.get("schemaVersion").getAsInt)
+    assertEquals(5, root.get("schemaVersion").getAsInt)
     assertEquals(
       original.terminalHypoxiaDurationTicks,
       root.getAsJsonObject("vitals").get("terminalHypoxiaDurationTicks").getAsInt

@@ -52,4 +52,10 @@ object CasualtiesBelowTags {
   /** Tier-3 discomfort food: rotten, poisonous or not human food (rotten flesh, pufferfish). */
   val Discomfort3Items: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("discomfort_3"))
+
+  /** Nourishing prepared soups, priced as a group by the matching `food_immune/tag` entry (see
+    * `immune.FoodImmunity`). Packs extend the group by adding members to this tag.
+    */
+  val HealthySoupsItems: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("healthy_soups"))
 }

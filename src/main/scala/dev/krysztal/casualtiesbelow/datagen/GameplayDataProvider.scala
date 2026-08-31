@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
@@ -62,6 +63,20 @@ final class GameplayDataProvider(
             "discomfort",
             DiscomfortData.Codec,
             CasualtiesBelowDataDefaults.Discomfort
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "food_immune/item",
+            FoodImmuneData.Codec,
+            CasualtiesBelowDataDefaults.FoodImmuneItems
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "food_immune/tag",
+            FoodImmuneData.Codec,
+            CasualtiesBelowDataDefaults.FoodImmuneTags
           ) ++
           saveAll(
             cache,

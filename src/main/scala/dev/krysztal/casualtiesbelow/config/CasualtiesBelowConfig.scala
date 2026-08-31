@@ -545,6 +545,13 @@ object CasualtiesBelowConfig {
       "disables poison immune drain."
     )
     .defineInRange("poisonImmuneDrainPerTick", 0.05, 0.0, 10.0, classOf[Double])
+  val FoodImmuneSpreadFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Spread of one food immune dose as a fraction of its absolute mean (gaussian standard",
+      "deviation), so healthy and contaminated foods wobble proportionally; the sign of the",
+      "mean is always preserved. 0 disables fluctuation."
+    )
+    .defineInRange("foodImmuneSpreadFraction", 0.2, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("regeneration")
