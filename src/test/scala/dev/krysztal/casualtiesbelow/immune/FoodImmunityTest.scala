@@ -1,13 +1,9 @@
 package dev.krysztal.casualtiesbelow.immune
 
-import java.util.List as JList
-
 import net.minecraft.SharedConstants
-import net.minecraft.core.HolderSet
 import net.minecraft.resources.Identifier
 import net.minecraft.server.Bootstrap
 import net.minecraft.util.RandomSource
-import net.minecraft.world.item.Item
 import net.minecraft.world.item.Items
 
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
@@ -23,39 +19,119 @@ final class FoodImmunityTest {
   Bootstrap.bootStrap()
 
   @Test
-  def highestPriorityEntryWins(): Unit = {
-    val store = storeOf(
-      "broad" -> FoodImmuneData(itemsOf(Items.COOKED_BEEF), 1.0, 0),
-      "specific" -> FoodImmuneData(itemsOf(Items.COOKED_BEEF), 3.0, 10)
+  def exactItemEntryWins(): Unit = {
+    assertEquals(
+      2.0,
+      FoodImmunity
+        .resolveValue(
+          id("cooked_beef"),
+          Set.empty,
+          items = Map(id("cooked_beef") -> FoodImmuneData(2.0)),
+          tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
+        )
+        .get,
+      1.0e-9
     )
+  }
+
+  @Test
+  def carriedTagPricesUnlistedFood(): Unit = {
+    assertEquals(
+      4.0,
+      FoodImmunity
+        .resolveValue(
+          id("mushroom_stew"),
+          Set(id("healthy_soups")),
+          items = Map.empty,
+          tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
+        )
+        .get,
+      1.0e-9
+    )
+  }
+
+  @Test
+  def exactEntryBeatsCarriedTag(): Unit = {
     assertEquals(
       3.0,
-      FoodImmunity.resolve(Items.COOKED_BEEF.builtInRegistryHolder(), store).get,
+      FoodImmunity
+        .resolveValue(
+          id("modded_stew"),
+          Set(id("healthy_soups")),
+          items = Map(id("modded_stew") -> FoodImmuneData(3.0)),
+          tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
+        )
+        .get,
+      1.0e-9
+    )
+  }
+
+  @Test
+  def explicitZeroItemEntryMasksCarriedTag(): Unit = {
+    assertEquals(
+      0.0,
+      FoodImmunity
+        .resolveValue(
+          id("bland_stew"),
+          Set(id("healthy_soups")),
+          items = Map(id("bland_stew") -> FoodImmuneData(0.0)),
+          tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
+        )
+        .get,
+      1.0e-9
+    )
+  }
+
+  @Test
+  def largestAbsoluteTagValueWinsAndTiesFavorNourishment(): Unit = {
+    val tags = Map(
+      id("healthy_soups") -> FoodImmuneData(4.0),
+      id("suspicious_stews") -> FoodImmuneData(-2.0),
+      id("mild_snacks") -> FoodImmuneData(1.0)
+    )
+    assertEquals(
+      4.0,
+      FoodImmunity
+        .resolveValue(
+          id("stew"),
+          Set(id("healthy_soups"), id("suspicious_stews"), id("mild_snacks")),
+          Map.empty,
+          tags
+        )
+        .get,
+      1.0e-9
+    )
+
+    val tied = Map(
+      id("tainted_meals") -> FoodImmuneData(-2.0),
+      id("hearty_meals") -> FoodImmuneData(2.0)
+    )
+    assertEquals(
+      2.0,
+      FoodImmunity
+        .resolveValue(id("meal"), Set(id("tainted_meals"), id("hearty_meals")), Map.empty, tied)
+        .get,
       1.0e-9
     )
   }
 
   @Test
   def unlistedFoodResolvesNothing(): Unit = {
-    val store = storeOf("soups" -> FoodImmuneData(itemsOf(Items.MUSHROOM_STEW), 4.0, 0))
-    assertTrue(FoodImmunity.resolve(Items.COOKED_BEEF.builtInRegistryHolder(), store).isEmpty)
+    assertTrue(
+      FoodImmunity
+        .resolveValue(
+          id("cooked_beef"),
+          Set(id("healthy_soups")),
+          Map.empty,
+          Map(id("other_tag") -> FoodImmuneData(1.0))
+        )
+        .isEmpty
+    )
+    // Registry-backed holder lookup also comes up empty without any entries.
     assertTrue(
       FoodImmunity
         .resolve(Items.COOKED_BEEF.builtInRegistryHolder(), GameplayDataStore.Empty)
         .isEmpty
-    )
-  }
-
-  @Test
-  def explicitZeroMasksBroaderFallback(): Unit = {
-    val store = storeOf(
-      "all_food" -> FoodImmuneData(itemsOf(Items.POISONOUS_POTATO), -1.0, 0),
-      "exemption" -> FoodImmuneData(itemsOf(Items.POISONOUS_POTATO), 0.0, 5)
-    )
-    assertEquals(
-      0.0,
-      FoodImmunity.resolve(Items.POISONOUS_POTATO.builtInRegistryHolder(), store).get,
-      1.0e-9
     )
   }
 
@@ -78,15 +154,5 @@ final class FoodImmunityTest {
     }
   }
 
-  private def storeOf(entries: (String, FoodImmuneData)*): GameplayDataStore = {
-    GameplayDataStore.Empty.copy(
-      foodImmune = entries.map { (path, data) =>
-        Identifier.fromNamespaceAndPath("test", path) -> data
-      }.toMap
-    )
-  }
-
-  private def itemsOf(first: Item, rest: Item*): HolderSet[Item] = {
-    HolderSet.direct(JList.of((first +: rest).map(_.builtInRegistryHolder())*))
-  }
+  private def id(path: String): Identifier = Identifier.fromNamespaceAndPath("test", path)
 }
