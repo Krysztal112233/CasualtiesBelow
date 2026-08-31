@@ -82,15 +82,15 @@ final class PainShockAdrenalineTest {
 
   @Test
   def deferredUsesOrdinaryConsciousnessRules(): Unit = {
-    val (consciousness, unconscious) = ConsciousnessProgression.normalizeStoredState(
+    val normalized = ConsciousnessProgression.normalizeStoredState(
       75.0,
       Some(false),
       floor = 10.0,
       knockoutThreshold = 30.0,
       painShockStage = PainShockStage.Deferred
     )
-    assertEquals(75.0, consciousness, 1.0e-9)
-    assertFalse(unconscious)
+    assertEquals(75.0, normalized.level, 1.0e-9)
+    assertFalse(normalized.unconscious)
   }
 
   private def transition(stage: PainShockStage, load: Double): PainShockStage = {

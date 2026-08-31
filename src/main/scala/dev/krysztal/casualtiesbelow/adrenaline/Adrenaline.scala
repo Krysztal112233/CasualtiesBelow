@@ -199,14 +199,11 @@ object Adrenaline {
   }
 
   private def storedState(vitals: VitalsComponentImpl): AdrenalineState =
-    normalizeStoredState(vitals.adrenaline, VitalsMutations.adrenalineGraceTicks(vitals))
+    VitalsMutations.adrenalineReserve(vitals)
 
   private def applyState(vitals: VitalsComponentImpl, state: AdrenalineState): Unit = {
-    if (
-      vitals.adrenaline != state.amount ||
-      VitalsMutations.adrenalineGraceTicks(vitals) != state.graceTicks
-    ) {
-      VitalsMutations.applyAdrenalineState(vitals, state.amount, state.graceTicks)
+    if (VitalsMutations.adrenalineReserve(vitals) != state) {
+      VitalsMutations.applyAdrenalineState(vitals, state)
     }
   }
 

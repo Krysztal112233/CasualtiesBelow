@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedContext
@@ -60,7 +61,10 @@ object PainShock {
     val retainedLoad = normalizeLoad(vitals.shock.load).min(wakeLoadCap)
     val previousLoad = normalizeLoad(vitals.shock.load)
     val previousStage = vitals.shock.stage
-    VitalsMutations.applyPainShockState(vitals, retainedLoad, PainShockStage.Stable)
+    VitalsMutations.applyShockState(
+      vitals,
+      ShockSnapshot(retainedLoad, PainShockStage.Stable)
+    )
     emitStageChange(
       player,
       previousStage,
@@ -104,7 +108,7 @@ object PainShock {
   def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val previousLoad = normalizeLoad(vitals.shock.load)
     val previousStage = vitals.shock.stage
-    VitalsMutations.applyPainShockState(vitals, 0.0, PainShockStage.Stable)
+    VitalsMutations.applyShockState(vitals, ShockSnapshot(0.0, PainShockStage.Stable))
     if (previousStage != PainShockStage.Stable) {
       emitStageChange(
         player,
@@ -123,7 +127,7 @@ object PainShock {
       savedStage: PainShockStage,
       savedUnconscious: Option[Boolean],
       adrenaline: Double
-  ): (Double, PainShockStage) = {
+  ): ShockSnapshot = {
     val load = normalizeLoad(savedLoad)
     val threshold = collapseThreshold
     val effectiveThreshold = effectiveCollapseThreshold(
@@ -155,7 +159,7 @@ object PainShock {
       case PainShockStage.Recovering if savedUnconscious.contains(false) => PainShockStage.Stable
       case other                                                         => other
     }
-    (load, stage)
+    ShockSnapshot(load, stage)
   }
 
   /** Client-side component transport normalization. The server-authored stage is retained instead
@@ -164,7 +168,7 @@ object PainShock {
   private[casualtiesbelow] def normalizeSyncedState(
       savedLoad: Double,
       savedStage: PainShockStage
-  ): (Double, PainShockStage) = (normalizeLoad(savedLoad), savedStage)
+  ): ShockSnapshot = ShockSnapshot(normalizeLoad(savedLoad), savedStage)
 
   private def applyLoad(
       player: ServerPlayer,
@@ -183,7 +187,7 @@ object PainShock {
     val nextStage =
       transition(previousStage, previousLoad, nextLoad, baseThreshold, effectiveThreshold)
     if (nextLoad != vitals.shock.load || nextStage != previousStage) {
-      VitalsMutations.applyPainShockState(vitals, nextLoad, nextStage)
+      VitalsMutations.applyShockState(vitals, ShockSnapshot(nextLoad, nextStage))
     }
     if (nextStage != previousStage) {
       emitStageChange(player, previousStage, nextStage, previousLoad, nextLoad, cause)

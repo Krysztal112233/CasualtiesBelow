@@ -2,8 +2,10 @@ package dev.krysztal.casualtiesbelow.component
 
 import net.minecraft.world.entity.player.Player
 
+import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot
 
 /** Internal write authority for the mutable storage behind the public read-only vitals view. */
 object VitalsMutations {
@@ -11,36 +13,36 @@ object VitalsMutations {
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.infection.immuneHealth
+    val previous = vitals.infection
     vitals.setImmuneHealth(value)
-    vitals.infection.immuneHealth != previous
+    vitals.infection != previous
   }
 
   private[casualtiesbelow] def setBloodOxygen(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.circulation.bloodOxygen
+    val previous = vitals.circulation
     vitals.setBloodOxygen(value)
-    vitals.circulation.bloodOxygen != previous
+    vitals.circulation != previous
   }
 
   private[casualtiesbelow] def setBloodVolume(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.circulation.bloodVolume
+    val previous = vitals.circulation
     vitals.setBloodVolume(value)
-    vitals.circulation.bloodVolume != previous
+    vitals.circulation != previous
   }
 
   private[casualtiesbelow] def setSepsis(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.infection.sepsis
+    val previous = vitals.infection
     vitals.setSepsis(value)
-    vitals.infection.sepsis != previous
+    vitals.infection != previous
   }
 
   private[casualtiesbelow] def setDiscomfort(
@@ -54,24 +56,24 @@ object VitalsMutations {
 
   private[casualtiesbelow] def applyConsciousnessState(
       vitals: VitalsComponentImpl,
-      consciousness: Double,
-      unconscious: Boolean
-  ): Unit = vitals.applyConsciousnessState(consciousness, unconscious)
+      state: ConsciousnessSnapshot
+  ): Unit = vitals.applyConsciousnessState(state)
 
-  private[casualtiesbelow] def applyPainShockState(
+  private[casualtiesbelow] def applyShockState(
       vitals: VitalsComponentImpl,
-      load: Double,
-      stage: PainShockStage
-  ): Unit = vitals.applyPainShockState(load, stage)
+      state: ShockSnapshot
+  ): Unit = vitals.applyShockState(state)
+
+  private[casualtiesbelow] def adrenalineReserve(vitals: VitalsComponentImpl): AdrenalineState =
+    vitals.adrenalineReserve
 
   private[casualtiesbelow] def adrenalineGraceTicks(vitals: VitalsComponentImpl): Int =
     vitals.adrenalineGraceTicks
 
   private[casualtiesbelow] def applyAdrenalineState(
       vitals: VitalsComponentImpl,
-      amount: Double,
-      graceTicks: Int
-  ): Unit = vitals.applyAdrenalineState(amount, graceTicks)
+      state: AdrenalineState
+  ): Unit = vitals.applyAdrenalineState(state)
 
   private[casualtiesbelow] def hypoxiaExposureTicks(vitals: VitalsComponentImpl): Int =
     vitals.hypoxiaExposureTicks

@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.progression
 
+import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,7 +25,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertTrue(pressure.wakeBlocked)
 
     val step = advance(100.0, unconscious = false, pressure)
-    assertEquals(60.0, step.consciousness, 1.0e-9)
+    assertEquals(60.0, step.level, 1.0e-9)
     assertFalse(step.unconscious)
   }
 
@@ -38,7 +39,7 @@ final class ConsciousnessOxygenRelationshipTest {
       KnockoutThreshold,
       Floor
     )
-    assertEquals(KnockoutThreshold, atThreshold.consciousness, 1.0e-9)
+    assertEquals(KnockoutThreshold, atThreshold.level, 1.0e-9)
     assertTrue(atThreshold.unconscious)
 
     val aboveThreshold = ConsciousnessProgression.reconcile(
@@ -95,7 +96,7 @@ final class ConsciousnessOxygenRelationshipTest {
     (1 to 250).foreach { tick =>
       oxygen = (oxygen - 0.4).max(0.0)
       val step = advance(consciousness, unconscious, hypoxia(oxygen))
-      consciousness = step.consciousness
+      consciousness = step.level
       unconscious = step.unconscious
       if (unconscious && knockoutTick == 0) knockoutTick = tick
     }
@@ -114,8 +115,8 @@ final class ConsciousnessOxygenRelationshipTest {
       KnockoutThreshold,
       PainShockStage.Stable
     )
-    assertEquals(25.0, stable._1, 1.0e-9)
-    assertTrue(stable._2)
+    assertEquals(25.0, stable.level, 1.0e-9)
+    assertTrue(stable.unconscious)
 
     val recovering = ConsciousnessProgression.normalizeStoredState(
       5.0,
@@ -124,8 +125,8 @@ final class ConsciousnessOxygenRelationshipTest {
       KnockoutThreshold,
       PainShockStage.Recovering
     )
-    assertEquals(5.0, recovering._1, 1.0e-9)
-    assertTrue(recovering._2)
+    assertEquals(5.0, recovering.level, 1.0e-9)
+    assertTrue(recovering.unconscious)
   }
 
   @Test
@@ -143,7 +144,7 @@ final class ConsciousnessOxygenRelationshipTest {
       KnockoutThreshold,
       Floor
     )
-    assertEquals(Floor, invalidCurrent.consciousness, 1.0e-9)
+    assertEquals(Floor, invalidCurrent.level, 1.0e-9)
     assertTrue(invalidCurrent.unconscious)
 
     val invalidPressure = ConsciousnessProgression.advance(
@@ -155,7 +156,7 @@ final class ConsciousnessOxygenRelationshipTest {
       KnockoutThreshold,
       Floor
     )
-    assertEquals(Floor, invalidPressure.consciousness, 1.0e-9)
+    assertEquals(Floor, invalidPressure.level, 1.0e-9)
     assertTrue(invalidPressure.unconscious)
   }
 
@@ -172,7 +173,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertTrue(entered.unconscious)
 
     val remained = ConsciousnessProgression.reconcile(
-      entered.consciousness,
+      entered.level,
       entered.unconscious,
       List(ConsciousnessPressure()),
       wakeThreshold = 100.0,
@@ -189,8 +190,8 @@ final class ConsciousnessOxygenRelationshipTest {
       Some(false),
       PainShockStage.Stable
     )
-    assertEquals(0.0, synchronized._1, 1.0e-9)
-    assertFalse(synchronized._2)
+    assertEquals(0.0, synchronized.level, 1.0e-9)
+    assertFalse(synchronized.unconscious)
   }
 
   @Test
@@ -224,7 +225,7 @@ final class ConsciousnessOxygenRelationshipTest {
       consciousness: Double,
       unconscious: Boolean,
       pressure: ConsciousnessPressure
-  ): ConsciousnessStep = {
+  ): ConsciousnessSnapshot = {
     ConsciousnessProgression.advance(
       consciousness,
       unconscious,

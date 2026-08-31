@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.progression
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 
+import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
@@ -29,7 +30,7 @@ object ConsciousnessProgression {
     */
   def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     val step = vitals.shock.stage match {
-      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
         advance(
           vitals.consciousness.level,
@@ -53,7 +54,7 @@ object ConsciousnessProgression {
       consciousness: Double
   ): Boolean = {
     val step = vitals.shock.stage match {
-      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
         reconcile(
           consciousness,
@@ -72,7 +73,7 @@ object ConsciousnessProgression {
     */
   def reconcileAfterEdit(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
     val step = vitals.shock.stage match {
-      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
         reconcile(
           vitals.consciousness.level,
@@ -93,7 +94,7 @@ object ConsciousnessProgression {
     applyStep(
       player,
       vitals,
-      ConsciousnessStep(VitalsComponent.MaxValue, false),
+      ConsciousnessSnapshot(VitalsComponent.MaxValue, false),
       PhysiologyChangeCause.Reset
     )
   }
@@ -108,7 +109,7 @@ object ConsciousnessProgression {
   ): Boolean = {
     val wakeThreshold = configuredWakeThreshold
     val step = vitals.shock.stage match {
-      case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
+      case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
         reconcile(
           vitals.consciousness.level.max(wakeThreshold),
@@ -155,12 +156,12 @@ object ConsciousnessProgression {
   private def applyStep(
       player: ServerPlayer,
       vitals: VitalsComponentImpl,
-      step: ConsciousnessStep,
+      step: ConsciousnessSnapshot,
       cause: Identifier
   ): Boolean = {
     val previousConsciousness = vitals.consciousness.level
     val previousUnconscious = vitals.consciousness.unconscious
-    VitalsMutations.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
+    VitalsMutations.applyConsciousnessState(vitals, step)
 
     if (step.unconscious != previousUnconscious) {
       if (step.unconscious) Unconsciousness.onEntered(player)
@@ -170,7 +171,7 @@ object ConsciousnessProgression {
           new ConsciousnessStateChangeContext(
             player,
             previousConsciousness,
-            step.consciousness,
+            step.level,
             previousUnconscious,
             step.unconscious,
             vitals.shock.stage,
@@ -179,7 +180,7 @@ object ConsciousnessProgression {
         )
     }
 
-    step.consciousness != previousConsciousness || step.unconscious != previousUnconscious
+    step.level != previousConsciousness || step.unconscious != previousUnconscious
   }
 
   private[progression] def advance(
@@ -190,7 +191,7 @@ object ConsciousnessProgression {
       wakeThreshold: Double,
       knockoutThreshold: Double,
       floor: Double
-  ): ConsciousnessStep = {
+  ): ConsciousnessSnapshot = {
     val minimum = finiteInRange(floor, 0.0, VitalsComponent.MaxValue, 0.0)
     val ceiling = pressureCeiling(pressures).max(minimum)
     val bounded = normalizedConsciousness(current, minimum, ceiling)
@@ -214,7 +215,7 @@ object ConsciousnessProgression {
       wakeThreshold: Double,
       knockoutThreshold: Double,
       floor: Double
-  ): ConsciousnessStep = {
+  ): ConsciousnessSnapshot = {
     val minimum = finiteInRange(floor, 0.0, VitalsComponent.MaxValue, 0.0)
     val ceiling = pressureCeiling(pressures).max(minimum)
     val bounded = normalizedConsciousness(consciousness, minimum, ceiling)
@@ -244,7 +245,7 @@ object ConsciousnessProgression {
       } else {
         unconscious
       }
-    ConsciousnessStep(bounded, nextUnconscious)
+    ConsciousnessSnapshot(bounded, nextUnconscious)
   }
 
   private def minimumWakeThreshold(knockoutThreshold: Double): Double = {
@@ -331,9 +332,9 @@ object ConsciousnessProgression {
       floor: Double,
       knockoutThreshold: Double,
       painShockStage: PainShockStage
-  ): (Double, Boolean) = {
+  ): ConsciousnessSnapshot = {
     if (painShockStage == PainShockStage.Collapsed) {
-      return (0.0, true)
+      return ConsciousnessSnapshot(0.0, true)
     }
 
     val minimum =
@@ -356,7 +357,7 @@ object ConsciousnessProgression {
     val unconscious =
       if (painShockStage == PainShockStage.Recovering) true
       else savedUnconscious.getOrElse(consciousness <= knockout) || consciousness <= knockout
-    (consciousness, unconscious)
+    ConsciousnessSnapshot(consciousness, unconscious)
   }
 
   /** Normalizes a server-synchronized client copy without re-deriving the authoritative latch from
@@ -366,8 +367,8 @@ object ConsciousnessProgression {
       savedConsciousness: Double,
       savedUnconscious: Option[Boolean],
       painShockStage: PainShockStage
-  ): (Double, Boolean) = {
-    if (painShockStage == PainShockStage.Collapsed) return (0.0, true)
+  ): ConsciousnessSnapshot = {
+    if (painShockStage == PainShockStage.Collapsed) return ConsciousnessSnapshot(0.0, true)
 
     val raw =
       if (savedConsciousness.isFinite) savedConsciousness
@@ -379,7 +380,7 @@ object ConsciousnessProgression {
     val unconscious =
       if (painShockStage == PainShockStage.Recovering) true
       else savedUnconscious.getOrElse(false)
-    (consciousness, unconscious)
+    ConsciousnessSnapshot(consciousness, unconscious)
   }
 }
 
@@ -388,9 +389,4 @@ private[progression] final case class ConsciousnessPressure(
     recoveryBlocked: Boolean = false,
     wakeBlocked: Boolean = false,
     ceiling: Double = VitalsComponent.MaxValue
-)
-
-private[progression] final case class ConsciousnessStep(
-    consciousness: Double,
-    unconscious: Boolean
 )
