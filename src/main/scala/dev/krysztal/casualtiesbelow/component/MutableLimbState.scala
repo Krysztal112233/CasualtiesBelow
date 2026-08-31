@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.component
 import java.util.OptionalDouble
 import java.util.OptionalInt
 
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 
 /** Mutable storage model used only while the server applies or advances physiology. */
 private[casualtiesbelow] final case class MutableLimbState(

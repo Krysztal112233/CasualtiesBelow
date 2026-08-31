@@ -14,8 +14,8 @@ import net.minecraft.resources.Identifier
 import net.minecraft.util.ExtraCodecs
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 
 /** An optional wound side effect that can cauterize existing external bleeding on the same limb.
   * Each accepted wound with positive skin damage rolls once; success removes the configured

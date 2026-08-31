@@ -8,8 +8,8 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.damagesource.DamageSource
 
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAllowCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedContext

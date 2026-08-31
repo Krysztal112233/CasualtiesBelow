@@ -13,9 +13,9 @@ import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue

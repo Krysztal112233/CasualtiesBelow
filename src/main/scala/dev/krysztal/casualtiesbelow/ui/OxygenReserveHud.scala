@@ -13,7 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudStatusBarHeightRegistr
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 
 /** Contextual ten-bubble blood-oxygen reserve rendered in vanilla's air-bar slot.
   *

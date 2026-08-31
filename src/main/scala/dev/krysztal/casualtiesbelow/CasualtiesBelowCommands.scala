@@ -25,9 +25,9 @@ import net.minecraft.server.level.ServerPlayer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState

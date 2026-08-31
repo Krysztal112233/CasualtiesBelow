@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.blood
 
-import dev.krysztal.casualtiesbelow.api.body.CirculationSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot
 
 /** Internal circulation storage: the public oxygen/volume pair plus the hidden terminal-hypoxia
   * exposure and totem-hemostasis timers that must not leak into the API.

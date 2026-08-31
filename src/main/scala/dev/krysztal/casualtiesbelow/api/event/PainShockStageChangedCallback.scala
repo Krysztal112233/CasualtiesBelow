@@ -6,7 +6,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
 
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 
 /** One committed transition in the pain-shock state machine. */
 final class PainShockStageChangedContext(

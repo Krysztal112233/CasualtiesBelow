@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.body
+package dev.krysztal.casualtiesbelow.api.body.limb
 
 import java.util.OptionalDouble
 import java.util.OptionalInt

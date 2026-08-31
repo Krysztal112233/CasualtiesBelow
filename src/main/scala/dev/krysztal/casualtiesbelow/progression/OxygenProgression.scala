@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.progression
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.gamerules.GameRules
 
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations

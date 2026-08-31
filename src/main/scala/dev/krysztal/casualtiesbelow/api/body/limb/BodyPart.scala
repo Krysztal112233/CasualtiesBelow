@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.body
+package dev.krysztal.casualtiesbelow.api.body.limb
 
 import java.util.Optional
 
@@ -7,7 +7,7 @@ import scala.jdk.OptionConverters.*
 /** Player body parts tracked by the mod. Vanilla has no hit-location concept; damage is attributed
   * to a part by our own logic.
   */
-enum BodyPart(val id: String) {
+enum BodyPart(val id: String) extends Enum[BodyPart] {
   case Head extends BodyPart("head")
   case Torso extends BodyPart("torso")
   case ArmLeft extends BodyPart("arm_left")

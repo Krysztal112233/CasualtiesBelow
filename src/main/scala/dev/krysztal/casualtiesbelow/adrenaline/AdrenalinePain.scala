@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.adrenaline
 
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Acute-pain multiplier derived from the authoritative adrenaline reserve.

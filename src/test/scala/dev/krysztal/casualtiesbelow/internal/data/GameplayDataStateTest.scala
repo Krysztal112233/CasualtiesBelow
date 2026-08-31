@@ -6,7 +6,7 @@ import net.minecraft.server.Bootstrap
 
 import net.fabricmc.fabric.api.resource.v1.DataResourceStore
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
 import dev.krysztal.casualtiesbelow.data.schema.LocalizedApplicationData

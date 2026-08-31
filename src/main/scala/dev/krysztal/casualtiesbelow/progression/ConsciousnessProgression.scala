@@ -3,9 +3,9 @@ package dev.krysztal.casualtiesbelow.progression
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause

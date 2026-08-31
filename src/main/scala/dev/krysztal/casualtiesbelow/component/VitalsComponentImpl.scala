@@ -11,12 +11,12 @@ import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineState
-import dev.krysztal.casualtiesbelow.api.body.CirculationSnapshot
-import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
-import dev.krysztal.casualtiesbelow.api.body.InfectionSnapshot
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
-import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.InfectionSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.blood.CirculationState
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig

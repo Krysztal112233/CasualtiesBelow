@@ -29,7 +29,7 @@ import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 
 import com.ezylang.evalex.Expression

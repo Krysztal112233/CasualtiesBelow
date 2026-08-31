@@ -4,7 +4,7 @@ import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.phys.Vec3
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 
 /** Guesses the body part a hit landed on from hit geometry — vanilla damage carries no hit-location

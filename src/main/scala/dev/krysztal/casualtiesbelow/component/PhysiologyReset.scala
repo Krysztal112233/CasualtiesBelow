@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.component
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.pain.PainShock

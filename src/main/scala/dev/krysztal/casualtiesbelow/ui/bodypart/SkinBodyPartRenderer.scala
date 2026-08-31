@@ -6,8 +6,8 @@ import net.minecraft.client.renderer.RenderPipelines
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.player.PlayerModelType
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.ui.Argb
 
 /** Default [[BodyPartRenderer]]: each part blits the matching front-face region of the player's

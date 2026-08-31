@@ -8,9 +8,9 @@ import net.minecraft.world.entity.player.Player
 
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 
 private[casualtiesbelow] final case class BodyMutation(
     before: LimbSnapshot,

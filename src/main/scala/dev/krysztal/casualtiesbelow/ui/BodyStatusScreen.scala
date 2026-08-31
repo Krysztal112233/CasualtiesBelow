@@ -9,9 +9,9 @@ import net.minecraft.util.Mth
 import net.minecraft.util.Util
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
 
 /** Body status screen, summoned by the open-screen keybind (default: R). Pressing the keybind again

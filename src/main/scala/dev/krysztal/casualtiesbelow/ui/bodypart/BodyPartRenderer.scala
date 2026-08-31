@@ -3,8 +3,8 @@ package dev.krysztal.casualtiesbelow.ui.bodypart
 import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.player.LocalPlayer
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 
 /** Renders one body part of the body diagram at a given screen rect, reflecting the part's
   * [[LimbSnapshot]] (damage coloring, hover highlight). Trembling is the caller's concern — the

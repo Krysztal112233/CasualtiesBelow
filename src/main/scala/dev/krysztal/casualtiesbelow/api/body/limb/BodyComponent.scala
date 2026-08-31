@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.body
+package dev.krysztal.casualtiesbelow.api.body.limb
 
 import org.ladysnake.cca.api.v8.component.CardinalComponent
 

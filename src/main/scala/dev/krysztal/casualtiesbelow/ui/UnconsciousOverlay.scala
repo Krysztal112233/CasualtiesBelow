@@ -11,7 +11,7 @@ import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 

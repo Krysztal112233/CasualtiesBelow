@@ -5,7 +5,7 @@ import java.lang.Double
 import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.discomfort.DiscomfortDistribution as Distribution
 import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
 

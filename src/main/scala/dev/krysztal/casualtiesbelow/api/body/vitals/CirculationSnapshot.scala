@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.body
+package dev.krysztal.casualtiesbelow.api.body.vitals
 
 /** Immutable, language-neutral view of blood oxygen and blood volume in mL. Blood oxygen is
   * normalized oxygen availability relative to a healthy, fully oxygenated player rather than a

@@ -8,7 +8,7 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause

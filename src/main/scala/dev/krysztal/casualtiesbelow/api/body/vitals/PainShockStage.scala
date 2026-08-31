@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.api.body
+package dev.krysztal.casualtiesbelow.api.body.vitals
 
 import java.util.Optional
 

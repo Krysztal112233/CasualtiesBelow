@@ -9,9 +9,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
-import dev.krysztal.casualtiesbelow.api.body.BodyComponent
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.blood.BloodVolume

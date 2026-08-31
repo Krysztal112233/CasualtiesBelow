@@ -4,10 +4,10 @@ import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.api.body.BodyComponent
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
-import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot
-import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause

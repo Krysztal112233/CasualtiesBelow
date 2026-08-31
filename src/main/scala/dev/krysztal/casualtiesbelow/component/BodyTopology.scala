@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.component
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 
 /** Internal anatomical groups and adjacency used by physiology implementation code. */
 private[casualtiesbelow] object BodyTopology {

@@ -1,7 +1,7 @@
 package dev.krysztal.casualtiesbelow.progression
 
-import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
-import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

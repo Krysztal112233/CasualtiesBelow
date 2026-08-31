@@ -25,7 +25,7 @@ import net.minecraft.world.item.Items
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
@@ -401,13 +401,13 @@ object CasualtiesBelowDataDefaults {
     Optional.of(SpillImpactData(above = 8.0, count = 1, fraction = 0.5)),
     List(
       ConditionStepData(
-        dev.krysztal.casualtiesbelow.api.body.LimbCondition.Fracture,
+        dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition.Fracture,
         atLeast = 10.0,
         pain = 50.0,
         Optional.of(Integer.valueOf(24000))
       ),
       ConditionStepData(
-        dev.krysztal.casualtiesbelow.api.body.LimbCondition.Dislocation,
+        dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition.Dislocation,
         atLeast = 8.0,
         pain = 30.0,
         Optional.empty()

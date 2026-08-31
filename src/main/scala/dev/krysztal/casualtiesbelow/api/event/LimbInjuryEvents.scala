@@ -9,9 +9,9 @@ import net.minecraft.world.damagesource.DamageSource
 import net.fabricmc.fabric.api.event.Event
 import net.fabricmc.fabric.api.event.EventFactory
 
-import dev.krysztal.casualtiesbelow.api.body.BodyPart
-import dev.krysztal.casualtiesbelow.api.body.LimbCondition
-import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 
 /** Immutable description of one limb injury before it is applied.
   *
