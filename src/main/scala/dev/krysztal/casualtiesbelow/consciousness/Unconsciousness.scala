@@ -35,7 +35,7 @@ object Unconsciousness {
     player.isAlive &&
     !player.isCreative &&
     !player.isSpectator &&
-    CasualtiesBelowComponents.Vitals.get(player).unconscious
+    CasualtiesBelowComponents.Vitals.get(player).consciousness.unconscious
   }
 
   private val SlownessModifierId = CasualtiesBelow.ofIdentifier("consciousness_slowness")
@@ -56,7 +56,7 @@ object Unconsciousness {
   /** Severity for a player; a latched player is always fully incapacitated. */
   def severity(player: Player): Double = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
-    if (vitals.unconscious) 1.0 else severityOf(vitals.consciousness)
+    if (vitals.consciousness.unconscious) 1.0 else severityOf(vitals.consciousness.level)
   }
 
   /** Applies the gradual MOVEMENT_SPEED penalty each server tick after consciousness progression.

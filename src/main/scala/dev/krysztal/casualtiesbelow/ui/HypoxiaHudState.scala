@@ -129,9 +129,9 @@ object HypoxiaHudState {
         }
         if (!minecraft.isPaused) {
           val vitals = ComponentAccess.vitals(player)
-          tickOxygen(vitals.bloodOxygen)
+          tickOxygen(vitals.circulation.bloodOxygen)
           tickExposure(vitals.hypoxiaExposureTicks)
-          tickDirection(vitals.consciousness, vitals.hypoxiaExposureTicks > 0)
+          tickDirection(vitals.consciousness.level, vitals.hypoxiaExposureTicks > 0)
           tickPhases()
         }
       case None =>
@@ -143,12 +143,12 @@ object HypoxiaHudState {
   private def snapToPlayer(player: LocalPlayer): Unit = {
     val vitals = ComponentAccess.vitals(player)
     trackedPlayer = Some(player)
-    previousOxygen = vitals.bloodOxygen
-    displayOxygen = vitals.bloodOxygen
+    previousOxygen = vitals.circulation.bloodOxygen
+    displayOxygen = vitals.circulation.bloodOxygen
     anchoredExposure = vitals.hypoxiaExposureTicks
     previousExposure = vitals.hypoxiaExposureTicks.toDouble
     displayExposure = vitals.hypoxiaExposureTicks.toDouble
-    lastConsciousness = Some(vitals.consciousness)
+    lastConsciousness = Some(vitals.consciousness.level)
     directionRising = false
   }
 

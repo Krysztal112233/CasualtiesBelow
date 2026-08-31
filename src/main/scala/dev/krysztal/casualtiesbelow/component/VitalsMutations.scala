@@ -11,36 +11,36 @@ object VitalsMutations {
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.immuneHealth
+    val previous = vitals.infection.immuneHealth
     vitals.setImmuneHealth(value)
-    vitals.immuneHealth != previous
+    vitals.infection.immuneHealth != previous
   }
 
   private[casualtiesbelow] def setBloodOxygen(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.bloodOxygen
+    val previous = vitals.circulation.bloodOxygen
     vitals.setBloodOxygen(value)
-    vitals.bloodOxygen != previous
+    vitals.circulation.bloodOxygen != previous
   }
 
   private[casualtiesbelow] def setBloodVolume(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.bloodVolume
+    val previous = vitals.circulation.bloodVolume
     vitals.setBloodVolume(value)
-    vitals.bloodVolume != previous
+    vitals.circulation.bloodVolume != previous
   }
 
   private[casualtiesbelow] def setSepsis(
       vitals: VitalsComponentImpl,
       value: Double
   ): Boolean = {
-    val previous = vitals.sepsis
+    val previous = vitals.infection.sepsis
     vitals.setSepsis(value)
-    vitals.sepsis != previous
+    vitals.infection.sepsis != previous
   }
 
   private[casualtiesbelow] def setDiscomfort(

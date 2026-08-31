@@ -11,8 +11,12 @@ import java.util.stream.Stream;
 
 import dev.krysztal.casualtiesbelow.api.body.BodyComponent;
 import dev.krysztal.casualtiesbelow.api.body.BodyPart;
+import dev.krysztal.casualtiesbelow.api.body.CirculationSnapshot;
+import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot;
+import dev.krysztal.casualtiesbelow.api.body.InfectionSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.LimbSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage;
+import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent;
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedCallback;
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedContext;
@@ -51,6 +55,17 @@ final class ApiJavaInteropTest {
         assertFalse(snapshot.fractured());
         assertTrue(snapshot.infected());
         assertEquals(12.5, snapshot.infectionProgress().orElseThrow(), 1.0e-9);
+
+        var shock = new ShockSnapshot(12.5, PainShockStage.fromId("deferred").orElseThrow());
+        assertEquals("deferred", shock.stage().id());
+        var consciousness = new ConsciousnessSnapshot(80.0, false);
+        assertEquals(80.0, consciousness.level(), 1.0e-9);
+        assertFalse(consciousness.unconscious());
+        var circulation = new CirculationSnapshot(100.0, 5000.0);
+        assertEquals(100.0, circulation.bloodOxygen(), 1.0e-9);
+        assertEquals(5000.0, circulation.bloodVolume(), 1.0e-9);
+        var infection = new InfectionSnapshot(200.0, 0.0);
+        assertEquals(200.0, infection.immuneHealth(), 1.0e-9);
     }
 
     @Test

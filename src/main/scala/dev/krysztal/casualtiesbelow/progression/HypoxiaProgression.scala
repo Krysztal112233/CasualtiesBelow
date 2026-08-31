@@ -26,7 +26,7 @@ object HypoxiaProgression {
   def tick(vitals: VitalsComponentImpl, breathingBlocked: Boolean): HypoxiaStep = {
     val step = advance(
       VitalsMutations.hypoxiaExposureTicks(vitals),
-      vitals.bloodOxygen,
+      vitals.circulation.bloodOxygen,
       breathingBlocked,
       configuredDuration
     )

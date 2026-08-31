@@ -74,7 +74,7 @@ object UnconsciousOverlay {
         val vitals = ComponentAccess.vitals(player)
         val exposureTicks = vitals.hypoxiaExposureTicks
         val terminalActive = exposureTicks > 0
-        val shouldShow = vitals.unconscious || terminalActive
+        val shouldShow = vitals.consciousness.unconscious || terminalActive
         if (!shouldShow && visibility <= 0.0f) {
           resetAnimation()
           return
@@ -99,10 +99,10 @@ object UnconsciousOverlay {
         val guiScale = minecraft.getWindow.getGuiScale
         if (terminalBlend < 1.0) {
           val entryThreshold =
-            if (vitals.painShockStage == PainShockStage.Recovering) 0.0
+            if (vitals.shock.stage == PainShockStage.Recovering) 0.0
             else gameplayData.consciousnessKnockoutThreshold
           val progress = wakeProgress(
-            vitals.consciousness,
+            vitals.consciousness.level,
             entryThreshold,
             gameplayData.unconsciousWakeThreshold
           )

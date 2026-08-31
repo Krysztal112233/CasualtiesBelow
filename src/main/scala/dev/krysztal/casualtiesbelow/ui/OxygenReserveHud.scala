@@ -70,6 +70,7 @@ object OxygenReserveHud {
               val engaged =
                 CasualtiesBelowComponents.Vitals
                   .get(player)
+                  .circulation
                   .bloodOxygen < VitalsComponent.MaxBloodOxygen - OxygenEpsilon
               HypoxiaHudState.advanceOxygenVisibility(
                 deltaTracker.getRealtimeDeltaTicks(),

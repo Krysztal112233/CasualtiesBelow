@@ -56,7 +56,8 @@ object BloodBarHud {
       val vitals = CasualtiesBelowComponents.Vitals.get(player)
       val maxBloodVolume = GameplayDataSnapshot.current.maxBloodVolume
       val fraction =
-        if (maxBloodVolume > 0.0) Mth.clamp(vitals.bloodVolume / maxBloodVolume, 0.0, 1.0)
+        if (maxBloodVolume > 0.0)
+          Mth.clamp(vitals.circulation.bloodVolume / maxBloodVolume, 0.0, 1.0)
         else 0.0
       val fillWidth =
         if (fraction > 0.0) math.max(1, Math.round(InnerWidth * fraction).toInt)
@@ -74,7 +75,7 @@ object BloodBarHud {
         graphics.fill(x + 1, y + 1, x + 1 + fillWidth, y + 2, HighlightColor)
       }
 
-      val volumeLabel = s"${math.max(0L, Math.round(vitals.bloodVolume))} mL"
+      val volumeLabel = s"${math.max(0L, Math.round(vitals.circulation.bloodVolume))} mL"
       val textWidth = minecraft.font.width(volumeLabel) * TextScale
       val textHeight = minecraft.font.lineHeight * TextScale
       val textX = x + (Width - textWidth) / 2.0f

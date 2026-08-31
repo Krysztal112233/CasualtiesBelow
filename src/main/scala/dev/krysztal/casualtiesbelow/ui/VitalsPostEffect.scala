@@ -89,17 +89,17 @@ object VitalsPostEffect {
     Option(minecraft.player) match {
       case Some(player) if !player.isCreative && !player.isSpectator && player.isAlive =>
         val vitals = CasualtiesBelowComponents.Vitals.get(player)
-        if (vitals.unconscious) {
-          snapShockLoad(player, vitals.painShockLoad)
+        if (vitals.consciousness.unconscious) {
+          snapShockLoad(player, vitals.shock.load)
           Some(unconsciousStrengths)
         } else if (minecraft.gui.hud.isHidden()) {
-          snapShockLoad(player, vitals.painShockLoad)
+          snapShockLoad(player, vitals.shock.load)
           None
         } else {
           Some(awakeStrengths(player, vitals, deltaTracker)).filter(hasVisibleEffect)
         }
       case Some(player) =>
-        snapShockLoad(player, CasualtiesBelowComponents.Vitals.get(player).painShockLoad)
+        snapShockLoad(player, CasualtiesBelowComponents.Vitals.get(player).shock.load)
         None
       case None =>
         clearShockInterpolation()
@@ -148,7 +148,7 @@ object VitalsPostEffect {
   ): ConsciousnessVisual = {
     val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
     val progress = Mth.clamp(
-      ((dimThreshold - vitals.consciousness) / math.max(dimThreshold, 1.0e-6)).toFloat,
+      ((dimThreshold - vitals.consciousness.level) / math.max(dimThreshold, 1.0e-6)).toFloat,
       0.0f,
       1.0f
     )
@@ -162,7 +162,7 @@ object VitalsPostEffect {
     val maxDimming = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat
     val dimming = maxDimming * progress * pulse
     val incapacitation =
-      maxDimming * Unconsciousness.severityOf(vitals.consciousness).toFloat
+      maxDimming * Unconsciousness.severityOf(vitals.consciousness.level).toFloat
 
     ConsciousnessVisual(
       darkness = math.max(dimming, incapacitation),
@@ -191,7 +191,7 @@ object VitalsPostEffect {
     val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
     val fullDesaturation =
       math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
-    val bloodFraction = vitals.bloodVolume / gameplayData.maxBloodVolume
+    val bloodFraction = vitals.circulation.bloodVolume / gameplayData.maxBloodVolume
     BloodLossVisual(
       desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
     )
@@ -218,10 +218,10 @@ object VitalsPostEffect {
       deltaTracker: DeltaTracker
   ): Float = {
     val visualStart = CasualtiesBelowConfig.ShockVisualStartLoad.get().toFloat
-    val actualLoad = Mth.clamp(vitals.painShockLoad.toFloat, 0.0f, 100.0f)
+    val actualLoad = Mth.clamp(vitals.shock.load.toFloat, 0.0f, 100.0f)
     val warningStage =
-      vitals.painShockStage == PainShockStage.Stable ||
-        vitals.painShockStage == PainShockStage.Deferred
+      vitals.shock.stage == PainShockStage.Stable ||
+        vitals.shock.stage == PainShockStage.Deferred
     if (!warningStage || actualLoad <= visualStart) {
       snapShockLoad(player, actualLoad)
       return 0.0f

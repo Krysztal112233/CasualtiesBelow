@@ -19,7 +19,7 @@ object BloodVolume {
   /** Current effective capacity after sepsis, normalized to the healthy configured capacity. */
   def effectiveMaximum(vitals: VitalsComponent): Double = {
     normalizeBound(
-      CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis),
+      CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.infection.sepsis),
       healthyMaximum
     )
   }
@@ -27,7 +27,7 @@ object BloodVolume {
   /** Blood-oxygen carrying capacity represented by the current bounded blood volume. */
   def oxygenCarryingCapacity(vitals: VitalsComponent): Double = {
     oxygenCarryingCapacity(
-      vitals.bloodVolume,
+      vitals.circulation.bloodVolume,
       healthyMaximum,
       CasualtiesBelowConfig.FullOxygenBloodFraction.get()
     )
@@ -57,8 +57,8 @@ object BloodVolume {
   /** Reconciles blood into `[0, maximum]`; returns whether the stored value changed. */
   def clamp(vitals: VitalsComponentImpl, maximum: Double): Boolean = {
     val boundedMaximum = nonNegative(maximum)
-    val next = normalizedVolume(vitals.bloodVolume, boundedMaximum)
-    if (same(vitals.bloodVolume, next)) return false
+    val next = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
+    if (same(vitals.circulation.bloodVolume, next)) return false
 
     VitalsMutations.setBloodVolume(vitals, next)
     true
@@ -67,7 +67,7 @@ object BloodVolume {
   /** Restores a finite non-negative amount without exceeding `maximum`; returns the actual gain. */
   def restore(vitals: VitalsComponentImpl, amount: Double, maximum: Double): Double = {
     val boundedMaximum = nonNegative(maximum)
-    val current = normalizedVolume(vitals.bloodVolume, boundedMaximum)
+    val current = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
     val next = (current + mutationAmount(amount)).min(boundedMaximum)
     VitalsMutations.setBloodVolume(vitals, next)
     next - current
@@ -84,7 +84,7 @@ object BloodVolume {
   ): Double = {
     val boundedMaximum = nonNegative(maximum)
     val boundedFloor = normalizeBound(floor, boundedMaximum)
-    val current = normalizedVolume(vitals.bloodVolume, boundedMaximum)
+    val current = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
     val effectiveFloor = boundedFloor.min(current)
     val next = (current - mutationAmount(amount)).max(effectiveFloor)
     VitalsMutations.setBloodVolume(vitals, next)

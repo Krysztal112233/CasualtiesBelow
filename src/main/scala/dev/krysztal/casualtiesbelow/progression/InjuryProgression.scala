@@ -125,7 +125,7 @@ object InjuryProgression {
       val discrete = tickLimb(
         updated,
         walkingStrainRate(part, current, walking),
-        vitals.immuneHealth,
+        vitals.infection.immuneHealth,
         fightShare,
         regenerationMultiplier,
         player.getRandom
@@ -184,7 +184,7 @@ object InjuryProgression {
     // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
     // threshold. Blood-loss death protection restores blood synchronously in the vanilla totem
     // path; an unrescued player remains at zero and dies normally.
-    if (vitals.bloodVolume <= 0.0) {
+    if (vitals.circulation.bloodVolume <= 0.0) {
       val fatal =
         if (maxBlood <= 0.0) {
           CasualtiesBelowDamageTypes.sepsis(player.level())
@@ -245,10 +245,10 @@ object InjuryProgression {
   private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
     val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length
     val gain = CasualtiesBelowConfig.SepsisGainPerTick.get() * infectionLoad / maxLoad
-    val next = (vitals.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
+    val next = (vitals.infection.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
       .max(0.0)
       .min(CasualtiesBelowConfig.MaxSepsis.get())
-    if (next == vitals.sepsis) return false
+    if (next == vitals.infection.sepsis) return false
 
     VitalsMutations.setSepsis(vitals, next)
     true
@@ -277,8 +277,10 @@ object InjuryProgression {
     if (delta == 0.0) return false
 
     val next =
-      (vitals.immuneHealth + delta).max(0.0).min(CasualtiesBelowConfig.MaxImmuneHealth.get())
-    if (next == vitals.immuneHealth) return false
+      (vitals.infection.immuneHealth + delta)
+        .max(0.0)
+        .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+    if (next == vitals.infection.immuneHealth) return false
 
     VitalsMutations.setImmuneHealth(vitals, next)
     true

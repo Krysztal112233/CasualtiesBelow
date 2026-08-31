@@ -52,7 +52,7 @@ object AdrenalineRules {
       store: GameplayDataStore
   ): Boolean = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
-    if (vitals.unconscious) return false
+    if (vitals.consciousness.unconscious) return false
 
     classify(player.level(), player, source, store).exists(rule =>
       Adrenaline.grant(player, rule.amount, rule.ruleId)

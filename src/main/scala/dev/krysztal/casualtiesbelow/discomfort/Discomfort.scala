@@ -118,8 +118,9 @@ object Discomfort {
           amount *= CasualtiesBelowConfig.DiscomfortOvereatingMultiplier.get()
         }
         if (
-          vitals.sepsis > 0.0 ||
-          vitals.consciousness < CasualtiesBelowConfig.DiscomfortPoorConditionConsciousness.get()
+          vitals.infection.sepsis > 0.0 ||
+          vitals.consciousness.level < CasualtiesBelowConfig.DiscomfortPoorConditionConsciousness
+            .get()
         ) {
           amount *= CasualtiesBelowConfig.DiscomfortPoorConditionMultiplier.get()
         }

@@ -49,13 +49,13 @@ object OxygenProgression {
 
     val breathingBlocked = inWall || exhaustedAir
     val boundedDeprivationRate = finiteNonNegative(deprivationRate)
-    val previousOxygen = vitals.bloodOxygen
+    val previousOxygen = vitals.circulation.bloodOxygen
     VitalsMutations.setBloodOxygen(
       vitals,
       nextBloodOxygen(vitals, breathingBlocked, boundedDeprivationRate)
     )
     OxygenProgressionResult(
-      changed = !same(previousOxygen, vitals.bloodOxygen),
+      changed = !same(previousOxygen, vitals.circulation.bloodOxygen),
       breathingBlocked = breathingBlocked,
       deprivationRate = boundedDeprivationRate
     )
@@ -67,7 +67,7 @@ object OxygenProgression {
       deprivationRate: Double
   ): Double = {
     nextBloodOxygen(
-      vitals.bloodOxygen,
+      vitals.circulation.bloodOxygen,
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,

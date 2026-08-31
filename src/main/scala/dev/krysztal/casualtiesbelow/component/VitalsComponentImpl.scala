@@ -10,7 +10,11 @@ import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
+import dev.krysztal.casualtiesbelow.api.body.CirculationSnapshot
+import dev.krysztal.casualtiesbelow.api.body.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.InfectionSnapshot
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.VitalsComponent
 import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
@@ -50,7 +54,7 @@ final class VitalsComponentImpl(val player: Player)
           s"Unexpected vitals component implementation: ${component.getClass.getName}"
         )
     }
-    setImmuneHealth(source.immuneHealth)
+    setImmuneHealth(source.infection.immuneHealth)
     val normalizedAdrenaline =
       if (player.level().isClientSide()) {
         Adrenaline.normalizeSyncedState(source.adrenaline, source.adrenalineGraceTicks)
@@ -60,12 +64,12 @@ final class VitalsComponentImpl(val player: Player)
     applyAdrenalineState(normalizedAdrenaline.amount, normalizedAdrenaline.graceTicks)
     val (normalizedShockLoad, normalizedShockStage) =
       if (player.level().isClientSide()) {
-        PainShock.normalizeSyncedState(other.painShockLoad, other.painShockStage)
+        PainShock.normalizeSyncedState(other.shock.load, other.shock.stage)
       } else {
         PainShock.normalizeStoredState(
-          other.painShockLoad,
-          other.painShockStage,
-          Some(source.unconscious),
+          other.shock.load,
+          other.shock.stage,
+          Some(source.consciousness.unconscious),
           normalizedAdrenaline.amount
         )
       }
@@ -73,41 +77,41 @@ final class VitalsComponentImpl(val player: Player)
     val (normalizedConsciousness, normalizedUnconscious) =
       if (player.level().isClientSide()) {
         ConsciousnessProgression.normalizeSyncedState(
-          source.consciousness,
-          Some(source.unconscious),
+          source.consciousness.level,
+          Some(source.consciousness.unconscious),
           normalizedShockStage
         )
       } else {
         ConsciousnessProgression.normalizeStoredState(
-          source.consciousness,
-          Some(source.unconscious),
+          source.consciousness.level,
+          Some(source.consciousness.unconscious),
           CasualtiesBelowConfig.effectiveConsciousnessFloor,
           CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold,
           normalizedShockStage
         )
       }
     applyConsciousnessState(normalizedConsciousness, normalizedUnconscious)
-    setBloodOxygen(source.bloodOxygen)
-    setBloodVolume(source.bloodVolume)
+    setBloodOxygen(source.circulation.bloodOxygen)
+    setBloodVolume(source.circulation.bloodVolume)
     applyHypoxiaExposureTicks(
       HypoxiaProgression.normalizeExposureTicks(source.hypoxiaExposureTicks)
     )
     applyTotemHemostasisTicks(
       TotemHemostasis.normalizeRemainingTicks(source.totemHemostasisTicks)
     )
-    setSepsis(source.sepsis)
+    setSepsis(source.infection.sepsis)
     setDiscomfort(source.discomfort)
   }
 
-  override def immuneHealth: Double = immuneHealthState
+  override def infection: InfectionSnapshot =
+    InfectionSnapshot(immuneHealthState, sepsisState)
 
   private[casualtiesbelow] def setImmuneHealth(value: Double): Unit = {
     immuneHealthState = bounded(value, CasualtiesBelowConfig.MaxImmuneHealth.get())
   }
 
-  override def consciousness: Double = consciousnessState
-
-  override def unconscious: Boolean = unconsciousState
+  override def consciousness: ConsciousnessSnapshot =
+    ConsciousnessSnapshot(consciousnessState, unconsciousState)
 
   private[casualtiesbelow] def applyConsciousnessState(
       consciousness: Double,
@@ -117,9 +121,7 @@ final class VitalsComponentImpl(val player: Player)
     unconsciousState = unconscious
   }
 
-  override def painShockLoad: Double = painShockLoadState
-
-  override def painShockStage: PainShockStage = painShockStageState
+  override def shock: ShockSnapshot = ShockSnapshot(painShockLoadState, painShockStageState)
 
   private[casualtiesbelow] def applyPainShockState(
       load: Double,
@@ -154,19 +156,16 @@ final class VitalsComponentImpl(val player: Player)
     totemHemostasisTicksState = ticks
   }
 
-  override def bloodOxygen: Double = bloodOxygenState
+  override def circulation: CirculationSnapshot =
+    CirculationSnapshot(bloodOxygenState, bloodVolumeState)
 
   private[casualtiesbelow] def setBloodOxygen(value: Double): Unit = {
     bloodOxygenState = bounded(value, VitalsComponent.MaxBloodOxygen)
   }
 
-  override def bloodVolume: Double = bloodVolumeState
-
   private[casualtiesbelow] def setBloodVolume(value: Double): Unit = {
     bloodVolumeState = bounded(value, CasualtiesBelowConfig.MaxBloodVolume.get())
   }
-
-  override def sepsis: Double = sepsisState
 
   private[casualtiesbelow] def setSepsis(value: Double): Unit = {
     sepsisState = bounded(value, CasualtiesBelowConfig.MaxSepsis.get())
@@ -181,18 +180,18 @@ final class VitalsComponentImpl(val player: Player)
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
 
   override def writeData(out: ValueOutput): Unit = {
-    out.putDouble(VitalsComponentImpl.ImmuneHealthKey, immuneHealth)
-    out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousness)
-    out.putBoolean(VitalsComponentImpl.UnconsciousKey, unconscious)
+    out.putDouble(VitalsComponentImpl.ImmuneHealthKey, immuneHealthState)
+    out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousnessState)
+    out.putBoolean(VitalsComponentImpl.UnconsciousKey, unconsciousState)
     out.putDouble(VitalsComponentImpl.AdrenalineKey, adrenaline)
     out.putInt(VitalsComponentImpl.AdrenalineGraceTicksKey, adrenalineGraceTicks)
-    out.putDouble(VitalsComponentImpl.PainShockLoadKey, painShockLoad)
-    out.putString(VitalsComponentImpl.PainShockStageKey, painShockStage.id)
-    out.putDouble(VitalsComponentImpl.BloodOxygenKey, bloodOxygen)
-    out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolume)
+    out.putDouble(VitalsComponentImpl.PainShockLoadKey, painShockLoadState)
+    out.putString(VitalsComponentImpl.PainShockStageKey, painShockStageState.id)
+    out.putDouble(VitalsComponentImpl.BloodOxygenKey, bloodOxygenState)
+    out.putDouble(VitalsComponentImpl.BloodVolumeKey, bloodVolumeState)
     out.putInt(VitalsComponentImpl.HypoxiaExposureTicksKey, hypoxiaExposureTicks)
     out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, totemHemostasisTicks)
-    out.putDouble(VitalsComponentImpl.SepsisKey, sepsis)
+    out.putDouble(VitalsComponentImpl.SepsisKey, sepsisState)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
   }
 

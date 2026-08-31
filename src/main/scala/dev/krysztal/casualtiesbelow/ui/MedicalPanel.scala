@@ -101,7 +101,7 @@ object MedicalPanel {
       contentX,
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.consciousness"),
-      vitals.consciousness,
+      vitals.consciousness.level,
       ConsciousnessBadThreshold
     )
     y = extractStatBar(
@@ -110,7 +110,7 @@ object MedicalPanel {
       contentX,
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.blood_oxygen"),
-      vitals.bloodOxygen,
+      vitals.circulation.bloodOxygen,
       gameplayData.bloodOxygenHypoxiaThreshold
     )
 
@@ -125,14 +125,14 @@ object MedicalPanel {
       contentX,
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
-      vitals.immuneHealth,
+      vitals.infection.immuneHealth,
       CasualtiesBelowConfig.immuneBreakEven,
       maxImmune
     )
     // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
     // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
     // room, not the configured base maximum.
-    val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.sepsis)
+    val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.infection.sepsis)
 
     y = extractStatBar(
       graphics,
@@ -140,7 +140,8 @@ object MedicalPanel {
       contentX,
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
-      if (effectiveMaxBlood > 0.0) vitals.bloodVolume / effectiveMaxBlood * 100.0 else 0.0,
+      if (effectiveMaxBlood > 0.0) vitals.circulation.bloodVolume / effectiveMaxBlood * 100.0
+      else 0.0,
       BloodBadThreshold
     )
     // Sepsis is a "higher is worse" meter, so it is a plain row like pain rather than a
@@ -152,9 +153,9 @@ object MedicalPanel {
       y,
       Component.translatable("screen.casualtiesbelow.body_status.stat.sepsis"),
       Component.literal(
-        (vitals.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
+        (vitals.infection.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
       ),
-      vitals.sepsis > 0.0
+      vitals.infection.sepsis > 0.0
     )
     // Discomfort is another "higher is worse" meter (see Discomfort); red once nausea
     // territory is reached.

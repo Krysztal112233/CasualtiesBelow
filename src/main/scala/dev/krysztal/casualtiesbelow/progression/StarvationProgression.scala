@@ -34,7 +34,7 @@ object StarvationProgression {
 
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     val maximum = BloodVolume.effectiveMaximum(vitals)
-    val current = BloodVolume.normalizedVolume(vitals.bloodVolume, maximum)
+    val current = BloodVolume.normalizedVolume(vitals.circulation.bloodVolume, maximum)
     current > bloodFloor(player, maximum)
   }
 
@@ -77,7 +77,7 @@ object StarvationProgression {
     val drained = BloodVolume.drain(vitals, requestedLoss, maximum, bloodFloor(player, maximum))
     StarvationResult(
       changed = drained > 0.0,
-      reachedZero = drained > 0.0 && vitals.bloodVolume <= 0.0
+      reachedZero = drained > 0.0 && vitals.circulation.bloodVolume <= 0.0
     )
   }
 

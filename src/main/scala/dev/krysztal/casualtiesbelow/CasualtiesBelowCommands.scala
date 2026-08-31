@@ -377,17 +377,17 @@ object CasualtiesBelowCommands {
   }
 
   private def vitalsValue(vitals: VitalsComponentImpl, stat: String): String = stat match {
-    case "immune_health"          => f"${vitals.immuneHealth}%.1f"
-    case "consciousness"          => f"${vitals.consciousness}%.1f"
-    case "pain_shock_load"        => f"${vitals.painShockLoad}%.1f"
-    case "pain_shock_stage"       => vitals.painShockStage.id
+    case "immune_health"          => f"${vitals.infection.immuneHealth}%.1f"
+    case "consciousness"          => f"${vitals.consciousness.level}%.1f"
+    case "pain_shock_load"        => f"${vitals.shock.load}%.1f"
+    case "pain_shock_stage"       => vitals.shock.stage.id
     case "adrenaline"             => f"${vitals.adrenaline}%.1f"
     case "adrenaline_grace_ticks" => VitalsMutations.adrenalineGraceTicks(vitals).toString
-    case "blood_oxygen"           => f"${vitals.bloodOxygen}%.1f"
-    case "blood_volume"           => f"${vitals.bloodVolume}%.1f mL"
-    case "sepsis"                 => f"${vitals.sepsis}%.1f"
+    case "blood_oxygen"           => f"${vitals.circulation.bloodOxygen}%.1f"
+    case "blood_volume"           => f"${vitals.circulation.bloodVolume}%.1f mL"
+    case "sepsis"                 => f"${vitals.infection.sepsis}%.1f"
     case "discomfort"             => f"${vitals.discomfort}%.1f"
-    case "unconscious"            => vitals.unconscious.toString
+    case "unconscious"            => vitals.consciousness.unconscious.toString
     case _                        => throw UnknownStat.create()
   }
 

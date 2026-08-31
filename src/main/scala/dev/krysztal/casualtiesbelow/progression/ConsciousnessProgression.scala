@@ -28,12 +28,12 @@ object ConsciousnessProgression {
     * value changed.
     */
   def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
-    val step = vitals.painShockStage match {
+    val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
         advance(
-          vitals.consciousness,
-          vitals.unconscious,
+          vitals.consciousness.level,
+          vitals.consciousness.unconscious,
           List(currentPressure(vitals)),
           CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
           configuredWakeThreshold,
@@ -52,12 +52,12 @@ object ConsciousnessProgression {
       vitals: VitalsComponentImpl,
       consciousness: Double
   ): Boolean = {
-    val step = vitals.painShockStage match {
+    val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
         reconcile(
           consciousness,
-          vitals.unconscious,
+          vitals.consciousness.unconscious,
           List(currentPressure(vitals)),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
@@ -71,12 +71,12 @@ object ConsciousnessProgression {
     * physiological pressure (for example blood oxygen).
     */
   def reconcileAfterEdit(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
-    val step = vitals.painShockStage match {
+    val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
         reconcile(
-          vitals.consciousness,
-          vitals.unconscious,
+          vitals.consciousness.level,
+          vitals.consciousness.unconscious,
           List(currentPressure(vitals)),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
@@ -107,12 +107,12 @@ object ConsciousnessProgression {
       vitals: VitalsComponentImpl
   ): Boolean = {
     val wakeThreshold = configuredWakeThreshold
-    val step = vitals.painShockStage match {
+    val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessStep(0.0, true)
       case _                        =>
         reconcile(
-          vitals.consciousness.max(wakeThreshold),
-          vitals.unconscious,
+          vitals.consciousness.level.max(wakeThreshold),
+          vitals.consciousness.unconscious,
           List(currentPressure(vitals)),
           wakeThreshold,
           effectiveKnockoutThreshold(vitals),
@@ -131,14 +131,14 @@ object ConsciousnessProgression {
   }
 
   private def effectiveFloor(vitals: VitalsComponentImpl): Double = {
-    vitals.painShockStage match {
+    vitals.shock.stage match {
       case PainShockStage.Recovering => 0.0
       case _                         => CasualtiesBelowConfig.effectiveConsciousnessFloor
     }
   }
 
   private def effectiveKnockoutThreshold(vitals: VitalsComponentImpl): Double = {
-    vitals.painShockStage match {
+    vitals.shock.stage match {
       case PainShockStage.Recovering => 0.0
       case _                         => configuredKnockoutThreshold
     }
@@ -146,7 +146,7 @@ object ConsciousnessProgression {
 
   private def currentPressure(vitals: VitalsComponentImpl): ConsciousnessPressure = {
     hypoxiaPressure(
-      vitals.bloodOxygen,
+      vitals.circulation.bloodOxygen,
       CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
       CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
     )
@@ -158,8 +158,8 @@ object ConsciousnessProgression {
       step: ConsciousnessStep,
       cause: Identifier
   ): Boolean = {
-    val previousConsciousness = vitals.consciousness
-    val previousUnconscious = vitals.unconscious
+    val previousConsciousness = vitals.consciousness.level
+    val previousUnconscious = vitals.consciousness.unconscious
     VitalsMutations.applyConsciousnessState(vitals, step.consciousness, step.unconscious)
 
     if (step.unconscious != previousUnconscious) {
@@ -173,7 +173,7 @@ object ConsciousnessProgression {
             step.consciousness,
             previousUnconscious,
             step.unconscious,
-            vitals.painShockStage,
+            vitals.shock.stage,
             cause
           )
         )

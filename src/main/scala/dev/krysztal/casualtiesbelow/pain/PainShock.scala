@@ -39,8 +39,8 @@ object PainShock {
       body: BodyComponent,
       vitals: VitalsComponentImpl
   ): Boolean = {
-    val previousLoad = normalizeLoad(vitals.painShockLoad)
-    val previousStage = vitals.painShockStage
+    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousStage = vitals.shock.stage
     val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
     applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression) ||
     (isWarningStage(previousStage) && crossedInteger(previousLoad, nextLoad))
@@ -51,15 +51,15 @@ object PainShock {
     * changed.
     */
   def finishRecovery(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
-    if (vitals.painShockStage != PainShockStage.Recovering || vitals.unconscious) {
+    if (vitals.shock.stage != PainShockStage.Recovering || vitals.consciousness.unconscious) {
       return false
     }
 
     val wakeLoadCap =
       CasualtiesBelowConfig.ShockWakeLoadCap.get().doubleValue.max(0.0).min(MaxLoad)
-    val retainedLoad = normalizeLoad(vitals.painShockLoad).min(wakeLoadCap)
-    val previousLoad = normalizeLoad(vitals.painShockLoad)
-    val previousStage = vitals.painShockStage
+    val retainedLoad = normalizeLoad(vitals.shock.load).min(wakeLoadCap)
+    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousStage = vitals.shock.stage
     VitalsMutations.applyPainShockState(vitals, retainedLoad, PainShockStage.Stable)
     emitStageChange(
       player,
@@ -80,7 +80,7 @@ object PainShock {
       vitals: VitalsComponentImpl,
       requestedLoad: Double
   ): Boolean = {
-    val previousLoad = normalizeLoad(vitals.painShockLoad)
+    val previousLoad = normalizeLoad(vitals.shock.load)
     applyLoad(
       player,
       vitals,
@@ -97,13 +97,13 @@ object PainShock {
       player: ServerPlayer,
       vitals: VitalsComponentImpl
   ): Boolean = {
-    val load = normalizeLoad(vitals.painShockLoad)
+    val load = normalizeLoad(vitals.shock.load)
     applyLoad(player, vitals, load, load, PhysiologyChangeCause.AdrenalineEdit)
   }
 
   def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
-    val previousLoad = normalizeLoad(vitals.painShockLoad)
-    val previousStage = vitals.painShockStage
+    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousStage = vitals.shock.stage
     VitalsMutations.applyPainShockState(vitals, 0.0, PainShockStage.Stable)
     if (previousStage != PainShockStage.Stable) {
       emitStageChange(
@@ -173,7 +173,7 @@ object PainShock {
       nextLoad: Double,
       cause: Identifier
   ): Boolean = {
-    val previousStage = vitals.painShockStage
+    val previousStage = vitals.shock.stage
     val baseThreshold = collapseThreshold
     val effectiveThreshold = effectiveCollapseThreshold(
       baseThreshold,
@@ -182,7 +182,7 @@ object PainShock {
     )
     val nextStage =
       transition(previousStage, previousLoad, nextLoad, baseThreshold, effectiveThreshold)
-    if (nextLoad != vitals.painShockLoad || nextStage != previousStage) {
+    if (nextLoad != vitals.shock.load || nextStage != previousStage) {
       VitalsMutations.applyPainShockState(vitals, nextLoad, nextStage)
     }
     if (nextStage != previousStage) {

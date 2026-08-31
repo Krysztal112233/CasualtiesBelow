@@ -35,8 +35,8 @@ object ZombieAttackImmuneDrain {
     val base = CasualtiesBelowConfig.ZombieHitImmuneDrain.get()
     val jitter = CasualtiesBelowConfig.ZombieHitImmuneDrainJitter.get()
     val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter
-    val next = (vitals.immuneHealth - base * roll).max(0.0)
-    if (next == vitals.immuneHealth) return
+    val next = (vitals.infection.immuneHealth - base * roll).max(0.0)
+    if (next == vitals.infection.immuneHealth) return
 
     VitalsMutations.setImmuneHealth(vitals, next)
     VitalsMutations.syncNow(player)
