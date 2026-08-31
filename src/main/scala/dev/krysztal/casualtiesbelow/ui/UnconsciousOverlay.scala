@@ -11,16 +11,19 @@ import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.PainShockStage
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
-/** Circular wake-progress indicator shown while the synced unconscious latch is active.
+/** Circular state indicator shown while unconscious or in terminal hypoxia.
   *
   * The low-opacity track fades in over half a second; its bright clockwise arc advances from the
-  * unconscious-entry threshold to the wake threshold. Falling consciousness colors the ring red,
-  * while recovery colors it white. The world blackout remains independent in the post effect, and
-  * F1 can hide this HUD element without revealing the world.
+  * unconscious-entry threshold to the wake threshold. The ring tint sweeps between red and white
+  * over a few ticks as consciousness trends down or up. Once the blood-oxygen reserve is empty, the
+  * same geometry crossfades into a continuous countdown ring whose arc recedes smoothly and warms
+  * from cyan to red as terminal exposure elapses, extrapolated between the sparse server sync
+  * milestones by [[HypoxiaHudState]]. The world blackout remains independent in the post effect,
+  * and F1 can hide this HUD element without revealing the world.
   */
 @Environment(EnvType.CLIENT)
 object UnconsciousOverlay {
@@ -31,13 +34,10 @@ object UnconsciousOverlay {
   private val TwoPi = math.Pi * 2.0
   private val FadeDurationTicks = 10.0f
   private val TrackOpacity = 0.28
-  private val DirectionEpsilon = 1.0e-6
+  private val Epsilon = 1.0e-6
   private val FallingRgb = 0x00ff4040
   private val RisingRgb = 0x00ffffff
-
-  private enum Direction {
-    case Falling, Rising
-  }
+  private val TerminalTrackRgb = 0x00374b54
 
   private final case class RingPixel(x: Int, completion: Double)
 
@@ -47,8 +47,6 @@ object UnconsciousOverlay {
 
   private var cachedGeometry: Option[RingGeometry] = None
   private var trackedPlayer: Option[LocalPlayer] = None
-  private var lastConsciousness: Option[Double] = None
-  private var direction = Direction.Falling
   private var visibility = 0.0f
 
   def register(): Unit = {
@@ -73,15 +71,17 @@ object UnconsciousOverlay {
           trackedPlayer = Some(player)
         }
 
-        val vitals = CasualtiesBelowComponents.Vitals.get(player)
-        if (!vitals.unconscious && visibility <= 0.0f) {
+        val vitals = ComponentAccess.vitals(player)
+        val exposureTicks = vitals.hypoxiaExposureTicks
+        val terminalActive = exposureTicks > 0
+        val shouldShow = vitals.unconscious || terminalActive
+        if (!shouldShow && visibility <= 0.0f) {
           resetAnimation()
           return
         }
 
-        updateDirection(vitals.consciousness)
         val fadeStep = deltaTracker.getRealtimeDeltaTicks() / FadeDurationTicks
-        if (vitals.unconscious) {
+        if (shouldShow) {
           visibility = math.min(1.0f, visibility + fadeStep)
         } else {
           visibility = math.max(0.0f, visibility - fadeStep)
@@ -91,27 +91,41 @@ object UnconsciousOverlay {
           }
         }
 
-        val entryThreshold =
-          if (vitals.painShockStage == PainShockStage.Recovering) 0.0
-          else GameplayDataSnapshot.current.consciousnessKnockoutThreshold
-        val wakeThreshold = GameplayDataSnapshot.current.unconsciousWakeThreshold
-        val progress = wakeProgress(vitals.consciousness, entryThreshold, wakeThreshold)
-        drawRing(graphics, progress, minecraft.getWindow.getGuiScale)
+        val realtimeDelta = deltaTracker.getRealtimeDeltaTicks()
+        HypoxiaHudState.advanceTerminalBlend(realtimeDelta, terminalActive)
+        HypoxiaHudState.advanceDirectionBlend(realtimeDelta)
+        val terminalBlend = HypoxiaHudState.terminalBlendValue.toDouble
+        val gameplayData = GameplayDataSnapshot.current
+        val guiScale = minecraft.getWindow.getGuiScale
+        if (terminalBlend < 1.0) {
+          val entryThreshold =
+            if (vitals.painShockStage == PainShockStage.Recovering) 0.0
+            else gameplayData.consciousnessKnockoutThreshold
+          val progress = wakeProgress(
+            vitals.consciousness,
+            entryThreshold,
+            gameplayData.unconsciousWakeThreshold
+          )
+          drawWakeRing(
+            graphics,
+            progress,
+            guiScale,
+            visibility.toDouble * (1.0 - terminalBlend)
+          )
+        }
+        if (terminalBlend > 0.0) {
+          drawTerminalRing(
+            graphics,
+            gameplayData.terminalHypoxiaDurationTicks,
+            guiScale,
+            deltaTracker.getGameTimeDeltaPartialTick(false),
+            visibility.toDouble * terminalBlend
+          )
+        }
       case None =>
         trackedPlayer = None
         resetAnimation()
     }
-  }
-
-  private def updateDirection(consciousness: Double): Unit = {
-    lastConsciousness.foreach { previous =>
-      if (consciousness > previous + DirectionEpsilon) {
-        direction = Direction.Rising
-      } else if (consciousness < previous - DirectionEpsilon) {
-        direction = Direction.Falling
-      }
-    }
-    lastConsciousness = Some(consciousness)
   }
 
   private def wakeProgress(
@@ -120,17 +134,18 @@ object UnconsciousOverlay {
       wakeThreshold: Double
   ): Double = {
     val span = wakeThreshold - entryThreshold
-    if (span <= DirectionEpsilon) {
+    if (span <= Epsilon) {
       if (consciousness >= wakeThreshold) 1.0 else 0.0
     } else {
       Mth.clamp((consciousness - entryThreshold) / span, 0.0, 1.0)
     }
   }
 
-  private def drawRing(
+  private def drawWakeRing(
       graphics: GuiGraphicsExtractor,
       progress: Double,
-      guiScale: Int
+      guiScale: Int,
+      alphaScale: Double
   ): Unit = {
     val targetDiameter = graphics.guiHeight().toFloat * DiameterHeightRatio
     val rasterPixelSize = RasterPhysicalPixelSize / math.max(guiScale, 1).toFloat
@@ -138,12 +153,13 @@ object UnconsciousOverlay {
     val scale = targetDiameter / geometry.diameter.toFloat
     val left = (graphics.guiWidth().toFloat - targetDiameter) / 2.0f
     val top = (graphics.guiHeight().toFloat - targetDiameter) / 2.0f
-    val rgb = direction match {
-      case Direction.Falling => FallingRgb
-      case Direction.Rising  => RisingRgb
-    }
-    val trackColor = withAlpha(rgb, visibility * TrackOpacity)
-    val progressColor = withAlpha(rgb, visibility)
+    val tint = HypoxiaVisuals.lerpRgb(
+      FallingRgb,
+      RisingRgb,
+      Mth.smoothstep(HypoxiaHudState.directionBlendValue.toDouble)
+    )
+    val trackColor = withAlpha(tint, alphaScale * TrackOpacity)
+    val progressColor = withAlpha(tint, alphaScale)
     val pose = graphics.pose()
 
     pose.pushMatrix()
@@ -152,6 +168,43 @@ object UnconsciousOverlay {
       pose.scale(scale, scale)
       drawRows(graphics, geometry, 1.0, trackColor)
       drawRows(graphics, geometry, progress, progressColor)
+    } finally {
+      pose.popMatrix()
+    }
+  }
+
+  private def drawTerminalRing(
+      graphics: GuiGraphicsExtractor,
+      durationTicks: Int,
+      guiScale: Int,
+      partialTick: Float,
+      alphaScale: Double
+  ): Unit = {
+    val targetDiameter = graphics.guiHeight().toFloat * DiameterHeightRatio
+    val rasterPixelSize = RasterPhysicalPixelSize / math.max(guiScale, 1).toFloat
+    val geometry = ringGeometry(targetDiameter, rasterPixelSize)
+    val scale = targetDiameter / geometry.diameter.toFloat
+    val left = (graphics.guiWidth().toFloat - targetDiameter) / 2.0f
+    val top = (graphics.guiHeight().toFloat - targetDiameter) / 2.0f
+    val remaining = HypoxiaVisuals.terminalRemainingFraction(
+      HypoxiaHudState.smoothedExposureTicks(partialTick),
+      durationTicks
+    )
+    val rgb = HypoxiaVisuals.terminalColor(remaining)
+    val pulse = HypoxiaVisuals.pulseOpacity(
+      HypoxiaHudState.terminalPulsePhaseCycles(partialTick),
+      HypoxiaVisuals.terminalPulseFloor(remaining)
+    )
+    val trackColor = withAlpha(TerminalTrackRgb, alphaScale * TrackOpacity)
+    val progressColor = withAlpha(rgb, alphaScale * pulse)
+    val pose = graphics.pose()
+
+    pose.pushMatrix()
+    try {
+      pose.translate(left, top)
+      pose.scale(scale, scale)
+      drawRows(graphics, geometry, 1.0, trackColor)
+      drawRows(graphics, geometry, remaining, progressColor)
     } finally {
       pose.popMatrix()
     }
@@ -205,7 +258,8 @@ object UnconsciousOverlay {
       var runStart = -1
       var runEnd = -1
       row.pixels.foreach { pixel =>
-        if (fullRing || pixel.completion < completion) {
+        val beforeCompletion = fullRing || pixel.completion < completion
+        if (beforeCompletion) {
           if (runStart < 0) {
             runStart = pixel.x
             runEnd = pixel.x + 1
@@ -234,8 +288,7 @@ object UnconsciousOverlay {
   }
 
   private def resetAnimation(): Unit = {
-    lastConsciousness = None
-    direction = Direction.Falling
     visibility = 0.0f
+    HypoxiaHudState.resetOverlayTransitions()
   }
 }
