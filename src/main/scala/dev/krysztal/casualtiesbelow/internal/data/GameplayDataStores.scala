@@ -15,7 +15,7 @@ import net.fabricmc.fabric.api.resource.v1.DataResourceStore
 
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
@@ -29,8 +29,7 @@ final case class GameplayDataStore(
     woundProfiles: Map[Identifier, WoundProfile],
     woundRules: Map[Identifier, WoundRuleData],
     armorProtection: Map[Identifier, ArmorProtectionData],
-    discomfort: Map[Identifier, DiscomfortData],
-    foodImmuneItems: Map[Identifier, FoodImmuneData],
+    foodEffects: Map[Identifier, FoodEffectsData],
     foodImmuneTags: Map[Identifier, FoodImmuneData],
     hitLocations: Map[Identifier, HitLocationData],
     adrenalineRules: Map[Identifier, AdrenalineRuleData]
@@ -42,8 +41,7 @@ object GameplayDataStore {
     woundProfiles = Map.empty,
     woundRules = Map.empty,
     armorProtection = Map.empty,
-    discomfort = Map.empty,
-    foodImmuneItems = Map.empty,
+    foodEffects = Map.empty,
     foodImmuneTags = Map.empty,
     hitLocations = Map.empty,
     adrenalineRules = Map.empty
@@ -97,9 +95,8 @@ object GameplayDataStores {
       "armor_protection",
       encodeSection(store.armorProtection, ArmorProtectionData.Codec, ops)
     )
-    root.add("discomfort", encodeSection(store.discomfort, DiscomfortData.Codec, ops))
-    root.add("food_immune_item", encodeSection(store.foodImmuneItems, FoodImmuneData.Codec, ops))
-    root.add("food_immune_tag", encodeSection(store.foodImmuneTags, FoodImmuneData.Codec, ops))
+    root.add("food_item", encodeSection(store.foodEffects, FoodEffectsData.Codec, ops))
+    root.add("food_tag", encodeSection(store.foodImmuneTags, FoodImmuneData.Codec, ops))
     root.add("hit_location", encodeSection(store.hitLocations, HitLocationData.Codec, ops))
     root
   }
@@ -116,9 +113,8 @@ object GameplayDataStores {
       woundProfiles = decodeSection(root, "wound_profile", WoundProfile.Codec, ops),
       woundRules = decodeSection(root, "wound_rule", WoundRuleData.Codec, ops),
       armorProtection = decodeSection(root, "armor_protection", ArmorProtectionData.Codec, ops),
-      discomfort = decodeSection(root, "discomfort", DiscomfortData.Codec, ops),
-      foodImmuneItems = decodeSection(root, "food_immune_item", FoodImmuneData.Codec, ops),
-      foodImmuneTags = decodeSection(root, "food_immune_tag", FoodImmuneData.Codec, ops),
+      foodEffects = decodeSection(root, "food_item", FoodEffectsData.Codec, ops),
+      foodImmuneTags = decodeSection(root, "food_tag", FoodImmuneData.Codec, ops),
       hitLocations = decodeSection(root, "hit_location", HitLocationData.Codec, ops),
       adrenalineRules = decodeSection(root, "adrenaline_rule", AdrenalineRuleData.Codec, ops)
     )

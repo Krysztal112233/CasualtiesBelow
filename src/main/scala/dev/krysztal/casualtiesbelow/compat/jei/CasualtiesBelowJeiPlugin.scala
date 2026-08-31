@@ -57,8 +57,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   )(using data: GameplayDataSnapshot, store: GameplayDataStore): Unit = {
     val candidates = collectDiscomfortCandidates
     val stewOverridden = GameplayDataLookup
-      .discomfort(new ItemStack(Items.SUSPICIOUS_STEW), store)
-      .isDefined
+      .foodEffects(Items.SUSPICIOUS_STEW.builtInRegistryHolder(), store)
+      .exists(e => e.discomfortTier.isPresent || e.discomfortMean.isPresent)
 
     // Group items that share one description into a single info entry.
     val groups = candidates.toList
@@ -126,11 +126,11 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     ).foreach { tag =>
       BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(h => items += h.value())
     }
-    GameplayDataLookup
-      .orderedEntries(store.discomfort)(_.priority.intValue())
-      .foreach { (_, entry) =>
-        if (entry.items.isBound) entry.items.stream().forEach(holder => items += holder.value())
+    store.foodEffects.foreach { (id, entry) =>
+      if (entry.discomfortTier.isPresent || entry.discomfortMean.isPresent) {
+        BuiltInRegistries.ITEM.get(id).toScala.foreach(holder => items += holder.value())
       }
+    }
     items += Items.SUSPICIOUS_STEW // always documented: its tier is component-derived
     items.toSet
   }

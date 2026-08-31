@@ -103,7 +103,7 @@ final case class GameplayDataSnapshot(
 
 object GameplayDataSnapshot {
 
-  private val CurrentSchemaVersion = 5
+  private val CurrentSchemaVersion = 6
 
   private final case class ClientState(
       rawJson: Option[String],

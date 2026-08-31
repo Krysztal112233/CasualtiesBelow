@@ -312,37 +312,9 @@ object ArmorProtectionData {
   )
 }
 
-/** Per-item discomfort override. Exactly one of level or mean is present. */
-final case class DiscomfortData(
-    items: HolderSet[Item],
-    level: Optional[Integer],
-    mean: Optional[Double],
-    priority: Integer
-)
-
-object DiscomfortData {
-  private val RawCodec: Codec[DiscomfortData] = RecordCodecBuilder.create(instance =>
-    instance
-      .group(
-        RegistryCodecs.homogeneousList(Registries.ITEM).fieldOf("items").forGetter(_.items),
-        ExtraCodecs.intRange(1, 3).optionalFieldOf("level").forGetter(_.level),
-        GameplayCodecs.NonNegativeDouble.optionalFieldOf("mean").forGetter(_.mean),
-        INT.optionalFieldOf("priority", 0).forGetter(_.priority)
-      )
-      .apply(instance, DiscomfortData.apply)
-  )
-
-  val Codec: Codec[DiscomfortData] = RawCodec.validate(data =>
-    if (data.level.isPresent != data.mean.isPresent) DataResult.success(data)
-    else DataResult.error(() => "Exactly one of level or mean is required")
-  )
-}
-
-/** Immune effect value of one food item or one item tag. The target is identified by the file path
-  * the value was loaded from: `food_immune/item/<ns>/<path>.json` applies to item `<ns>:<path>`,
-  * and `food_immune/tag/<ns>/<path>.json` applies to every item carrying tag `<ns>:<path>`.
-  * Positive values reward nourishing food, negative values punish contaminated food, and an
-  * explicit zero exempts one item from a tag-borne value.
+/** Immune effect value of one item tag, loaded from `food/tag/<ns>/<path>.json` and applied to
+  * every item carrying tag `<ns>:<path>`. Positive values reward nourishing food, negative values
+  * punish contaminated food.
   */
 final case class FoodImmuneData(immune: Double)
 
@@ -351,6 +323,49 @@ object FoodImmuneData {
     .fieldOf("immune")
     .xmap(FoodImmuneData.apply, _.immune)
     .codec()
+}
+
+/** The full body-effect profile of one food item, loaded from `food/item/<ns>/<path>.json`
+  * targeting item `<ns>:<path>`. Every field is optional, but at least one must be present;
+  * `discomfortTier` and `discomfortMean` are mutually exclusive (re-assign the tier, or price the
+  * dose directly — not both). An explicit zero immune value exempts the item from tag-borne values.
+  */
+final case class FoodEffectsData(
+    immune: Optional[Double],
+    discomfortTier: Optional[Integer],
+    discomfortMean: Optional[Double]
+)
+
+object FoodEffectsData {
+
+  /** Shorthand for the common case: an immune-only food entry. */
+  def immune(value: Double): FoodEffectsData =
+    FoodEffectsData(Optional.of(value), Optional.empty(), Optional.empty())
+
+  private val RawCodec: Codec[FoodEffectsData] = RecordCodecBuilder.create(instance =>
+    instance
+      .group(
+        GameplayCodecs.FiniteDouble.optionalFieldOf("immune").forGetter(_.immune),
+        ExtraCodecs
+          .intRange(1, 3)
+          .optionalFieldOf("discomfort_tier")
+          .forGetter(_.discomfortTier),
+        GameplayCodecs.NonNegativeDouble
+          .optionalFieldOf("discomfort_mean")
+          .forGetter(_.discomfortMean)
+      )
+      .apply(instance, FoodEffectsData.apply)
+  )
+
+  val Codec: Codec[FoodEffectsData] = RawCodec.validate(data =>
+    if (data.discomfortTier.isPresent && data.discomfortMean.isPresent) {
+      DataResult.error(() => "discomfort_tier and discomfort_mean are mutually exclusive")
+    } else if (data.immune.isEmpty && data.discomfortTier.isEmpty && data.discomfortMean.isEmpty) {
+      DataResult.error(() =>
+        "At least one of immune, discomfort_tier or discomfort_mean is required"
+      )
+    } else DataResult.success(data)
+  )
 }
 
 /** Per-entity hit geometry bands. */

@@ -6,6 +6,7 @@ import net.minecraft.server.Bootstrap
 import net.minecraft.util.RandomSource
 import net.minecraft.world.item.Items
 
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 
@@ -26,7 +27,7 @@ final class FoodImmunityTest {
         .resolveValue(
           id("cooked_beef"),
           Set.empty,
-          items = Map(id("cooked_beef") -> FoodImmuneData(2.0)),
+          items = Map(id("cooked_beef") -> FoodEffectsData.immune(2.0)),
           tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
         )
         .get,
@@ -58,7 +59,7 @@ final class FoodImmunityTest {
         .resolveValue(
           id("modded_stew"),
           Set(id("healthy_soups")),
-          items = Map(id("modded_stew") -> FoodImmuneData(3.0)),
+          items = Map(id("modded_stew") -> FoodEffectsData.immune(3.0)),
           tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
         )
         .get,
@@ -74,7 +75,7 @@ final class FoodImmunityTest {
         .resolveValue(
           id("bland_stew"),
           Set(id("healthy_soups")),
-          items = Map(id("bland_stew") -> FoodImmuneData(0.0)),
+          items = Map(id("bland_stew") -> FoodEffectsData.immune(0.0)),
           tags = Map(id("healthy_soups") -> FoodImmuneData(4.0))
         )
         .get,

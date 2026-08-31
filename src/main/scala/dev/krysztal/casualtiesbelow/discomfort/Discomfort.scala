@@ -50,9 +50,10 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
   * while applying hunger and saturation penalties.
   *
   * Authoritative per-item entries come from the reload-listener store on the server and the synced
-  * store on clients. Global means and thresholds still come from [[GameplayDataSnapshot]]. Untagged
-  * food (and beneficial suspicious stew) contributes nothing. Milk keeps working while nauseous: it
-  * bears no discomfort, so refusal never blocks it.
+  * store on clients: `food/item/<ns>/<path>.json` files can re-assign the tier or price the mean
+  * directly (see `data.schema.FoodEffectsData`). Global means and thresholds still come from
+  * [[GameplayDataSnapshot]]. Untagged food (and beneficial suspicious stew) contributes nothing.
+  * Milk keeps working while nauseous: it bears no discomfort, so refusal never blocks it.
   */
 object Discomfort {
 
@@ -238,12 +239,10 @@ object Discomfort {
       data: GameplayDataSnapshot,
       store: GameplayDataStore
   ): Option[(Double, Option[Int])] = {
-    GameplayDataLookup.discomfort(stack, store).flatMap { entry =>
-      entry.level.toScala
-        .map(level =>
-          (tierMean(level.intValue(), data.discomfortLevelMeans), Some(level.intValue()))
-        )
-        .orElse(entry.mean.toScala.map(mean => (mean.doubleValue(), None)))
+    GameplayDataLookup.foodEffects(stack.typeHolder(), store).flatMap { entry =>
+      entry.discomfortTier.toScala
+        .map(tier => (tierMean(tier.intValue(), data.discomfortLevelMeans), Some(tier.intValue())))
+        .orElse(entry.discomfortMean.toScala.map(mean => (mean.doubleValue(), None)))
     }
   }
 

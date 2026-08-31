@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack
 import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
@@ -66,7 +67,7 @@ object FoodImmunity {
       resolveValue(
         key.identifier(),
         item.tags().toScala(Set).map(_.location),
-        store.foodImmuneItems,
+        store.foodEffects,
         store.foodImmuneTags
       )
     }
@@ -78,10 +79,10 @@ object FoodImmunity {
   private[casualtiesbelow] def resolveValue(
       itemId: Identifier,
       itemTags: Set[Identifier],
-      items: Map[Identifier, FoodImmuneData],
+      items: Map[Identifier, FoodEffectsData],
       tags: Map[Identifier, FoodImmuneData]
   ): Option[Double] = {
-    items.get(itemId).map(_.immune).orElse {
+    items.get(itemId).flatMap(_.immune.toScala).orElse {
       val matches = itemTags.flatMap(tags.get).map(_.immune)
       if (matches.isEmpty) None
       else Some(matches.maxBy(value => (math.abs(value), value)))

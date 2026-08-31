@@ -1,11 +1,15 @@
 package dev.krysztal.casualtiesbelow.internal.data
 
+import scala.jdk.OptionConverters.*
+
+import net.minecraft.core.Holder
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.Entity
+import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 
 /** Deterministic lookups shared by gameplay consumers of the reload-listener stores. */
@@ -40,12 +44,11 @@ object GameplayDataLookup {
       .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }
   }
 
-  def discomfort(
-      stack: ItemStack,
-      store: GameplayDataStore
-  ): Option[DiscomfortData] = {
-    orderedEntries(store.discomfort)(_.priority.intValue())
-      .collectFirst { case (_, entry) if entry.items.contains(stack.typeHolder()) => entry }
+  /** The exact per-item food effects entry, if the item has one. Tag-level fallback for immune
+    * values is resolved by the consumer (`immune.FoodImmunity`).
+    */
+  def foodEffects(item: Holder[Item], store: GameplayDataStore): Option[FoodEffectsData] = {
+    item.unwrapKey().toScala.flatMap(key => store.foodEffects.get(key.identifier()))
   }
 
   private def entityTypeHolder(entity: Entity) = entity.typeHolder()

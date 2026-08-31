@@ -12,7 +12,7 @@ import dev.krysztal.casualtiesbelow.api.event.GameplayDataReloadedCallback
 import dev.krysztal.casualtiesbelow.api.event.GameplayDataReloadedContext
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile as WoundProfileEntry
@@ -29,11 +29,10 @@ object GameplayDataLoaders {
     "armor_protection",
     ArmorProtectionData.Codec
   )
-  private val Discomfort = GameplayDataLoader[DiscomfortData]("discomfort", DiscomfortData.Codec)
-  private val FoodImmuneItem =
-    GameplayDataLoader[FoodImmuneData]("food_immune/item", FoodImmuneData.Codec)
-  private val FoodImmuneTag =
-    GameplayDataLoader[FoodImmuneData]("food_immune/tag", FoodImmuneData.Codec)
+  private val FoodItemEffects =
+    GameplayDataLoader[FoodEffectsData]("food/item", FoodEffectsData.Codec)
+  private val FoodTagImmune =
+    GameplayDataLoader[FoodImmuneData]("food/tag", FoodImmuneData.Codec)
   private val HitLocation =
     GameplayDataLoader[HitLocationData]("hit_location", HitLocationData.Codec)
 
@@ -60,9 +59,8 @@ object GameplayDataLoaders {
           woundProfiles = WoundProfile.load(manager, lookup),
           woundRules = WoundRule.load(manager, lookup),
           armorProtection = ArmorProtection.load(manager, lookup),
-          discomfort = Discomfort.load(manager, lookup),
-          foodImmuneItems = FoodImmuneItem.load(manager, lookup),
-          foodImmuneTags = FoodImmuneTag.load(manager, lookup),
+          foodEffects = FoodItemEffects.load(manager, lookup),
+          foodImmuneTags = FoodTagImmune.load(manager, lookup),
           hitLocations = HitLocation.load(manager, lookup),
           adrenalineRules = AdrenalineRule.load(manager, lookup)
         )

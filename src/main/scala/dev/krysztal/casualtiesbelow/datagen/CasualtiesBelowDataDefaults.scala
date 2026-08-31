@@ -30,9 +30,9 @@ import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
 import dev.krysztal.casualtiesbelow.data.schema.DamageTypeSelector
-import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
 import dev.krysztal.casualtiesbelow.data.schema.ExactDamageType
 import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.FormulaSource
 import dev.krysztal.casualtiesbelow.data.schema.HemostasisData
@@ -312,44 +312,38 @@ object CasualtiesBelowDataDefaults {
     }.toMap
   }
 
-  val Discomfort: Map[Identifier, DiscomfortData] = Map.empty
-
-  /** Built-in food immune table: nourishing staples reward, contaminated raw food drains. Foods
+  /** Built-in food body-effect table, path-keyed per item: vanilla foods live under the `minecraft`
+    * namespace so datapacks override a single food by replacing its same-path file. Vanilla
+    * discomfort assignments stay in the tier tags; these files price immune values only. Foods
     * vanilla already punishes with Poison (poison potato, pufferfish, spider eye) carry no entry —
     * the Poison effect's continuous immune drain is punishment enough; golden apples and milk stay
     * unlisted while their role is undecided.
     */
-  /** Built-in food immune table, path-keyed per item: vanilla foods live under the `minecraft`
-    * namespace so datapacks override a single food by replacing its same-path file. Foods vanilla
-    * already punishes with Poison (poison potato, pufferfish, spider eye) carry no entry — the
-    * Poison effect's continuous immune drain is punishment enough; golden apples and milk stay
-    * unlisted while their role is undecided.
-    */
-  val FoodImmuneItems: Map[Identifier, FoodImmuneData] = Map(
-    mcId("cooked_beef") -> FoodImmuneData(2.0),
-    mcId("cooked_porkchop") -> FoodImmuneData(2.0),
-    mcId("cooked_chicken") -> FoodImmuneData(2.0),
-    mcId("cooked_mutton") -> FoodImmuneData(2.0),
-    mcId("cooked_rabbit") -> FoodImmuneData(2.0),
-    mcId("cooked_cod") -> FoodImmuneData(2.0),
-    mcId("cooked_salmon") -> FoodImmuneData(2.0),
-    mcId("bread") -> FoodImmuneData(1.0),
-    mcId("baked_potato") -> FoodImmuneData(1.0),
-    mcId("pumpkin_pie") -> FoodImmuneData(1.0),
-    mcId("carrot") -> FoodImmuneData(1.0),
-    mcId("beetroot") -> FoodImmuneData(1.0),
-    mcId("melon_slice") -> FoodImmuneData(1.0),
-    mcId("golden_carrot") -> FoodImmuneData(5.0),
-    mcId("beef") -> FoodImmuneData(-1.5),
-    mcId("porkchop") -> FoodImmuneData(-1.5),
-    mcId("mutton") -> FoodImmuneData(-1.5),
-    mcId("rabbit") -> FoodImmuneData(-1.5),
-    mcId("cod") -> FoodImmuneData(-1.5),
-    mcId("salmon") -> FoodImmuneData(-1.5),
-    mcId("chicken") -> FoodImmuneData(-2.0),
-    mcId("rotten_flesh") -> FoodImmuneData(-3.0),
-    mcId("tropical_fish") -> FoodImmuneData(-1.0),
-    mcId("potato") -> FoodImmuneData(-0.5)
+  val FoodEffects: Map[Identifier, FoodEffectsData] = Map(
+    mcId("cooked_beef") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_porkchop") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_chicken") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_mutton") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_rabbit") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_cod") -> FoodEffectsData.immune(2.0),
+    mcId("cooked_salmon") -> FoodEffectsData.immune(2.0),
+    mcId("bread") -> FoodEffectsData.immune(1.0),
+    mcId("baked_potato") -> FoodEffectsData.immune(1.0),
+    mcId("pumpkin_pie") -> FoodEffectsData.immune(1.0),
+    mcId("carrot") -> FoodEffectsData.immune(1.0),
+    mcId("beetroot") -> FoodEffectsData.immune(1.0),
+    mcId("melon_slice") -> FoodEffectsData.immune(1.0),
+    mcId("golden_carrot") -> FoodEffectsData.immune(5.0),
+    mcId("beef") -> FoodEffectsData.immune(-1.5),
+    mcId("porkchop") -> FoodEffectsData.immune(-1.5),
+    mcId("mutton") -> FoodEffectsData.immune(-1.5),
+    mcId("rabbit") -> FoodEffectsData.immune(-1.5),
+    mcId("cod") -> FoodEffectsData.immune(-1.5),
+    mcId("salmon") -> FoodEffectsData.immune(-1.5),
+    mcId("chicken") -> FoodEffectsData.immune(-2.0),
+    mcId("rotten_flesh") -> FoodEffectsData.immune(-3.0),
+    mcId("tropical_fish") -> FoodEffectsData.immune(-1.0),
+    mcId("potato") -> FoodEffectsData.immune(-0.5)
   )
 
   /** Tag-level food immune values; tag membership itself is an ordinary item tag, so packs extend

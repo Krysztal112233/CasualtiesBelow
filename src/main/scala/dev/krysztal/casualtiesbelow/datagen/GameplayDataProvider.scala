@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.data.schema.AdrenalineRuleData
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.data.schema.DiscomfortData
+import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
@@ -60,21 +60,14 @@ final class GameplayDataProvider(
           saveAll(
             cache,
             lookup,
-            "discomfort",
-            DiscomfortData.Codec,
-            CasualtiesBelowDataDefaults.Discomfort
+            "food/item",
+            FoodEffectsData.Codec,
+            CasualtiesBelowDataDefaults.FoodEffects
           ) ++
           saveAll(
             cache,
             lookup,
-            "food_immune/item",
-            FoodImmuneData.Codec,
-            CasualtiesBelowDataDefaults.FoodImmuneItems
-          ) ++
-          saveAll(
-            cache,
-            lookup,
-            "food_immune/tag",
+            "food/tag",
             FoodImmuneData.Codec,
             CasualtiesBelowDataDefaults.FoodImmuneTags
           ) ++
