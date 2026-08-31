@@ -210,7 +210,9 @@ object InjuryProgression {
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this
     // player's progression returns immediately after the fatal call.
-    if (HypoxiaProgression.tick(vitals, oxygen.breathingBlocked)) {
+    val hypoxia = HypoxiaProgression.tick(vitals, oxygen.breathingBlocked)
+    vitalsChanged = hypoxia.syncDue || vitalsChanged
+    if (hypoxia.fatal) {
       player.hurtServer(
         player.level(),
         CasualtiesBelowDamageTypes.hypoxia(player.level()),

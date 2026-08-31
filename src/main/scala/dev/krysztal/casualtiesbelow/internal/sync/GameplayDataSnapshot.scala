@@ -31,6 +31,7 @@ final case class GameplayDataSnapshot(
     consciousnessKnockoutThreshold: Double,
     unconsciousWakeThreshold: Double,
     shockCollapseThreshold: Double,
+    terminalHypoxiaDurationTicks: Int,
     armorSkinFormula: String,
     armorMuscleFormula: String,
     maxDiscomfort: Double,
@@ -56,7 +57,8 @@ final case class GameplayDataSnapshot(
             JsonPrimitive(consciousnessKnockoutThreshold)
           ),
           "unconsciousWakeThreshold" -> Some(JsonPrimitive(unconsciousWakeThreshold)),
-          "shockCollapseThreshold" -> Some(JsonPrimitive(shockCollapseThreshold))
+          "shockCollapseThreshold" -> Some(JsonPrimitive(shockCollapseThreshold)),
+          "terminalHypoxiaDurationTicks" -> Some(JsonPrimitive(terminalHypoxiaDurationTicks))
         )
       ),
       "armor" -> Some(
@@ -101,7 +103,7 @@ final case class GameplayDataSnapshot(
 
 object GameplayDataSnapshot {
 
-  private val CurrentSchemaVersion = 3
+  private val CurrentSchemaVersion = 4
 
   private final case class ClientState(
       rawJson: Option[String],
@@ -170,6 +172,7 @@ object GameplayDataSnapshot {
       consciousnessKnockoutThreshold = config.effectiveConsciousnessKnockoutThreshold,
       unconsciousWakeThreshold = config.effectiveConsciousnessWakeThreshold,
       shockCollapseThreshold = config.ShockCollapseThreshold.get(),
+      terminalHypoxiaDurationTicks = config.TerminalHypoxiaDurationTicks.get().intValue.max(1),
       armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
       armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
       maxDiscomfort = config.MaxDiscomfort.get(),
@@ -223,6 +226,10 @@ object GameplayDataSnapshot {
       required(section, key).getAsString
     }
 
+    def requiredInt(section: JsonObject, key: String): Int = {
+      required(section, key).getAsInt
+    }
+
     def requiredDoubles(section: JsonObject, key: String): List[Double] = {
       val value = required(section, key)
       if (!value.isJsonArray) {
@@ -249,6 +256,7 @@ object GameplayDataSnapshot {
       ),
       unconsciousWakeThreshold = requiredDouble(vitals, "unconsciousWakeThreshold"),
       shockCollapseThreshold = requiredDouble(vitals, "shockCollapseThreshold"),
+      terminalHypoxiaDurationTicks = requiredInt(vitals, "terminalHypoxiaDurationTicks").max(1),
       armorSkinFormula = requiredString(armor, "skinFormula"),
       armorMuscleFormula = requiredString(armor, "muscleFormula"),
       maxDiscomfort = requiredDouble(discomfort, "maxValue"),
