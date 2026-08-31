@@ -14,6 +14,8 @@ import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
+import dev.krysztal.casualtiesbelow.ui.HypoxiaHudState
+import dev.krysztal.casualtiesbelow.ui.OxygenReserveHud
 import dev.krysztal.casualtiesbelow.ui.UnconsciousOverlay
 
 import net.neoforged.neoforge.client.gui.ConfigurationScreen
@@ -62,6 +64,8 @@ object CasualtiesBelowClient extends ClientModInitializer {
     BleedingParticles.register()
     GameplayDataSync.registerClient()
     BloodBarHud.register()
+    HypoxiaHudState.register()
+    OxygenReserveHud.register()
     UnconsciousOverlay.register()
   }
 }
