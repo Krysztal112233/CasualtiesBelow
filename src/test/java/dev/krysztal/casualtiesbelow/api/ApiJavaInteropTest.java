@@ -56,8 +56,9 @@ final class ApiJavaInteropTest {
         assertTrue(snapshot.infected());
         assertEquals(12.5, snapshot.infectionProgress().orElseThrow(), 1.0e-9);
 
-        var shock = new ShockSnapshot(12.5, PainShockStage.fromId("deferred").orElseThrow());
-        assertEquals("deferred", shock.stage().id());
+        var shock = new ShockSnapshot(12.5, PainShockStage.Deferred);
+        assertEquals(PainShockStage.Deferred, shock.stage());
+        assertEquals(PainShockStage.Deferred, PainShockStage.valueOf("Deferred"));
         var consciousness = new ConsciousnessSnapshot(80.0, false);
         assertEquals(80.0, consciousness.level(), 1.0e-9);
         assertFalse(consciousness.unconscious());

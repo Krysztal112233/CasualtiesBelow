@@ -13,7 +13,7 @@ import scala.jdk.OptionConverters.*
   * threshold from above, [[Recovering]] permits consciousness to rise from zero; the episode
   * returns to [[Stable]] only after the player wakes.
   */
-enum PainShockStage(val id: String) {
+enum PainShockStage(val id: String) extends Enum[PainShockStage] {
   case Stable extends PainShockStage("stable")
   case Deferred extends PainShockStage("deferred")
   case Collapsed extends PainShockStage("collapsed")
