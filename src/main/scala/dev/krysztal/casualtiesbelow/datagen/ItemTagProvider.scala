@@ -31,16 +31,19 @@ final class ItemTagProvider(
       .addOptionalTag(ItemTags.SWORDS)
       .addOptionalTag(ItemTags.AXES)
 
-    // Ground-cover plant fibers that vanilla shelves can dry into fiber cloth.
+    // Loose plant fibers that vanilla shelves can dry into fiber cloth.
     builder(CasualtiesBelowTags.DriesToFiberClothItems)
       .add(
         itemKey(Items.VINE),
+        itemKey(Items.WEEPING_VINES),
+        itemKey(Items.TWISTING_VINES),
         itemKey(Items.SHORT_GRASS),
         itemKey(Items.TALL_GRASS),
         itemKey(Items.FERN),
         itemKey(Items.LARGE_FERN),
         itemKey(Items.DRY_SHORT_GRASS),
-        itemKey(Items.DRY_TALL_GRASS)
+        itemKey(Items.DRY_TALL_GRASS),
+        itemKey(Items.LEAF_LITTER)
       )
 
     // Discomfort tier 1: still edible, but raw/starchy/sickly-sweet — a brief queasiness.
