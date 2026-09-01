@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 
-/** Generates the mod's item tags: wound classification (sharp melee weapons) and the food
+/** Generates the mod's item tags: wound classification, shelf-dried plant fibers and food
   * discomfort tiers (see `Discomfort`). One provider for the whole item registry — Fabric datagen
   * rejects duplicate per-registry tag providers. Suspicious stew is absent on purpose: its effects
   * live in a stack component, so its tier is derived per stack in code.
@@ -30,6 +30,18 @@ final class ItemTagProvider(
     builder(CasualtiesBelowTags.SharpMeleeItems)
       .addOptionalTag(ItemTags.SWORDS)
       .addOptionalTag(ItemTags.AXES)
+
+    // Ground-cover plant fibers that vanilla shelves can dry into fiber cloth.
+    builder(CasualtiesBelowTags.DriesToFiberClothItems)
+      .add(
+        itemKey(Items.VINE),
+        itemKey(Items.SHORT_GRASS),
+        itemKey(Items.TALL_GRASS),
+        itemKey(Items.FERN),
+        itemKey(Items.LARGE_FERN),
+        itemKey(Items.DRY_SHORT_GRASS),
+        itemKey(Items.DRY_TALL_GRASS)
+      )
 
     // Discomfort tier 1: still edible, but raw/starchy/sickly-sweet — a brief queasiness.
     builder(CasualtiesBelowTags.Discomfort1Items)

@@ -34,6 +34,10 @@ object CasualtiesBelowTags {
   val SharpMeleeItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("sharp_melee"))
 
+  /** Plant materials that vanilla shelves dry into fiber cloth. */
+  val DriesToFiberClothItems: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("dries_to_fiber_cloth"))
+
   /** Unarmed attackers whose hits are blunt slams rather than bites/scratches (slimes, golems,
     * ...). Bare-handed attackers not in this tag default to bite/scratch wounds.
     */

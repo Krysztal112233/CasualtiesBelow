@@ -13,7 +13,8 @@
     "PlayerActuallyHurtMixin",
     "PlayerMixin",
     "ServerGamePacketListenerImplMixin",
-    "ServerPlayerGameModeMixin"
+    "ServerPlayerGameModeMixin",
+    "ShelfBlockMixin"
   ],
   "client": [
     "GameRendererMixin",
