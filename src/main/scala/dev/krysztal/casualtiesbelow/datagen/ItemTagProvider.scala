@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.item.FiberClothDryingInputs
 
 /** Generates the mod's item tags: wound classification, shelf-dried plant fibers and food
   * discomfort tiers (see `Discomfort`). One provider for the whole item registry — Fabric datagen
@@ -32,19 +33,10 @@ final class ItemTagProvider(
       .addOptionalTag(ItemTags.AXES)
 
     // Loose plant fibers that vanilla shelves can dry into fiber cloth.
-    builder(CasualtiesBelowTags.DriesToFiberClothItems)
-      .add(
-        itemKey(Items.VINE),
-        itemKey(Items.WEEPING_VINES),
-        itemKey(Items.TWISTING_VINES),
-        itemKey(Items.SHORT_GRASS),
-        itemKey(Items.TALL_GRASS),
-        itemKey(Items.FERN),
-        itemKey(Items.LARGE_FERN),
-        itemKey(Items.DRY_SHORT_GRASS),
-        itemKey(Items.DRY_TALL_GRASS),
-        itemKey(Items.LEAF_LITTER)
-      )
+    val fiberClothInputs = builder(CasualtiesBelowTags.DriesToFiberClothItems)
+    FiberClothDryingInputs.BuiltInItems.foreach { item =>
+      fiberClothInputs.add(itemKey(item))
+    }
 
     // Discomfort tier 1: still edible, but raw/starchy/sickly-sweet — a brief queasiness.
     builder(CasualtiesBelowTags.Discomfort1Items)

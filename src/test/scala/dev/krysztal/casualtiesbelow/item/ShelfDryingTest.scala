@@ -14,6 +14,7 @@ import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -49,9 +50,25 @@ final class ShelfDryingTest {
   }
 
   @Test
+  def inProgressStageRejectsNonPersistedValuesBeforeMutation(): Unit = {
+    val input = new ItemStack(Items.VINE)
+
+    assertThrows(
+      classOf[IllegalArgumentException],
+      () => ShelfDrying.applyInProgressStage(input, 0)
+    )
+    assertThrows(
+      classOf[IllegalArgumentException],
+      () => ShelfDrying.applyInProgressStage(input, ShelfDrying.RequiredAdvances)
+    )
+
+    assertNull(input.get(CasualtiesBelowDataComponents.DryingStageComponent))
+  }
+
+  @Test
   def componentAppliesToWholeStackWithoutReducingItsLimit(): Unit = {
     val input = new ItemStack(Items.VINE, 64)
-    input.set(CasualtiesBelowDataComponents.DryingStageComponent, DryingStage(2))
+    ShelfDrying.applyInProgressStage(input, 2)
 
     assertEquals(64, input.getCount)
     assertEquals(64, input.getMaxStackSize)
@@ -79,7 +96,7 @@ final class ShelfDryingTest {
 
   private def withStage(value: Int): ItemStack = {
     val stack = new ItemStack(Items.VINE, 16)
-    stack.set(CasualtiesBelowDataComponents.DryingStageComponent, DryingStage(value))
+    ShelfDrying.applyInProgressStage(stack, value)
     stack
   }
 }

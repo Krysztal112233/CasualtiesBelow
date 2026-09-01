@@ -12,6 +12,7 @@ import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
+import dev.krysztal.casualtiesbelow.item.client.DryingItemTints
 import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.HypoxiaHudState
@@ -40,6 +41,8 @@ object CasualtiesBelowClient extends ClientModInitializer {
   )
 
   override def onInitializeClient(): Unit = {
+    DryingItemTints.register()
+
     // Expose the config screen through Forge Config API Port's built-in ModMenu integration.
     // Harmless when ModMenu is not installed (the registry is FCAP's own API).
     ConfigScreenFactoryRegistry.INSTANCE.register(
