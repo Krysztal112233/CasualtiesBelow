@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "#": "casualtiesbelow:fiber_cloth",
+    "S": "minecraft:stick"
+  },
+  "pattern": [
+    "###",
+    "#S#",
+    "###"
+  ],
+  "result": {
+    "id": "casualtiesbelow:basic_bandage"
+  }
+}

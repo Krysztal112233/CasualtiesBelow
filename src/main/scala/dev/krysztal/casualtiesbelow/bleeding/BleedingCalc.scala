@@ -43,6 +43,13 @@ object BleedingCalc {
     stats.externalBleedingRate = (stats.externalBleedingRate * retainedFraction).max(0.0)
   }
 
+  /** Subtracts a fixed rate from current external bleeding. Non-positive reductions do nothing, and
+    * a reduction larger than the current rate stops the bleeding without going negative.
+    */
+  def applyFixedHemostasis(stats: MutableLimbState, reductionRate: Double): Unit = {
+    stats.externalBleedingRate = (stats.externalBleedingRate - reductionRate.max(0.0)).max(0.0)
+  }
+
   /** Maximum external bleeding rate for the given skin integrity: linear from zero on intact skin
     * to the configured maximum on fully destroyed skin. Clamping makes this safe for malformed or
     * legacy component values outside the normal 0–100 range.

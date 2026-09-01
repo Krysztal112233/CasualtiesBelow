@@ -1,4 +1,13 @@
 {
   "item.casualtiesbelow.fiber_cloth": "纤维布",
-  "tooltip.casualtiesbelow.drying_stage": "干燥阶段：%1$s/%2$s"
+  "item.casualtiesbelow.basic_bandage": "基础绷带",
+  "tooltip.casualtiesbelow.drying_stage": "干燥阶段：%1$s/%2$s",
+  "message.casualtiesbelow.bandage.applied": "已包扎%1$s",
+  "message.casualtiesbelow.bandage.no_treatable_injury": "没有可用基础绷带处理的伤情",
+  "bodypart.casualtiesbelow.head": "头部",
+  "bodypart.casualtiesbelow.torso": "躯干",
+  "bodypart.casualtiesbelow.arm_left": "左臂",
+  "bodypart.casualtiesbelow.arm_right": "右臂",
+  "bodypart.casualtiesbelow.leg_left": "左腿",
+  "bodypart.casualtiesbelow.leg_right": "右腿"
 }

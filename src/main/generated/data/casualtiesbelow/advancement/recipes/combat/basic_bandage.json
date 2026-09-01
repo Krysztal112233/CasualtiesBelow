@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_fiber_cloth": {
+      "conditions": {
+        "items": [
+          {
+            "items": "casualtiesbelow:fiber_cloth"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "casualtiesbelow:basic_bandage"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_fiber_cloth"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "casualtiesbelow:basic_bandage"
+    ]
+  }
+}

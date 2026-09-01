@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.GameplayDataProvider
+import dev.krysztal.casualtiesbelow.datagen.ItemRecipeProvider
 import dev.krysztal.casualtiesbelow.datagen.ItemTagProvider
 
 /** Data generation entrypoint (declared as `fabric-datagen` in fabric.mod.json). Run with
@@ -31,6 +32,9 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
       DamageTypeTagProvider(output, registries)
     )
     pack.addProvider[ItemTagProvider]((output, registries) => ItemTagProvider(output, registries))
+    pack.addProvider[ItemRecipeProvider]((output, registries) =>
+      ItemRecipeProvider(output, registries)
+    )
     pack.addProvider[BluntMeleeTagProvider]((output, registries) =>
       BluntMeleeTagProvider(output, registries)
     )
