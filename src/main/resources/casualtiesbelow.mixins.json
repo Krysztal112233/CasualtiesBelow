@@ -9,6 +9,7 @@
     "BiomeInvoker",
     "ConsumableMixin",
     "FoodDataMixin",
+    "LayeredCauldronBlockMixin",
     "LivingEntityMixin",
     "PlayerActuallyHurtMixin",
     "PlayerMixin",

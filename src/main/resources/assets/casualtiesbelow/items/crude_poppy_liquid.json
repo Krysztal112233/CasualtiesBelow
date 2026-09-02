@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "casualtiesbelow:item/crude_poppy_liquid",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": 7215144
+      }
+    ]
+  }
+}

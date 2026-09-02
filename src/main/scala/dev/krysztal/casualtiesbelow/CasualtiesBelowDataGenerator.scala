@@ -11,6 +11,8 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.datagen.BlockLootProvider
+import dev.krysztal.casualtiesbelow.datagen.BlockTagProvider
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeProvider
 import dev.krysztal.casualtiesbelow.datagen.DamageTypeTagProvider
@@ -32,6 +34,10 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
       DamageTypeTagProvider(output, registries)
     )
     pack.addProvider[ItemTagProvider]((output, registries) => ItemTagProvider(output, registries))
+    pack.addProvider[BlockTagProvider]((output, registries) => BlockTagProvider(output, registries))
+    pack.addProvider[BlockLootProvider]((output, registries) =>
+      BlockLootProvider(output, registries)
+    )
     pack.addProvider[ItemRecipeProvider]((output, registries) =>
       ItemRecipeProvider(output, registries)
     )

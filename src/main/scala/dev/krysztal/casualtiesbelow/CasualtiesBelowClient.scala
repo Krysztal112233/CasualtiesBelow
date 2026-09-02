@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow
 import com.mojang.blaze3d.platform.InputConstants
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.gui.screens.Screen
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers
 
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -10,6 +11,8 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 
 import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
+import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
+import dev.krysztal.casualtiesbelow.client.render.SoakingPoppyCauldronRenderer
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.item.client.DryingItemTints
@@ -42,6 +45,10 @@ object CasualtiesBelowClient extends ClientModInitializer {
 
   override def onInitializeClient(): Unit = {
     DryingItemTints.register()
+    BlockEntityRenderers.register(
+      CasualtiesBelowBlockEntities.SoakingPoppyCauldron,
+      context => new SoakingPoppyCauldronRenderer(context)
+    )
 
     // Expose the config screen through Forge Config API Port's built-in ModMenu integration.
     // Harmless when ModMenu is not installed (the registry is FCAP's own API).

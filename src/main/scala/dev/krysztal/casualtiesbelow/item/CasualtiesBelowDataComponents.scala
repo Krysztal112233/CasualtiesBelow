@@ -14,6 +14,10 @@ object CasualtiesBelowDataComponents {
     .builder[DryingStage]()
     .persistent(DryingStage.Codec)
     .build()
+  val LiquidContentsComponent: DataComponentType[LiquidContents] = DataComponentType
+    .builder[LiquidContents]()
+    .persistent(LiquidContents.Codec)
+    .build()
 
   def register(): Unit = {
     Registry.register(
@@ -21,6 +25,12 @@ object CasualtiesBelowDataComponents {
       CasualtiesBelowApi.id("drying_stage"),
       DryingStageComponent
     )
+    Registry.register(
+      BuiltInRegistries.DATA_COMPONENT_TYPE,
+      CasualtiesBelowApi.id("liquid_contents"),
+      LiquidContentsComponent
+    )
     ItemComponentTooltipProviderRegistry.addLast(DryingStageComponent)
+    ItemComponentTooltipProviderRegistry.addLast(LiquidContentsComponent)
   }
 }

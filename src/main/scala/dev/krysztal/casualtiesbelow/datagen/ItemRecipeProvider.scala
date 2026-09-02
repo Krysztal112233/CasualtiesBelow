@@ -44,6 +44,13 @@ final class ItemRecipeProvider(
           .pattern("CCC")
           .unlockedBy("has_charcoal", has(Items.CHARCOAL))
           .save(recipeOutput)
+
+        shapeless(RecipeCategory.MISC, CasualtiesBelowItems.CrudePoppyPaste)
+          .requires(Items.POPPY)
+          .requires(Items.CHARCOAL)
+          .requires(ItemTags.SAND)
+          .unlockedBy("has_poppy", has(Items.POPPY))
+          .save(recipeOutput)
       }
     }
   }

@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:poppy",
+    "minecraft:charcoal",
+    "#minecraft:sand"
+  ],
+  "result": {
+    "id": "casualtiesbelow:crude_poppy_paste"
+  }
+}
