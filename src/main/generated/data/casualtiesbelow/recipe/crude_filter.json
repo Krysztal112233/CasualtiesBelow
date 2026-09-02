@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "C": "minecraft:charcoal",
+    "P": "#minecraft:planks",
+    "S": "#minecraft:sand"
+  },
+  "pattern": [
+    "PPP",
+    "SSS",
+    "CCC"
+  ],
+  "result": {
+    "id": "casualtiesbelow:crude_filter"
+  }
+}

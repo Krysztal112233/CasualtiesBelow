@@ -17,6 +17,8 @@ object CasualtiesBelowItems {
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("fiber_cloth"))
   private val BasicBandageKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("basic_bandage"))
+  private val CrudeFilterKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_filter"))
 
   val FiberCloth: Item = Registry.register(
     BuiltInRegistries.ITEM,
@@ -32,10 +34,19 @@ object CasualtiesBelowItems {
     )
   )
 
+  val CrudeFilter: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    CrudeFilterKey,
+    Item(Item.Properties().setId(CrudeFilterKey).stacksTo(64))
+  )
+
   def register(): Unit = {
     CreativeModeTabEvents
       .modifyOutputEvent(CreativeModeTabs.INGREDIENTS)
-      .register(output => output.accept(FiberCloth))
+      .register { output =>
+        output.accept(FiberCloth)
+        output.accept(CrudeFilter)
+      }
     CreativeModeTabEvents
       .modifyOutputEvent(CreativeModeTabs.COMBAT)
       .register(output => output.accept(BasicBandage))

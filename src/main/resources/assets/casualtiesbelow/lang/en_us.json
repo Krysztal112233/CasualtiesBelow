@@ -3,6 +3,7 @@
   "key.category.casualtiesbelow.main": "Casualties: Below",
   "item.casualtiesbelow.fiber_cloth": "Fiber Cloth",
   "item.casualtiesbelow.basic_bandage": "Basic Bandage",
+  "item.casualtiesbelow.crude_filter": "Crude Filter",
   "tooltip.casualtiesbelow.drying_stage": "Drying stage: %1$s/%2$s",
   "message.casualtiesbelow.bandage.applied": "Bandaged %1$s",
   "message.casualtiesbelow.bandage.no_treatable_injury": "No injury can be treated with this bandage",

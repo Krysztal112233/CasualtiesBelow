@@ -6,6 +6,7 @@ import net.minecraft.core.HolderLookup
 import net.minecraft.data.recipes.RecipeCategory
 import net.minecraft.data.recipes.RecipeOutput
 import net.minecraft.data.recipes.RecipeProvider
+import net.minecraft.tags.ItemTags
 import net.minecraft.world.item.Items
 
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
@@ -32,6 +33,16 @@ final class ItemRecipeProvider(
           .pattern("#S#")
           .pattern("###")
           .unlockedBy("has_fiber_cloth", has(CasualtiesBelowItems.FiberCloth))
+          .save(recipeOutput)
+
+        shaped(RecipeCategory.MISC, CasualtiesBelowItems.CrudeFilter)
+          .define('P', ItemTags.PLANKS)
+          .define('S', ItemTags.SAND)
+          .define('C', Items.CHARCOAL)
+          .pattern("PPP")
+          .pattern("SSS")
+          .pattern("CCC")
+          .unlockedBy("has_charcoal", has(Items.CHARCOAL))
           .save(recipeOutput)
       }
     }
