@@ -17,7 +17,9 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
+import dev.krysztal.casualtiesbelow.item.PoppyPotions
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
+import dev.krysztal.casualtiesbelow.item.PoppyRefining
 import dev.krysztal.casualtiesbelow.progression.InjuryProgression
 
 import org.slf4j.Logger
@@ -31,7 +33,10 @@ object CasualtiesBelow extends ModInitializer {
     CasualtiesBelowDataComponents.register()
     CasualtiesBelowBlocks.register()
     CasualtiesBelowBlockEntities.register()
+    // The brewing carrier potion must be registered before the liquid items bind its holder.
+    PoppyPotions.register()
     CasualtiesBelowItems.register()
+    PoppyRefining.register()
     GameplayDataLoaders.registerAll()
     CasualtiesBelowConfig.register()
     CasualtiesBelowCommands.register()

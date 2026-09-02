@@ -6,6 +6,7 @@
   "item.casualtiesbelow.crude_filter": "Crude Filter",
   "item.casualtiesbelow.crude_poppy_paste": "Crude Poppy Paste",
   "item.casualtiesbelow.crude_poppy_liquid": "Crude Poppy Liquid",
+  "item.casualtiesbelow.refined_poppy_extract": "Refined Poppy Extract",
   "block.casualtiesbelow.soaking_poppy_cauldron": "Soaking Poppy Cauldron",
   "block.casualtiesbelow.poppy_infusion_cauldron": "Poppy Infusion Cauldron",
   "tooltip.casualtiesbelow.drying_stage": "Drying stage: %1$s/%2$s",

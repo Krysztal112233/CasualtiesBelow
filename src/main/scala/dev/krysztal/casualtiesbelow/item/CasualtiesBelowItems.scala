@@ -1,6 +1,7 @@
 package dev.krysztal.casualtiesbelow.item
 
 import net.minecraft.core.Registry
+import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
@@ -23,6 +24,23 @@ object CasualtiesBelowItems {
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_paste"))
   private val CrudePoppyLiquidKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_liquid"))
+  private val RefinedPoppyExtractKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("refined_poppy_extract"))
+
+  private def poppyLiquidProperties(
+      key: ResourceKey[Item],
+      contents: LiquidContents
+  ): Item.Properties =
+    Item
+      .Properties()
+      .setId(key)
+      .stacksTo(PoppyProcessing.LiquidContainerMaxStack)
+      .component(CasualtiesBelowDataComponents.LiquidContentsComponent, contents)
+      .component(DataComponents.POTION_CONTENTS, PoppyLiquidContainerItem.BrewingAdapterContents)
+      .component(
+        DataComponents.TOOLTIP_DISPLAY,
+        PoppyLiquidContainerItem.TooltipDisplayWithoutAdapter
+      )
 
   val FiberCloth: Item = Registry.register(
     BuiltInRegistries.ITEM,
@@ -53,15 +71,16 @@ object CasualtiesBelowItems {
   val CrudePoppyLiquid: Item = Registry.register(
     BuiltInRegistries.ITEM,
     CrudePoppyLiquidKey,
-    Item(
-      Item
-        .Properties()
-        .setId(CrudePoppyLiquidKey)
-        .stacksTo(PoppyProcessing.LiquidContainerMaxStack)
-        .component(
-          CasualtiesBelowDataComponents.LiquidContentsComponent,
-          LiquidContents.CrudePoppyLiquid
-        )
+    PoppyLiquidContainerItem(
+      poppyLiquidProperties(CrudePoppyLiquidKey, LiquidContents.CrudePoppyLiquid)
+    )
+  )
+
+  val RefinedPoppyExtract: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    RefinedPoppyExtractKey,
+    PoppyLiquidContainerItem(
+      poppyLiquidProperties(RefinedPoppyExtractKey, LiquidContents.RefinedPoppyExtract)
     )
   )
 
@@ -73,6 +92,7 @@ object CasualtiesBelowItems {
         output.accept(CrudePoppyPaste)
         output.accept(CrudeFilter)
         output.accept(CrudePoppyLiquid)
+        output.accept(RefinedPoppyExtract)
       }
     CreativeModeTabEvents
       .modifyOutputEvent(CreativeModeTabs.COMBAT)
