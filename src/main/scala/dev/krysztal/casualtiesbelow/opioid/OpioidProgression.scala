@@ -24,14 +24,24 @@ object OpioidProgression {
   private def tickWithdrawalDiscomfort(vitals: VitalsComponentImpl): Boolean = {
     if (!OpioidWithdrawal.isActive(vitals)) return false
 
-    val target = CasualtiesBelowConfig.OpioidWithdrawalDiscomfortTarget.get()
-    if (vitals.discomfort >= target) return false
-
-    VitalsMutations.setDiscomfort(
-      vitals,
-      (vitals.discomfort + CasualtiesBelowConfig.OpioidWithdrawalDiscomfortPerTick.get())
-        .min(target)
+    val next = nextWithdrawalDiscomfort(
+      vitals.discomfort,
+      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortPerTick.get(),
+      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortTarget.get()
     )
+    if (next == vitals.discomfort) return false
+
+    VitalsMutations.setDiscomfort(vitals, next)
+  }
+
+  private[casualtiesbelow] def nextWithdrawalDiscomfort(
+      discomfort: Double,
+      gainPerTick: Double,
+      target: Double
+  ): Double = {
+    val boundedTarget = target.max(0.0)
+    if (discomfort >= boundedTarget) discomfort
+    else (discomfort + gainPerTick.max(0.0)).min(boundedTarget)
   }
 
   private[opioid] def nextState(level: Double, dependence: Double): OpioidState = {
@@ -54,7 +64,7 @@ object OpioidProgression {
     val boundedLevel = normalize(level, VitalsComponent.MaxOpioidLevel)
     val boundedDependence = normalize(dependence, VitalsComponent.MaxOpioidDependence)
     val exposure = boundedLevel * exposurePerLevelPerTick.max(0.0)
-    val dependenceDelta = if (exposure > 0.0) exposure else -dependenceDecayPerTick.max(0.0)
+    val dependenceDelta = exposure - dependenceDecayPerTick.max(0.0)
 
     OpioidState(
       (boundedLevel - levelDecayPerTick.max(0.0)).max(0.0),

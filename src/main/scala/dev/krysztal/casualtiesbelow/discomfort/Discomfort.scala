@@ -26,6 +26,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.opioid.OpioidWithdrawal
 
 /** Probability distribution used when sampling a food's discomfort dose around its mean. */
 enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
@@ -149,16 +150,20 @@ object Discomfort {
     val vitals = ComponentAccess.vitals(player)
 
     // Decay: fast while merely queasy ("tough it out"), slow once actually sick, so high
-    // discomfort asks for active resolution (or a vomit) instead of being waited out.
+    // discomfort asks for active resolution (or a vomit) instead of being waited out. Withdrawal
+    // owns discomfort evolution while active, preventing ordinary decay from cancelling its gain.
     if (vitals.discomfort > 0.0) {
-      val rate =
-        if (vitals.discomfort < CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
-          CasualtiesBelowConfig.DiscomfortDecayLowPerSecond.get()
-        } else {
-          CasualtiesBelowConfig.DiscomfortDecayHighPerSecond.get()
-        }
-      VitalsMutations.setDiscomfort(vitals, (vitals.discomfort - rate / 20.0).max(0.0))
-      if (syncTick) VitalsMutations.syncNow(player)
+      val next = nextAfterOrdinaryDecay(
+        vitals.discomfort,
+        OpioidWithdrawal.isActive(vitals),
+        CasualtiesBelowConfig.DiscomfortNauseaThreshold.get(),
+        CasualtiesBelowConfig.DiscomfortDecayLowPerSecond.get(),
+        CasualtiesBelowConfig.DiscomfortDecayHighPerSecond.get()
+      )
+      if (next != vitals.discomfort) {
+        VitalsMutations.setDiscomfort(vitals, next)
+        if (syncTick) VitalsMutations.syncNow(player)
+      }
     }
 
     if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
@@ -167,6 +172,21 @@ object Discomfort {
 
     if (shouldVomit(vitals.discomfort, player.getRandom)) {
       vomit(player, vitals)
+    }
+  }
+
+  private[casualtiesbelow] def nextAfterOrdinaryDecay(
+      discomfort: Double,
+      withdrawalActive: Boolean,
+      nauseaThreshold: Double,
+      lowDecayPerSecond: Double,
+      highDecayPerSecond: Double
+  ): Double = {
+    if (withdrawalActive) discomfort
+    else {
+      val rate =
+        if (discomfort < nauseaThreshold) lowDecayPerSecond else highDecayPerSecond
+      (discomfort - rate.max(0.0) / 20.0).max(0.0)
     }
   }
 

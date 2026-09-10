@@ -86,6 +86,7 @@ object OxygenProgression {
       deprivationRate,
       CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get(),
       respiratoryEfficiency,
+      opioidRespiratoryFailure,
       if (opioidRespiratoryFailure) {
         CasualtiesBelowConfig.OpioidRespiratoryFailureOxygenDrainPerTick.get()
       } else {
@@ -108,6 +109,7 @@ object OxygenProgression {
       deprivationRate,
       recoveryRate,
       respiratoryEfficiency = 1.0,
+      respirationFailed = false,
       respiratoryFailureDrain = 0.0
     )
   }
@@ -119,6 +121,7 @@ object OxygenProgression {
       deprivationRate: Double,
       recoveryRate: Double,
       respiratoryEfficiency: Double,
+      respirationFailed: Boolean,
       respiratoryFailureDrain: Double
   ): Double = {
     val capacity = normalizedOxygen(carryingCapacity, VitalsComponent.MaxBloodOxygen)
@@ -129,7 +132,7 @@ object OxygenProgression {
     // with severe opioid failure replacing recovery with a fixed net drain.
     if (breathingBlocked) {
       (current - finiteNonNegative(deprivationRate)).max(0.0)
-    } else if (respiratoryFailureDrain > 0.0) {
+    } else if (respirationFailed) {
       (current - finiteNonNegative(respiratoryFailureDrain)).max(0.0)
     } else {
       val efficiency = finiteNonNegative(respiratoryEfficiency).min(1.0)

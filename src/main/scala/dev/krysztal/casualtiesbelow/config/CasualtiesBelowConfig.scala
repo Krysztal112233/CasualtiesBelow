@@ -755,7 +755,7 @@ object CasualtiesBelowConfig {
     .defineInRange("dependenceExposurePerLevelPerTick", 0.0000125, 0.0, 1.0, classOf[Double])
   val OpioidDependenceDecayPerTick: ConfigValue[Double] = Builder
     .comment(
-      "Dependence removed per tick once no acute opioid remains.",
+      "Dependence removed per tick, including while acute opioid exposure adds dependence.",
       "The default is 3 points per Minecraft day (24000 ticks)."
     )
     .defineInRange("dependenceDecayPerTick", 0.000125, 0.0, 100.0, classOf[Double])

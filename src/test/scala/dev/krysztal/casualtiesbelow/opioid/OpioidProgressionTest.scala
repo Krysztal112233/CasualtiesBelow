@@ -1,5 +1,7 @@
 package dev.krysztal.casualtiesbelow.opioid
 
+import dev.krysztal.casualtiesbelow.discomfort.Discomfort
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -21,12 +23,9 @@ final class OpioidProgressionTest {
   }
 
   @Test
-  def integratedDependenceScalesWithDoseSquared(): Unit = {
-    val lowDoseDependence = exposureDependence(50.0)
-    val standardDoseDependence = exposureDependence(100.0)
-
-    assertEquals(4.0, standardDoseDependence / lowDoseDependence, 0.001)
-    assertEquals(7.53, standardDoseDependence, 0.01)
+  def integratedDependenceIncludesUnconditionalDecay(): Unit = {
+    assertEquals(1.13, exposureDependence(50.0), 0.01)
+    assertEquals(6.02, exposureDependence(100.0), 0.01)
   }
 
   @Test
@@ -37,6 +36,30 @@ final class OpioidProgressionTest {
       .next()
 
     assertEquals(7.0, afterDay.dependence, 1.0e-8)
+  }
+
+  @Test
+  def exposureAndDecayApplyInTheSameTick(): Unit = {
+    val next = OpioidProgression.nextState(50.0, 10.0, 0.0083, 0.0000125, 0.000125)
+    assertEquals(10.0005, next.dependence, 1.0e-12)
+  }
+
+  @Test
+  def withdrawalDiscomfortRisesWhileOrdinaryDiscomfortStillDecays(): Unit = {
+    val afterWithdrawal = Iterator
+      .iterate(10.0) { discomfort =>
+        val gained = OpioidProgression.nextWithdrawalDiscomfort(discomfort, 0.0025, 35.0)
+        Discomfort.nextAfterOrdinaryDecay(gained, true, 30.0, 0.5, 0.2)
+      }
+      .drop(400)
+      .next()
+    assertEquals(11.0, afterWithdrawal, 1.0e-9)
+
+    assertEquals(
+      9.975,
+      Discomfort.nextAfterOrdinaryDecay(10.0, false, 30.0, 0.5, 0.2),
+      1.0e-9
+    )
   }
 
   @Test

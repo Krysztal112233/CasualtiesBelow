@@ -23,12 +23,21 @@ final class OxygenProgressionTest {
   def opioidEfficiencyScalesRecoveryAndFailureReplacesItWithNetDrain(): Unit = {
     assertEquals(
       50.4,
-      OxygenProgression.nextBloodOxygen(50.0, 100.0, false, 0.4, 0.8, 0.5, 0.0),
+      OxygenProgression.nextBloodOxygen(50.0, 100.0, false, 0.4, 0.8, 0.5, false, 0.0),
       1.0e-9
     )
     assertEquals(
       49.7,
-      OxygenProgression.nextBloodOxygen(50.0, 100.0, false, 0.4, 0.8, 0.1, 0.3),
+      OxygenProgression.nextBloodOxygen(50.0, 100.0, false, 0.4, 0.8, 0.1, true, 0.3),
+      1.0e-9
+    )
+  }
+
+  @Test
+  def respiratoryFailureWithZeroDrainStillPreventsRecovery(): Unit = {
+    assertEquals(
+      50.0,
+      OxygenProgression.nextBloodOxygen(50.0, 100.0, false, 0.4, 0.8, 0.1, true, 0.0),
       1.0e-9
     )
   }

@@ -128,7 +128,8 @@ object InjuryProgression {
       val updated = current.copy()
       val discrete = tickLimb(
         updated,
-        walkingStrainRate(part, current, walking) * withdrawalPainMultiplier,
+        walkingStrainRate(part, current, walking),
+        withdrawalPainMultiplier,
         vitals.infection.immuneHealth,
         fightShare,
         regenerationMultiplier,
@@ -295,10 +296,11 @@ object InjuryProgression {
 
   /** One tick of evolution for one limb, mutating the given copy in place. `strainPainRate` is the
     * walking-strain pain rate when the limb is a fractured/dislocated leg currently bearing the
-    * walking player, zero otherwise. `immuneHealth` modulates infection spread and natural skin
-    * regrowth; `regenerationMultiplier` drives the independent vanilla Regeneration micro-repair.
-    * Returns whether a discrete transition occurred (fracture healed, bleeding stopped, infection
-    * started or cleared).
+    * walking player, zero otherwise. `painGrantMultiplier` applies systemic hyperalgesia to all
+    * positive pain grants. `immuneHealth` modulates infection spread and natural skin regrowth;
+    * `regenerationMultiplier` drives the independent vanilla Regeneration micro-repair. Returns
+    * whether a discrete transition occurred (fracture healed, bleeding stopped, infection started
+    * or cleared).
     *
     * Ordering matters: bleeding clots before natural skin regrowth is considered, so a wound that
     * seals this tick starts regrowing skin immediately. Regeneration then repairs skin even if the
@@ -307,6 +309,7 @@ object InjuryProgression {
   private def tickLimb(
       stats: MutableLimbState,
       strainPainRate: Double,
+      painGrantMultiplier: Double,
       immuneHealth: Double,
       fightShare: Double,
       regenerationMultiplier: Double,
@@ -319,13 +322,13 @@ object InjuryProgression {
     val bleedingStopped = tickBleeding()
     val infectionTransition = tickInfection(immuneHealth, fightShare, random)
 
-    tickInfectionEffects()
+    tickInfectionEffects(painGrantMultiplier)
     tickSkinRegen(immuneHealth)
     val regenerationTransition =
       tickRegenerationSkin(regenerationMultiplier)
     tickMuscleRegen()
     tickPainDecay()
-    tickWalkingStrain(strainPainRate)
+    tickWalkingStrain(strainPainRate * painGrantMultiplier)
 
     fractureHealed || bleedingStopped || regenerationTransition || infectionTransition
   }
@@ -440,7 +443,9 @@ object InjuryProgression {
     * and persists until the infection recedes) and muscle decay (at full strength double the muscle
     * regrowth rate, so the limb loses muscle net).
     */
-  private def tickInfectionEffects()(using stats: MutableLimbState): Unit = {
+  private def tickInfectionEffects(painGrantMultiplier: Double)(using
+      stats: MutableLimbState
+  ): Unit = {
     if (stats.infectionProgress.isEmpty) return
 
     val start = CasualtiesBelowConfig.InfectionEffectStartProgress.get()
@@ -449,11 +454,22 @@ object InjuryProgression {
     val severity = ((stats.infectionProgress.get - start) / ramp).max(0.0).min(1.0)
     if (severity <= 0.0) return
 
-    stats.pain = (stats.pain + CasualtiesBelowConfig.InfectionPainPerTick.get() * severity)
-      .min(MutableLimbState.MaxValue)
+    stats.pain = infectionPainAfterGrant(
+      stats.pain,
+      CasualtiesBelowConfig.InfectionPainPerTick.get() * severity,
+      painGrantMultiplier
+    )
     stats.muscleHealth =
       (stats.muscleHealth - CasualtiesBelowConfig.InfectionMuscleDecayPerTick.get() * severity)
         .max(0.0)
+  }
+
+  private[casualtiesbelow] def infectionPainAfterGrant(
+      pain: Double,
+      grant: Double,
+      painGrantMultiplier: Double
+  ): Double = {
+    (pain + grant.max(0.0) * painGrantMultiplier.max(0.0)).min(MutableLimbState.MaxValue)
   }
 
   /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the

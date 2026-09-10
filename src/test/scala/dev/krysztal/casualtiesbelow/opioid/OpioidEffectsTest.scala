@@ -42,6 +42,6 @@ final class OpioidEffectsTest {
 
     val atBandStart = OpioidProgression.nextState(50.0, 0.0, 0.0083, 0.0000125, 0.000125)
     assertEquals(49.9917, atBandStart.level, 1.0e-9)
-    assertEquals(0.000625, atBandStart.dependence, 1.0e-12)
+    assertEquals(0.0005, atBandStart.dependence, 1.0e-12)
   }
 }
