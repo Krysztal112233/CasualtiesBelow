@@ -23,6 +23,8 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.opioid.OpioidProgression
+import dev.krysztal.casualtiesbelow.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.pain.PainShock
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
@@ -108,7 +110,9 @@ object InjuryProgression {
 
     val body = CasualtiesBelowComponents.Body.get(player)
     val vitals = ComponentAccess.vitals(player)
+    var vitalsChanged = OpioidProgression.tick(vitals)
     val walking = isWalking(player)
+    val withdrawalPainMultiplier = OpioidWithdrawal.painGrantMultiplier(vitals)
     val regenerationMultiplier =
       Option(player.getEffect(MobEffects.REGENERATION)).fold(0.0)(_.getAmplifier + 1.0)
     var totalBleeding = 0.0
@@ -124,7 +128,7 @@ object InjuryProgression {
       val updated = current.copy()
       val discrete = tickLimb(
         updated,
-        walkingStrainRate(part, current, walking),
+        walkingStrainRate(part, current, walking) * withdrawalPainMultiplier,
         vitals.infection.immuneHealth,
         fightShare,
         regenerationMultiplier,
@@ -142,7 +146,7 @@ object InjuryProgression {
     // A fresh AFTER_DAMAGE stimulus carries a one-tick sentinel, so aging here preserves its full
     // amount for this tick's shock decision. Later decay can contract the effective threshold and
     // collapse Deferred in this same pass. All damage grants still ship in this one vitals sync.
-    var vitalsChanged = Adrenaline.consumeDirty(player)
+    vitalsChanged = Adrenaline.consumeDirty(player) || vitalsChanged
     vitalsChanged = Adrenaline.tick(player, vitals) || vitalsChanged
 
     // Pain shock reads the fully updated per-limb pains and current adrenaline. Awake-load integer
@@ -210,7 +214,7 @@ object InjuryProgression {
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this
     // player's progression returns immediately after the fatal call.
-    val hypoxia = HypoxiaProgression.tick(vitals, oxygen.breathingBlocked)
+    val hypoxia = HypoxiaProgression.tick(vitals, oxygen.respirationFailed)
     vitalsChanged = hypoxia.syncDue || vitalsChanged
     if (hypoxia.fatal) {
       player.hurtServer(
@@ -262,7 +266,10 @@ object InjuryProgression {
   private def tickImmune(vitals: VitalsComponentImpl, player: ServerPlayer): Boolean = {
     val food = player.getFoodData.getFoodLevel
     val foodDelta: Double =
-      if (food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue) {
+      if (
+        food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue &&
+        !OpioidWithdrawal.isActive(vitals)
+      ) {
         CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
       } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
         -CasualtiesBelowConfig.HungryImmuneDrainPerTick.get()

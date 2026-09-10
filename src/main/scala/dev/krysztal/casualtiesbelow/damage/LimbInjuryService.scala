@@ -15,7 +15,9 @@ import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedContext
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
 import dev.krysztal.casualtiesbelow.component.BodyMutations
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.opioid.OpioidWithdrawal
 
 /** Central application point for limb injuries — the single internal path through which damage
   * attribution reaches a limb.
@@ -123,9 +125,11 @@ object LimbInjuryService {
   )(mutate: (MutableLimbState, Double) => Unit): Boolean = {
     val random = player.getRandom
     val normalizedPainMultiplier = AdrenalinePain.normalizeMultiplier(painMultiplier)
+    val withdrawalMultiplier =
+      OpioidWithdrawal.painGrantMultiplier(ComponentAccess.vitals(player))
 
     val effectiveDamage = (damage + rollJitter(random, jitter)).max(0.0)
-    val basePain = AdrenalinePain.scale(pain, normalizedPainMultiplier)
+    val basePain = AdrenalinePain.scale(pain, normalizedPainMultiplier) * withdrawalMultiplier
     val context = new LimbInjuryContext(
       player,
       part,
@@ -144,7 +148,7 @@ object LimbInjuryService {
       (basePain + AdrenalinePain.scale(
         rollJitter(random, jitter),
         normalizedPainMultiplier
-      )).max(0.0)
+      ) * withdrawalMultiplier).max(0.0)
 
     val result = BodyMutations.mutate(player, part, markDirty = true) { stats =>
       stats.pain = (stats.pain + grantedPain).min(MutableLimbState.MaxValue)

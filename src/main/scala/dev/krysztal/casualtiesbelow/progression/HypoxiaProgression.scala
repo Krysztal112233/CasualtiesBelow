@@ -10,9 +10,10 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.
   *
-  * Exposure accumulates only while oxygen is zero and breathing remains blocked. Ending the block
-  * resets it immediately, even though blood oxygen and consciousness then recover gradually. The
-  * final fatal hit remains owned by [[InjuryProgression]].
+  * Exposure accumulates only while oxygen is zero and respiration remains failed, whether from a
+  * vanilla breathing block or severe opioid depression. Ending the failure resets it immediately,
+  * even though blood oxygen and consciousness then recover gradually. The final fatal hit remains
+  * owned by [[InjuryProgression]].
   */
 object HypoxiaProgression {
 
@@ -23,11 +24,11 @@ object HypoxiaProgression {
     * per second, when it resets, and at its configured endpoint; it does not turn the whole vitals
     * component into a per-tick packet stream after oxygen has stabilized at zero.
     */
-  def tick(vitals: VitalsComponentImpl, breathingBlocked: Boolean): HypoxiaStep = {
+  def tick(vitals: VitalsComponentImpl, respirationFailed: Boolean): HypoxiaStep = {
     val step = advance(
       VitalsMutations.hypoxiaExposureTicks(vitals),
       vitals.circulation.bloodOxygen,
-      breathingBlocked,
+      respirationFailed,
       configuredDuration
     )
     if (step.changed) {
@@ -63,13 +64,13 @@ object HypoxiaProgression {
   private[casualtiesbelow] def advance(
       exposureTicks: Int,
       bloodOxygen: Double,
-      breathingBlocked: Boolean,
+      respirationFailed: Boolean,
       durationTicks: Int
   ): HypoxiaStep = {
     val duration = durationTicks.max(1)
     val current = normalizeExposureTicks(exposureTicks, duration)
     val next =
-      if (!breathingBlocked) 0
+      if (!respirationFailed) 0
       else if (bloodOxygen > 0.0) current
       else (current + 1).min(duration)
     val changed = next != current

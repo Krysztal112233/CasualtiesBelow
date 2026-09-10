@@ -8,6 +8,7 @@ import dev.krysztal.casualtiesbelow.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.opioid.OpioidEffects
 
 /** Couples vanilla breath, in-wall suffocation, and custom blood volume into blood oxygen.
   *
@@ -49,14 +50,24 @@ object OxygenProgression {
 
     val breathingBlocked = inWall || exhaustedAir
     val boundedDeprivationRate = finiteNonNegative(deprivationRate)
+    val respiratoryEfficiency =
+      OpioidEffects.respiratoryEfficiency(vitals.opioidLevel, vitals.opioidDependence)
+    val opioidRespiratoryFailure = OpioidEffects.causesRespiratoryFailure(respiratoryEfficiency)
     val previousOxygen = vitals.circulation.bloodOxygen
     VitalsMutations.setBloodOxygen(
       vitals,
-      nextBloodOxygen(vitals, breathingBlocked, boundedDeprivationRate)
+      nextBloodOxygen(
+        vitals,
+        breathingBlocked,
+        boundedDeprivationRate,
+        respiratoryEfficiency,
+        opioidRespiratoryFailure
+      )
     )
     OxygenProgressionResult(
       changed = !same(previousOxygen, vitals.circulation.bloodOxygen),
       breathingBlocked = breathingBlocked,
+      respirationFailed = breathingBlocked || opioidRespiratoryFailure,
       deprivationRate = boundedDeprivationRate
     )
   }
@@ -64,14 +75,22 @@ object OxygenProgression {
   private def nextBloodOxygen(
       vitals: VitalsComponent,
       breathingBlocked: Boolean,
-      deprivationRate: Double
+      deprivationRate: Double,
+      respiratoryEfficiency: Double,
+      opioidRespiratoryFailure: Boolean
   ): Double = {
     nextBloodOxygen(
       vitals.circulation.bloodOxygen,
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,
-      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get()
+      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get(),
+      respiratoryEfficiency,
+      if (opioidRespiratoryFailure) {
+        CasualtiesBelowConfig.OpioidRespiratoryFailureOxygenDrainPerTick.get()
+      } else {
+        0.0
+      }
     )
   }
 
@@ -82,15 +101,39 @@ object OxygenProgression {
       deprivationRate: Double,
       recoveryRate: Double
   ): Double = {
+    nextBloodOxygen(
+      bloodOxygen,
+      carryingCapacity,
+      breathingBlocked,
+      deprivationRate,
+      recoveryRate,
+      respiratoryEfficiency = 1.0,
+      respiratoryFailureDrain = 0.0
+    )
+  }
+
+  private[progression] def nextBloodOxygen(
+      bloodOxygen: Double,
+      carryingCapacity: Double,
+      breathingBlocked: Boolean,
+      deprivationRate: Double,
+      recoveryRate: Double,
+      respiratoryEfficiency: Double,
+      respiratoryFailureDrain: Double
+  ): Double = {
     val capacity = normalizedOxygen(carryingCapacity, VitalsComponent.MaxBloodOxygen)
     val current = normalizedOxygen(bloodOxygen, capacity)
 
-    // Oxygen above a newly reduced blood-volume capacity is lost immediately. Active deprivation
-    // and recovery remain gradual at their configured rates.
+    // Oxygen above a newly reduced blood-volume capacity is lost immediately. Vanilla breathing
+    // blocks retain their deprivation semantics; otherwise respiratory efficiency scales recovery,
+    // with severe opioid failure replacing recovery with a fixed net drain.
     if (breathingBlocked) {
       (current - finiteNonNegative(deprivationRate)).max(0.0)
+    } else if (respiratoryFailureDrain > 0.0) {
+      (current - finiteNonNegative(respiratoryFailureDrain)).max(0.0)
     } else {
-      (current + finiteNonNegative(recoveryRate)).min(capacity)
+      val efficiency = finiteNonNegative(respiratoryEfficiency).min(1.0)
+      (current + finiteNonNegative(recoveryRate) * efficiency).min(capacity)
     }
   }
 
@@ -114,5 +157,6 @@ object OxygenProgression {
 private[progression] final case class OxygenProgressionResult(
     changed: Boolean,
     breathingBlocked: Boolean,
+    respirationFailed: Boolean,
     deprivationRate: Double
 )

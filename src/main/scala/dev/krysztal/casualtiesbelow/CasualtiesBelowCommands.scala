@@ -73,7 +73,9 @@ object CasualtiesBelowCommands {
       "blood_oxygen",
       "blood_volume",
       "sepsis",
-      "discomfort"
+      "discomfort",
+      "opioid_level",
+      "opioid_dependence"
     )
   private val VitalsStatNames =
     VitalsEditableStatNames ++ List(
@@ -362,6 +364,10 @@ object CasualtiesBelowCommands {
           VitalsMutations.setSepsis(vitals, value)
         case "discomfort" =>
           VitalsMutations.setDiscomfort(vitals, value)
+        case "opioid_level" =>
+          VitalsMutations.setOpioidLevel(vitals, value)
+        case "opioid_dependence" =>
+          VitalsMutations.setOpioidDependence(vitals, value)
       }
       if (name != "consciousness") {
         ConsciousnessProgression.reconcileAfterEdit(player, vitals)
@@ -387,6 +393,8 @@ object CasualtiesBelowCommands {
     case "blood_volume"           => f"${vitals.circulation.bloodVolume}%.1f mL"
     case "sepsis"                 => f"${vitals.infection.sepsis}%.1f"
     case "discomfort"             => f"${vitals.discomfort}%.1f"
+    case "opioid_level"           => f"${vitals.opioidLevel}%.1f"
+    case "opioid_dependence"      => f"${vitals.opioidDependence}%.1f"
     case "unconscious"            => vitals.consciousness.unconscious.toString
     case _                        => throw UnknownStat.create()
   }

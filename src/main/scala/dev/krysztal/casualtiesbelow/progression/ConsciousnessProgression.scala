@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.opioid.OpioidEffects
 
 /** Central authority for continuous consciousness and discrete unconsciousness transitions.
   *
@@ -35,7 +36,7 @@ object ConsciousnessProgression {
         advance(
           vitals.consciousness.level,
           vitals.consciousness.unconscious,
-          List(currentPressure(vitals)),
+          currentPressures(vitals),
           CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
@@ -59,7 +60,7 @@ object ConsciousnessProgression {
         reconcile(
           consciousness,
           vitals.consciousness.unconscious,
-          List(currentPressure(vitals)),
+          currentPressures(vitals),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
@@ -78,7 +79,7 @@ object ConsciousnessProgression {
         reconcile(
           vitals.consciousness.level,
           vitals.consciousness.unconscious,
-          List(currentPressure(vitals)),
+          currentPressures(vitals),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
@@ -114,7 +115,7 @@ object ConsciousnessProgression {
         reconcile(
           vitals.consciousness.level.max(wakeThreshold),
           vitals.consciousness.unconscious,
-          List(currentPressure(vitals)),
+          currentPressures(vitals),
           wakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
@@ -145,11 +146,14 @@ object ConsciousnessProgression {
     }
   }
 
-  private def currentPressure(vitals: VitalsComponentImpl): ConsciousnessPressure = {
-    hypoxiaPressure(
-      vitals.circulation.bloodOxygen,
-      CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
-      CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
+  private def currentPressures(vitals: VitalsComponentImpl): List[ConsciousnessPressure] = {
+    List(
+      hypoxiaPressure(
+        vitals.circulation.bloodOxygen,
+        CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
+        CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
+      ),
+      ConsciousnessPressure(ceiling = OpioidEffects.consciousnessCeiling(vitals.opioidLevel))
     )
   }
 

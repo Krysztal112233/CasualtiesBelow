@@ -4,7 +4,9 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.opioid.OpioidEffects
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
   * (Scala 3 enums otherwise only extend `scala.reflect.Enum`) so it works with Java's F-bounded
@@ -59,6 +61,13 @@ object PainCalc {
   /** Whole-body pain for the given body, from all limbs' current pain. */
   def total(body: BodyComponent): Double =
     total(BodyPart.values.map(part => body.stats(part).pain))
+
+  /** Whole-body pain after systemic analgesia. This derived value is reserved for physiological
+    * consequences such as pain shock; medical presentation continues to use [[total]].
+    */
+  def feltTotal(body: BodyComponent, vitals: VitalsComponent): Double = {
+    OpioidEffects.feltPain(total(body), vitals)
+  }
 
   /** Whole-body pain from a collection of limb pain values, using the configured strategy. */
   def total(pains: Iterable[Double]): Double = {
