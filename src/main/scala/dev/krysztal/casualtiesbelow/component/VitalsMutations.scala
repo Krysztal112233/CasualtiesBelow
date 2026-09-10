@@ -54,6 +54,24 @@ object VitalsMutations {
     vitals.discomfort != previous
   }
 
+  private[casualtiesbelow] def setOpioidLevel(
+      vitals: VitalsComponentImpl,
+      value: Double
+  ): Boolean = {
+    val previous = vitals.opioidLevel
+    vitals.setOpioidLevel(value)
+    vitals.opioidLevel != previous
+  }
+
+  private[casualtiesbelow] def setOpioidDependence(
+      vitals: VitalsComponentImpl,
+      value: Double
+  ): Boolean = {
+    val previous = vitals.opioidDependence
+    vitals.setOpioidDependence(value)
+    vitals.opioidDependence != previous
+  }
+
   private[casualtiesbelow] def applyConsciousnessState(
       vitals: VitalsComponentImpl,
       state: ConsciousnessSnapshot

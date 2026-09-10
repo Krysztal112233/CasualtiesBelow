@@ -4,11 +4,15 @@ import scala.jdk.OptionConverters.*
 
 import com.mojang.serialization.Codec
 import net.minecraft.core.HolderLookup
+import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.util.ProblemReporter
 import net.minecraft.world.entity.player.Player
+import net.minecraft.world.level.storage.TagValueOutput
 import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
+import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot
@@ -44,6 +48,8 @@ final class VitalsComponentImpl(val player: Player)
     totemHemostasisTicks = 0
   )
   private var discomfortState: Double = 0.0
+  private var opioidLevelState: Double = 0.0
+  private var opioidDependenceState: Double = 0.0
 
   override def copyFrom(
       other: VitalsComponent,
@@ -103,6 +109,8 @@ final class VitalsComponentImpl(val player: Player)
     )
     setSepsis(source.infection.sepsis)
     setDiscomfort(source.discomfort)
+    setOpioidLevel(source.opioidLevel)
+    setOpioidDependence(source.opioidDependence)
   }
 
   override def infection: InfectionSnapshot = infectionState
@@ -171,9 +179,34 @@ final class VitalsComponentImpl(val player: Player)
     discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.get())
   }
 
+  override def opioidLevel: Double = opioidLevelState
+
+  private[casualtiesbelow] def setOpioidLevel(value: Double): Unit = {
+    opioidLevelState = bounded(value, VitalsComponent.MaxOpioidLevel)
+  }
+
+  override def opioidDependence: Double = opioidDependenceState
+
+  private[casualtiesbelow] def setOpioidDependence(value: Double): Unit = {
+    opioidDependenceState = bounded(value, VitalsComponent.MaxOpioidDependence)
+  }
+
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
 
-  override def writeData(out: ValueOutput): Unit = {
+  override def writeData(out: ValueOutput): Unit = writeData(out, includeHidden = true)
+
+  override def writeSyncPacket(buf: RegistryFriendlyByteBuf, recipient: ServerPlayer): Unit = {
+    val reporter = new ProblemReporter.ScopedCollector(CasualtiesBelow.Logger)
+    try {
+      val out = TagValueOutput.createWithContext(reporter, buf.registryAccess())
+      writeData(out, includeHidden = false)
+      buf.writeNbt(out.buildResult())
+    } finally {
+      reporter.close()
+    }
+  }
+
+  private def writeData(out: ValueOutput, includeHidden: Boolean): Unit = {
     out.putDouble(VitalsComponentImpl.ImmuneHealthKey, infectionState.immuneHealth)
     out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousnessState.level)
     out.putBoolean(VitalsComponentImpl.UnconsciousKey, consciousnessState.unconscious)
@@ -187,6 +220,10 @@ final class VitalsComponentImpl(val player: Player)
     out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, circulationState.totemHemostasisTicks)
     out.putDouble(VitalsComponentImpl.SepsisKey, infectionState.sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
+    if (includeHidden) {
+      out.putDouble(VitalsComponentImpl.OpioidLevelKey, opioidLevel)
+    }
+    out.putDouble(VitalsComponentImpl.OpioidDependenceKey, opioidDependence)
   }
 
   override def readData(in: ValueInput): Unit = {
@@ -270,6 +307,8 @@ final class VitalsComponentImpl(val player: Player)
     )
     setSepsis(in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0))
     setDiscomfort(in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0))
+    setOpioidLevel(in.getDoubleOr(VitalsComponentImpl.OpioidLevelKey, 0.0))
+    setOpioidDependence(in.getDoubleOr(VitalsComponentImpl.OpioidDependenceKey, 0.0))
   }
 
   private def bounded(value: Double, maximum: Double): Double = {
@@ -296,4 +335,6 @@ object VitalsComponentImpl {
   private val TotemHemostasisTicksKey = "totem_hemostasis_ticks"
   private val SepsisKey = "sepsis"
   private val DiscomfortKey = "discomfort"
+  private val OpioidLevelKey = "opioid_level"
+  private val OpioidDependenceKey = "opioid_dependence"
 }

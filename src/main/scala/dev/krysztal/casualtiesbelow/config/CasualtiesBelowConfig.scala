@@ -177,9 +177,9 @@ object CasualtiesBelowConfig {
   Builder.push("hazards")
   val TerminalHypoxiaDurationTicks: ConfigValue[Integer] = Builder
     .comment(
-      "Ticks spent at zero blood oxygen while breathing remains blocked before terminal hypoxia",
-      "deals its fatal hit (20 ticks = 1 second). Must remain positive; ending the breathing",
-      "block resets the hidden persisted exposure timer immediately."
+      "Ticks spent at zero blood oxygen while respiration remains failed before terminal hypoxia",
+      "deals its fatal hit (20 ticks = 1 second). Must remain positive; ending the vanilla",
+      "breathing block or opioid respiratory failure resets the persisted exposure timer."
     )
     .defineInRange("terminalHypoxiaDurationTicks", 160, 1, 72000)
   val InWallBloodOxygenDepletionPerTick: ConfigValue[Double] = Builder
@@ -738,6 +738,89 @@ object CasualtiesBelowConfig {
       "This never changes tissue damage, bleeding, or condition onset."
     )
     .defineInRange("maxPainReductionFraction", 0.5, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("opioid")
+  val OpioidLevelDecayPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Acute opioid level removed per server tick. The default drains a full 200-point level",
+      "in about 20 minutes (20 ticks = 1 second)."
+    )
+    .defineInRange("levelDecayPerTick", 0.0083, 0.0, 200.0, classOf[Double])
+  val OpioidDependenceExposurePerLevelPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Dependence gained per stored opioid-level point per tick.",
+      "The default makes one isolated 100-point exposure contribute approximately 7.5 dependence."
+    )
+    .defineInRange("dependenceExposurePerLevelPerTick", 0.0000125, 0.0, 1.0, classOf[Double])
+  val OpioidDependenceDecayPerTick: ConfigValue[Double] = Builder
+    .comment(
+      "Dependence removed per tick once no acute opioid remains.",
+      "The default is 3 points per Minecraft day (24000 ticks)."
+    )
+    .defineInRange("dependenceDecayPerTick", 0.000125, 0.0, 100.0, classOf[Double])
+  val OpioidAnalgesiaFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "analgesiaFormula",
+    "min(0.85, level / 150) / (1 + dependence / 100)",
+    List("level", "dependence"),
+    comment = Seq(
+      "Fraction of aggregated pain masked before pain-shock progression.",
+      "Available variables: level (0-200), dependence (0-100). Limb pain storage and medical",
+      "display values remain unchanged. Invalid formulas fall back to the default."
+    )
+  )
+  val OpioidExcitementStartLevel: ConfigValue[Double] = Builder
+    .comment("Reserved excitement-band lower bound. Phase 1 assigns no mechanical effect to it.")
+    .defineInRange("excitementStartLevel", 50.0, 0.0, 200.0, classOf[Double])
+  val OpioidExcitementEndLevel: ConfigValue[Double] = Builder
+    .comment("Reserved excitement-band upper bound. Phase 1 assigns no mechanical effect to it.")
+    .defineInRange("excitementEndLevel", 120.0, 0.0, 200.0, classOf[Double])
+  val OpioidSedationCeilingFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "sedationCeilingFormula",
+    "100 - 0.5 * max(0, level - 110)",
+    List("level"),
+    comment = Seq(
+      "Opioid-derived consciousness ceiling.",
+      "Available variable: level (0-200). The result is clamped to the consciousness range."
+    )
+  )
+  val OpioidRespiratoryEfficiencyFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "respiratoryEfficiencyFormula",
+    "1 - 0.9 * max(0, level - (120 + min(20, dependence * 0.2))) / 80",
+    List("level", "dependence"),
+    comment = Seq(
+      "Respiratory efficiency used to scale oxygen recovery.",
+      "Available variables: level (0-200), dependence (0-100). Dependence moves onset right by",
+      "0.2 level per point, capped at 20. The result is clamped to 0-1."
+    )
+  )
+  val OpioidRespiratoryFailureEfficiencyThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Respiratory efficiency below which oxygen drains even with vanilla air available.",
+      "The comparison is strict: efficiency equal to this threshold is not respiratory failure."
+    )
+    .defineInRange("respiratoryFailureEfficiencyThreshold", 0.3, 0.0, 1.0, classOf[Double])
+  val OpioidRespiratoryFailureOxygenDrainPerTick: ConfigValue[Double] = Builder
+    .comment("Blood oxygen drained per tick during opioid respiratory failure.")
+    .defineInRange("respiratoryFailureOxygenDrainPerTick", 0.3, 0.0, 100.0, classOf[Double])
+  val OpioidWithdrawalDependenceThreshold: ConfigValue[Double] = Builder
+    .comment("Dependence must be strictly above this value for withdrawal to become active.")
+    .defineInRange("withdrawalDependenceThreshold", 20.0, 0.0, 100.0, classOf[Double])
+  val OpioidWithdrawalLevelPerDependence: ConfigValue[Double] = Builder
+    .comment("Withdrawal is active while opioid level is below dependence times this factor.")
+    .defineInRange("withdrawalLevelPerDependence", 0.6, 0.0, 2.0, classOf[Double])
+  val OpioidWithdrawalPainMultiplier: ConfigValue[Double] = Builder
+    .comment("Multiplier applied to acute injury and walking-strain pain during withdrawal.")
+    .defineInRange("withdrawalPainMultiplier", 1.25, 0.0, 10.0, classOf[Double])
+  val OpioidWithdrawalDiscomfortPerTick: ConfigValue[Double] = Builder
+    .comment("Discomfort gained per tick during withdrawal (0.0025 = 0.05 per second).")
+    .defineInRange("withdrawalDiscomfortPerTick", 0.0025, 0.0, 100.0, classOf[Double])
+  val OpioidWithdrawalDiscomfortTarget: ConfigValue[Double] = Builder
+    .comment("Withdrawal discomfort climbs toward, but never beyond, this value.")
+    .defineInRange("withdrawalDiscomfortTarget", 35.0, 0.0, 100.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")
