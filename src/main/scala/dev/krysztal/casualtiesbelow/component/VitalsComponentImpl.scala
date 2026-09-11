@@ -24,6 +24,7 @@ import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.physiology.blood.CirculationState
+import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
 import dev.krysztal.casualtiesbelow.physiology.progression.HypoxiaProgression
@@ -48,8 +49,7 @@ final class VitalsComponentImpl(val player: Player)
     totemHemostasisTicks = 0
   )
   private var discomfortState: Double = 0.0
-  private var opioidLevelState: Double = 0.0
-  private var opioidDependenceState: Double = 0.0
+  private var opioidState: OpioidState = OpioidState(0.0, 0.0)
 
   override def copyFrom(
       other: VitalsComponent,
@@ -179,16 +179,21 @@ final class VitalsComponentImpl(val player: Player)
     discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.get())
   }
 
-  override def opioidLevel: Double = opioidLevelState
+  override def opioidLevel: Double = opioidState.level
 
   private[casualtiesbelow] def setOpioidLevel(value: Double): Unit = {
-    opioidLevelState = bounded(value, VitalsComponent.MaxOpioidLevel)
+    opioidState = opioidState.copy(level = bounded(value, VitalsComponent.MaxOpioidLevel))
   }
 
-  override def opioidDependence: Double = opioidDependenceState
+  override def opioidDependence: Double = opioidState.dependence
 
   private[casualtiesbelow] def setOpioidDependence(value: Double): Unit = {
-    opioidDependenceState = bounded(value, VitalsComponent.MaxOpioidDependence)
+    opioidState = opioidState.copy(dependence = bounded(value, VitalsComponent.MaxOpioidDependence))
+  }
+
+  private[casualtiesbelow] def applyOpioidState(state: OpioidState): Unit = {
+    setOpioidLevel(state.level)
+    setOpioidDependence(state.dependence)
   }
 
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player

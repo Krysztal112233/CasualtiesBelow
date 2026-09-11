@@ -6,6 +6,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
+import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 
 /** Internal write authority for the mutable storage behind the public read-only vitals view. */
 object VitalsMutations {
@@ -71,6 +72,11 @@ object VitalsMutations {
     vitals.setOpioidDependence(value)
     vitals.opioidDependence != previous
   }
+
+  private[casualtiesbelow] def applyOpioidState(
+      vitals: VitalsComponentImpl,
+      state: OpioidState
+  ): Unit = vitals.applyOpioidState(state)
 
   private[casualtiesbelow] def applyConsciousnessState(
       vitals: VitalsComponentImpl,

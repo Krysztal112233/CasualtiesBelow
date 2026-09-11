@@ -14,8 +14,7 @@ object OpioidProgression {
   def tick(vitals: VitalsComponentImpl): Boolean = {
     val previousDependence = vitals.opioidDependence
     val next = nextState(vitals.opioidLevel, previousDependence)
-    VitalsMutations.setOpioidLevel(vitals, next.level)
-    VitalsMutations.setOpioidDependence(vitals, next.dependence)
+    VitalsMutations.applyOpioidState(vitals, next)
 
     val discomfortChanged = tickWithdrawalDiscomfort(vitals)
     next.dependence != previousDependence || discomfortChanged
@@ -78,5 +77,3 @@ object OpioidProgression {
     else 0.0
   }
 }
-
-private[opioid] final case class OpioidState(level: Double, dependence: Double)
