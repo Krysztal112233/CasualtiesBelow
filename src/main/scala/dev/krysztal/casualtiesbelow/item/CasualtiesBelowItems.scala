@@ -5,14 +5,11 @@ import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
-import net.minecraft.world.item.CreativeModeTabs
 import net.minecraft.world.item.Item
-
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
 
-/** Registers the mod's items and their vanilla creative-tab placement. */
+/** Registers the mod's items and dedicated creative-mode tab. */
 object CasualtiesBelowItems {
   private val FiberClothKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("fiber_cloth"))
@@ -92,19 +89,5 @@ object CasualtiesBelowItems {
     )
   )
 
-  def register(): Unit = {
-    CreativeModeTabEvents
-      .modifyOutputEvent(CreativeModeTabs.INGREDIENTS)
-      .register { output =>
-        output.accept(FiberCloth)
-        output.accept(CrudePoppyPaste)
-        output.accept(CrudeFilter)
-        output.accept(Ampoule)
-        output.accept(CrudePoppyLiquid)
-        output.accept(RefinedPoppyExtract)
-      }
-    CreativeModeTabEvents
-      .modifyOutputEvent(CreativeModeTabs.COMBAT)
-      .register(output => output.accept(BasicBandage))
-  }
+  def register(): Unit = CasualtiesBelowItemGroup.register()
 }
