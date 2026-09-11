@@ -12,7 +12,7 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl
 import net.minecraft.world.entity.player.Input
 import net.minecraft.world.entity.vehicle.boat.AbstractBoat
 
-import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.Shadow

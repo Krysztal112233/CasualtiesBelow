@@ -2,10 +2,10 @@ package dev.krysztal.casualtiesbelow.component
 
 import net.minecraft.world.entity.player.Player
 
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 
 /** Internal write authority for the mutable storage behind the public read-only vitals view. */
 object VitalsMutations {

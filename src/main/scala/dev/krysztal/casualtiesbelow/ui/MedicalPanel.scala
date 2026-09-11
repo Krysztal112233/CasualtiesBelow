@@ -12,7 +12,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
-import dev.krysztal.casualtiesbelow.pain.PainCalc
+import dev.krysztal.casualtiesbelow.physiology.pain.PainCalc
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
   * panel: an always-visible vitals section (consciousness, blood oxygen, immune health) on top and

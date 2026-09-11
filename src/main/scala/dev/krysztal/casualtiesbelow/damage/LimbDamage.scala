@@ -6,14 +6,14 @@ import net.minecraft.world.entity.LivingEntity
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineRules
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedContext
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.data.WoundProfiles
-import dev.krysztal.casualtiesbelow.progression.StarvationProgression
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineRules
+import dev.krysztal.casualtiesbelow.physiology.progression.StarvationProgression
 
 /** Classifies incoming damage and delegates every matched rule to the central wound executor. */
 object LimbDamage {

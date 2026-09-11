@@ -2,13 +2,13 @@ package dev.krysztal.casualtiesbelow.component
 
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.pain.PainShock
-import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
-import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
+import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
+import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
+import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.progression.HypoxiaProgression
 
 /** Atomic administrative reset of body and whole-player physiology. */
 object PhysiologyReset {

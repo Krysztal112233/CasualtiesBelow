@@ -17,9 +17,9 @@ import net.minecraft.world.level.Level
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
-import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 
 /** Reusable basic bandage. Holding use for two seconds treats one automatically selected limb;
   * interrupted uses and uses without an eligible injury have no effect and cost no durability.

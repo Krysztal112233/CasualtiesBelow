@@ -5,7 +5,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.GameType
 import net.minecraft.world.level.Level
 
-import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

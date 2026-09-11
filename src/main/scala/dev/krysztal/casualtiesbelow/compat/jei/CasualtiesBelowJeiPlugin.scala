@@ -20,10 +20,10 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
-import dev.krysztal.casualtiesbelow.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 
 import mezz.jei.api.IModPlugin
 import mezz.jei.api.JeiPlugin

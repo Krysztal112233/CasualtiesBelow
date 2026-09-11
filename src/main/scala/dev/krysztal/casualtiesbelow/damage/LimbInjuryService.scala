@@ -7,7 +7,6 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.util.RandomSource
 import net.minecraft.world.damagesource.DamageSource
 
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAllowCallback
@@ -17,7 +16,8 @@ import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
-import dev.krysztal.casualtiesbelow.opioid.OpioidWithdrawal
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
+import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 
 /** Central application point for limb injuries — the single internal path through which damage
   * attribution reaches a limb.

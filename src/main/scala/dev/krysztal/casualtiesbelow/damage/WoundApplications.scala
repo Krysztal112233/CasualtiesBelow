@@ -12,11 +12,9 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.minecraft.world.item.enchantment.EnchantmentHelper
 
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
-import dev.krysztal.casualtiesbelow.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
@@ -36,6 +34,8 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.data.HitLocation
 import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundApplication
 import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundContribution
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
+import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 
 /** Executes the typed applications of one classified damage event. All body mutation still passes
   * through [[LimbInjuryService]], preserving per-limb armor, jitter, callbacks, and batched sync.

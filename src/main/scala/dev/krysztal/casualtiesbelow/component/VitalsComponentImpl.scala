@@ -13,20 +13,20 @@ import net.minecraft.world.level.storage.ValueInput
 import net.minecraft.world.level.storage.ValueOutput
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.InfectionSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.bleeding.TotemHemostasis
-import dev.krysztal.casualtiesbelow.blood.CirculationState
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.pain.PainShock
-import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
-import dev.krysztal.casualtiesbelow.progression.HypoxiaProgression
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
+import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
+import dev.krysztal.casualtiesbelow.physiology.blood.CirculationState
+import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
+import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.progression.HypoxiaProgression
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent

@@ -6,8 +6,8 @@ import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.discomfort.DiscomfortDistribution as Distribution
-import dev.krysztal.casualtiesbelow.pain.TotalPainStrategy
+import dev.krysztal.casualtiesbelow.physiology.discomfort.DiscomfortDistribution as Distribution
+import dev.krysztal.casualtiesbelow.physiology.pain.TotalPainStrategy
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig

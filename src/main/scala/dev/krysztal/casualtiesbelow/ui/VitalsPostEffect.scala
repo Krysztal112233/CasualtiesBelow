@@ -25,10 +25,10 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.mixin.PostChainAccessor
 import dev.krysztal.casualtiesbelow.mixin.PostPassAccessor
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 
 import org.lwjgl.system.MemoryStack
 

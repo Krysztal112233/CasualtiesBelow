@@ -9,8 +9,8 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.Consumable
 import net.minecraft.world.level.Level
 
-import dev.krysztal.casualtiesbelow.discomfort.Discomfort
-import dev.krysztal.casualtiesbelow.immune.FoodImmunity
+import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.physiology.immune.FoodImmunity
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

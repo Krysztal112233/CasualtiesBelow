@@ -10,12 +10,12 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 
-import dev.krysztal.casualtiesbelow.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
 import dev.krysztal.casualtiesbelow.client.render.SoakingPoppyCauldronRenderer
-import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.item.client.DryingItemTints
+import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingParticles
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.HypoxiaHudState

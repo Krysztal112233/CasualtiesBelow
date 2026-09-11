@@ -24,7 +24,6 @@ import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 
-import dev.krysztal.casualtiesbelow.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
@@ -35,8 +34,9 @@ import dev.krysztal.casualtiesbelow.component.PhysiologyReset
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.pain.PainShock
-import dev.krysztal.casualtiesbelow.progression.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
+import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
+import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
 
 /** Debug/admin commands for inspecting and editing body and vitals state:
   *

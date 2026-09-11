@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec2
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
 
-import dev.krysztal.casualtiesbelow.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
