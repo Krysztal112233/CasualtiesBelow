@@ -91,6 +91,10 @@ object InjuryProgression {
     }
   }
 
+  /** Advances an isolated GameTest player that is not registered in the server player list. */
+  private[casualtiesbelow] def tickForGameTest(player: ServerPlayer): Unit =
+    tickPlayer(player, syncTick = false)
+
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
     if (!player.isAlive) {
       StarvationProgression.discard(player)
