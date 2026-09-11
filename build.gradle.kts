@@ -29,6 +29,13 @@ loom {
     // Output lands in src/main/generated and is packaged automatically.
     fabricApi {
         configureDataGeneration()
+        configureTests {
+            createSourceSet = true
+            modId = "casualtiesbelow-gametest"
+            enableGameTests = true
+            enableClientGameTests = false
+            eula = true
+        }
     }
 }
 

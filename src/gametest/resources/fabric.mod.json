@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "casualtiesbelow-gametest",
+  "version": "1.0.0",
+  "name": "Casualties: Below Game Tests",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-gametest": [
+      "dev.krysztal.casualtiesbelow.gametest.PhysiologyGameTests"
+    ]
+  },
+  "depends": {
+    "casualtiesbelow": "*"
+  }
+}
