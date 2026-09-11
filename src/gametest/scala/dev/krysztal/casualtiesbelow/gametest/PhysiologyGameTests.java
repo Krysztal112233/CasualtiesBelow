@@ -19,4 +19,9 @@ public final class PhysiologyGameTests {
     public void withdrawalTrio(GameTestHelper helper) {
         OpioidPhaseOneScenarios.withdrawalTrio(helper);
     }
+
+    @GameTest(maxTicks = 20)
+    public void syringeInjectsStoredOpioidDose(GameTestHelper helper) {
+        SyringeScenarios.injectsStoredOpioidDose(helper);
+    }
 }

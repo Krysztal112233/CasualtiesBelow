@@ -33,6 +33,8 @@ object CasualtiesBelowItemGroup {
           output.accept(CasualtiesBelowItems.CrudePoppyLiquid)
           output.accept(CasualtiesBelowItems.RefinedPoppyExtract)
           output.accept(CasualtiesBelowItems.Ampoule)
+          output.accept(CasualtiesBelowItems.UnmarkedSyringe)
+          output.accept(CasualtiesBelowItems.CalibratedSyringe)
         }
         .build()
     )

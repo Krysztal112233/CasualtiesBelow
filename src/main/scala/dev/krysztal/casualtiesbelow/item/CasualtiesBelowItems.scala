@@ -19,6 +19,10 @@ object CasualtiesBelowItems {
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_filter"))
   private val AmpouleKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("ampoule"))
+  private val UnmarkedSyringeKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("unmarked_syringe"))
+  private val CalibratedSyringeKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("calibrated_syringe"))
   private val CrudePoppyPasteKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_paste"))
   private val CrudePoppyLiquidKey: ResourceKey[Item] =
@@ -65,6 +69,24 @@ object CasualtiesBelowItems {
     BuiltInRegistries.ITEM,
     AmpouleKey,
     Item(Item.Properties().setId(AmpouleKey).stacksTo(16))
+  )
+
+  val UnmarkedSyringe: SyringeItem = Registry.register(
+    BuiltInRegistries.ITEM,
+    UnmarkedSyringeKey,
+    SyringeItem(
+      Item.Properties().setId(UnmarkedSyringeKey).stacksTo(16),
+      calibrated = false
+    )
+  )
+
+  val CalibratedSyringe: SyringeItem = Registry.register(
+    BuiltInRegistries.ITEM,
+    CalibratedSyringeKey,
+    SyringeItem(
+      Item.Properties().setId(CalibratedSyringeKey).stacksTo(16),
+      calibrated = true
+    )
   )
 
   val CrudePoppyPaste: Item = Registry.register(

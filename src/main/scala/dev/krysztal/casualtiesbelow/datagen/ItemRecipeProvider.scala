@@ -52,6 +52,22 @@ final class ItemRecipeProvider(
           2
         )
 
+        shaped(RecipeCategory.MISC, CasualtiesBelowItems.UnmarkedSyringe)
+          .define('P', Items.PISTON)
+          .define('G', Items.GLASS)
+          .define('N', Items.IRON_NUGGET)
+          .pattern("P")
+          .pattern("G")
+          .pattern("N")
+          .unlockedBy("has_ampoule", has(CasualtiesBelowItems.Ampoule))
+          .save(recipeOutput)
+
+        shapeless(RecipeCategory.MISC, CasualtiesBelowItems.CalibratedSyringe)
+          .requires(CasualtiesBelowItems.UnmarkedSyringe)
+          .requires(Items.FLINT)
+          .unlockedBy("has_unmarked_syringe", has(CasualtiesBelowItems.UnmarkedSyringe))
+          .save(recipeOutput)
+
         shapeless(RecipeCategory.MISC, CasualtiesBelowItems.CrudePoppyPaste)
           .requires(Items.POPPY)
           .requires(Items.CHARCOAL)

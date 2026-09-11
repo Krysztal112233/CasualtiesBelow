@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_ampoule": {
+      "conditions": {
+        "items": [
+          {
+            "items": "casualtiesbelow:ampoule"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "casualtiesbelow:unmarked_syringe"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_ampoule"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "casualtiesbelow:unmarked_syringe"
+    ]
+  }
+}

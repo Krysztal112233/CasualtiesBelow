@@ -821,6 +821,36 @@ object CasualtiesBelowConfig {
   val OpioidWithdrawalDiscomfortTarget: ConfigValue[Double] = Builder
     .comment("Withdrawal discomfort climbs toward, but never beyond, this value.")
     .defineInRange("withdrawalDiscomfortTarget", 35.0, 0.0, 100.0, classOf[Double])
+  val OpioidRefinedSyringeDose: ConfigValue[Double] = Builder
+    .comment("Base opioid dose drawn from one refined poppy ampoule.")
+    .defineInRange("refinedSyringeDose", 50.0, 0.0, 200.0, classOf[Double])
+  val OpioidCrudeSyringeDoseMean: ConfigValue[Double] = Builder
+    .comment("Mean opioid dose sampled when drawing directly from crude poppy liquid.")
+    .defineInRange("crudeSyringeDoseMean", 40.0, 0.0, 200.0, classOf[Double])
+  val OpioidCrudeSyringeDoseSigma: ConfigValue[Double] = Builder
+    .comment("Standard deviation of the normal crude-poppy dose sample.")
+    .defineInRange("crudeSyringeDoseSigma", 13.0, 0.0, 200.0, classOf[Double])
+  val OpioidCrudeSyringeDoseMinimum: ConfigValue[Double] = Builder
+    .comment("Minimum crude-poppy base dose after normal sampling.")
+    .defineInRange("crudeSyringeDoseMinimum", 20.0, 0.0, 200.0, classOf[Double])
+  val OpioidCrudeSyringeDoseMaximum: ConfigValue[Double] = Builder
+    .comment("Maximum crude-poppy base dose after normal sampling.")
+    .defineInRange("crudeSyringeDoseMaximum", 60.0, 0.0, 200.0, classOf[Double])
+  val OpioidUnmarkedSyringeJitterFraction: ConfigValue[Double] = Builder
+    .comment("Maximum uniform measurement error fraction applied by an unmarked syringe.")
+    .defineInRange("unmarkedSyringeJitterFraction", 0.15, 0.0, 1.0, classOf[Double])
+  val OpioidUnmarkedSyringeUseDurationTicks: ConfigValue[Integer] = Builder
+    .comment("Ticks required to inject an unmarked syringe.")
+    .defineInRange("unmarkedSyringeUseDurationTicks", 16, 1, 72000)
+  val OpioidCalibratedSyringeUseDurationTicks: ConfigValue[Integer] = Builder
+    .comment("Ticks required to inject a calibrated syringe.")
+    .defineInRange("calibratedSyringeUseDurationTicks", 32, 1, 72000)
+  val OpioidRefinedSyringeDiscomfort: ConfigValue[Double] = Builder
+    .comment("Immediate discomfort added after injecting refined poppy extract.")
+    .defineInRange("refinedSyringeDiscomfort", 7.0, 0.0, 100.0, classOf[Double])
+  val OpioidCrudeSyringeDiscomfort: ConfigValue[Double] = Builder
+    .comment("Immediate discomfort added after injecting crude poppy liquid.")
+    .defineInRange("crudeSyringeDiscomfort", 15.0, 0.0, 100.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")

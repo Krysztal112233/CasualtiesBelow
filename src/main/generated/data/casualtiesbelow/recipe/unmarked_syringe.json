@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "key": {
+    "G": "minecraft:glass",
+    "N": "minecraft:iron_nugget",
+    "P": "minecraft:piston"
+  },
+  "pattern": [
+    "P",
+    "G",
+    "N"
+  ],
+  "result": {
+    "id": "casualtiesbelow:unmarked_syringe"
+  }
+}
