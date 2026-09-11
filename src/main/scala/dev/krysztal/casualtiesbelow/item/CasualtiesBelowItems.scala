@@ -20,6 +20,8 @@ object CasualtiesBelowItems {
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("basic_bandage"))
   private val CrudeFilterKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_filter"))
+  private val AmpouleKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("ampoule"))
   private val CrudePoppyPasteKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_paste"))
   private val CrudePoppyLiquidKey: ResourceKey[Item] =
@@ -62,6 +64,12 @@ object CasualtiesBelowItems {
     Item(Item.Properties().setId(CrudeFilterKey).stacksTo(PoppyProcessing.CrudeFilterMaxStack))
   )
 
+  val Ampoule: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    AmpouleKey,
+    Item(Item.Properties().setId(AmpouleKey).stacksTo(16))
+  )
+
   val CrudePoppyPaste: Item = Registry.register(
     BuiltInRegistries.ITEM,
     CrudePoppyPasteKey,
@@ -91,6 +99,7 @@ object CasualtiesBelowItems {
         output.accept(FiberCloth)
         output.accept(CrudePoppyPaste)
         output.accept(CrudeFilter)
+        output.accept(Ampoule)
         output.accept(CrudePoppyLiquid)
         output.accept(RefinedPoppyExtract)
       }

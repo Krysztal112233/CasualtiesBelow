@@ -45,6 +45,13 @@ final class ItemRecipeProvider(
           .unlockedBy("has_charcoal", has(Items.CHARCOAL))
           .save(recipeOutput)
 
+        stonecutterResultFromBase(
+          RecipeCategory.MISC,
+          CasualtiesBelowItems.Ampoule,
+          Items.GLASS_PANE,
+          2
+        )
+
         shapeless(RecipeCategory.MISC, CasualtiesBelowItems.CrudePoppyPaste)
           .requires(Items.POPPY)
           .requires(Items.CHARCOAL)
