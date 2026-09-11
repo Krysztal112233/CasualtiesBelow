@@ -72,6 +72,13 @@ object OpioidPhaseOneScenarios {
     VitalsMutations.setOpioidDependence(vitals, 50.0)
     VitalsMutations.setOpioidLevel(vitals, 0.0)
 
+    // Positive control: equally fed, no dependence — its immune health must regenerate,
+    // proving the harness can observe the regeneration that withdrawal cancels.
+    val control = survivalPlayer(helper)
+    val controlVitals = ComponentAccess.vitals(control)
+    control.getFoodData.setFoodLevel(20)
+    VitalsMutations.setImmuneHealth(controlVitals, 100.0)
+
     val applied = LimbInjuryService.apply(
       player,
       BodyPart.ArmLeft,
@@ -88,13 +95,23 @@ object OpioidPhaseOneScenarios {
 
     helper
       .startSequence()
-      .thenExecuteFor(100, () => InjuryProgression.tickForGameTest(player))
+      .thenExecuteFor(
+        100,
+        () => {
+          InjuryProgression.tickForGameTest(player)
+          InjuryProgression.tickForGameTest(control)
+        }
+      )
       .thenExecute(() => {
         val observed = CasualtiesBelowComponents.vitals(player)
         helper.assertTrue(observed.discomfort > 0.0, "Withdrawal discomfort did not rise")
         helper.assertTrue(
           approximately(observed.infection.immuneHealth, 100.0),
           "Withdrawal did not cancel well-fed immune regeneration"
+        )
+        helper.assertTrue(
+          CasualtiesBelowComponents.vitals(control).infection.immuneHealth > 100.0,
+          "Control immune regeneration was not observable"
         )
       })
       .thenSucceed()
