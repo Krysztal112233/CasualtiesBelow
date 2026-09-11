@@ -14,6 +14,7 @@
   "tooltip.casualtiesbelow.liquid_amount": "Volume: %s droplets",
   "message.casualtiesbelow.bandage.applied": "Bandaged %1$s",
   "message.casualtiesbelow.poppy.water_bottle_required": "A water bottle is required in your inventory",
+  "message.casualtiesbelow.ampoule.refined_extract_required": "Refined poppy extract is required in your inventory",
   "message.casualtiesbelow.bandage.no_treatable_injury": "No injury can be treated with this bandage",
   "screen.casualtiesbelow.body_status": "Body Status",
   "screen.casualtiesbelow.body_status.section.vitals": "Vitals",

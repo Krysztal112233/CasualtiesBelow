@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
+import dev.krysztal.casualtiesbelow.item.AmpouleFilling
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.PoppyPotions
@@ -45,8 +46,9 @@ object CasualtiesBelow extends ModInitializer {
     // event order) so its dirty marks ship in the same tick.
     InjuryProgression.register()
     Unconsciousness.register()
-    // The unconsciousness interaction gate must run before this block-use handler.
+    // The unconsciousness interaction gate must run before these use handlers.
     PoppyProcessing.register()
+    AmpouleFilling.register()
     // Same tick-ordering constraint as InjuryProgression: before the body flush.
     Discomfort.register()
     BodyMutations.register()

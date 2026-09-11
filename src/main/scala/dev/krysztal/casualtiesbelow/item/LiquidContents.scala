@@ -42,12 +42,16 @@ final case class LiquidContents private[item] (liquid: Identifier, droplets: Lon
 }
 
 object LiquidContents {
+  val AmpouleDroplets: Long = 810L
+
   val CrudePoppyLiquid: LiquidContents =
     LiquidContents(CasualtiesBelowApi.id("crude_poppy_liquid"), FluidConstants.BOTTLE)
   val RefinedPoppyExtract: LiquidContents = LiquidContents(
     CasualtiesBelowApi.id("refined_poppy_extract"),
     PoppyRefining.refinedDroplets(FluidConstants.BOTTLE)
   )
+  val RefinedPoppyAmpoule: LiquidContents =
+    LiquidContents(RefinedPoppyExtract.liquid, AmpouleDroplets)
 
   val Codec: Codec[LiquidContents] = RecordCodecBuilder.create(instance =>
     instance
