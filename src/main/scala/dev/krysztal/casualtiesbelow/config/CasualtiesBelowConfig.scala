@@ -839,18 +839,42 @@ object CasualtiesBelowConfig {
   val OpioidUnmarkedSyringeJitterFraction: ConfigValue[Double] = Builder
     .comment("Maximum uniform measurement error fraction applied by an unmarked syringe.")
     .defineInRange("unmarkedSyringeJitterFraction", 0.15, 0.0, 1.0, classOf[Double])
-  val OpioidUnmarkedSyringeUseDurationTicks: ConfigValue[Integer] = Builder
-    .comment("Ticks required to inject an unmarked syringe.")
-    .defineInRange("unmarkedSyringeUseDurationTicks", 16, 1, 72000)
-  val OpioidCalibratedSyringeUseDurationTicks: ConfigValue[Integer] = Builder
-    .comment("Ticks required to inject a calibrated syringe.")
-    .defineInRange("calibratedSyringeUseDurationTicks", 32, 1, 72000)
-  val OpioidRefinedSyringeDiscomfort: ConfigValue[Double] = Builder
-    .comment("Immediate discomfort added after injecting refined poppy extract.")
-    .defineInRange("refinedSyringeDiscomfort", 7.0, 0.0, 100.0, classOf[Double])
-  val OpioidCrudeSyringeDiscomfort: ConfigValue[Double] = Builder
-    .comment("Immediate discomfort added after injecting crude poppy liquid.")
-    .defineInRange("crudeSyringeDiscomfort", 15.0, 0.0, 100.0, classOf[Double])
+  Builder.pop()
+
+  Builder.push("injection")
+  val InjectionMaxSpeedFractionPerSecond: ConfigValue[Double] = Builder
+    .comment(
+      "Fraction of a syringe pushed per second at full plunger press in the injection screen.",
+      "Applies to every injectable; dose always lands proportionally to the pushed amount."
+    )
+    .defineInRange("maxSpeedFractionPerSecond", 0.5, 0.01, 10.0, classOf[Double])
+  val InjectionFullDoseSideEffectDiscomfort: ConfigValue[Double] = Builder
+    .comment(
+      "Discomfort gained when one full syringe is pushed at maximum speed.",
+      "Scales linearly with push speed and pushed amount."
+    )
+    .defineInRange("fullDoseSideEffectDiscomfort", 10.0, 0.0, 100.0, classOf[Double])
+  val InjectionFullDoseSideEffectPain: ConfigValue[Double] = Builder
+    .comment(
+      "Injection-site pain gained when one full syringe is pushed at maximum speed.",
+      "Scales linearly with push speed and pushed amount."
+    )
+    .defineInRange("fullDoseSideEffectPain", 10.0, 0.0, 100.0, classOf[Double])
+  val InjectionFullSpeedPressDepthPixels: ConfigValue[Integer] = Builder
+    .comment(
+      "Screen pixels of plunger press depth (cursor below the thumb pad) that request maximum",
+      "injection speed."
+    )
+    .defineInRange("fullSpeedPressDepthPixels", 60, 10, 500)
+  val InjectionBatchIntervalMilliseconds: ConfigValue[Integer] = Builder
+    .comment("Milliseconds between injection progress batches sent to the server.")
+    .defineInRange("batchIntervalMilliseconds", 200, 20, 5000)
+  val InjectionRecommendedSpeedFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Upper edge of the recommended-speed band shown by calibrated injectables,",
+      "as a fraction of maximum speed."
+    )
+    .defineInRange("recommendedSpeedFraction", 0.4, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")

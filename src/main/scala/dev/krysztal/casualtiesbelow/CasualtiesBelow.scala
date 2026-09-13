@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
+import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
 import dev.krysztal.casualtiesbelow.item.AmpouleFilling
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
@@ -54,6 +55,7 @@ object CasualtiesBelow extends ModInitializer {
     BodyMutations.register()
     ZombieAttackImmuneDrain.register()
     GameplayDataSync.register()
+    InjectionSync.register()
     Logger.info("Casualties: Below initialized")
   }
 

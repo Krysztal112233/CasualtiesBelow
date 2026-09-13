@@ -13,12 +13,14 @@ import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
 import dev.krysztal.casualtiesbelow.client.render.SoakingPoppyCauldronRenderer
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
+import dev.krysztal.casualtiesbelow.item.InjectionScreenHook
 import dev.krysztal.casualtiesbelow.item.client.DryingItemTints
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.HypoxiaHudState
+import dev.krysztal.casualtiesbelow.ui.InjectionScreen
 import dev.krysztal.casualtiesbelow.ui.OxygenReserveHud
 import dev.krysztal.casualtiesbelow.ui.UnconsciousOverlay
 
@@ -71,6 +73,7 @@ object CasualtiesBelowClient extends ClientModInitializer {
     // rejects a held attack: it immediately clears the in-progress crack, emits the vanilla ABORT
     // packet, and suppresses the residual hand swing.
     ClientPreAttackCallback.EVENT.register((_, player, _) => Unconsciousness.restricts(player))
+    InjectionScreenHook.register((player, hand) => InjectionScreen.openFor(player, hand))
     BleedingParticles.register()
     GameplayDataSync.registerClient()
     BloodBarHud.register()
