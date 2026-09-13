@@ -44,6 +44,11 @@ final case class LiquidContents private[item] (liquid: Identifier, droplets: Lon
 object LiquidContents {
   val AmpouleDroplets: Long = 810L
 
+  /** Display conversion for the calibrated syringe's live capacity readout: one ampoule (one full
+    * syringe) is 1 mL.
+    */
+  val DropletsPerMilliliter: Long = 810L
+
   val CrudePoppyLiquid: LiquidContents =
     LiquidContents(CasualtiesBelowApi.id("crude_poppy_liquid"), FluidConstants.BOTTLE)
   val RefinedPoppyExtract: LiquidContents = LiquidContents(

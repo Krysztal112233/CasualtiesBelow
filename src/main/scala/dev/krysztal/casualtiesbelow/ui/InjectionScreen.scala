@@ -428,7 +428,7 @@ class InjectionScreen private (
       faded(InjectionScreen.PlungerColor)
     )
 
-    if (pierced && calibrated) {
+    if (calibrated) {
       var mark = 0
       while (mark <= InjectionScreen.ScaleMarkCount) {
         val y = barrelTopY + InjectionScreen.BarrelPadding +
@@ -436,6 +436,18 @@ class InjectionScreen private (
         graphics.fill(right + 2, y, right + 5, y + 1, faded(InjectionScreen.ScaleMarkColor))
         mark += 1
       }
+      // Live remaining-capacity readout, riding the plunger seal so the number tracks the liquid
+      // level; one full syringe is 1 mL (see LiquidContents.DropletsPerMilliliter).
+      val remainingMl = session.remainingExact / LiquidContents.DropletsPerMilliliter.toDouble
+      val label = f"$remainingMl%.2f mL"
+      graphics.text(
+        font,
+        label,
+        right + 8,
+        sealY - font.lineHeight / 2,
+        faded(InjectionScreen.TextColor),
+        true
+      )
     }
   }
 
