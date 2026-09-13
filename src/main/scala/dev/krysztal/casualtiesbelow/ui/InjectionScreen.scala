@@ -34,19 +34,21 @@ import org.lwjgl.glfw.GLFW
   * window only gets the dim backdrop. The bottom third of the viewport is the skin — a baked
   * skin-tone texture, its side and bottom edges feathered to transparency so it blends into the
   * backdrop. In the PENDING phase the syringe is a scene object, not a cursor shadow: it only moves
-  * while grabbed, and then freely in both axes within the viewport. Holding LMB on the syringe and
-  * dragging down presses the needle against the skin (the last few pixels of travel are an
-  * invisible resistance zone — the needle visually rests on the surface until the press depth
-  * pierces it); releasing mid-drag lets go of the syringe, which stays where it is and can be
-  * re-gripped; piercing locks it in place. In the PIERCED phase the plunger becomes the control:
-  * holding LMB at the plunger's thumb pad and pushing down injects, with the gap between cursor and
-  * pad mapping linearly to push speed; releasing pauses. The plunger position is the cumulative
-  * injected amount, so closing the screen (Esc) simply keeps the remainder for a later session.
+  * while grabbed, and then freely in both axes within the viewport. One continuous hold drives the
+  * whole procedure — no re-grabs: dragging down presses the needle against the skin (the last few
+  * pixels of travel are an invisible resistance zone), piercing at the press depth locks the needle
+  * in place, and pulling further down immediately becomes plunger pressure — the cursor-to-pad gap
+  * maps linearly to injection speed and eases itself as the plunger descends; lifting the cursor
+  * eases the speed back to zero and keeps raising the barrel, sliding the needle out, and the tip
+  * crossing the skin line returns to PENDING, still held, with the already-pushed dose settled and
+  * the remainder traveling with the syringe. Releasing mid-drag lets go where the syringe is;
+  * closing the screen (Esc) likewise keeps the remainder for a later session. The plunger position
+  * is the cumulative injected amount, so closing the screen (Esc) simply keeps the remainder for a
+  * later session.
   *
   * Progress is accumulated locally ([[InjectionSession]]) and reported to the server in batches;
   * settlement (dose, side effects, remainder, consumption) is server-authoritative. Calibrated
-  * syringes additionally show barrel scale marks and a speed gauge with the recommended band;
-  * unmarked ones offer no references.
+  * syringes additionally show barrel scale marks; unmarked ones offer no references.
   *
   * The whole scene fades in on open and out on close (alpha ramps on a wall-clock timer, the same
   * animation culture as [[BodyStatusScreen]]). A close request (Esc, or the empty-syringe beat)
@@ -71,7 +73,6 @@ class InjectionScreen private (
 
   private var pierced = false
   private var grabbingSyringe = false
-  private var pressingPlunger = false
   private var speedFraction = 0.0
 
   /** Syringe center X; free while pending, locked once the needle pierces. Seeded at the viewport
@@ -162,11 +163,10 @@ class InjectionScreen private (
 
     if (!pierced) {
       updatePendingDrag(mouseX, mouseY, skinTop)
+    } else {
+      updatePiercedDrag(mouseY, skinTop)
     }
     extractSyringe(graphics, skinTop)
-    if (pierced && calibrated) {
-      extractSpeedGauge(graphics)
-    }
 
     graphics.text(
       font,
@@ -200,11 +200,17 @@ class InjectionScreen private (
     lastAdvanceMs = now
 
     speedFraction =
-      if (pierced && pressingPlunger && emptyCloseAtMs == 0L && !closing) {
-        val gap = (mouseY - plungerPadCenterY).toDouble
-        (gap / CasualtiesBelowConfig.InjectionFullSpeedPressDepthPixels.get().toDouble)
-          .max(0.0)
-          .min(1.0)
+      if (pierced && grabbingSyringe && emptyCloseAtMs == 0L && !closing) {
+        // Only a needle pinned against the pierce depth converts cursor travel into plunger
+        // pressure; while the barrel is lifting the needle out, speed stays zero.
+        val deepestTop = skinTopY + InjectionScreen.PierceDepthPixels -
+          InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
+        if (barrelTopY >= deepestTop) {
+          val gap = (mouseY - plungerPadCenterY).toDouble
+          (gap / CasualtiesBelowConfig.InjectionFullSpeedPressDepthPixels.get().toDouble)
+            .max(0.0)
+            .min(1.0)
+        } else 0.0
       } else 0.0
 
     if (speedFraction > 0.0) {
@@ -255,18 +261,16 @@ class InjectionScreen private (
   }
 
   /** Pending-phase dragging: the syringe moves freely in both axes while grabbed, clamped to the
-    * viewport (tightly enough on the right that the calibrated speed gauge stays inside) and —
-    * vertically — between the home position and the pierce depth, so it cannot rise above the title
-    * or sink below the press limit; releasing mid-drag lets go of it where it is. The needle goes
-    * through once its tip reaches the pierce depth, locking the syringe in place.
+    * viewport and — vertically — between the home position and the pierce depth, so it cannot rise
+    * above the title or sink below the press limit; releasing mid-drag lets go of it where it is.
+    * The needle goes through once its tip reaches the pierce depth, locking the syringe in place.
     */
   private def updatePendingDrag(mouseX: Int, mouseY: Int, skinTop: Int): Unit = {
     if (!grabbingSyringe) return
     syringeX = Mth.clamp(
       mouseX - grabOffsetX,
       regionLeft + InjectionScreen.BarrelWidth,
-      regionRight - InjectionScreen.BarrelWidth -
-        InjectionScreen.GaugeGapPixels - InjectionScreen.GaugeWidth - 2
+      regionRight - InjectionScreen.BarrelWidth
     )
     val homeTop = homeTopY(skinTop)
     val deepestTop = skinTop + InjectionScreen.PierceDepthPixels -
@@ -277,9 +281,32 @@ class InjectionScreen private (
       deepestTop
     )
     if (needleTipY >= skinTop + InjectionScreen.PierceDepthPixels) {
+      // The hold continues seamlessly: from here the same grab drives injection and withdrawal.
       pierced = true
-      grabbingSyringe = false
       playUiSound(SoundEvents.BOTTLE_FILL, 0.6f, 1.4f)
+    }
+  }
+
+  /** Pierced-phase drag — one continuous hold from piercing onward, no re-grab: while the cursor
+    * pulls at or below the pierce depth the needle stays pinned and the pull becomes plunger
+    * pressure (speed via [[advanceSession]]'s cursor-to-pad gap, the inherited injection logic);
+    * lifting the cursor eases speed back to zero and keeps raising the barrel, sliding the needle
+    * out — the tip crossing the skin line returns to PENDING, still held. The needle never goes
+    * deeper or moves sideways inside the skin.
+    */
+  private def updatePiercedDrag(mouseY: Int, skinTop: Int): Unit = {
+    if (!grabbingSyringe) return
+    val deepestTop = skinTop + InjectionScreen.PierceDepthPixels -
+      InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
+    val desiredTop = mouseY - grabOffsetY
+    if (desiredTop >= deepestTop) {
+      barrelTopY = deepestTop
+    } else {
+      barrelTopY = Mth.clamp(desiredTop, regionTop + InjectionScreen.TitleClearanceY, deepestTop)
+      if (needleTipY <= skinTop) {
+        pierced = false
+        playUiSound(SoundEvents.BOTTLE_FILL, 0.6f, 0.7f)
+      }
     }
   }
 
@@ -355,9 +382,10 @@ class InjectionScreen private (
 
     // Needle (drawn first so the barrel overlaps its top). Pre-pierce the tip is clamped at the
     // skin line: the press travel below the surface is an invisible resistance zone (input only),
-    // the needle is never drawn clipping into un-pierced skin.
+    // the needle is never drawn clipping into un-pierced skin. Pierced, the tip tracks the barrel
+    // so withdrawal slides the needle out instead of stretching it.
     val needleBottom =
-      if (pierced) skinTop + InjectionScreen.PierceDepthPixels
+      if (pierced) needleTipY
       else needleTipY.min(skinTop)
     graphics.fill(
       syringeX - InjectionScreen.NeedleWidth / 2,
@@ -411,50 +439,6 @@ class InjectionScreen private (
     }
   }
 
-  /** Speed gauge for calibrated syringes: a vertical track whose height is exactly the full-speed
-    * press depth, so the cursor-to-pad gap reads directly off it. Green up to the recommended speed
-    * fraction, red beyond.
-    */
-  private def extractSpeedGauge(graphics: GuiGraphicsExtractor): Unit = {
-    val depth = CasualtiesBelowConfig.InjectionFullSpeedPressDepthPixels.get()
-    val gaugeLeft = syringeX + InjectionScreen.BarrelWidth / 2 + InjectionScreen.GaugeGapPixels
-    val gaugeRight = gaugeLeft + InjectionScreen.GaugeWidth
-    val gaugeBottom = plungerPadCenterY + depth
-    val recommended = CasualtiesBelowConfig.InjectionRecommendedSpeedFraction.get()
-    val recommendedY = gaugeBottom - (depth.toDouble * recommended).toInt
-
-    graphics.fill(
-      gaugeLeft,
-      plungerPadCenterY,
-      gaugeRight,
-      recommendedY,
-      faded(InjectionScreen.GaugeOverColor)
-    )
-    graphics.fill(
-      gaugeLeft,
-      recommendedY,
-      gaugeRight,
-      gaugeBottom,
-      faded(InjectionScreen.GaugeOkColor)
-    )
-    outline(
-      graphics,
-      gaugeLeft,
-      plungerPadCenterY,
-      gaugeRight,
-      gaugeBottom,
-      faded(InjectionScreen.BarrelBorderColor)
-    )
-    val markerY = gaugeBottom - (speedFraction * depth).toInt
-    graphics.fill(
-      gaugeLeft - 1,
-      markerY - 1,
-      gaugeRight + 1,
-      markerY + 1,
-      faded(InjectionScreen.GaugeMarkerColor)
-    )
-  }
-
   private def liquidColor: Int = {
     if (liquid == LiquidContents.RefinedPoppyExtract.liquid) InjectionScreen.RefinedLiquidColor
     else if (liquid == LiquidContents.CrudePoppyLiquid.liquid) InjectionScreen.CrudeLiquidColor
@@ -479,14 +463,12 @@ class InjectionScreen private (
     if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && emptyCloseAtMs == 0L && !closing) {
       val mouseX = event.x().toInt
       val mouseY = event.y().toInt
-      if (!pierced && isOverSyringe(mouseX, mouseY)) {
+      if (isOverSyringe(mouseX, mouseY)) {
+        // One continuous hold drives both phases: down pierces then presses the plunger, up eases
+        // off then pulls the needle out.
         grabbingSyringe = true
         grabOffsetX = mouseX - syringeX
         grabOffsetY = mouseY - barrelTopY
-        return true
-      }
-      if (pierced && isOverPlungerPad(mouseX, mouseY)) {
-        pressingPlunger = true
         return true
       }
     }
@@ -498,11 +480,10 @@ class InjectionScreen private (
     // always lands even when the cursor has left the window. Symmetrically, holding with the
     // cursor parked outside the window freezes mouseY and injects at a constant speed until
     // re-entry — harmless, so no special handling.
-    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && (grabbingSyringe || pressingPlunger)) {
-      // Releasing mid-drag lets go of the syringe (it stays at its current height); releasing the
-      // plunger pauses the injection — either way, report the pushed amount right away.
+    if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT && grabbingSyringe) {
+      // Releasing lets go where the syringe is (pending) or pauses the injection (pierced) —
+      // either way, report the pushed amount right away.
       grabbingSyringe = false
-      pressingPlunger = false
       flushPending()
       return true
     }
@@ -514,14 +495,6 @@ class InjectionScreen private (
     mouseX <= syringeX + InjectionScreen.BarrelWidth &&
     mouseY >= barrelTopY - InjectionScreen.PlungerPadHeight - InjectionScreen.PlungerRodLength &&
     mouseY <= barrelTopY + InjectionScreen.BarrelHeight + InjectionScreen.NeedleLength
-  }
-
-  /** The plunger must be grabbed at its thumb pad: pressing elsewhere does nothing, so an injection
-    * can only continue by holding the plunger's current position and pushing down.
-    */
-  private def isOverPlungerPad(mouseX: Int, mouseY: Int): Boolean = {
-    math.abs(mouseX - syringeX) <= InjectionScreen.BarrelWidth &&
-    math.abs(mouseY - plungerPadCenterY) <= InjectionScreen.PadGrabTolerancePixels
   }
 
   /** Best-effort final report on teardown (death or world exit — vanilla closes screens in both,
@@ -543,7 +516,6 @@ class InjectionScreen private (
       closing = true
       closedAtMs = Util.getMillis()
       grabbingSyringe = false
-      pressingPlunger = false
       flushPending()
     }
   }
@@ -618,11 +590,8 @@ object InjectionScreen {
   private val PlungerTravel = BarrelHeight - 2 * BarrelPadding
   private val PierceDepthPixels = 6
   private val SkinLineThickness = 2
-  private val PadGrabTolerancePixels = 10
   private val ScaleMarkCount = 10
   private val ScaleMarkColor = 0xff8a9298.toInt
-  private val GaugeGapPixels = 12
-  private val GaugeWidth = 6
 
   /** Upper bound on a single frame's advance delta, so a stall cannot slam the plunger down. */
   private val MaxDtSeconds = 0.1
@@ -646,7 +615,4 @@ object InjectionScreen {
   private val RefinedLiquidColor = 0xffe3c46b.toInt
   private val CrudeLiquidColor = 0xff7e4f24.toInt
   private val UnknownLiquidColor = 0xff9fb4c8.toInt
-  private val GaugeOkColor = 0x8040c060
-  private val GaugeOverColor = 0x80c04040
-  private val GaugeMarkerColor = 0xffffffff
 }

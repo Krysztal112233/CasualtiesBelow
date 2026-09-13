@@ -869,12 +869,6 @@ object CasualtiesBelowConfig {
   val InjectionBatchIntervalMilliseconds: ConfigValue[Integer] = Builder
     .comment("Milliseconds between injection progress batches sent to the server.")
     .defineInRange("batchIntervalMilliseconds", 200, 20, 5000)
-  val InjectionRecommendedSpeedFraction: ConfigValue[Double] = Builder
-    .comment(
-      "Upper edge of the recommended-speed band shown by calibrated injectables,",
-      "as a fraction of maximum speed."
-    )
-    .defineInRange("recommendedSpeedFraction", 0.4, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("fall")
