@@ -33,12 +33,12 @@ import org.lwjgl.glfw.GLFW
   * The scene lives in a centered viewport (60% of the window width, 80% of its height); the full
   * window only gets the dim backdrop. The bottom third of the viewport is the skin — a baked
   * skin-tone texture, its side and bottom edges feathered to transparency so it blends into the
-  * backdrop. In the PENDING phase the syringe rests at a fixed anchor (screen center) above it — a
-  * scene object, not a cursor shadow: it only moves while grabbed. Holding LMB on the syringe and
+  * backdrop. In the PENDING phase the syringe is a scene object, not a cursor shadow: it only moves
+  * while grabbed, and then freely in both axes within the viewport. Holding LMB on the syringe and
   * dragging down presses the needle against the skin (the last few pixels of travel are an
   * invisible resistance zone — the needle visually rests on the surface until the press depth
   * pierces it); releasing mid-drag lets go of the syringe, which stays where it is and can be
-  * re-gripped. In the PIERCED phase the syringe locks in place and the plunger becomes the control:
+  * re-gripped; piercing locks it in place. In the PIERCED phase the plunger becomes the control:
   * holding LMB at the plunger's thumb pad and pushing down injects, with the gap between cursor and
   * pad mapping linearly to push speed; releasing pauses. The plunger position is the cumulative
   * injected amount, so closing the screen (Esc) simply keeps the remainder for a later session.
@@ -74,11 +74,15 @@ class InjectionScreen private (
   private var pressingPlunger = false
   private var speedFraction = 0.0
 
-  /** Syringe center X; anchored at screen center until the needle pierces, then locked. */
+  /** Syringe center X; free while pending, locked once the needle pierces. Seeded at the viewport
+    * center on open and on resize (pre-pierce state only).
+    */
   private var syringeX = 0
   private var barrelTopY = 0
 
-  /** Mouse-Y minus barrel top at grab time, preserved so the syringe does not jump when grabbed. */
+  /** Mouse minus syringe origin at grab time, preserved so the syringe does not jump when grabbed.
+    */
+  private var grabOffsetX = 0
   private var grabOffsetY = 0
 
   private var lastAdvanceMs = Util.getMillis()
@@ -157,7 +161,7 @@ class InjectionScreen private (
     extractSkin(graphics, skinTop)
 
     if (!pierced) {
-      updatePendingDrag(mouseY, skinTop)
+      updatePendingDrag(mouseX, mouseY, skinTop)
     }
     extractSyringe(graphics, skinTop)
     if (pierced && calibrated) {
@@ -250,13 +254,20 @@ class InjectionScreen private (
     }
   }
 
-  /** Pending-phase dragging: the syringe only moves while grabbed, and then only vertically (X
-    * stays anchored). Travel is clamped between the home position and the pierce depth, so lifting
-    * back up is allowed but the syringe cannot rise above its anchor; releasing mid-drag leaves it
-    * at its current height. The needle goes through once its tip reaches the pierce depth.
+  /** Pending-phase dragging: the syringe moves freely in both axes while grabbed, clamped to the
+    * viewport (tightly enough on the right that the calibrated speed gauge stays inside) and —
+    * vertically — between the home position and the pierce depth, so it cannot rise above the title
+    * or sink below the press limit; releasing mid-drag lets go of it where it is. The needle goes
+    * through once its tip reaches the pierce depth, locking the syringe in place.
     */
-  private def updatePendingDrag(mouseY: Int, skinTop: Int): Unit = {
+  private def updatePendingDrag(mouseX: Int, mouseY: Int, skinTop: Int): Unit = {
     if (!grabbingSyringe) return
+    syringeX = Mth.clamp(
+      mouseX - grabOffsetX,
+      regionLeft + InjectionScreen.BarrelWidth,
+      regionRight - InjectionScreen.BarrelWidth -
+        InjectionScreen.GaugeGapPixels - InjectionScreen.GaugeWidth - 2
+    )
     val homeTop = homeTopY(skinTop)
     val deepestTop = skinTop + InjectionScreen.PierceDepthPixels -
       InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
@@ -470,6 +481,7 @@ class InjectionScreen private (
       val mouseY = event.y().toInt
       if (!pierced && isOverSyringe(mouseX, mouseY)) {
         grabbingSyringe = true
+        grabOffsetX = mouseX - syringeX
         grabOffsetY = mouseY - barrelTopY
         return true
       }
