@@ -24,4 +24,24 @@ public final class PhysiologyGameTests {
     public void syringeInjectsStoredOpioidDose(GameTestHelper helper) {
         SyringeScenarios.injectsStoredOpioidDose(helper);
     }
+
+    @GameTest(maxTicks = 20)
+    public void syringePartialInjectionKeepsRemainder(GameTestHelper helper) {
+        SyringeScenarios.partialInjectionKeepsProportionalRemainder(helper);
+    }
+
+    @GameTest(maxTicks = 20)
+    public void syringeInjectionPainLandsInOppositeArm(GameTestHelper helper) {
+        SyringeScenarios.injectionPainLandsInOppositeArm(helper);
+    }
+
+    @GameTest(maxTicks = 20)
+    public void syringeBatchWithStaleIdentityIsIgnored(GameTestHelper helper) {
+        SyringeScenarios.batchWithStaleIdentityIsIgnored(helper);
+    }
+
+    @GameTest(maxTicks = 20)
+    public void syringeCreativeInjectionNeverConsumes(GameTestHelper helper) {
+        SyringeScenarios.creativeInjectionNeverConsumes(helper);
+    }
 }

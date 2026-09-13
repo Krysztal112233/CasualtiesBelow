@@ -14,7 +14,7 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.level.GameType;
 
-/** Creates uniquely named survival players with an in-memory connection for damage handling. */
+/** Creates uniquely named players with an in-memory connection for damage handling. */
 public final class GameTestPlayers {
     private static final AtomicInteger NEXT_ID = new AtomicInteger();
 
@@ -22,6 +22,14 @@ public final class GameTestPlayers {
     }
 
     public static ServerPlayer createSurvivalPlayer(GameTestHelper helper) {
+        return createPlayer(helper, GameType.SURVIVAL);
+    }
+
+    public static ServerPlayer createCreativePlayer(GameTestHelper helper) {
+        return createPlayer(helper, GameType.CREATIVE);
+    }
+
+    private static ServerPlayer createPlayer(GameTestHelper helper, GameType gameType) {
         GameProfile profile = new GameProfile(
                 UUID.randomUUID(), "cb-test-" + NEXT_ID.incrementAndGet());
         ClientInformation clientInformation = ClientInformation.createDefault();
@@ -31,7 +39,7 @@ public final class GameTestPlayers {
                 helper.getLevel().getServer(), helper.getLevel(), profile, clientInformation) {
             @Override
             public GameType gameMode() {
-                return GameType.SURVIVAL;
+                return gameType;
             }
 
             @Override
@@ -39,7 +47,7 @@ public final class GameTestPlayers {
                 return false;
             }
         };
-        GameType.SURVIVAL.updatePlayerAbilities(player.getAbilities());
+        gameType.updatePlayerAbilities(player.getAbilities());
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
         new EmbeddedChannel(connection);
         ServerGamePacketListenerImpl listener = new ServerGamePacketListenerImpl(
