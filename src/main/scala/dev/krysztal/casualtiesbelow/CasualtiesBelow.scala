@@ -17,6 +17,7 @@ import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
 import dev.krysztal.casualtiesbelow.item.AmpouleFilling
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
+import dev.krysztal.casualtiesbelow.item.PoppyFluidItemStorages
 import dev.krysztal.casualtiesbelow.item.PoppyPotions
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
 import dev.krysztal.casualtiesbelow.item.PoppyRefining
@@ -53,6 +54,7 @@ object CasualtiesBelow extends ModInitializer {
     // The unconsciousness interaction gate must run before these use handlers.
     PoppyProcessing.register()
     AmpouleFilling.register()
+    PoppyFluidItemStorages.register()
     // Same tick-ordering constraint as InjuryProgression: before the body flush.
     Discomfort.register()
     BodyMutations.register()
