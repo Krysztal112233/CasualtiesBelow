@@ -11,13 +11,15 @@
     "BrewingStandPotionSlotMixin",
     "ConsumableMixin",
     "FoodDataMixin",
+    "FlowingFluidInvoker",
     "LayeredCauldronBlockMixin",
     "LivingEntityMixin",
     "PlayerActuallyHurtMixin",
     "PlayerMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerPlayerGameModeMixin",
-    "ShelfBlockMixin"
+    "ShelfBlockMixin",
+    "WaterFluidInvoker"
   ],
   "client": [
     "GameRendererMixin",

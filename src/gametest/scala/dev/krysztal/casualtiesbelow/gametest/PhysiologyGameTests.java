@@ -54,4 +54,14 @@ public final class PhysiologyGameTests {
     public void bucketConvertsWithInfusionCauldron(GameTestHelper helper) {
         PoppyFluidScenarios.bucketConvertsWithInfusionCauldron(helper);
     }
+
+    @GameTest(maxTicks = 20)
+    public void flowingFluidInvokerMapsLegacyLevels(GameTestHelper helper) {
+        PoppyFluidScenarios.flowingFluidInvokerMapsLegacyLevels(helper);
+    }
+
+    @GameTest(maxTicks = 20)
+    public void waterFluidInvokerDelegatesDropLogic(GameTestHelper helper) {
+        PoppyFluidScenarios.waterFluidInvokerDelegatesDropLogic(helper);
+    }
 }

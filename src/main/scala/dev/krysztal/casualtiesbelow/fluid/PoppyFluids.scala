@@ -16,17 +16,19 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.level.BlockGetter
 import net.minecraft.world.level.LevelAccessor
 import net.minecraft.world.level.LevelReader
-import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.LiquidBlock
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.state.StateDefinition
 import net.minecraft.world.level.material.FlowingFluid
 import net.minecraft.world.level.material.Fluid
 import net.minecraft.world.level.material.FluidState
+import net.minecraft.world.level.material.Fluids
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
+import dev.krysztal.casualtiesbelow.mixin.FlowingFluidInvoker
+import dev.krysztal.casualtiesbelow.mixin.WaterFluidInvoker
 
 /** Shared behavior for the mod's poppy liquids. Spreading is water-like, but sources never
   * regenerate (the source-conversion gate is permanently closed, unlike water's gamerule) so fluid
@@ -42,11 +44,9 @@ private[fluid] abstract class PoppyFluidBase extends FlowingFluid {
       pos: BlockPos,
       state: BlockState
   ): Unit =
-    if (state.hasBlockEntity) {
-      Block.dropResources(state, level, pos, level.getBlockEntity(pos))
-    } else {
-      Block.dropResources(state, level, pos, null)
-    }
+    Fluids.WATER
+      .asInstanceOf[WaterFluidInvoker]
+      .casualtiesbelow$invokeBeforeDestroyingBlock(level, pos, state)
 
   override protected def getSlopeFindDistance(level: LevelReader): Int = 4
 
@@ -66,13 +66,6 @@ private[fluid] abstract class PoppyFluidBase extends FlowingFluid {
   override protected def getExplosionResistance(): Float = 100.0f
 
   override def getPickupSound(): Optional[SoundEvent] = Optional.of(SoundEvents.BUCKET_FILL)
-
-  /** Vanilla's protected static helper reimplemented to avoid cross-object static access. */
-  protected final def legacyLevel(state: FluidState): Int =
-    if (state.isSource) 0
-    else
-      8 - Math.min(state.getAmount, 8) + (if (state.getValue(FlowingFluid.FALLING).booleanValue()) 8
-                                          else 0)
 }
 
 /** Non-source side of a still/flowing pair; owns the flowing LEVEL property. */
@@ -131,7 +124,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.UnfilteredPoppyLiquidBucket
     }
@@ -150,7 +143,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.UnfilteredPoppyLiquidBucket
     }
@@ -169,7 +162,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.CrudePoppyLiquidBucket
     }
@@ -188,7 +181,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.CrudePoppyLiquidBucket
     }
@@ -207,7 +200,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.RefinedPoppyExtractBucket
     }
@@ -226,7 +219,7 @@ object PoppyFluids {
           .defaultBlockState()
           .setValue[JInteger, JInteger](
             LiquidBlock.LEVEL,
-            JInteger.valueOf(legacyLevel(state))
+            JInteger.valueOf(FlowingFluidInvoker.callGetLegacyLevel(state))
           )
       override def getBucket(): Item = CasualtiesBelowItems.RefinedPoppyExtractBucket
     }

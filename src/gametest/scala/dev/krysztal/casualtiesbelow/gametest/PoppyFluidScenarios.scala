@@ -11,6 +11,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.LayeredCauldronBlock
 import net.minecraft.world.level.block.state.BlockState
+import net.minecraft.world.level.material.Fluids
 
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage
@@ -21,6 +22,8 @@ import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
+import dev.krysztal.casualtiesbelow.mixin.FlowingFluidInvoker
+import dev.krysztal.casualtiesbelow.mixin.WaterFluidInvoker
 
 /** In-game validation that the infusion cauldron is wired into the Transfer API as unfiltered poppy
   * liquid without weakening the filtering gate.
@@ -166,7 +169,46 @@ object PoppyFluidScenarios {
     helper.succeed()
   }
 
+  /** The static FlowingFluidInvoker must route to the vanilla protected legacy-level mapping that
+    * encodes fluid states into LiquidBlock.LEVEL: source -> 0, flowing amounts mirror, falling adds 8.
+    */
+  def flowingFluidInvokerMapsLegacyLevels(helper: GameTestHelper): Unit = {
+    helper.assertTrue(
+      FlowingFluidInvoker.callGetLegacyLevel(
+        PoppyFluids.UnfilteredPoppyLiquid.getSource(false)
+      ) == 0,
+      "a source must map to legacy level 0"
+    )
+    helper.assertTrue(
+      FlowingFluidInvoker.callGetLegacyLevel(
+        PoppyFluids.FlowingUnfilteredPoppyLiquid.getFlowing(7, false)
+      ) == 1,
+      "flowing amount 7 must map to legacy level 1"
+    )
+    helper.assertTrue(
+      FlowingFluidInvoker.callGetLegacyLevel(
+        PoppyFluids.FlowingUnfilteredPoppyLiquid.getFlowing(8, true)
+      ) == 8,
+      "falling fluid must map to legacy level 8"
+    )
+    helper.succeed()
+  }
 
+  /** The instance WaterFluidInvoker must route to the vanilla water implementation of
+    * beforeDestroyingBlock: invoking it against a block-entity state must run without throwing (a
+    * broken mixin would hit the stub AssertionError).
+    */
+  def waterFluidInvokerDelegatesDropLogic(helper: GameTestHelper): Unit = {
+    val pos = helper.absolutePos(new BlockPos(1, 1, 1))
+    Fluids.WATER
+      .asInstanceOf[WaterFluidInvoker]
+      .casualtiesbelow$invokeBeforeDestroyingBlock(
+        helper.getLevel,
+        pos,
+        Blocks.CHEST.defaultBlockState()
+      )
+    helper.succeed()
+  }
 
   private def infusionState(level: Int): BlockState =
     CasualtiesBelowBlocks.PoppyInfusionCauldron
