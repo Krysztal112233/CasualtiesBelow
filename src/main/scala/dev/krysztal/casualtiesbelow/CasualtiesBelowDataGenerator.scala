@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.datagen.v1.DataGeneratorEntrypoint
 import net.fabricmc.fabric.api.datagen.v1.FabricDataGenerator
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
+import dev.krysztal.casualtiesbelow.datagen.AssetModelProvider
 import dev.krysztal.casualtiesbelow.datagen.BlockLootProvider
 import dev.krysztal.casualtiesbelow.datagen.BlockTagProvider
 import dev.krysztal.casualtiesbelow.datagen.BluntMeleeTagProvider
@@ -47,6 +48,9 @@ object CasualtiesBelowDataGenerator extends DataGeneratorEntrypoint {
     pack.addProvider[GameplayDataProvider]((output, registries) =>
       GameplayDataProvider(output, registries)
     )
+    // Model assets (items/, models/, blockstates/) require a client datagen run; build.gradle.kts
+    // enables it via `client.set(true)`.
+    pack.addProvider[AssetModelProvider]((output, registries) => new AssetModelProvider(output))
   }
 
   override def buildRegistry(registryBuilder: RegistrySetBuilder): Unit = {

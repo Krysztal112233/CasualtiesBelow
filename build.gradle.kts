@@ -28,7 +28,10 @@ loom {
     // `./gradlew runDatagen` (entrypoint: datagen/CasualtiesBelowDataGenerator).
     // Output lands in src/main/generated and is packaged automatically.
     fabricApi {
-        configureDataGeneration()
+        // Model asset generation (AssetModelProvider) runs client-side data generators.
+        configureDataGeneration {
+            client.set(true)
+        }
         configureTests {
             createSourceSet = true
             modId = "casualtiesbelow-gametest"

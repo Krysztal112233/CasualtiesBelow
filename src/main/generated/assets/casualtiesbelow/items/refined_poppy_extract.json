@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "casualtiesbelow:item/refined_poppy_extract",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -6347699
+      }
+    ]
+  }
+}

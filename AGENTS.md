@@ -11,7 +11,10 @@ single source of truth for version numbers.
 ./gradlew runClient    # Launch a dev client
 ./gradlew runServer    # Launch a dev server
 ./gradlew sources      # Generate and extract dependency sources into sources/ (see below)
-./gradlew runDatagen   # Regenerate datapack JSON (damage types, tags) into src/main/generated/
+./gradlew runDatagen   # Regenerate datapack JSON (damage types, tags) AND model assets
+                       # (items/, models/, blockstates/ via datagen/AssetModelProvider)
+                       # into src/main/generated/. Lang and textures stay hand-written;
+                       # tools/bucket_liquid_overlay.py regenerates the bucket liquid overlay.
 ./gradlew spotlessApply # Format all sources (scalafmt for Scala, ktlint for *.gradle.kts)
 ```
 

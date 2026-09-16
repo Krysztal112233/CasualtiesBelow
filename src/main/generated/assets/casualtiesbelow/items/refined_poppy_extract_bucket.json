@@ -1,0 +1,16 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "casualtiesbelow:item/refined_poppy_extract_bucket",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -1
+      },
+      {
+        "type": "minecraft:constant",
+        "value": -6347699
+      }
+    ]
+  }
+}
