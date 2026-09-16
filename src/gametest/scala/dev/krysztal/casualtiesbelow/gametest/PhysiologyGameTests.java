@@ -44,4 +44,14 @@ public final class PhysiologyGameTests {
     public void syringeCreativeInjectionNeverConsumes(GameTestHelper helper) {
         SyringeScenarios.creativeInjectionNeverConsumes(helper);
     }
+
+    @GameTest(maxTicks = 20)
+    public void infusionCauldronExposesUnfilteredFluidStorage(GameTestHelper helper) {
+        PoppyFluidScenarios.infusionCauldronExposesUnfilteredStorage(helper);
+    }
+
+    @GameTest(maxTicks = 20)
+    public void bucketConvertsWithInfusionCauldron(GameTestHelper helper) {
+        PoppyFluidScenarios.bucketConvertsWithInfusionCauldron(helper);
+    }
 }

@@ -7,11 +7,16 @@ import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
 import net.minecraft.core.cauldron.CauldronInteractions
 import net.minecraft.server.level.ServerLevel
+import net.minecraft.sounds.SoundEvents
+import net.minecraft.sounds.SoundSource
+import net.minecraft.stats.Stats
 import net.minecraft.util.RandomSource
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.ItemUtils
+import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.AbstractCauldronBlock
 import net.minecraft.world.level.block.Block
@@ -28,6 +33,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox
 import net.minecraft.world.phys.BlockHitResult
 
 import dev.krysztal.casualtiesbelow.block.entity.SoakingPoppyCauldronBlockEntity
+import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
 
 /** Cauldron-shaped block carrying three bottle-sized levels of poppy infusion. */
@@ -137,12 +143,65 @@ object SoakingPoppyCauldronBlock {
     BlockBehaviour.simpleCodec(properties => SoakingPoppyCauldronBlock(properties))
 }
 
-/** Ready infusion. Each successful filter use removes one of its three levels. */
+/** Ready infusion. Each successful filter use removes one of its three levels.
+  *
+  * Hand interactions beyond filtering: a glass bottle scoops one level into an unfiltered bottle,
+  * and an unfiltered bottle pours one level back. Everything else (vanilla water and potion
+  * handling in particular) stays blocked by the base class.
+  */
 final class PoppyInfusionCauldronBlock(properties: BlockBehaviour.Properties)
     extends PoppyCauldronBlock(properties) {
 
   override protected def codec(): MapCodec[? <: AbstractCauldronBlock] =
     PoppyInfusionCauldronBlock.Codec
+
+  override protected def useItemOn(
+      stack: ItemStack,
+      state: BlockState,
+      level: Level,
+      pos: BlockPos,
+      player: Player,
+      hand: InteractionHand,
+      hitResult: BlockHitResult
+  ): InteractionResult = {
+    val currentLevel = state.getValue[JInteger](PoppyCauldronBlock.Level).intValue()
+
+    if (stack.getItem == Items.GLASS_BOTTLE && currentLevel >= 1) {
+      if (!level.isClientSide()) {
+        val filled = new ItemStack(CasualtiesBelowItems.UnfilteredPoppyLiquid)
+        player.setItemInHand(hand, ItemUtils.createFilledResult(stack, player, filled))
+        player.awardStat(Stats.ITEM_USED.get(CasualtiesBelowItems.UnfilteredPoppyLiquid))
+        player.awardStat(Stats.USE_CAULDRON)
+        LayeredCauldronBlock.lowerFillLevel(state, level, pos)
+        level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f)
+        level.gameEvent(player, GameEvent.FLUID_PICKUP, pos)
+      }
+      InteractionResult.SUCCESS
+    } else if (
+      stack.getItem == CasualtiesBelowItems.UnfilteredPoppyLiquid &&
+      currentLevel < PoppyProcessing.FullCauldronLevel
+    ) {
+      if (!level.isClientSide()) {
+        player.setItemInHand(
+          hand,
+          ItemUtils.createFilledResult(stack, player, new ItemStack(Items.GLASS_BOTTLE))
+        )
+        player.awardStat(Stats.USE_CAULDRON)
+        level.setBlockAndUpdate(
+          pos,
+          state.setValue[JInteger, JInteger](
+            PoppyCauldronBlock.Level,
+            JInteger.valueOf(currentLevel + 1)
+          )
+        )
+        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f)
+        level.gameEvent(player, GameEvent.FLUID_PLACE, pos)
+      }
+      InteractionResult.SUCCESS
+    } else {
+      InteractionResult.TRY_WITH_EMPTY_HAND
+    }
+  }
 }
 
 object PoppyInfusionCauldronBlock {
