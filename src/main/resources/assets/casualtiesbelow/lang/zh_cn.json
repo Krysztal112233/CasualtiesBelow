@@ -16,6 +16,8 @@
   "tooltip.casualtiesbelow.syringe.opioid_dose": "阿片剂量：%s",
   "message.casualtiesbelow.bandage.applied": "已包扎%1$s",
   "message.casualtiesbelow.poppy.water_bottle_required": "背包中需要一瓶水",
+  "message.casualtiesbelow.poppy.unfiltered_bottle_required": "背包中需要一瓶未过滤虞美人液",
+  "message.casualtiesbelow.poppy.full_infusion_required": "浸出液必须装满炼药锅才能用桶舀取",
   "message.casualtiesbelow.ampoule.refined_extract_required": "背包中需要精制虞美人提取物",
   "message.casualtiesbelow.syringe.liquid_required": "背包中需要已灌装安瓿瓶或粗制虞美人液",
   "message.casualtiesbelow.bandage.no_treatable_injury": "没有可用基础绷带处理的伤情",
@@ -27,5 +29,12 @@
   "bodypart.casualtiesbelow.arm_left": "左臂",
   "bodypart.casualtiesbelow.arm_right": "右臂",
   "bodypart.casualtiesbelow.leg_left": "左腿",
-  "bodypart.casualtiesbelow.leg_right": "右腿"
+  "bodypart.casualtiesbelow.leg_right": "右腿",
+  "block.casualtiesbelow.unfiltered_poppy_liquid": "未过滤虞美人液",
+  "block.casualtiesbelow.crude_poppy_liquid": "粗制虞美人液",
+  "block.casualtiesbelow.refined_poppy_extract": "精制虞美人提取物",
+  "item.casualtiesbelow.unfiltered_poppy_liquid": "未过滤虞美人液",
+  "item.casualtiesbelow.unfiltered_poppy_liquid_bucket": "未过滤虞美人液桶",
+  "item.casualtiesbelow.crude_poppy_liquid_bucket": "粗制虞美人液桶",
+  "item.casualtiesbelow.refined_poppy_extract_bucket": "精制虞美人提取物桶"
 }

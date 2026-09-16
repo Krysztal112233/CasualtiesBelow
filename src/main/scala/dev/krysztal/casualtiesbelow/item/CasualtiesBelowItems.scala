@@ -5,9 +5,11 @@ import net.minecraft.core.component.DataComponents
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.resources.ResourceKey
+import net.minecraft.world.item.BucketItem
 import net.minecraft.world.item.Item
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
 
 /** Registers the mod's items and dedicated creative-mode tab. */
 object CasualtiesBelowItems {
@@ -29,6 +31,14 @@ object CasualtiesBelowItems {
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_liquid"))
   private val RefinedPoppyExtractKey: ResourceKey[Item] =
     ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("refined_poppy_extract"))
+  private val UnfilteredPoppyLiquidKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("unfiltered_poppy_liquid"))
+  private val UnfilteredPoppyLiquidBucketKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("unfiltered_poppy_liquid_bucket"))
+  private val CrudePoppyLiquidBucketKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("crude_poppy_liquid_bucket"))
+  private val RefinedPoppyExtractBucketKey: ResourceKey[Item] =
+    ResourceKey.create(Registries.ITEM, CasualtiesBelowApi.id("refined_poppy_extract_bucket"))
 
   private def poppyLiquidProperties(
       key: ResourceKey[Item],
@@ -108,6 +118,50 @@ object CasualtiesBelowItems {
     RefinedPoppyExtractKey,
     PoppyLiquidContainerItem(
       poppyLiquidProperties(RefinedPoppyExtractKey, LiquidContents.RefinedPoppyExtract)
+    )
+  )
+
+  // The unfiltered bottle is a plain component-carrying item: it is never brewable, so unlike the
+  // two potion-carrier bottles it needs no brewing adapter.
+  val UnfilteredPoppyLiquid: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    UnfilteredPoppyLiquidKey,
+    Item(
+      Item
+        .Properties()
+        .setId(UnfilteredPoppyLiquidKey)
+        .stacksTo(PoppyProcessing.LiquidContainerMaxStack)
+        .component(
+          CasualtiesBelowDataComponents.LiquidContentsComponent,
+          LiquidContents.UnfilteredPoppyLiquid
+        )
+    )
+  )
+
+  val UnfilteredPoppyLiquidBucket: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    UnfilteredPoppyLiquidBucketKey,
+    BucketItem(
+      PoppyFluids.UnfilteredPoppyLiquid,
+      Item.Properties().setId(UnfilteredPoppyLiquidBucketKey).stacksTo(1)
+    )
+  )
+
+  val CrudePoppyLiquidBucket: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    CrudePoppyLiquidBucketKey,
+    BucketItem(
+      PoppyFluids.CrudePoppyLiquid,
+      Item.Properties().setId(CrudePoppyLiquidBucketKey).stacksTo(1)
+    )
+  )
+
+  val RefinedPoppyExtractBucket: Item = Registry.register(
+    BuiltInRegistries.ITEM,
+    RefinedPoppyExtractBucketKey,
+    BucketItem(
+      PoppyFluids.RefinedPoppyExtract,
+      Item.Properties().setId(RefinedPoppyExtractBucketKey).stacksTo(1)
     )
   )
 

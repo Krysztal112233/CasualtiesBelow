@@ -18,6 +18,8 @@
   "tooltip.casualtiesbelow.syringe.opioid_dose": "Opioid dose: %s",
   "message.casualtiesbelow.bandage.applied": "Bandaged %1$s",
   "message.casualtiesbelow.poppy.water_bottle_required": "A water bottle is required in your inventory",
+  "message.casualtiesbelow.poppy.unfiltered_bottle_required": "An unfiltered poppy liquid bottle is required in your inventory",
+  "message.casualtiesbelow.poppy.full_infusion_required": "The infusion cauldron must be full before a bucket can scoop it",
   "message.casualtiesbelow.ampoule.refined_extract_required": "Refined poppy extract is required in your inventory",
   "message.casualtiesbelow.syringe.liquid_required": "A filled poppy ampoule or crude poppy liquid is required in your inventory",
   "message.casualtiesbelow.bandage.no_treatable_injury": "No injury can be treated with this bandage",
@@ -66,5 +68,12 @@
   "jei.casualtiesbelow.armor.slot.feet": "feet",
   "wound_profile.casualtiesbelow.cut": "Sharp hits cut the skin: per damage point — skin ×%1$s, muscle ×%2$s, bleeding +%3$s/s per wound, pain ×%4$s",
   "wound_profile.casualtiesbelow.fall": "Falls cause impact wounds: per damage point — skin ×%1$s, muscle ×%2$s, bleeding +%3$s/s per wound, pain ×%4$s",
-  "jei.casualtiesbelow.weapon.note": "Other armed hits bludgeon instead; unarmed hits bite or scratch."
+  "jei.casualtiesbelow.weapon.note": "Other armed hits bludgeon instead; unarmed hits bite or scratch.",
+  "block.casualtiesbelow.unfiltered_poppy_liquid": "Unfiltered Poppy Liquid",
+  "block.casualtiesbelow.crude_poppy_liquid": "Crude Poppy Liquid",
+  "block.casualtiesbelow.refined_poppy_extract": "Refined Poppy Extract",
+  "item.casualtiesbelow.unfiltered_poppy_liquid": "Unfiltered Poppy Liquid",
+  "item.casualtiesbelow.unfiltered_poppy_liquid_bucket": "Unfiltered Poppy Liquid Bucket",
+  "item.casualtiesbelow.crude_poppy_liquid_bucket": "Crude Poppy Liquid Bucket",
+  "item.casualtiesbelow.refined_poppy_extract_bucket": "Refined Poppy Extract Bucket"
 }

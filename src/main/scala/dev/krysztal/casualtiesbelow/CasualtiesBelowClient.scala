@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback
 
 import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
+import dev.krysztal.casualtiesbelow.client.PoppyFluidRendering
 import dev.krysztal.casualtiesbelow.client.render.SoakingPoppyCauldronRenderer
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.item.InjectionScreenHook
@@ -47,6 +48,7 @@ object CasualtiesBelowClient extends ClientModInitializer {
 
   override def onInitializeClient(): Unit = {
     DryingItemTints.register()
+    PoppyFluidRendering.register()
     BlockEntityRenderers.register(
       CasualtiesBelowBlockEntities.SoakingPoppyCauldron,
       context => new SoakingPoppyCauldronRenderer(context)

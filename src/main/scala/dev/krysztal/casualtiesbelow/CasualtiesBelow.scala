@@ -10,6 +10,7 @@ import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
+import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
@@ -32,6 +33,8 @@ object CasualtiesBelow extends ModInitializer {
   val Logger: Logger = LoggerFactory.getLogger(ModId)
 
   override def onInitialize(): Unit = {
+    // Fluids must exist before the fluid blocks (constructor argument) and the buckets.
+    PoppyFluids.register()
     CasualtiesBelowDataComponents.register()
     CasualtiesBelowBlocks.register()
     CasualtiesBelowBlockEntities.register()
