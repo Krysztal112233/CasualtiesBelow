@@ -10,6 +10,7 @@ import net.minecraft.world.entity.player.Player
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
@@ -68,6 +69,15 @@ private[casualtiesbelow] object InjectionSettlement {
     )
 
     val vitals = ComponentAccess.vitals(player)
+    // Dirty needle: contamination scales with the player's dirtiness and the pushed fraction,
+    // never with speed — a careful push through dirty skin still infects.
+    val infectionSeed = infectionSeedFor(
+      CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.get(),
+      vitals.dirtiness,
+      CasualtiesBelowConfig.MaxDirtiness.get(),
+      applied,
+      LiquidContents.AmpouleDroplets
+    )
     if (doseDelta != 0.0) {
       VitalsMutations.setOpioidLevel(vitals, vitals.opioidLevel + doseDelta)
     }
@@ -75,9 +85,15 @@ private[casualtiesbelow] object InjectionSettlement {
       VitalsMutations.setDiscomfort(vitals, vitals.discomfort + discomfort)
     }
     VitalsMutations.syncNow(player)
-    if (pain != 0.0) {
+    if (pain != 0.0 || infectionSeed > 0.0) {
       BodyMutations.mutate(player, injectedPart(player, hand), markDirty = true) { state =>
-        state.pain = state.pain + pain
+        if (pain != 0.0) {
+          state.pain = state.pain + pain
+        }
+        if (infectionSeed > 0.0) {
+          val progress = state.infectionProgress.getOrElse(0.0)
+          state.infectionProgress = Some((progress + infectionSeed).min(MutableLimbState.MaxValue))
+        }
       }
     }
 
@@ -127,6 +143,24 @@ private[casualtiesbelow] object InjectionSettlement {
         (appliedDroplets.toDouble / fullDroplets.toDouble).max(0.0).min(1.0)
       fullDoseCap * clampSpeed(speedFraction) * amountFraction
     }
+  }
+
+  /** Infection progress seeded into the injected limb by a batch: `maxSeed` is what one full
+    * syringe at maximum dirtiness yields; scales linearly with dirtiness (clamped to the axis) and
+    * with the pushed fraction, so batched settlement sums to the same total regardless of batching.
+    */
+  private[item] def infectionSeedFor(
+      maxSeed: Double,
+      dirtiness: Double,
+      maxDirtiness: Double,
+      appliedDroplets: Long,
+      fullDroplets: Long
+  ): Double = {
+    if (fullDroplets <= 0L || maxSeed <= 0.0 || maxDirtiness <= 0.0) return 0.0
+    val pushedFraction =
+      (appliedDroplets.toDouble / fullDroplets.toDouble).max(0.0).min(1.0)
+    val dirtinessFraction = (dirtiness / maxDirtiness).max(0.0).min(1.0)
+    maxSeed * dirtinessFraction * pushedFraction
   }
 
   /** The syringe contents after `appliedDroplets` leave: droplets and dose scale down

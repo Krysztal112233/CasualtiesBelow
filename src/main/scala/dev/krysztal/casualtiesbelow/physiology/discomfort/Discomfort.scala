@@ -26,6 +26,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
+import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 
 /** Probability distribution used when sampling a food's discomfort dose around its mean. */
@@ -126,6 +127,11 @@ object Discomfort {
         ) {
           amount *= CasualtiesBelowConfig.DiscomfortPoorConditionMultiplier.get()
         }
+        amount *= Dirtiness.foodDiscomfortMultiplier(
+          vitals.dirtiness,
+          CasualtiesBelowConfig.MaxDirtiness.get(),
+          CasualtiesBelowConfig.DirtinessFoodDiscomfortMultiplierAtMax.get()
+        )
         VitalsMutations.setDiscomfort(
           vitals,
           (vitals.discomfort + amount).min(CasualtiesBelowConfig.MaxDiscomfort.get())

@@ -106,4 +106,37 @@ final class InjectionSettlementTest {
     assertEquals(25.0, InjectionSettlement.doseFor(25.0, 405L, 405L), 1.0e-12)
     assertEquals(0.0, InjectionSettlement.doseFor(25.0, 405L, 0L), 1.0e-12)
   }
+
+  @Test
+  def infectionSeedScalesWithDirtinessAndPushedFraction(): Unit = {
+    assertEquals(
+      12.0,
+      InjectionSettlement.infectionSeedFor(12.0, 100.0, 100.0, 810L, 810L),
+      1.0e-12
+    )
+    assertEquals(6.0, InjectionSettlement.infectionSeedFor(12.0, 50.0, 100.0, 810L, 810L), 1.0e-12)
+    assertEquals(6.0, InjectionSettlement.infectionSeedFor(12.0, 100.0, 100.0, 405L, 810L), 1.0e-12)
+    assertEquals(0.0, InjectionSettlement.infectionSeedFor(12.0, 0.0, 100.0, 810L, 810L), 1.0e-12)
+  }
+
+  @Test
+  def infectionSeedIsBatchConserving(): Unit = {
+    val full = InjectionSettlement.infectionSeedFor(12.0, 80.0, 100.0, 810L, 810L)
+    val batched =
+      InjectionSettlement.infectionSeedFor(12.0, 80.0, 100.0, 405L, 810L) +
+        InjectionSettlement.infectionSeedFor(12.0, 80.0, 100.0, 405L, 810L)
+    assertEquals(full, batched, 1.0e-12, "batched seeding must sum to the single-push total")
+  }
+
+  @Test
+  def infectionSeedClampsAndNeverInverts(): Unit = {
+    assertEquals(
+      12.0,
+      InjectionSettlement.infectionSeedFor(12.0, 200.0, 100.0, 810L, 810L),
+      1.0e-12
+    )
+    assertEquals(0.0, InjectionSettlement.infectionSeedFor(12.0, -10.0, 100.0, 810L, 810L), 1.0e-12)
+    assertEquals(0.0, InjectionSettlement.infectionSeedFor(12.0, 100.0, 100.0, 810L, 0L), 1.0e-12)
+    assertEquals(0.0, InjectionSettlement.infectionSeedFor(0.0, 100.0, 100.0, 810L, 810L), 1.0e-12)
+  }
 }

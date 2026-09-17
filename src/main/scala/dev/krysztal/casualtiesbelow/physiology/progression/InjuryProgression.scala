@@ -23,6 +23,7 @@ import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
+import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidProgression
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
@@ -135,6 +136,7 @@ object InjuryProgression {
         walkingStrainRate(part, current, walking),
         withdrawalPainMultiplier,
         vitals.infection.immuneHealth,
+        vitals.dirtiness,
         fightShare,
         regenerationMultiplier,
         player.getRandom
@@ -285,7 +287,13 @@ object InjuryProgression {
     val poisonDrain = Option(player.getEffect(MobEffects.POISON)).fold(0.0) { effect =>
       CasualtiesBelowConfig.PoisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
     }
-    val delta = foodDelta - poisonDrain
+    val dirtDrain = Dirtiness.immuneDrainPerTick(
+      vitals.dirtiness,
+      CasualtiesBelowConfig.DirtinessImmuneDrainStart.get(),
+      CasualtiesBelowConfig.MaxDirtiness.get(),
+      CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.get()
+    )
+    val delta = foodDelta - poisonDrain - dirtDrain
     if (delta == 0.0) return false
 
     val next =
@@ -302,9 +310,9 @@ object InjuryProgression {
     * walking-strain pain rate when the limb is a fractured/dislocated leg currently bearing the
     * walking player, zero otherwise. `painGrantMultiplier` applies systemic hyperalgesia to all
     * positive pain grants. `immuneHealth` modulates infection spread and natural skin regrowth;
-    * `regenerationMultiplier` drives the independent vanilla Regeneration micro-repair. Returns
-    * whether a discrete transition occurred (fracture healed, bleeding stopped, infection started
-    * or cleared).
+    * `dirtiness` modulates infection onset and skin regrowth; `regenerationMultiplier` drives the
+    * independent vanilla Regeneration micro-repair. Returns whether a discrete transition occurred
+    * (fracture healed, bleeding stopped, infection started or cleared).
     *
     * Ordering matters: bleeding clots before natural skin regrowth is considered, so a wound that
     * seals this tick starts regrowing skin immediately. Regeneration then repairs skin even if the
@@ -315,6 +323,7 @@ object InjuryProgression {
       strainPainRate: Double,
       painGrantMultiplier: Double,
       immuneHealth: Double,
+      dirtiness: Double,
       fightShare: Double,
       regenerationMultiplier: Double,
       random: RandomSource
@@ -324,10 +333,10 @@ object InjuryProgression {
 
     val fractureHealed = tickFracture()
     val bleedingStopped = tickBleeding()
-    val infectionTransition = tickInfection(immuneHealth, fightShare, random)
+    val infectionTransition = tickInfection(immuneHealth, dirtiness, fightShare, random)
 
     tickInfectionEffects(painGrantMultiplier)
-    tickSkinRegen(immuneHealth)
+    tickSkinRegen(immuneHealth, dirtiness)
     val regenerationTransition =
       tickRegenerationSkin(regenerationMultiplier)
     tickMuscleRegen()
@@ -375,6 +384,7 @@ object InjuryProgression {
     */
   private def tickInfection(
       immuneHealth: Double,
+      dirtiness: Double,
       fightShare: Double,
       random: RandomSource
   )(using stats: MutableLimbState): Boolean = {
@@ -398,7 +408,12 @@ object InjuryProgression {
 
         val chance =
           CasualtiesBelowConfig.InfectionChancePerTick
-            .get() * skinDamage / MutableLimbState.MaxValue
+            .get() * skinDamage / MutableLimbState.MaxValue *
+            Dirtiness.infectionChanceMultiplier(
+              dirtiness,
+              CasualtiesBelowConfig.MaxDirtiness.get(),
+              CasualtiesBelowConfig.DirtinessInfectionChanceMultiplierAtMax.get()
+            )
         if (random.nextFloat() < chance) {
           stats.infectionProgress = Some(InfectionOnsetSeed)
           true
@@ -477,16 +492,25 @@ object InjuryProgression {
   }
 
   /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the
-    * configured minimum multiplier (zero immune) and the full base rate (full immune).
+    * configured minimum multiplier (zero immune) and the full base rate (full immune), and
+    * dirtiness applies its own linear ramp on top (never zero either).
     */
-  private def tickSkinRegen(immuneHealth: Double)(using stats: MutableLimbState): Unit = {
+  private def tickSkinRegen(immuneHealth: Double, dirtiness: Double)(using
+      stats: MutableLimbState
+  ): Unit = {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= MutableLimbState.MaxValue) return
 
     val minMultiplier = CasualtiesBelowConfig.SkinRegenMinImmuneMultiplier.get()
-    val multiplier =
+    val immuneMultiplier =
       minMultiplier +
         (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
+    val multiplier =
+      immuneMultiplier * Dirtiness.skinRegenMultiplier(
+        dirtiness,
+        CasualtiesBelowConfig.MaxDirtiness.get(),
+        CasualtiesBelowConfig.DirtinessSkinRegenMinMultiplier.get()
+      )
     stats.skinIntegrity =
       (stats.skinIntegrity + SkinRegenPerTick * multiplier).min(MutableLimbState.MaxValue)
   }
