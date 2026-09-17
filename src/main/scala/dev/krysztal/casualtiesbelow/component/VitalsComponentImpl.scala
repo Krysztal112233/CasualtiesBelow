@@ -49,6 +49,7 @@ final class VitalsComponentImpl(val player: Player)
     totemHemostasisTicks = 0
   )
   private var discomfortState: Double = 0.0
+  private var dirtinessState: Double = 0.0
   private var opioidState: OpioidState = OpioidState(0.0, 0.0)
 
   override def copyFrom(
@@ -109,6 +110,7 @@ final class VitalsComponentImpl(val player: Player)
     )
     setSepsis(source.infection.sepsis)
     setDiscomfort(source.discomfort)
+    setDirtiness(source.dirtiness)
     setOpioidLevel(source.opioidLevel)
     setOpioidDependence(source.opioidDependence)
   }
@@ -179,6 +181,12 @@ final class VitalsComponentImpl(val player: Player)
     discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.get())
   }
 
+  override def dirtiness: Double = dirtinessState
+
+  private[casualtiesbelow] def setDirtiness(value: Double): Unit = {
+    dirtinessState = bounded(value, CasualtiesBelowConfig.MaxDirtiness.get())
+  }
+
   override def opioidLevel: Double = opioidState.level
 
   private[casualtiesbelow] def setOpioidLevel(value: Double): Unit = {
@@ -225,6 +233,7 @@ final class VitalsComponentImpl(val player: Player)
     out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, circulationState.totemHemostasisTicks)
     out.putDouble(VitalsComponentImpl.SepsisKey, infectionState.sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
+    out.putDouble(VitalsComponentImpl.DirtinessKey, dirtiness)
     if (includeHidden) {
       out.putDouble(VitalsComponentImpl.OpioidLevelKey, opioidLevel)
     }
@@ -312,6 +321,7 @@ final class VitalsComponentImpl(val player: Player)
     )
     setSepsis(in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0))
     setDiscomfort(in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0))
+    setDirtiness(in.getDoubleOr(VitalsComponentImpl.DirtinessKey, 0.0))
     setOpioidLevel(in.getDoubleOr(VitalsComponentImpl.OpioidLevelKey, 0.0))
     setOpioidDependence(in.getDoubleOr(VitalsComponentImpl.OpioidDependenceKey, 0.0))
   }
@@ -340,6 +350,7 @@ object VitalsComponentImpl {
   private val TotemHemostasisTicksKey = "totem_hemostasis_ticks"
   private val SepsisKey = "sepsis"
   private val DiscomfortKey = "discomfort"
+  private val DirtinessKey = "dirtiness"
   private val OpioidLevelKey = "opioid_level"
   private val OpioidDependenceKey = "opioid_dependence"
 }

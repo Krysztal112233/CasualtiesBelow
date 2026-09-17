@@ -55,6 +55,15 @@ object VitalsMutations {
     vitals.discomfort != previous
   }
 
+  private[casualtiesbelow] def setDirtiness(
+      vitals: VitalsComponentImpl,
+      value: Double
+  ): Boolean = {
+    val previous = vitals.dirtiness
+    vitals.setDirtiness(value)
+    vitals.dirtiness != previous
+  }
+
   private[casualtiesbelow] def setOpioidLevel(
       vitals: VitalsComponentImpl,
       value: Double
