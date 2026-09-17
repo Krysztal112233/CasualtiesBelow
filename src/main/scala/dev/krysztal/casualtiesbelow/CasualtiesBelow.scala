@@ -23,6 +23,8 @@ import dev.krysztal.casualtiesbelow.item.PoppyProcessing
 import dev.krysztal.casualtiesbelow.item.PoppyRefining
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 
@@ -57,8 +59,11 @@ object CasualtiesBelow extends ModInitializer {
     PoppyFluidItemStorages.register()
     // Same tick-ordering constraint as InjuryProgression: before the body flush.
     Discomfort.register()
+    // Hygiene progression shares discomfort's owner-sync cadence; vitals-only, no body flush.
+    Dirtiness.register()
     BodyMutations.register()
     ZombieAttackImmuneDrain.register()
+    DirtinessSources.register()
     GameplayDataSync.register()
     InjectionSync.register()
     Logger.info("Casualties: Below initialized")

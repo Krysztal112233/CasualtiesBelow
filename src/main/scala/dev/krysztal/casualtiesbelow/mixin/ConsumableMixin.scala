@@ -10,6 +10,7 @@ import net.minecraft.world.item.component.Consumable
 import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.immune.FoodImmunity
 
 import org.spongepowered.asm.mixin.Mixin
@@ -54,6 +55,7 @@ abstract class ConsumableMixin {
       case (player: ServerPlayer, false) if stack.has(DataComponents.FOOD) =>
         Discomfort.onFoodEaten(player, stack)
         FoodImmunity.onFoodEaten(player, stack)
+        DirtinessSources.onFoodEaten(player, stack)
       case _ => ()
     }
   }
