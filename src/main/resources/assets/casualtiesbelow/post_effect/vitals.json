@@ -50,6 +50,11 @@
             "name": "ShockTime",
             "type": "float",
             "value": 0.0
+          },
+          {
+            "name": "GrimeVignetteStrength",
+            "type": "float",
+            "value": 0.0
           }
         ]
       }

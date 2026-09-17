@@ -48,6 +48,7 @@ object VitalsPostEffect {
     .putFloat()
     .putFloat()
     .putFloat()
+    .putFloat()
     .get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
@@ -115,7 +116,8 @@ object VitalsPostEffect {
       discomfortVignette = 0.0f,
       shock = 0.0f,
       shockNoise = 0.0f,
-      shockTime = 0.0f
+      shockTime = 0.0f,
+      grimeVignette = 0.0f
     )
   }
 
@@ -137,8 +139,22 @@ object VitalsPostEffect {
       discomfortVignette = discomfort.vignette,
       shock = painShock.strength,
       shockNoise = painShock.noise,
-      shockTime = painShock.time
+      shockTime = painShock.time,
+      grimeVignette = grimeVisual(vitals)
     )
+  }
+
+  /** Grime vignette: the dirtiness display bands gate presentation only — the ramp starts at the
+    * grimy band and reaches the configured opacity at maximum dirtiness. Brown-toned, distinct from
+    * the nausea darkening.
+    */
+  private def grimeVisual(vitals: VitalsComponent): Float = {
+    val progress = progressAbove(
+      vitals.dirtiness,
+      CasualtiesBelowConfig.DirtinessBandGrimy.get(),
+      CasualtiesBelowConfig.MaxDirtiness.get()
+    )
+    CasualtiesBelowConfig.DirtinessGrimeVignetteMaxOpacity.get().toFloat * progress
   }
 
   private def consciousnessVisual(
@@ -300,7 +316,8 @@ object VitalsPostEffect {
     strengths.blur > 0.0f ||
     strengths.desaturation > 0.0f ||
     strengths.discomfortVignette > 0.0f ||
-    strengths.shock > 0.0f
+    strengths.shock > 0.0f ||
+    strengths.grimeVignette > 0.0f
   }
 
   private def configBuffer(chain: PostChain): Option[GpuBuffer] = {
@@ -349,6 +366,7 @@ object VitalsPostEffect {
         .putFloat(0.0f)
         .putFloat(0.0f)
         .putFloat(0.0f)
+        .putFloat(0.0f)
       RenderSystem
         .getDevice()
         .createBuffer(
@@ -373,6 +391,7 @@ object VitalsPostEffect {
         .putFloat(strengths.shock)
         .putFloat(strengths.shockNoise)
         .putFloat(strengths.shockTime)
+        .putFloat(strengths.grimeVignette)
     } finally {
       view.close()
     }
@@ -407,6 +426,7 @@ object VitalsPostEffect {
       discomfortVignette: Float,
       shock: Float,
       shockNoise: Float,
-      shockTime: Float
+      shockTime: Float,
+      grimeVignette: Float
   )
 }

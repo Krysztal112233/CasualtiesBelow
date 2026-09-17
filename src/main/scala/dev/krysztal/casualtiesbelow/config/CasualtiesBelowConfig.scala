@@ -700,7 +700,7 @@ object CasualtiesBelowConfig {
       "Strongest grime vignette opacity (0.0-1.0), ramping from bandGrimy to maxValue;",
       "brown-toned, distinct from the nausea green. 0 disables it."
     )
-    .defineInRange("grimeVignetteMaxOpacity", 0.3, 0.0, 1.0, classOf[Double])
+    .defineInRange("grimeVignetteMaxOpacity", 0.55, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("regeneration")
