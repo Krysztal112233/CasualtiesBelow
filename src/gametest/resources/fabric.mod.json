@@ -6,7 +6,8 @@
   "environment": "server",
   "entrypoints": {
     "fabric-gametest": [
-      "dev.krysztal.casualtiesbelow.gametest.PhysiologyGameTests"
+      "dev.krysztal.casualtiesbelow.gametest.PhysiologyGameTests",
+      "dev.krysztal.casualtiesbelow.gametest.HygieneGameTests"
     ]
   },
   "depends": {
