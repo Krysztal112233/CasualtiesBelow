@@ -1,0 +1,232 @@
+package dev.krysztal.casualtiesbelow.physiology.hygiene
+
+import java.util.UUID
+
+import scala.collection.mutable
+
+import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerPlayer
+import net.minecraft.tags.BiomeTags
+import net.minecraft.world.entity.EquipmentSlot
+import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.LayeredCauldronBlock
+import net.minecraft.world.level.block.state.BlockState
+
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
+
+import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
+import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+
+/** Dirtiness: the whole-body hygiene axis. The environment and the player's own actions push it up;
+  * only water washes it down. One-way feedback by design: physiological states (infection, pain,
+  * bleeding) never push dirtiness back up, so no loop can spiral — any hole can be escaped by
+  * washing once.
+  *
+  * Per server tick and per player (skipped in creative/spectator, like the rest of physiology):
+  *
+  *   - passive accrual runs at the configured per-second rate with situational multipliers stacked
+  *     multiplicatively: sprinting (sweat), a full armor set (heat buildup) and Nether biomes (ash,
+  *     compounding vanilla's no-water rule)
+  *   - immersion in water washes at the configured rate, dampened in murky water (biome tag
+  *     `casualtiesbelow:dirty_water`); rain is a slower free wash. Immersion wins over rain when
+  *     both apply. Washing always far outruns accrual, so hygiene is a plannable resource rather
+  *     than a constant nag
+  *
+  * Display bands exist only for client presentation; every mechanic computes from the raw value.
+  * Event pulses (combat grime, digging dust, contaminated food) live in [[DirtinessSources]].
+  *
+  * Sync is throttled: the continuously changing value ships to the owner once per
+  * [[SyncIntervalTicks]], the same cadence as discomfort.
+  */
+object Dirtiness {
+
+  def register(): Unit = {
+    ServerTickEvents.END_SERVER_TICK.register { server =>
+      ticks += 1
+      val syncTick = ticks % SyncIntervalTicks == 0
+      server.getPlayerList.getPlayers.forEach { player =>
+        tickPlayer(player, syncTick)
+      }
+    }
+    ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
+      cauldronProgress.remove(handler.player.getUUID)
+      ()
+    }
+  }
+
+  /** Advances an isolated GameTest player that is not registered in the server player list. */
+  private[casualtiesbelow] def tickForGameTest(player: ServerPlayer): Unit =
+    tickPlayer(player, syncTick = false)
+
+  private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
+    if (player.isCreative || player.isSpectator || !player.isAlive) {
+      cauldronProgress.remove(player.getUUID)
+      return
+    }
+
+    val vitals = ComponentAccess.vitals(player)
+    val level = player.level()
+    val biome = level.getBiome(player.blockPosition())
+
+    val accrual = accrualPerTick(
+      CasualtiesBelowConfig.DirtinessAccrualPerSecond.get(),
+      CasualtiesBelowConfig.DirtinessSprintMultiplier.get(),
+      CasualtiesBelowConfig.DirtinessArmoredMultiplier.get(),
+      CasualtiesBelowConfig.DirtinessNetherMultiplier.get(),
+      sprinting = player.isSprinting,
+      fullyArmored = isFullyArmored(player),
+      inNether = biome.is(BiomeTags.IS_NETHER)
+    )
+    val wash = washPerTick(
+      CasualtiesBelowConfig.DirtinessWashWaterPerSecond.get(),
+      CasualtiesBelowConfig.DirtinessWashRainPerSecond.get(),
+      CasualtiesBelowConfig.DirtyWaterWashMultiplier.get(),
+      inWater = player.isInWater,
+      inRain = level.isRainingAt(player.blockPosition()),
+      murkyWater = biome.is(CasualtiesBelowTags.DirtyWaterBiomes)
+    )
+    val next =
+      (vitals.dirtiness + accrual - wash).max(0.0).min(CasualtiesBelowConfig.MaxDirtiness.get())
+    if (next != vitals.dirtiness) {
+      VitalsMutations.setDirtiness(vitals, next)
+      if (syncTick) VitalsMutations.syncNow(player)
+    }
+  }
+
+  /** Passive accrual for one tick: the per-second base with situational multipliers stacked
+    * multiplicatively.
+    */
+  private[hygiene] def accrualPerTick(
+      basePerSecond: Double,
+      sprintMultiplier: Double,
+      armoredMultiplier: Double,
+      netherMultiplier: Double,
+      sprinting: Boolean,
+      fullyArmored: Boolean,
+      inNether: Boolean
+  ): Double = {
+    val situational =
+      (if (sprinting) sprintMultiplier else 1.0) *
+        (if (fullyArmored) armoredMultiplier else 1.0) *
+        (if (inNether) netherMultiplier else 1.0)
+    basePerSecond.max(0.0) * situational / TicksPerSecond
+  }
+
+  /** Wash for one tick: immersion wins over rain when both apply; murky water dampens immersion.
+    */
+  private[hygiene] def washPerTick(
+      waterPerSecond: Double,
+      rainPerSecond: Double,
+      murkyMultiplier: Double,
+      inWater: Boolean,
+      inRain: Boolean,
+      murkyWater: Boolean
+  ): Double = {
+    val perSecond =
+      if (inWater) waterPerSecond.max(0.0) * (if (murkyWater) murkyMultiplier else 1.0)
+      else if (inRain) rainPerSecond.max(0.0)
+      else 0.0
+    perSecond / TicksPerSecond
+  }
+
+  /** Washes a player standing in a water cauldron at the immersion rate (cauldron water is clean,
+    * never murky), consuming one level per `cauldronPointsPerLevel` washed. Partial progress is
+    * per-player and evaporates when the player leaves, dies or disconnects. No sync flush here: the
+    * per-tick loop ships the changing value on its own cadence.
+    */
+  def onCauldronSoak(
+      player: ServerPlayer,
+      state: BlockState,
+      level: Level,
+      pos: BlockPos
+  ): Unit = {
+    if (player.isCreative || player.isSpectator || !player.isAlive) return
+
+    val vitals = ComponentAccess.vitals(player)
+    val current = vitals.dirtiness
+    if (current <= 0.0) {
+      cauldronProgress.remove(player.getUUID)
+      return
+    }
+
+    val washed =
+      (CasualtiesBelowConfig.DirtinessWashWaterPerSecond
+        .get()
+        .doubleValue
+        .max(0.0) / TicksPerSecond)
+        .min(current)
+    if (washed <= 0.0) return
+    VitalsMutations.setDirtiness(vitals, current - washed)
+
+    val pointsPerLevel = CasualtiesBelowConfig.DirtinessCauldronPointsPerLevel.get()
+    if (pointsPerLevel <= 0.0) return // configured as free washing: no level consumption
+    val id = player.getUUID
+    val progress = cauldronProgress.getOrElse(id, 0.0) + washed
+    if (progress >= pointsPerLevel) {
+      cauldronProgress.update(id, progress - pointsPerLevel)
+      LayeredCauldronBlock.lowerFillLevel(state, level, pos)
+    } else {
+      cauldronProgress.update(id, progress)
+    }
+  }
+
+  /** Wound infection chance multiplier: ramps linearly from 1 when clean to `1 + atMax` at maximum
+    * dirtiness.
+    */
+  private[casualtiesbelow] def infectionChanceMultiplier(
+      dirtiness: Double,
+      maxDirtiness: Double,
+      atMax: Double
+  ): Double = 1.0 + atMax.max(0.0) * fraction(dirtiness, maxDirtiness)
+
+  /** Skin regrowth multiplier: ramps linearly from 1 when clean to `minMultiplier` at maximum
+    * dirtiness. Never zero on its own; stacks with the immune multiplier.
+    */
+  private[casualtiesbelow] def skinRegenMultiplier(
+      dirtiness: Double,
+      maxDirtiness: Double,
+      minMultiplier: Double
+  ): Double = 1.0 - (1.0 - minMultiplier.max(0.0).min(1.0)) * fraction(dirtiness, maxDirtiness)
+
+  /** Continuous immune drain per tick: zero at or below the start dirtiness, ramping linearly to
+    * `maxPerTick` at maximum dirtiness. A degenerate `maxDirtiness <= startDirtiness` disables the
+    * drain entirely.
+    */
+  private[casualtiesbelow] def immuneDrainPerTick(
+      dirtiness: Double,
+      startDirtiness: Double,
+      maxDirtiness: Double,
+      maxPerTick: Double
+  ): Double = {
+    if (maxDirtiness <= startDirtiness || dirtiness <= startDirtiness) return 0.0
+    val ramp = (dirtiness - startDirtiness) / (maxDirtiness - startDirtiness)
+    maxPerTick.max(0.0) * ramp.min(1.0)
+  }
+
+  /** Food discomfort dose multiplier (eating with dirty hands): ramps linearly from 1 when clean to
+    * `1 + atMax` at maximum dirtiness.
+    */
+  private[casualtiesbelow] def foodDiscomfortMultiplier(
+      dirtiness: Double,
+      maxDirtiness: Double,
+      atMax: Double
+  ): Double = 1.0 + atMax.max(0.0) * fraction(dirtiness, maxDirtiness)
+
+  private def fraction(dirtiness: Double, maxDirtiness: Double): Double = {
+    if (maxDirtiness <= 0.0) 0.0 else (dirtiness / maxDirtiness).max(0.0).min(1.0)
+  }
+
+  private def isFullyArmored(player: ServerPlayer): Boolean = {
+    ArmorSlots.forall(slot => !player.getItemBySlot(slot).isEmpty)
+  }
+
+  private val ArmorSlots =
+    List(EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD)
+  private val cauldronProgress = mutable.HashMap.empty[UUID, Double]
+  private var ticks = 0
+  private val TicksPerSecond = 20
+  private val SyncIntervalTicks = 20
+}

@@ -5,6 +5,8 @@ import net.minecraft.tags.TagKey
 import net.minecraft.world.damagesource.DamageType
 import net.minecraft.world.entity.EntityType
 import net.minecraft.world.item.Item
+import net.minecraft.world.level.biome.Biome
+import net.minecraft.world.level.block.Block
 
 /** The mod's own vanilla-registry tags, used for fatal-damage passthrough, wound classification and
   * food discomfort tiers (see `discomfort.Discomfort`). Being datapack tags, all of them are
@@ -62,4 +64,16 @@ object CasualtiesBelowTags {
     */
   val HealthySoupsItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("healthy_soups"))
+
+  /** Biomes whose murky water washes dirtiness at a reduced rate (swamps by default; see
+    * `hygiene.Dirtiness`).
+    */
+  val DirtyWaterBiomes: TagKey[Biome] =
+    TagKey.create(Registries.BIOME, CasualtiesBelowApi.id("dirty_water"))
+
+  /** Loose blocks whose breaking kicks up grime (dirt, sand, gravel, mud; see
+    * `hygiene.DirtinessSources`).
+    */
+  val DirtyDiggableBlocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dirty_diggable"))
 }

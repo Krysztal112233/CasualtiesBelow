@@ -1,6 +1,7 @@
 package dev.krysztal.casualtiesbelow.mixin
 
 import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.entity.InsideBlockEffectApplier
 import net.minecraft.world.entity.item.ItemEntity
@@ -10,13 +11,16 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 import net.minecraft.world.level.block.state.BlockState
 
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
+import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 
-/** Detects paste entities entering vanilla layered cauldrons without replacing their behavior. */
+/** Detects paste entities entering vanilla layered cauldrons without replacing their behavior, and
+  * washes players standing in a water cauldron.
+  */
 @Mixin(value = Array(classOf[LayeredCauldronBlock]), remap = false)
 abstract class LayeredCauldronBlockMixin {
 
@@ -35,6 +39,8 @@ abstract class LayeredCauldronBlockMixin {
     entity match {
       case itemEntity: ItemEntity =>
         PoppyProcessing.tryStartSoakFromDroppedItem(level, pos, itemEntity)
+      case player: ServerPlayer =>
+        Dirtiness.onCauldronSoak(player, state, level, pos)
       case _ =>
     }
   }
