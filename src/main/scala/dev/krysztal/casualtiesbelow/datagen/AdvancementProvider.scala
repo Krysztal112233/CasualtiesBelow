@@ -40,7 +40,8 @@ final class AdvancementProvider(
         CasualtiesBelowItems.BasicBandage,
         Component.translatable("advancements.casualtiesbelow.root.title"),
         Component.translatable("advancements.casualtiesbelow.root.description"),
-        Identifier.withDefaultNamespace("textures/gui/advancements/backgrounds/adventure.png"),
+        // 26.2 convention: ResourceTexture expands this to textures/<path>.png itself.
+        Identifier.withDefaultNamespace("gui/advancements/backgrounds/adventure"),
         AdvancementType.TASK,
         true,
         false,
