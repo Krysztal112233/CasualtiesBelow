@@ -27,6 +27,8 @@ import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
+import dev.krysztal.casualtiesbelow.progression.AchievementHooks
+import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -47,6 +49,8 @@ object CasualtiesBelow extends ModInitializer {
     PoppyRefining.register()
     GameplayDataLoaders.registerAll()
     CasualtiesBelowConfig.register()
+    // Triggers must exist before datapack load validates advancement trigger ids.
+    CasualtiesBelowTriggers.register()
     CasualtiesBelowCommands.register()
     LimbDamage.register()
     // InjuryProgression must run before the body's end-of-tick flush (registration order =
@@ -64,6 +68,9 @@ object CasualtiesBelow extends ModInitializer {
     BodyMutations.register()
     ZombieAttackImmuneDrain.register()
     DirtinessSources.register()
+    // Achievement polling runs after physiology ticks (registration order = event order) so it
+    // reads current-tick vitals and bleeding.
+    AchievementHooks.register()
     GameplayDataSync.register()
     InjectionSync.register()
     Logger.info("Casualties: Below initialized")

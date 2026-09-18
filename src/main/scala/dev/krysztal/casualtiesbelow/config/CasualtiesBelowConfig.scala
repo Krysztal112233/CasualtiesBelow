@@ -1075,6 +1075,17 @@ object CasualtiesBelowConfig {
   )
   Builder.pop()
 
+  Builder.push("progression")
+  val NotTodayNearMaxBleedingFraction: ConfigValue[Double] = Builder
+    .comment(
+      "Near-maximum hemorrhage threshold of the \"Not Today\" advancement, as a fraction of a",
+      "limb's maximum external bleeding rate (maxExternalBleedingRate). An episode arms once the",
+      "player's total external bleeding rate reaches this threshold, and completes when external",
+      "bleeding is fully stopped while the player lives to see it."
+    )
+    .defineInRange("notTodayNearMaxBleedingFraction", 0.75, 0.0, 1.0, classOf[Double])
+  Builder.pop()
+
   private val Spec = Builder.build()
 
   /** Immune health at which infection spread and immune fight exactly cancel out for a single

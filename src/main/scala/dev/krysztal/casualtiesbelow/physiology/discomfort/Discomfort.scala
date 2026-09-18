@@ -28,6 +28,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
+import dev.krysztal.casualtiesbelow.progression.AchievementHooks
 
 /** Probability distribution used when sampling a food's discomfort dose around its mean. */
 enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
@@ -136,6 +137,7 @@ object Discomfort {
           vitals,
           (vitals.discomfort + amount).min(CasualtiesBelowConfig.MaxDiscomfort.get())
         )
+        AchievementHooks.onFoodDiscomfortSettled(player)
         VitalsMutations.syncNow(player)
     }
   }
