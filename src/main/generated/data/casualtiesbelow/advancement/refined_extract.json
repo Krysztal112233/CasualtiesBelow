@@ -1,0 +1,32 @@
+{
+  "parent": "casualtiesbelow:root",
+  "criteria": {
+    "has_refined_extract": {
+      "conditions": {
+        "items": [
+          {
+            "items": "casualtiesbelow:refined_poppy_extract"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.casualtiesbelow.refined_extract.description"
+    },
+    "icon": {
+      "id": "casualtiesbelow:refined_poppy_extract"
+    },
+    "title": {
+      "translate": "advancements.casualtiesbelow.refined_extract.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_refined_extract"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

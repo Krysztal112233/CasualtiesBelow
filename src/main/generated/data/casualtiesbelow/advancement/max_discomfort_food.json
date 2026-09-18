@@ -1,0 +1,25 @@
+{
+  "parent": "casualtiesbelow:root",
+  "criteria": {
+    "event": {
+      "trigger": "casualtiesbelow:max_discomfort_food"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.casualtiesbelow.max_discomfort_food.description"
+    },
+    "icon": {
+      "id": "minecraft:rotten_flesh"
+    },
+    "title": {
+      "translate": "advancements.casualtiesbelow.max_discomfort_food.title"
+    }
+  },
+  "requirements": [
+    [
+      "event"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,26 @@
+{
+  "parent": "casualtiesbelow:root",
+  "criteria": {
+    "event": {
+      "trigger": "casualtiesbelow:hemostasis"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.casualtiesbelow.hemostasis.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "id": "minecraft:shield"
+    },
+    "title": {
+      "translate": "advancements.casualtiesbelow.hemostasis.title"
+    }
+  },
+  "requirements": [
+    [
+      "event"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

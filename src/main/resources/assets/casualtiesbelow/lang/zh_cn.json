@@ -36,5 +36,19 @@
   "item.casualtiesbelow.unfiltered_poppy_liquid": "未过滤虞美人液",
   "item.casualtiesbelow.unfiltered_poppy_liquid_bucket": "未过滤虞美人液桶",
   "item.casualtiesbelow.crude_poppy_liquid_bucket": "粗制虞美人液桶",
-  "item.casualtiesbelow.refined_poppy_extract_bucket": "精制虞美人提取物桶"
+  "item.casualtiesbelow.refined_poppy_extract_bucket": "精制虞美人提取物桶",
+  "advancements.casualtiesbelow.root.title": "Casualties: Below",
+  "advancements.casualtiesbelow.root.description": "伤痛之下，皆有因果",
+  "advancements.casualtiesbelow.bandage.title": "绷住了",
+  "advancements.casualtiesbelow.bandage.description": "外出血离你更远了一些",
+  "advancements.casualtiesbelow.refined_extract.title": "化学老师制冰冰",
+  "advancements.casualtiesbelow.refined_extract.description": "看起来这种东西最好少用",
+  "advancements.casualtiesbelow.opioid_overdose_death.title": "？！ ！？",
+  "advancements.casualtiesbelow.opioid_overdose_death.description": "您从未想过是这样的死法",
+  "advancements.casualtiesbelow.max_discomfort_food.title": "这真能吃？",
+  "advancements.casualtiesbelow.max_discomfort_food.description": "好恶心，为什么要吃这个？",
+  "advancements.casualtiesbelow.consciousness_minimum.title": "四十六号混凝土拌意大利面",
+  "advancements.casualtiesbelow.consciousness_minimum.description": "刚刚说什么了吗？",
+  "advancements.casualtiesbelow.hemostasis.title": "死亡慢我一步",
+  "advancements.casualtiesbelow.hemostasis.description": "嗯...我想毁容已经显得不重要了"
 }

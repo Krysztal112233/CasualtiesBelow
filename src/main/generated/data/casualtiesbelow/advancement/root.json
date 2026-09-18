@@ -1,0 +1,27 @@
+{
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:textures/gui/advancements/backgrounds/adventure.png",
+    "description": {
+      "translate": "advancements.casualtiesbelow.root.description"
+    },
+    "icon": {
+      "id": "casualtiesbelow:basic_bandage"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.casualtiesbelow.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "tick"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,0 +1,32 @@
+{
+  "parent": "casualtiesbelow:root",
+  "criteria": {
+    "has_bandage": {
+      "conditions": {
+        "items": [
+          {
+            "items": "casualtiesbelow:basic_bandage"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.casualtiesbelow.bandage.description"
+    },
+    "icon": {
+      "id": "casualtiesbelow:basic_bandage"
+    },
+    "title": {
+      "translate": "advancements.casualtiesbelow.bandage.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_bandage"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

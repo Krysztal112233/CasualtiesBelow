@@ -75,5 +75,19 @@
   "item.casualtiesbelow.unfiltered_poppy_liquid": "Unfiltered Poppy Liquid",
   "item.casualtiesbelow.unfiltered_poppy_liquid_bucket": "Unfiltered Poppy Liquid Bucket",
   "item.casualtiesbelow.crude_poppy_liquid_bucket": "Crude Poppy Liquid Bucket",
-  "item.casualtiesbelow.refined_poppy_extract_bucket": "Refined Poppy Extract Bucket"
+  "item.casualtiesbelow.refined_poppy_extract_bucket": "Refined Poppy Extract Bucket",
+  "advancements.casualtiesbelow.root.title": "Casualties: Below",
+  "advancements.casualtiesbelow.root.description": "Beneath the pain, everything has a cause",
+  "advancements.casualtiesbelow.bandage.title": "All Bandaged Up",
+  "advancements.casualtiesbelow.bandage.description": "External bleeding is a little further away",
+  "advancements.casualtiesbelow.refined_extract.title": "Yeah, Science!",
+  "advancements.casualtiesbelow.refined_extract.description": "Looks like something best used sparingly",
+  "advancements.casualtiesbelow.opioid_overdose_death.title": "?! !?",
+  "advancements.casualtiesbelow.opioid_overdose_death.description": "You never imagined this was how you'd go",
+  "advancements.casualtiesbelow.max_discomfort_food.title": "Is This Even Edible?",
+  "advancements.casualtiesbelow.max_discomfort_food.description": "So revolting. Why would you eat that?",
+  "advancements.casualtiesbelow.consciousness_minimum.title": "No. 46 Concrete à la Spaghetti",
+  "advancements.casualtiesbelow.consciousness_minimum.description": "Did anyone say something just now?",
+  "advancements.casualtiesbelow.hemostasis.title": "Not Today",
+  "advancements.casualtiesbelow.hemostasis.description": "Well... disfigurement suddenly feels unimportant"
 }

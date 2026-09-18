@@ -1,0 +1,25 @@
+{
+  "parent": "casualtiesbelow:root",
+  "criteria": {
+    "event": {
+      "trigger": "casualtiesbelow:consciousness_minimum"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.casualtiesbelow.consciousness_minimum.description"
+    },
+    "icon": {
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.casualtiesbelow.consciousness_minimum.title"
+    }
+  },
+  "requirements": [
+    [
+      "event"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
