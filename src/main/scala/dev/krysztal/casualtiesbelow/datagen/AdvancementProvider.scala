@@ -42,7 +42,7 @@ final class AdvancementProvider(
         Component.translatable("advancements.casualtiesbelow.root.description"),
         Identifier.withDefaultNamespace("textures/gui/advancements/backgrounds/adventure.png"),
         AdvancementType.TASK,
-        false,
+        true,
         false,
         false
       )

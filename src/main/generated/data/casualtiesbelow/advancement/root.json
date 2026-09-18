@@ -13,7 +13,6 @@
     "icon": {
       "id": "casualtiesbelow:basic_bandage"
     },
-    "show_toast": false,
     "title": {
       "translate": "advancements.casualtiesbelow.root.title"
     }
