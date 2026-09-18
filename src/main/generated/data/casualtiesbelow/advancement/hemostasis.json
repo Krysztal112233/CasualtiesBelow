@@ -10,6 +10,7 @@
       "translate": "advancements.casualtiesbelow.hemostasis.description"
     },
     "frame": "challenge",
+    "hidden": true,
     "icon": {
       "id": "minecraft:shield"
     },

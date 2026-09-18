@@ -64,13 +64,15 @@ final class AdvancementProvider(
       CasualtiesBelowItems.RefinedPoppyExtract,
       AdvancementType.TASK
     )
+    // Challenge deaths and rescues stay hidden until earned: the surprise is the point.
     playerEvent(
       consumer,
       root,
       "opioid_overdose_death",
       CasualtiesBelowItems.CalibratedSyringe,
       AdvancementType.CHALLENGE,
-      CasualtiesBelowTriggers.OpioidOverdoseDeath
+      CasualtiesBelowTriggers.OpioidOverdoseDeath,
+      hidden = true
     )
     playerEvent(
       consumer,
@@ -94,7 +96,8 @@ final class AdvancementProvider(
       "hemostasis",
       Items.SHIELD,
       AdvancementType.CHALLENGE,
-      CasualtiesBelowTriggers.Hemostasis
+      CasualtiesBelowTriggers.Hemostasis,
+      hidden = true
     )
   }
 
@@ -128,7 +131,8 @@ final class AdvancementProvider(
       path: String,
       icon: ItemLike,
       frame: AdvancementType,
-      trigger: PlayerEventTrigger
+      trigger: PlayerEventTrigger,
+      hidden: Boolean = false
   ): Unit = {
     Advancement.Builder
       .advancement()
@@ -141,7 +145,7 @@ final class AdvancementProvider(
         frame,
         true,
         true,
-        false
+        hidden
       )
       .addCriterion("event", trigger.createCriterion(new PlayerEventTrigger.Instance))
       .save(consumer, s"casualtiesbelow:$path")

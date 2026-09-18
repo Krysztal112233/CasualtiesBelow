@@ -10,6 +10,7 @@
       "translate": "advancements.casualtiesbelow.opioid_overdose_death.description"
     },
     "frame": "challenge",
+    "hidden": true,
     "icon": {
       "id": "casualtiesbelow:calibrated_syringe"
     },
