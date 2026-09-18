@@ -11,6 +11,9 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
   */
 object CasualtiesBelowTriggers {
 
+  /** External bleeding started (any limb above zero): earns the root advancement. */
+  val FirstBleeding: PlayerEventTrigger = register("first_bleeding")
+
   /** Died of terminal hypoxia while opioid respiratory failure was active. */
   val OpioidOverdoseDeath: PlayerEventTrigger = register("opioid_overdose_death")
 

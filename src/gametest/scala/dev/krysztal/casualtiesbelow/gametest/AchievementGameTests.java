@@ -46,6 +46,11 @@ public final class AchievementGameTests {
     }
 
     @GameTest(maxTicks = 20)
+    public void firstBleedingGrantsRoot(GameTestHelper helper) {
+        AchievementScenarios.firstBleedingGrantsRoot(helper);
+    }
+
+    @GameTest(maxTicks = 20)
     public void hemostasisAfterNearMaxBleedingGrantsAdvancement(GameTestHelper helper) {
         AchievementScenarios.hemostasisAfterNearMaxBleedingGrantsAdvancement(helper);
     }

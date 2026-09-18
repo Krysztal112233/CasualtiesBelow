@@ -66,12 +66,15 @@ object AchievementHooks {
     if (ComponentAccess.vitals(player).consciousness.level <= 0.0) {
       CasualtiesBelowTriggers.ConsciousnessMinimum.trigger(player)
     }
-    tickHemostasis(player)
-  }
-
-  private def tickHemostasis(player: ServerPlayer): Unit = {
     val body = CasualtiesBelowComponents.Body.get(player)
     val totalBleeding = BodyPart.values.map(part => body.stats(part).externalBleedingRate).sum
+    if (totalBleeding > 0.0) {
+      CasualtiesBelowTriggers.FirstBleeding.trigger(player)
+    }
+    tickHemostasis(player, totalBleeding)
+  }
+
+  private def tickHemostasis(player: ServerPlayer, totalBleeding: Double): Unit = {
     val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
       CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.get()
     val previous =

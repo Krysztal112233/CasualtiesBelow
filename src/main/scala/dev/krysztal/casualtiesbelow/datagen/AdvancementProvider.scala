@@ -7,7 +7,6 @@ import net.minecraft.advancements.Advancement
 import net.minecraft.advancements.AdvancementHolder
 import net.minecraft.advancements.AdvancementType
 import net.minecraft.advancements.triggers.InventoryChangeTrigger
-import net.minecraft.advancements.triggers.PlayerTrigger
 import net.minecraft.core.HolderLookup
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
@@ -47,7 +46,10 @@ final class AdvancementProvider(
         false,
         false
       )
-      .addCriterion("tick", PlayerTrigger.TriggerInstance.tick())
+      .addCriterion(
+        "first_bleeding",
+        CasualtiesBelowTriggers.FirstBleeding.createCriterion(new PlayerEventTrigger.Instance)
+      )
       .save(consumer, "casualtiesbelow:root")
 
     itemObtainment(

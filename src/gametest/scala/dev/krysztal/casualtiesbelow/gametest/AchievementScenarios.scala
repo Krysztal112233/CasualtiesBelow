@@ -133,6 +133,16 @@ object AchievementScenarios {
     helper.succeed()
   }
 
+  /** The root advancement is earned: first external bleeding opens the tab (vanilla style). */
+  def firstBleedingGrantsRoot(helper: GameTestHelper): Unit = {
+    val player = GameTestPlayers.createSurvivalPlayer(helper)
+    assertNotDone(helper, player, "root")
+    setBleeding(player, BodyPart.Head, 0.1)
+    AchievementHooks.tickForGameTest(player)
+    assertDone(helper, player, "root")
+    helper.succeed()
+  }
+
   /** Near-maximum bleeding that is later fully stopped completes the "Not Today" episode. */
   def hemostasisAfterNearMaxBleedingGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)

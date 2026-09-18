@@ -1,7 +1,7 @@
 {
   "criteria": {
-    "tick": {
-      "trigger": "minecraft:tick"
+    "first_bleeding": {
+      "trigger": "casualtiesbelow:first_bleeding"
     }
   },
   "display": {
@@ -20,7 +20,7 @@
   },
   "requirements": [
     [
-      "tick"
+      "first_bleeding"
     ]
   ],
   "sends_telemetry_event": true
