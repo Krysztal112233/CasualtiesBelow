@@ -63,13 +63,15 @@ object DirtinessSources {
     PlayerBlockBreakEvents.AFTER.register { (level, player, _, state, _) =>
       (player, level.isClientSide()) match {
         case (serverPlayer: ServerPlayer, false) if !state.isAir =>
-          val base =
-            if (state.is(CasualtiesBelowTags.DirtyDiggableBlocks)) {
-              CasualtiesBelowConfig.DirtinessDigDirtyBlock.get()
-            } else {
-              CasualtiesBelowConfig.DirtinessDigHardBlock.get()
-            }
-          applyPulse(serverPlayer, base)
+          val base = digPulse(
+            dirty = state.is(CasualtiesBelowTags.DirtyDiggableBlocks),
+            dustless = state.is(CasualtiesBelowTags.DustlessDiggableBlocks),
+            dirtyPulse = CasualtiesBelowConfig.DirtinessDigDirtyBlock.get(),
+            dustlessPulse = CasualtiesBelowConfig.DirtinessDigDustlessBlock.get(),
+            basicPulse = CasualtiesBelowConfig.DirtinessDigBasicBlock.get()
+          )
+          // A dustless break raises nothing at all: skip the jitter roll entirely.
+          if (base > 0.0) applyPulse(serverPlayer, base)
         case _ => ()
       }
     }
@@ -95,6 +97,22 @@ object DirtinessSources {
     Discomfort.meanOf(stack, GameplayDataSnapshot.capture(store), store).foreach { mean =>
       applyPulse(player, foodDirt(mean, CasualtiesBelowConfig.DirtinessFoodFraction.get()))
     }
+  }
+
+  /** Dirtiness of one broken block, before jitter. Digging tiers: dirty blocks coat the hands most,
+    * dustless blocks raise nothing, everything else is the basic default. Dirty wins over dustless
+    * when a datapack puts a block in both tags.
+    */
+  private[hygiene] def digPulse(
+      dirty: Boolean,
+      dustless: Boolean,
+      dirtyPulse: Double,
+      dustlessPulse: Double,
+      basicPulse: Double
+  ): Double = {
+    if (dirty) dirtyPulse
+    else if (dustless) dustlessPulse
+    else basicPulse
   }
 
   /** Dirtiness of one incoming hit, before jitter. Zombie-family contact grime takes precedence

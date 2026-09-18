@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Blocks
 
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
@@ -48,6 +49,30 @@ final class BlockTagProvider(
         Blocks.SOUL_SOIL
       ).map(blockKey)*
     )
+    builder(CasualtiesBelowTags.DustlessDiggableBlocks)
+      .addOptionalTag(BlockTags.LEAVES)
+      .addOptionalTag(BlockTags.WOOL)
+      .addOptionalTag(BlockTags.LOGS)
+      .addOptionalTag(BlockTags.PLANKS)
+      .addOptionalTag(ConventionalBlockTags.GLASS_BLOCKS)
+      .addOptionalTag(ConventionalBlockTags.GLASS_PANES)
+      .add(
+        Seq(
+          Blocks.ICE,
+          Blocks.PACKED_ICE,
+          Blocks.BLUE_ICE,
+          Blocks.FROSTED_ICE,
+          Blocks.PUMPKIN,
+          Blocks.CARVED_PUMPKIN,
+          Blocks.JACK_O_LANTERN,
+          Blocks.MELON,
+          Blocks.HAY_BLOCK,
+          Blocks.SPONGE,
+          Blocks.WET_SPONGE,
+          Blocks.SLIME_BLOCK,
+          Blocks.HONEY_BLOCK
+        ).map(blockKey)*
+      )
   }
 
   private def blockKey(block: Block) =

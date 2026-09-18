@@ -76,4 +76,10 @@ object CasualtiesBelowTags {
     */
   val DirtyDiggableBlocks: TagKey[Block] =
     TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dirty_diggable"))
+
+  /** Blocks whose breaking raises no dust at all (leaves, wool, wood, glass, ice; see
+    * `hygiene.DirtinessSources`). Membership in [[DirtyDiggableBlocks]] wins over this tag.
+    */
+  val DustlessDiggableBlocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dustless_diggable"))
 }

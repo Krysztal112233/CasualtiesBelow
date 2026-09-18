@@ -624,9 +624,19 @@ object CasualtiesBelowConfig {
       "dirt, sand, gravel and the like)."
     )
     .defineInRange("digDirtyBlockDirt", 0.04, 0.0, 1000.0, classOf[Double])
-  val DirtinessDigHardBlock: ConfigValue[Double] = Builder
-    .comment("Dirtiness pulse per broken hard block (stone and the like): half of loose.")
-    .defineInRange("digHardBlockDirt", 0.02, 0.0, 1000.0, classOf[Double])
+  val DirtinessDigBasicBlock: ConfigValue[Double] = Builder
+    .comment(
+      "Dirtiness pulse per broken block in neither diggability tag (stone, ore and the",
+      "like): the default digging tier, half of loose."
+    )
+    .defineInRange("digBasicBlockDirt", 0.02, 0.0, 1000.0, classOf[Double])
+  val DirtinessDigDustlessBlock: ConfigValue[Double] = Builder
+    .comment(
+      "Dirtiness pulse per broken dustless block (block tag",
+      "casualtiesbelow:dustless_diggable: leaves, wool, wood, glass): 0 skips the pulse",
+      "entirely, no jitter roll."
+    )
+    .defineInRange("digDustlessBlockDirt", 0.0, 0.0, 1000.0, classOf[Double])
   val DirtinessFoodFraction: ConfigValue[Double] = Builder
     .comment(
       "Dirtiness pulse of a eaten food as a fraction of its discomfort tier mean (0.1 =",

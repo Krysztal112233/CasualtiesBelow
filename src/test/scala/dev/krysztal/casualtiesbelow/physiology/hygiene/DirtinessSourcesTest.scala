@@ -33,6 +33,18 @@ final class DirtinessSourcesTest {
   }
 
   @Test
+  def digPulseTiersDirtyAboveBasicAboveDustless(): Unit = {
+    assertEquals(0.04, DirtinessSources.digPulse(true, false, 0.04, 0.0, 0.02), 1.0e-12)
+    assertEquals(0.02, DirtinessSources.digPulse(false, false, 0.04, 0.0, 0.02), 1.0e-12)
+    assertEquals(0.0, DirtinessSources.digPulse(false, true, 0.04, 0.0, 0.02), 1.0e-12)
+  }
+
+  @Test
+  def digPulsePrefersDirtyWhenBothTagsMatch(): Unit = {
+    assertEquals(0.04, DirtinessSources.digPulse(true, true, 0.04, 0.0, 0.02), 1.0e-12)
+  }
+
+  @Test
   def rolledPulsesStayWithinTheJitterBounds(): Unit = {
     val random = RandomSource.create(42L)
     (1 to 1000).foreach { _ =>
