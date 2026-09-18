@@ -6,9 +6,18 @@
   "environment": "server",
   "entrypoints": {
     "fabric-gametest": [
-      "dev.krysztal.casualtiesbelow.gametest.PhysiologyGameTests",
-      "dev.krysztal.casualtiesbelow.gametest.HygieneGameTests",
-      "dev.krysztal.casualtiesbelow.gametest.AchievementGameTests"
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.PhysiologyGameTests"
+      },
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.HygieneGameTests"
+      },
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.AchievementGameTests"
+      }
     ]
   },
   "depends": {
