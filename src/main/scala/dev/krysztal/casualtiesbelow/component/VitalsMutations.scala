@@ -127,4 +127,22 @@ object VitalsMutations {
   private[casualtiesbelow] def syncNow(player: Player): Unit =
     CasualtiesBelowComponents.Vitals.sync(player)
 
+  private[casualtiesbelow] def setBodyTemperature(
+      vitals: VitalsComponentImpl,
+      value: Double
+  ): Boolean = {
+    val previous = vitals.bodyTemperature
+    vitals.setBodyTemperature(value)
+    vitals.bodyTemperature != previous
+  }
+
+  private[casualtiesbelow] def setWetness(
+      vitals: VitalsComponentImpl,
+      value: Double
+  ): Boolean = {
+    val previous = vitals.wetness
+    vitals.setWetness(value)
+    vitals.wetness != previous
+  }
+
 }

@@ -17,6 +17,7 @@ import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
 
@@ -77,6 +78,13 @@ final class GameplayDataProvider(
             "hit_location",
             HitLocationData.Codec,
             CasualtiesBelowDataDefaults.HitLocations
+          ) ++
+          saveAll(
+            cache,
+            lookup,
+            "material_thermal",
+            MaterialThermalData.Codec,
+            CasualtiesBelowDataDefaults.MaterialThermal
           )
 
       CompletableFuture.allOf(writes*)

@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.internal.data
 import scala.jdk.OptionConverters.*
 
 import net.minecraft.core.Holder
+import net.minecraft.core.component.DataComponents
 import net.minecraft.resources.Identifier
 import net.minecraft.world.entity.Entity
 import net.minecraft.world.item.Item
@@ -11,6 +12,7 @@ import net.minecraft.world.item.ItemStack
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 
 /** Deterministic lookups shared by gameplay consumers of the reload-listener stores. */
 object GameplayDataLookup {
@@ -49,6 +51,24 @@ object GameplayDataLookup {
     */
   def foodEffects(item: Holder[Item], store: GameplayDataStore): Option[FoodEffectsData] = {
     item.unwrapKey().toScala.flatMap(key => store.foodEffects.get(key.identifier()))
+  }
+
+  /** Thermal coefficients of the given equipment-asset id, or neutral when no datapack entry covers
+    * it.
+    */
+  def materialThermal(id: Identifier, store: GameplayDataStore): MaterialThermalData = {
+    store.materialThermal.getOrElse(id, MaterialThermalData.Zero)
+  }
+
+  /** Thermal coefficients of the armor material worn as this stack, resolved through the
+    * `EQUIPPABLE` component's asset id (see [[MaterialThermalData]]). Stacks without an equipment
+    * asset (including bare skin) are thermally neutral.
+    */
+  def materialThermal(stack: ItemStack, store: GameplayDataStore): MaterialThermalData = {
+    Option(stack.get(DataComponents.EQUIPPABLE))
+      .flatMap(_.assetId().toScala)
+      .map(key => materialThermal(key.identifier(), store))
+      .getOrElse(MaterialThermalData.Zero)
   }
 
   private def entityTypeHolder(entity: Entity) = entity.typeHolder()

@@ -39,6 +39,7 @@ import dev.krysztal.casualtiesbelow.data.schema.HemostasisData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationTargetData
 import dev.krysztal.casualtiesbelow.data.schema.LocalizedApplicationData
+import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.PairedImpactApplicationData
 import dev.krysztal.casualtiesbelow.data.schema.PairedImpactData
 import dev.krysztal.casualtiesbelow.data.schema.ScatterApplicationData
@@ -360,6 +361,20 @@ object CasualtiesBelowDataDefaults {
       headAbove = HitLocationData.DefaultHeadAbove,
       priority = 0
     )
+  )
+
+  /** Vanilla armor materials' thermal coefficients, keyed by equipment-asset id (see
+    * [[MaterialThermalData]]). Initial placeholders, pending calibration.
+    */
+  val MaterialThermal: Map[Identifier, MaterialThermalData] = Map(
+    mcId("leather") -> MaterialThermalData(0.6, 0.5, 0.0),
+    mcId("chainmail") -> MaterialThermalData(0.1, 0.05, 0.0),
+    mcId("copper") -> MaterialThermalData(0.05, 0.1, 0.0),
+    mcId("iron") -> MaterialThermalData(0.05, 0.15, 0.0),
+    mcId("gold") -> MaterialThermalData(0.05, 0.1, 0.0),
+    mcId("diamond") -> MaterialThermalData(0.1, 0.15, 0.0),
+    mcId("turtle_scute") -> MaterialThermalData(0.1, 0.1, 0.0),
+    mcId("netherite") -> MaterialThermalData(0.05, 0.1, 0.7)
   )
 
   /** All six player body parts share one entity set; the intrusive holder is the canonical

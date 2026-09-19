@@ -18,6 +18,7 @@ import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
 
@@ -32,7 +33,8 @@ final case class GameplayDataStore(
     foodEffects: Map[Identifier, FoodEffectsData],
     foodImmuneTags: Map[Identifier, FoodImmuneData],
     hitLocations: Map[Identifier, HitLocationData],
-    adrenalineRules: Map[Identifier, AdrenalineRuleData]
+    adrenalineRules: Map[Identifier, AdrenalineRuleData],
+    materialThermal: Map[Identifier, MaterialThermalData]
 )
 
 object GameplayDataStore {
@@ -44,7 +46,8 @@ object GameplayDataStore {
     foodEffects = Map.empty,
     foodImmuneTags = Map.empty,
     hitLocations = Map.empty,
-    adrenalineRules = Map.empty
+    adrenalineRules = Map.empty,
+    materialThermal = Map.empty
   )
 }
 
@@ -98,6 +101,10 @@ object GameplayDataStores {
     root.add("food_item", encodeSection(store.foodEffects, FoodEffectsData.Codec, ops))
     root.add("food_tag", encodeSection(store.foodImmuneTags, FoodImmuneData.Codec, ops))
     root.add("hit_location", encodeSection(store.hitLocations, HitLocationData.Codec, ops))
+    root.add(
+      "material_thermal",
+      encodeSection(store.materialThermal, MaterialThermalData.Codec, ops)
+    )
     root
   }
 
@@ -116,7 +123,8 @@ object GameplayDataStores {
       foodEffects = decodeSection(root, "food_item", FoodEffectsData.Codec, ops),
       foodImmuneTags = decodeSection(root, "food_tag", FoodImmuneData.Codec, ops),
       hitLocations = decodeSection(root, "hit_location", HitLocationData.Codec, ops),
-      adrenalineRules = decodeSection(root, "adrenaline_rule", AdrenalineRuleData.Codec, ops)
+      adrenalineRules = decodeSection(root, "adrenaline_rule", AdrenalineRuleData.Codec, ops),
+      materialThermal = decodeSection(root, "material_thermal", MaterialThermalData.Codec, ops)
     )
   }
 

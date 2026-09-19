@@ -1075,6 +1075,137 @@ object CasualtiesBelowConfig {
   )
   Builder.pop()
 
+  Builder.push("temperature")
+  val TauAirMinutes: ConfigValue[Double] = Builder
+    .comment(
+      "Time constant (minutes) of core-temperature approach in still air: every tau, the",
+      "remaining gap to the equilibrium closes by ~63%. Initial placeholder, pending calibration."
+    )
+    .defineInRange("tauAirMinutes", 3.0, 0.1, 60.0, classOf[Double])
+  val ImmersionRateMultiplier: ConfigValue[Double] = Builder
+    .comment(
+      "Multiplier on the approach rate while immersed in water (water conducts heat far better",
+      "than air). Initial placeholder, pending calibration."
+    )
+    .defineInRange("immersionRateMultiplier", 2.0, 1.0, 10.0, classOf[Double])
+  val ComfortLowCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Lower bound of the comfort band (°C): at or above it, the equilibrium core temperature is",
+      "normal body temperature. Initial placeholder, pending calibration."
+    )
+    .defineInRange("comfortLowCelsius", 10.0, -50.0, 37.0, classOf[Double])
+  val ComfortHighCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Upper bound of the comfort band (°C): at or below it, the equilibrium core temperature is",
+      "normal body temperature. Initial placeholder, pending calibration."
+    )
+    .defineInRange("comfortHighCelsius", 28.0, 37.0, 80.0, classOf[Double])
+  val ComfortSlope: ConfigValue[Double] = Builder
+    .comment(
+      "How strongly the equilibrium core temperature deviates per °C of apparent temperature",
+      "outside the comfort band. Initial placeholder, pending calibration."
+    )
+    .defineInRange("comfortSlope", 0.3, 0.0, 1.0, classOf[Double])
+  val EvaporationCoolingPerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum evaporative cooling (°C/min) at full wetness in fully dry air; scales with wetness",
+      "and air dryness (1 - downfall). Initial placeholder, pending calibration."
+    )
+    .defineInRange("evaporationCoolingPerMinute", 0.3, 0.0, 5.0, classOf[Double])
+  val ExerciseHeatPerExhaustionPerSecond: ConfigValue[Double] = Builder
+    .comment(
+      "Core-temperature gain (°C/min) per unit of vanilla exhaustion accumulated per second.",
+      "Initial placeholder, pending calibration."
+    )
+    .defineInRange("exerciseHeatPerExhaustionPerSecond", 0.9, 0.0, 10.0, classOf[Double])
+  val OnFireHeatPerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Direct contact heat (°C/min) while on fire or inside a fire block. Initial placeholder,",
+      "pending calibration."
+    )
+    .defineInRange("onFireHeatPerMinute", 3.0, 0.0, 100.0, classOf[Double])
+  val LavaContactHeatPerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Direct contact heat (°C/min) while touching lava. Initial placeholder, pending calibration."
+    )
+    .defineInRange("lavaContactHeatPerMinute", 10.0, 0.0, 1000.0, classOf[Double])
+  val HeatSourceBlockHeatPerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Direct contact heat (°C/min) while standing on a heat-source block (magma block, lit",
+      "campfire). Initial placeholder, pending calibration."
+    )
+    .defineInRange("heatSourceBlockHeatPerMinute", 1.5, 0.0, 100.0, classOf[Double])
+  val FireDryingBonusDegrees: ConfigValue[Double] = Builder
+    .comment(
+      "Apparent-temperature bonus (°C) fed to the drying curve while on fire; dries wetness in",
+      "seconds. Only affects drying, never core temperature. Initial placeholder, pending",
+      "calibration."
+    )
+    .defineInRange("fireDryingBonusDegrees", 60.0, 0.0, 1000.0, classOf[Double])
+  val ImmersionWetnessPerSecond: ConfigValue[Double] = Builder
+    .comment(
+      "Wetness gain per second while immersed in water. Initial placeholder, pending calibration."
+    )
+    .defineInRange("immersionWetnessPerSecond", 0.5, 0.0, 1.0, classOf[Double])
+  val RainWetnessPerSecond: ConfigValue[Double] = Builder
+    .comment(
+      "Wetness gain per second while exposed to rain. Initial placeholder, pending calibration."
+    )
+    .defineInRange("rainWetnessPerSecond", 0.02, 0.0, 1.0, classOf[Double])
+  val BiomeMappingFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "biomeMappingFormula",
+    "(t - 0.15) * 40 / 1.85",
+    List("t"),
+    comment = Seq(
+      "Maps the vanilla biome temperature to apparent environmental temperature (°C), compiled",
+      "with EvalEx. Available variable: t (height-adjusted vanilla biome temperature). The default",
+      "anchors the rain/snow line 0.15 to 0°C and desert 2.0 to 40°C. Initial placeholder,",
+      "pending calibration. Invalid formulas are rejected and corrected to the default.",
+      "Hot-reloaded on file change."
+    )
+  )
+  val ComfortBandFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "comfortBandFormula",
+    "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))",
+    List("t", "low", "high", "slope"),
+    comment = Seq(
+      "Maps apparent temperature (°C) to the equilibrium core temperature, compiled with EvalEx.",
+      "Available variables: t (apparent temperature), low/high (comfort band bounds), slope.",
+      "Inside the band the equilibrium is normal body temperature (37). Initial placeholder,",
+      "pending calibration. Invalid formulas are rejected and corrected to the default.",
+      "Hot-reloaded on file change."
+    )
+  )
+  val DryingCurveFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "dryingCurveFormula",
+    "0.0014 * 2.718281828459045^(0.06 * t)",
+    List("t"),
+    comment = Seq(
+      "Wetness lost per second from the drying temperature, compiled with EvalEx. Available",
+      "variable: t (drying temperature = apparent temperature + bonus, e.g. while on fire). The",
+      "result is further scaled by air dryness (1 - downfall) in code. NOTE: this EvalEx",
+      "configuration has no exp() function; the exponential is written as e's numeric power.",
+      "Initial placeholder, pending calibration. Invalid formulas are rejected and corrected to the default.",
+      "Hot-reloaded on file change."
+    )
+  )
+  val WetnessCollapseFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "wetnessCollapseFormula",
+    "1 - 0.85 * wetness",
+    List("wetness"),
+    comment = Seq(
+      "Fraction of armor thermal coefficients (insulation and dissipation block) that survives at",
+      "a given wetness, compiled with EvalEx. Available variable: wetness (0..1). Wet armor both",
+      "stops insulating and stops trapping sweat. Initial placeholder, pending calibration.",
+      "Invalid formulas are rejected and corrected to the default. Hot-reloaded on file change."
+    )
+  )
+  Builder.pop()
+
   Builder.push("progression")
   val NotTodayNearMaxBleedingFraction: ConfigValue[Double] = Builder
     .comment(

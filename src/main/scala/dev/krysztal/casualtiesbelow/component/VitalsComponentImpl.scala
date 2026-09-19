@@ -51,6 +51,8 @@ final class VitalsComponentImpl(val player: Player)
   private var discomfortState: Double = 0.0
   private var dirtinessState: Double = 0.0
   private var opioidState: OpioidState = OpioidState(0.0, 0.0)
+  private var bodyTemperatureState: Double = VitalsComponent.NormalBodyTemperature
+  private var wetnessState: Double = 0.0
 
   override def copyFrom(
       other: VitalsComponent,
@@ -113,6 +115,8 @@ final class VitalsComponentImpl(val player: Player)
     setDirtiness(source.dirtiness)
     setOpioidLevel(source.opioidLevel)
     setOpioidDependence(source.opioidDependence)
+    setBodyTemperature(source.bodyTemperature)
+    setWetness(source.wetness)
   }
 
   override def infection: InfectionSnapshot = infectionState
@@ -204,6 +208,18 @@ final class VitalsComponentImpl(val player: Player)
     setOpioidDependence(state.dependence)
   }
 
+  override def bodyTemperature: Double = bodyTemperatureState
+
+  private[casualtiesbelow] def setBodyTemperature(value: Double): Unit = {
+    bodyTemperatureState = bounded(value, VitalsComponent.MaxBodyTemperature)
+  }
+
+  override def wetness: Double = wetnessState
+
+  private[casualtiesbelow] def setWetness(value: Double): Unit = {
+    wetnessState = bounded(value, VitalsComponent.MaxWetness)
+  }
+
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
 
   override def writeData(out: ValueOutput): Unit = writeData(out, includeHidden = true)
@@ -238,6 +254,8 @@ final class VitalsComponentImpl(val player: Player)
       out.putDouble(VitalsComponentImpl.OpioidLevelKey, opioidLevel)
     }
     out.putDouble(VitalsComponentImpl.OpioidDependenceKey, opioidDependence)
+    out.putDouble(VitalsComponentImpl.BodyTemperatureKey, bodyTemperature)
+    out.putDouble(VitalsComponentImpl.WetnessKey, wetness)
   }
 
   override def readData(in: ValueInput): Unit = {
@@ -324,6 +342,13 @@ final class VitalsComponentImpl(val player: Player)
     setDirtiness(in.getDoubleOr(VitalsComponentImpl.DirtinessKey, 0.0))
     setOpioidLevel(in.getDoubleOr(VitalsComponentImpl.OpioidLevelKey, 0.0))
     setOpioidDependence(in.getDoubleOr(VitalsComponentImpl.OpioidDependenceKey, 0.0))
+    setBodyTemperature(
+      in.getDoubleOr(
+        VitalsComponentImpl.BodyTemperatureKey,
+        VitalsComponent.NormalBodyTemperature
+      )
+    )
+    setWetness(in.getDoubleOr(VitalsComponentImpl.WetnessKey, 0.0))
   }
 
   private def bounded(value: Double, maximum: Double): Double = {
@@ -353,4 +378,6 @@ object VitalsComponentImpl {
   private val DirtinessKey = "dirtiness"
   private val OpioidLevelKey = "opioid_level"
   private val OpioidDependenceKey = "opioid_dependence"
+  private val BodyTemperatureKey = "body_temperature"
+  private val WetnessKey = "wetness"
 }

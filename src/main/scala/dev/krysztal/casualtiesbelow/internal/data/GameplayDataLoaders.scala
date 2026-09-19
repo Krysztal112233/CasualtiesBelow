@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
+import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile as WoundProfileEntry
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
 
@@ -35,6 +36,8 @@ object GameplayDataLoaders {
     GameplayDataLoader[FoodImmuneData]("food/tag", FoodImmuneData.Codec)
   private val HitLocation =
     GameplayDataLoader[HitLocationData]("hit_location", HitLocationData.Codec)
+  private val MaterialThermal =
+    GameplayDataLoader[MaterialThermalData]("material_thermal", MaterialThermalData.Codec)
 
   def registerAll(): Unit = {
     DataResourceLoader
@@ -62,7 +65,8 @@ object GameplayDataLoaders {
           foodEffects = FoodItemEffects.load(manager, lookup),
           foodImmuneTags = FoodTagImmune.load(manager, lookup),
           hitLocations = HitLocation.load(manager, lookup),
-          adrenalineRules = AdrenalineRule.load(manager, lookup)
+          adrenalineRules = AdrenalineRule.load(manager, lookup),
+          materialThermal = MaterialThermal.load(manager, lookup)
         )
       )
     }
