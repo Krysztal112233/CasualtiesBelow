@@ -27,6 +27,7 @@ import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.immune.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
+import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureProgression
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks
 import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 
@@ -56,6 +57,9 @@ object CasualtiesBelow extends ModInitializer {
     // InjuryProgression must run before the body's end-of-tick flush (registration order =
     // event order) so its dirty marks ship in the same tick.
     InjuryProgression.register()
+    // Temperature progression is driven from InjuryProgression's per-player pass; this only
+    // registers its built-in heat contribution listeners, so tick ordering is unaffected.
+    TemperatureProgression.register()
     Unconsciousness.register()
     // The unconsciousness interaction gate must run before these use handlers.
     PoppyProcessing.register()

@@ -1099,7 +1099,7 @@ object CasualtiesBelowConfig {
       "Upper bound of the comfort band (°C): at or below it, the equilibrium core temperature is",
       "normal body temperature. Initial placeholder, pending calibration."
     )
-    .defineInRange("comfortHighCelsius", 28.0, 37.0, 80.0, classOf[Double])
+    .defineInRange("comfortHighCelsius", 28.0, -50.0, 80.0, classOf[Double])
   val ComfortSlope: ConfigValue[Double] = Builder
     .comment(
       "How strongly the equilibrium core temperature deviates per °C of apparent temperature",

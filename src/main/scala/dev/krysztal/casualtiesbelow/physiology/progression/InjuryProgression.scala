@@ -100,10 +100,12 @@ object InjuryProgression {
     if (!player.isAlive) {
       StarvationProgression.discard(player)
       Adrenaline.discard(player)
+      TemperatureProgression.discard(player)
       return
     }
     if (player.isCreative || player.isSpectator) {
       StarvationProgression.discard(player)
+      TemperatureProgression.discard(player)
       // A command or another mod can change modes after an accepted survival hit but before this
       // END_SERVER_TICK pass. Physiology remains frozen in creative/spectator, while the already
       // committed public reserve still needs its one owner sync.
@@ -217,6 +219,10 @@ object InjuryProgression {
     val oxygen = OxygenProgression.tick(player, vitals)
     vitalsChanged = oxygen.changed || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
+
+    // Body temperature runs off the same per-player pass; its own module doc lays out the
+    // approach/equilibrium recurrence and the heat contribution events.
+    vitalsChanged = TemperatureProgression.tick(player, vitals, syncTick) || vitalsChanged
 
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this
