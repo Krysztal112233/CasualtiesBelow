@@ -28,3 +28,6 @@ bin/
 .metals/
 .bsp/
 .bloop/
+
+# Working drafts
+/plan.md

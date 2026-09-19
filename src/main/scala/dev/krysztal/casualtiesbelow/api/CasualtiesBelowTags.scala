@@ -82,4 +82,10 @@ object CasualtiesBelowTags {
     */
   val DustlessDiggableBlocks: TagKey[Block] =
     TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dustless_diggable"))
+
+  /** Blocks that provide direct-contact heat when stood on (magma blocks, campfires; see the
+    * body-temperature system). LIT state is checked by the reader; the tag is block-level.
+    */
+  val HeatSourceBlocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("heat_sources"))
 }

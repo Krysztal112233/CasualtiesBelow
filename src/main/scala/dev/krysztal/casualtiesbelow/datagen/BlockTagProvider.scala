@@ -73,6 +73,13 @@ final class BlockTagProvider(
           Blocks.HONEY_BLOCK
         ).map(blockKey)*
       )
+    builder(CasualtiesBelowTags.HeatSourceBlocks).add(
+      Seq(
+        Blocks.MAGMA_BLOCK,
+        Blocks.CAMPFIRE,
+        Blocks.SOUL_CAMPFIRE
+      ).map(blockKey)*
+    )
   }
 
   private def blockKey(block: Block) =
