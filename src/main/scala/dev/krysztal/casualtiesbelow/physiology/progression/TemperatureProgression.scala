@@ -12,7 +12,6 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.api.event.DryingBonusCallback
@@ -88,7 +87,7 @@ object TemperatureProgression {
     val mapped =
       CasualtiesBelowConfig.BiomeMappingFormula.evaluate(vanillaTemperature.toDouble)
     val immersed = player.isInWater
-    val apparent = if (immersed) mapped.max(0.0) else mapped
+    val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
 
     // (b) Equilibrium core temperature from the comfort band.
     val equilibrium = CasualtiesBelowConfig.ComfortBandFormula.evaluate(
@@ -135,18 +134,25 @@ object TemperatureProgression {
     }
 
     // (f) Exponential approach of the armor-weakened equilibrium plus production terms.
-    val normal = VitalsComponent.NormalBodyTemperature
-    val effectiveEquilibrium = normal + (equilibrium - normal) * (1.0 - effectiveInsulation)
-    var ratePerSecond = 1.0 / (CasualtiesBelowConfig.TauAirMinutes.get() * 60.0)
-    if (immersed) {
-      ratePerSecond *= CasualtiesBelowConfig.ImmersionRateMultiplier.get()
-    }
-    val productionPerSecond =
-      (ContributionAccumulator.directTotal -
-        ContributionAccumulator.dissipativeTotal * (1.0 - effectiveDissipationBlock)) / 60.0
-    val nextCore = vitals.bodyTemperature +
-      SecondsPerTick *
-      (ratePerSecond * (effectiveEquilibrium - vitals.bodyTemperature) + productionPerSecond)
+    val effectiveEquilibrium =
+      TemperatureCalc.effectiveEquilibrium(equilibrium, effectiveInsulation)
+    val ratePerSecond = TemperatureCalc.approachRatePerSecond(
+      CasualtiesBelowConfig.TauAirMinutes.get(),
+      immersed,
+      CasualtiesBelowConfig.ImmersionRateMultiplier.get()
+    )
+    val productionPerSecond = TemperatureCalc.productionPerSecond(
+      ContributionAccumulator.directTotal,
+      ContributionAccumulator.dissipativeTotal,
+      effectiveDissipationBlock
+    )
+    val nextCore = TemperatureCalc.nextCoreTemperature(
+      vitals.bodyTemperature,
+      effectiveEquilibrium,
+      ratePerSecond,
+      productionPerSecond,
+      SecondsPerTick
+    )
     val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
 
     // (g) Wetness axis: fast accrual while immersed, slow in rain, temperature-driven drying
@@ -161,7 +167,7 @@ object TemperatureProgression {
         -CasualtiesBelowConfig.DryingCurveFormula.evaluate(apparent + dryingBonus) *
           airDryness * SecondsPerTick
       }
-    val nextWetness = (wetness + deltaWetness).max(0.0).min(VitalsComponent.MaxWetness)
+    val nextWetness = TemperatureCalc.nextWetness(wetness, deltaWetness)
     val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
 
     // Throttle like Dirtiness: the approach never exactly converges, so core is always dirty;

@@ -8,6 +8,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.physiology.discomfort.DiscomfortDistribution as Distribution
 import dev.krysztal.casualtiesbelow.physiology.pain.TotalPainStrategy
+import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig
@@ -1155,7 +1156,7 @@ object CasualtiesBelowConfig {
   val BiomeMappingFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
     "biomeMappingFormula",
-    "(t - 0.15) * 40 / 1.85",
+    TemperatureCalc.BiomeMappingFormulaDefault,
     List("t"),
     comment = Seq(
       "Maps the vanilla biome temperature to apparent environmental temperature (°C), compiled",
@@ -1168,7 +1169,7 @@ object CasualtiesBelowConfig {
   val ComfortBandFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
     "comfortBandFormula",
-    "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))",
+    TemperatureCalc.ComfortBandFormulaDefault,
     List("t", "low", "high", "slope"),
     comment = Seq(
       "Maps apparent temperature (°C) to the equilibrium core temperature, compiled with EvalEx.",
@@ -1181,7 +1182,7 @@ object CasualtiesBelowConfig {
   val DryingCurveFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
     "dryingCurveFormula",
-    "0.0014 * 2.718281828459045^(0.06 * t)",
+    TemperatureCalc.DryingCurveFormulaDefault,
     List("t"),
     comment = Seq(
       "Wetness lost per second from the drying temperature, compiled with EvalEx. Available",
@@ -1195,7 +1196,7 @@ object CasualtiesBelowConfig {
   val WetnessCollapseFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
     "wetnessCollapseFormula",
-    "1 - 0.85 * wetness",
+    TemperatureCalc.WetnessCollapseFormulaDefault,
     List("wetness"),
     comment = Seq(
       "Fraction of armor thermal coefficients (insulation and dissipation block) that survives at",

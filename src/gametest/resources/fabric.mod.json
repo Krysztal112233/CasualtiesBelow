@@ -17,6 +17,10 @@
       {
         "adapter": "scala",
         "value": "dev.krysztal.casualtiesbelow.gametest.AchievementGameTests"
+      },
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.TemperatureGameTests"
       }
     ]
   },
