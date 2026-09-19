@@ -1,7 +1,34 @@
+import org.gradle.plugins.ide.eclipse.model.Classpath
+import org.gradle.plugins.ide.eclipse.model.Library
+
 plugins {
     scala
+    eclipse
     id("net.fabricmc.fabric-loom") version "1.17-SNAPSHOT"
     id("com.diffplug.spotless") version "7.2.1"
+}
+
+// JDTLS (Buildship import) only compiles .java sources, so the Scala sources in this project
+// contribute no Java types and Java sources referencing them (src/test/java) fail to resolve in
+// the editor. Expose the Gradle-built Scala classes as a binary library with the Scala sources
+// attached for navigation. Requires a prior `./gradlew compileScala`; re-run it to refresh stale
+// classfiles. Honored both by the `eclipseClasspath` task and by Buildship project sync.
+eclipse {
+    classpath {
+        val factory = fileReferenceFactory
+        // whenMerged takes an untyped Action<?>: pre-typing the action keeps the receiver typed.
+        val addScalaClasses =
+            Action<Classpath> {
+                entries.add(
+                    Library(factory.fromPath("build/classes/scala/main")).apply {
+                        sourcePath = factory.fromPath("src/main/scala")
+                    },
+                )
+            }
+        file {
+            whenMerged(addScalaClasses)
+        }
+    }
 }
 
 // `./gradlew sources`: extract readable Minecraft + Fabric API sources (see AGENTS.md).
