@@ -4,17 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.stream.Stream;
-
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent;
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart;
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.vitals.InfectionSnapshot;
-import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage;
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot;
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent;
@@ -32,7 +27,10 @@ import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedCallback;
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedContext;
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback;
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedContext;
-
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.ladysnake.cca.api.v3.component.CopyableComponent;
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
@@ -90,8 +88,7 @@ final class ApiJavaInteropTest {
 
     @Test
     void keepsScalaImplementationHelpersOutOfTheJavaApi() {
-        assertNoDeclaredMethods(
-                BodyPart.class, "adjacent", "arms", "byId", "codec", "legs");
+        assertNoDeclaredMethods(BodyPart.class, "adjacent", "arms", "byId", "codec", "legs");
         assertNoDeclaredMethods(PainShockStage.class, "byId");
         Stream.of(
                         TraumaStartedContext.class,

@@ -194,6 +194,9 @@ tasks.named("check") {
 }
 
 spotless {
+    java {
+        googleJavaFormat("1.36.1").aosp()
+    }
     scala {
         scalafmt("3.11.5").configFile(".scalafmt.conf")
     }
