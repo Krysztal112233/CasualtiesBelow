@@ -1288,14 +1288,14 @@ object CasualtiesBelowConfig {
       "Invalid formulas are rejected and corrected to the default. Hot-reloaded on file change."
     )
   )
-  val FrostOverlayEnabled: ConfigValue[Boolean] = Builder
+  val TemperatureOverlayEnabled: ConfigValue[Boolean] = Builder
     .comment(
-      "Cold-side screen frost: a vitals post-shader axis that grows the frost overlay inward",
-      "from the screen edges as the core body temperature drops (texture: a copy of vanilla's",
-      "powder-snow outline, recomposed with spatial growth instead of vanilla's flat alpha fade).",
-      "Client-side presentation only; no gameplay effect."
+      "Temperature screen effects: a vitals post-shader axis. Cold side grows a frost overlay",
+      "inward from the screen edges (vanilla's powder-snow texture with a spatial mask); hot side",
+      "adds heat-haze wobble and a warm edge tint. Client-side presentation only; no gameplay",
+      "effect."
     )
-    .define("frostOverlayEnabled", true)
+    .define("temperatureOverlayEnabled", true)
   val FrostOverlayStartCelsius: ConfigValue[Double] = Builder
     .comment(
       "Core body temperature (°C) at which the frost overlay starts.",
@@ -1314,6 +1314,25 @@ object CasualtiesBelowConfig {
       "Initial placeholder, pending calibration. Client-side presentation only."
     )
     .defineInRange("frostOverlayMaxStrength", 0.85, 0.0, 1.0, classOf[Double])
+  val HeatOverlayStartCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Core body temperature (°C) at which the heat overlay (haze + warm tint) starts.",
+      "Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("heatOverlayStartCelsius", 39.5, 37.0, 45.0, classOf[Double])
+  val HeatOverlayFullSpanCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Degrees above heatOverlayStartCelsius at which the heat overlay reaches its maximum",
+      "strength — anchored so the maximum lands on the terminal-band edge (heatstroke).",
+      "Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("heatOverlayFullSpanCelsius", 2.5, 0.5, 10.0, classOf[Double])
+  val HeatOverlayMaxStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum heat overlay strength (0..1) reached at the full span above the onset.",
+      "Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("heatOverlayMaxStrength", 0.85, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("progression")

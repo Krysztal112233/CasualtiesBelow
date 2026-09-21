@@ -68,4 +68,48 @@ final class TemperatureVisualsTest {
     assertEquals(0.85, TemperatureVisuals.frostStrength(34.0, 35.0, 0.0, 0.85), 1.0e-9)
     assertEquals(0.0, TemperatureVisuals.frostStrength(35.0, 35.0, 0.0, 0.85), 1.0e-9)
   }
+
+  @Test
+  def heatIsZeroAtOrBelowOnset(): Unit = {
+    assertEquals(0.0, TemperatureVisuals.heatStrength(39.5, 39.5, 2.5, 0.85), 1.0e-9)
+    assertEquals(
+      0.0,
+      TemperatureVisuals.heatStrength(37.0, 39.5, 2.5, 0.85),
+      1.0e-9,
+      "a normal body must not simmer"
+    )
+  }
+
+  @Test
+  def heatRampsLinearlyThroughTheSpan(): Unit = {
+    assertEquals(
+      0.85 / 2.0,
+      TemperatureVisuals.heatStrength(40.75, 39.5, 2.5, 0.85),
+      1.0e-9,
+      "half the span gives half the strength"
+    )
+    assertEquals(
+      0.85,
+      TemperatureVisuals.heatStrength(42.0, 39.5, 2.5, 0.85),
+      1.0e-9,
+      "full strength lands on the terminal-band edge"
+    )
+    assertEquals(0.85, TemperatureVisuals.heatStrength(45.0, 39.5, 2.5, 0.85), 1.0e-9)
+  }
+
+  @Test
+  def heatHandlesDegenerateSpan(): Unit = {
+    assertEquals(0.85, TemperatureVisuals.heatStrength(40.0, 39.5, 0.0, 0.85), 1.0e-9)
+    assertEquals(0.0, TemperatureVisuals.heatStrength(39.5, 39.5, 0.0, 0.85), 1.0e-9)
+  }
+
+  @Test
+  def frostAndHeatAreMutuallyExclusive(): Unit = {
+    // The bands share one body temperature: whatever the temperature, at most one side renders.
+    Vector(20.0, 30.0, 34.0, 37.0, 40.0, 42.5, 45.0).foreach { t =>
+      val frost = TemperatureVisuals.frostStrength(t, 35.0, 6.0, 0.85)
+      val heat = TemperatureVisuals.heatStrength(t, 39.5, 2.5, 0.85)
+      assertTrue(frost == 0.0 || heat == 0.0, s"both overlays active at $t°C")
+    }
+  }
 }

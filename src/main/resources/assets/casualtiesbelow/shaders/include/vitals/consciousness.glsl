@@ -10,10 +10,6 @@ const float VignetteOpacityMultiplier = 2.0;
 const float ZoomDistance = 0.06;
 const float DoubleVisionBlend = 0.44;
 
-vec2 clampToTexture(vec2 coordinates, vec2 texelSize) {
-    return clamp(coordinates, texelSize * 0.5, 1.0 - texelSize * 0.5);
-}
-
 vec3 applyConsciousnessDistortion(
     vec3 sceneColor,
     vec2 coordinates,

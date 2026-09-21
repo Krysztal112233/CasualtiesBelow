@@ -53,7 +53,7 @@ object VitalsPostEffect {
     EffectBlock("DiscomfortConfig", Vector(_.discomfortVignette)),
     EffectBlock("ShockConfig", Vector(_.shock, _.shockNoise, _.shockTime)),
     EffectBlock("GrimeConfig", Vector(_.grimeVignette)),
-    EffectBlock("TemperatureConfig", Vector(_.frost))
+    EffectBlock("TemperatureConfig", Vector(_.frost, _.heat, _.heatTime))
   )
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
   private val BlurPerceptionExponent = 0.6
@@ -137,7 +137,9 @@ object VitalsPostEffect {
       shockNoise = 0.0f,
       shockTime = 0.0f,
       grimeVignette = 0.0f,
-      frost = 0.0f
+      frost = 0.0f,
+      heat = 0.0f,
+      heatTime = 0.0f
     )
   }
 
@@ -151,6 +153,14 @@ object VitalsPostEffect {
     val discomfort = discomfortVisual(vitals, gameplayData)
     val bloodLoss = bloodLossVisual(vitals, gameplayData)
     val painShock = painShockVisual(player, vitals, gameplayData, deltaTracker)
+    // Smooth the 1 Hz-synced body temperature once per frame and share it between the frost and
+    // heat ramps — calling the smoother twice would double-advance the interpolation.
+    val smoothedTemperature =
+      if (CasualtiesBelowConfig.TemperatureOverlayEnabled.get()) {
+        smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
+      } else {
+        snapBodyTemperature(player, vitals.bodyTemperature)
+      }
 
     EffectStrengths(
       darkness = consciousness.darkness,
@@ -161,31 +171,37 @@ object VitalsPostEffect {
       shockNoise = painShock.noise,
       shockTime = painShock.time,
       grimeVignette = grimeVisual(vitals),
-      frost = frostVisual(player, vitals, deltaTracker)
+      frost = frostVisual(smoothedTemperature),
+      heat = heatVisual(smoothedTemperature),
+      heatTime = (player.tickCount % ShockTimePeriodTicks) +
+        deltaTracker.getGameTimeDeltaPartialTick(true)
     )
   }
 
-  /** Cold-side frost overlay: the 1 Hz-synced body temperature is eased toward the latest
-    * observation (like the shock load) so the frost grows smoothly, then mapped through
-    * [[TemperatureVisuals.frostStrength]]. Disabled config or an absent ramp snaps the display to
-    * zero.
+  /** Cold-side frost overlay strength from the per-frame smoothed body temperature (the smoothing
+    * runs once per frame in [[awakeStrengths]] and is shared with the heat ramp).
     */
-  private def frostVisual(
-      player: LocalPlayer,
-      vitals: VitalsComponent,
-      deltaTracker: DeltaTracker
-  ): Float = {
-    if (!CasualtiesBelowConfig.FrostOverlayEnabled.get()) {
-      snapBodyTemperature(player, vitals.bodyTemperature)
-      return 0.0f
-    }
-    val smoothed = smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
+  private def frostVisual(smoothedTemperature: Double): Float = {
     TemperatureVisuals
       .frostStrength(
-        smoothed,
+        smoothedTemperature,
         CasualtiesBelowConfig.FrostOverlayStartCelsius.get(),
         CasualtiesBelowConfig.FrostOverlayFullSpanCelsius.get(),
         CasualtiesBelowConfig.FrostOverlayMaxStrength.get()
+      )
+      .toFloat
+  }
+
+  /** Hot-side heat overlay strength (haze + warm tint): the mirror of [[frostVisual]] — the two
+    * sides can never be active at once.
+    */
+  private def heatVisual(smoothedTemperature: Double): Float = {
+    TemperatureVisuals
+      .heatStrength(
+        smoothedTemperature,
+        CasualtiesBelowConfig.HeatOverlayStartCelsius.get(),
+        CasualtiesBelowConfig.HeatOverlayFullSpanCelsius.get(),
+        CasualtiesBelowConfig.HeatOverlayMaxStrength.get()
       )
       .toFloat
   }
@@ -422,7 +438,8 @@ object VitalsPostEffect {
     strengths.discomfortVignette > 0.0f ||
     strengths.shock > 0.0f ||
     strengths.grimeVignette > 0.0f ||
-    strengths.frost > 0.0f
+    strengths.frost > 0.0f ||
+    strengths.heat > 0.0f
   }
 
   /** Per-axis uniform buffers for the chain's single pass, installed once per chain instance.
@@ -549,6 +566,8 @@ object VitalsPostEffect {
       shockNoise: Float,
       shockTime: Float,
       grimeVignette: Float,
-      frost: Float
+      frost: Float,
+      heat: Float,
+      heatTime: Float
   )
 }

@@ -20,3 +20,9 @@ float valueNoise(vec2 position) {
     float d = staticNoise(cell + vec2(1.0, 1.0));
     return mix(mix(a, b, blend.x), mix(c, d, blend.x), blend.y);
 }
+
+// Texture-edge clamp shared by the axes that re-sample InSampler (consciousness distortion,
+// heat haze): sampling outside [0,1] would wrap/smear the frame border.
+vec2 clampToTexture(vec2 coordinates, vec2 texelSize) {
+    return clamp(coordinates, texelSize * 0.5, 1.0 - texelSize * 0.5);
+}

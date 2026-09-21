@@ -36,11 +36,18 @@ void main() {
     if (blur > 0.0) {
         color = applyConsciousnessDistortion(color, texCoord, centered, texelSize, blur);
     }
+    // Heat haze re-samples the raw scene, so it must run before the color axes (same constraint
+    // as the consciousness distortion above).
+    if (HeatStrength > 0.0) {
+        color = applyHeatHaze(color, texCoord, texelSize);
+    }
+    float edge = length(centered * 2.0);
     color = applyBloodLossDesaturation(color, DesaturationStrength);
     color = applyPainShock(color, vignette);
     color = applyDiscomfortVignette(color, vignette);
     color = applyGrimeVignette(color, grimeVignette, texCoord);
-    color = applyFrost(color, length(centered * 2.0), texCoord);
+    color = applyHeatTint(color);
+    color = applyFrost(color, edge, texCoord);
     color = applyDarkness(color, vignette);
 
     fragColor = vec4(color, scene.a);
