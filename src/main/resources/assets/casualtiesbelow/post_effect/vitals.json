@@ -11,6 +11,13 @@
           "sampler_name": "In",
           "target": "minecraft:main",
           "bilinear": true
+        },
+        {
+          "sampler_name": "Frost",
+          "location": "minecraft:textures/misc/powder_snow_outline",
+          "width": 256,
+          "height": 256,
+          "bilinear": true
         }
       ],
       "output": "swap",
@@ -61,6 +68,13 @@
         "GrimeConfig": [
           {
             "name": "GrimeVignetteStrength",
+            "type": "float",
+            "value": 0.0
+          }
+        ],
+        "TemperatureConfig": [
+          {
+            "name": "FrostStrength",
             "type": "float",
             "value": 0.0
           }

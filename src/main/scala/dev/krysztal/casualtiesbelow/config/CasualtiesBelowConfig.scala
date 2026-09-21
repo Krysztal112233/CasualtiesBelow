@@ -1288,6 +1288,32 @@ object CasualtiesBelowConfig {
       "Invalid formulas are rejected and corrected to the default. Hot-reloaded on file change."
     )
   )
+  val FrostOverlayEnabled: ConfigValue[Boolean] = Builder
+    .comment(
+      "Cold-side screen frost: a vitals post-shader axis that grows the frost overlay inward",
+      "from the screen edges as the core body temperature drops (texture: a copy of vanilla's",
+      "powder-snow outline, recomposed with spatial growth instead of vanilla's flat alpha fade).",
+      "Client-side presentation only; no gameplay effect."
+    )
+    .define("frostOverlayEnabled", true)
+  val FrostOverlayStartCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Core body temperature (°C) at which the frost overlay starts.",
+      "Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("frostOverlayStartCelsius", 35.0, 20.0, 37.0, classOf[Double])
+  val FrostOverlayFullSpanCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Degrees below frostOverlayStartCelsius at which the frost overlay reaches its maximum",
+      "strength. Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("frostOverlayFullSpanCelsius", 6.0, 1.0, 20.0, classOf[Double])
+  val FrostOverlayMaxStrength: ConfigValue[Double] = Builder
+    .comment(
+      "Maximum frost overlay strength (0..1) reached at the full span below the onset.",
+      "Initial placeholder, pending calibration. Client-side presentation only."
+    )
+    .defineInRange("frostOverlayMaxStrength", 0.85, 0.0, 1.0, classOf[Double])
   Builder.pop()
 
   Builder.push("progression")

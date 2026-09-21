@@ -52,7 +52,8 @@ object VitalsPostEffect {
     EffectBlock("BloodLossConfig", Vector(_.desaturation)),
     EffectBlock("DiscomfortConfig", Vector(_.discomfortVignette)),
     EffectBlock("ShockConfig", Vector(_.shock, _.shockNoise, _.shockTime)),
-    EffectBlock("GrimeConfig", Vector(_.grimeVignette))
+    EffectBlock("GrimeConfig", Vector(_.grimeVignette)),
+    EffectBlock("TemperatureConfig", Vector(_.frost))
   )
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
   private val BlurPerceptionExponent = 0.6
@@ -60,6 +61,7 @@ object VitalsPostEffect {
   private val ShockLoadInterpolationTicks = 5.0f
   private val ShockPulseMinimumModulation = 0.05f
   private val ShockTimePeriodTicks = 20000
+  private val TemperatureInterpolationTicks = 20.0f
 
   private var cachedChain: Option[PostChain] = None
   private var cachedBuffers: Map[String, GpuBuffer] = Map.empty
@@ -68,6 +70,12 @@ object VitalsPostEffect {
   private var displayedShockLoad = 0.0f
   private var shockInterpolationStart = 0.0f
   private var shockInterpolationProgress = 1.0f
+
+  private var temperatureInterpolationPlayer: Option[UUID] = None
+  private var observedBodyTemperature = 37.0f
+  private var displayedBodyTemperature = 37.0f
+  private var temperatureInterpolationStart = 37.0f
+  private var temperatureInterpolationProgress = 1.0f
 
   def render(
       gameRenderer: GameRenderer,
@@ -98,18 +106,23 @@ object VitalsPostEffect {
         val vitals = CasualtiesBelowComponents.Vitals.get(player)
         if (vitals.consciousness.unconscious) {
           snapShockLoad(player, vitals.shock.load)
+          snapBodyTemperature(player, vitals.bodyTemperature)
           Some(unconsciousStrengths)
         } else if (minecraft.gui.hud.isHidden()) {
           snapShockLoad(player, vitals.shock.load)
+          snapBodyTemperature(player, vitals.bodyTemperature)
           None
         } else {
           Some(awakeStrengths(player, vitals, deltaTracker)).filter(hasVisibleEffect)
         }
       case Some(player) =>
-        snapShockLoad(player, CasualtiesBelowComponents.Vitals.get(player).shock.load)
+        val vitals = CasualtiesBelowComponents.Vitals.get(player)
+        snapShockLoad(player, vitals.shock.load)
+        snapBodyTemperature(player, vitals.bodyTemperature)
         None
       case None =>
         clearShockInterpolation()
+        clearTemperatureInterpolation()
         None
     }
   }
@@ -123,7 +136,8 @@ object VitalsPostEffect {
       shock = 0.0f,
       shockNoise = 0.0f,
       shockTime = 0.0f,
-      grimeVignette = 0.0f
+      grimeVignette = 0.0f,
+      frost = 0.0f
     )
   }
 
@@ -146,8 +160,34 @@ object VitalsPostEffect {
       shock = painShock.strength,
       shockNoise = painShock.noise,
       shockTime = painShock.time,
-      grimeVignette = grimeVisual(vitals)
+      grimeVignette = grimeVisual(vitals),
+      frost = frostVisual(player, vitals, deltaTracker)
     )
+  }
+
+  /** Cold-side frost overlay: the 1 Hz-synced body temperature is eased toward the latest
+    * observation (like the shock load) so the frost grows smoothly, then mapped through
+    * [[TemperatureVisuals.frostStrength]]. Disabled config or an absent ramp snaps the display to
+    * zero.
+    */
+  private def frostVisual(
+      player: LocalPlayer,
+      vitals: VitalsComponent,
+      deltaTracker: DeltaTracker
+  ): Float = {
+    if (!CasualtiesBelowConfig.FrostOverlayEnabled.get()) {
+      snapBodyTemperature(player, vitals.bodyTemperature)
+      return 0.0f
+    }
+    val smoothed = smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
+    TemperatureVisuals
+      .frostStrength(
+        smoothed,
+        CasualtiesBelowConfig.FrostOverlayStartCelsius.get(),
+        CasualtiesBelowConfig.FrostOverlayFullSpanCelsius.get(),
+        CasualtiesBelowConfig.FrostOverlayMaxStrength.get()
+      )
+      .toFloat
   }
 
   /** Grime vignette: the dirtiness display bands gate presentation only — the ramp starts at the
@@ -323,13 +363,66 @@ object VitalsPostEffect {
     shockInterpolationProgress = 1.0f
   }
 
+  /** Smooths the 1 Hz-synced body temperature toward its latest observation over
+    * [[TemperatureInterpolationTicks]], mirroring the shock-load interpolation so the frost overlay
+    * grows continuously instead of stepping once per second.
+    */
+  private def smoothedBodyTemperature(
+      player: LocalPlayer,
+      actualTemperature: Double,
+      deltaTracker: DeltaTracker
+  ): Double = {
+    if (!temperatureInterpolationPlayer.contains(player.getUUID)) {
+      return snapBodyTemperature(player, actualTemperature)
+    }
+    val observed = actualTemperature.toFloat
+    if (observed != observedBodyTemperature) {
+      temperatureInterpolationStart = displayedBodyTemperature
+      observedBodyTemperature = observed
+      temperatureInterpolationProgress = 0.0f
+    }
+    if (temperatureInterpolationProgress < 1.0f) {
+      temperatureInterpolationProgress = math
+        .min(
+          1.0f,
+          temperatureInterpolationProgress +
+            deltaTracker.getRealtimeDeltaTicks() / TemperatureInterpolationTicks
+        )
+        .toFloat
+      val progress = temperatureInterpolationProgress
+      val eased = progress * progress * (3.0f - 2.0f * progress)
+      displayedBodyTemperature = temperatureInterpolationStart +
+        (observedBodyTemperature - temperatureInterpolationStart) * eased
+    }
+    displayedBodyTemperature.toDouble
+  }
+
+  private def snapBodyTemperature(player: LocalPlayer, temperature: Double): Double = {
+    temperatureInterpolationPlayer = Some(player.getUUID)
+    val value = temperature.toFloat
+    observedBodyTemperature = value
+    displayedBodyTemperature = value
+    temperatureInterpolationStart = value
+    temperatureInterpolationProgress = 1.0f
+    temperature
+  }
+
+  private def clearTemperatureInterpolation(): Unit = {
+    temperatureInterpolationPlayer = None
+    observedBodyTemperature = 37.0f
+    displayedBodyTemperature = 37.0f
+    temperatureInterpolationStart = 37.0f
+    temperatureInterpolationProgress = 1.0f
+  }
+
   private def hasVisibleEffect(strengths: EffectStrengths): Boolean = {
     strengths.darkness > 0.0f ||
     strengths.blur > 0.0f ||
     strengths.desaturation > 0.0f ||
     strengths.discomfortVignette > 0.0f ||
     strengths.shock > 0.0f ||
-    strengths.grimeVignette > 0.0f
+    strengths.grimeVignette > 0.0f ||
+    strengths.frost > 0.0f
   }
 
   /** Per-axis uniform buffers for the chain's single pass, installed once per chain instance.
@@ -455,6 +548,7 @@ object VitalsPostEffect {
       shock: Float,
       shockNoise: Float,
       shockTime: Float,
-      grimeVignette: Float
+      grimeVignette: Float,
+      frost: Float
   )
 }

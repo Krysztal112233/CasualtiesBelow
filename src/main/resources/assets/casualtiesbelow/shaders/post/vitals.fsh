@@ -20,6 +20,7 @@ out vec4 fragColor;
 #moj_import <casualtiesbelow:vitals/discomfort.glsl>
 #moj_import <casualtiesbelow:vitals/shock.glsl>
 #moj_import <casualtiesbelow:vitals/grime.glsl>
+#moj_import <casualtiesbelow:vitals/temperature.glsl>
 
 void main() {
     vec4 scene = texture(InSampler, texCoord);
@@ -39,6 +40,7 @@ void main() {
     color = applyPainShock(color, vignette);
     color = applyDiscomfortVignette(color, vignette);
     color = applyGrimeVignette(color, grimeVignette, texCoord);
+    color = applyFrost(color, length(centered * 2.0), texCoord);
     color = applyDarkness(color, vignette);
 
     fragColor = vec4(color, scene.a);
