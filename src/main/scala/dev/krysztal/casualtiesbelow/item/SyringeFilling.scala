@@ -5,7 +5,6 @@ import java.util.List
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -16,6 +15,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative drawing of one liquid dose into an empty syringe. Filled refined ampoules
   * take priority over crude bottles; refined bottles are intentionally not eligible.
@@ -71,14 +71,7 @@ private[casualtiesbelow] object SyringeFilling {
         }
         if (!inventory.add(filled)) player.drop(filled, false)
         player.awardStat(Stats.ITEM_USED.get(syringe))
-        level.playSound(
-          null,
-          player.blockPosition(),
-          SoundEvents.BOTTLE_FILL,
-          SoundSource.PLAYERS,
-          0.8f,
-          1.2f
-        )
+        level.playPlayerSound(player, SoundEvents.BOTTLE_FILL, volume = 0.8f, pitch = 1.2f)
     }
     InteractionResult.SUCCESS
   }

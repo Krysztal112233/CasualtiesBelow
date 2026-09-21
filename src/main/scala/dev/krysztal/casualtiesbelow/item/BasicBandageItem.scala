@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.item
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -19,6 +18,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 
 /** Reusable basic bandage. Holding use for two seconds treats one automatically selected limb;
@@ -53,14 +53,7 @@ final class BasicBandageItem(properties: Item.Properties) extends Item(propertie
         BasicBandageItem.treatBestLimb(player) match {
           case Some(part) =>
             player.awardStat(Stats.ITEM_USED.get(this))
-            level.playSound(
-              null,
-              player.blockPosition(),
-              SoundEvents.WOOL_PLACE,
-              SoundSource.PLAYERS,
-              0.8f,
-              1.1f
-            )
+            level.playPlayerSound(player, SoundEvents.WOOL_PLACE, volume = 0.8f, pitch = 1.1f)
             player.sendOverlayMessage(
               Component.translatable(
                 "message.casualtiesbelow.bandage.applied",

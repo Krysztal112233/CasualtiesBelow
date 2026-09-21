@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -32,6 +31,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative, no-GUI poppy processing on vanilla-shaped cauldrons. */
 private[casualtiesbelow] object PoppyProcessing {
@@ -144,14 +144,7 @@ private[casualtiesbelow] object PoppyProcessing {
         player.awardStat(Stats.USE_CAULDRON)
       case _ =>
     }
-    serverLevel.playSound(
-      null,
-      pos,
-      SoundEvents.MUD_PLACE,
-      SoundSource.BLOCKS,
-      1.0f,
-      1.0f
-    )
+    serverLevel.playBlockSound(pos, SoundEvents.MUD_PLACE)
     serverLevel.gameEvent(owner, GameEvent.BLOCK_CHANGE, pos)
     true
   }
@@ -205,7 +198,7 @@ private[casualtiesbelow] object PoppyProcessing {
     LayeredCauldronBlock.lowerFillLevel(state, level, pos)
     player.awardStat(Stats.ITEM_USED.get(CasualtiesBelowItems.CrudeFilter))
     player.awardStat(Stats.USE_CAULDRON)
-    level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f)
+    level.playBlockSound(pos, SoundEvents.BOTTLE_FILL)
     level.gameEvent(player, GameEvent.FLUID_PICKUP, pos)
     InteractionResult.SUCCESS
   }
@@ -251,14 +244,7 @@ private[casualtiesbelow] object PoppyProcessing {
     }
 
     player.awardStat(Stats.ITEM_USED.get(CasualtiesBelowItems.CrudeFilter))
-    level.playSound(
-      null,
-      player.blockPosition(),
-      SoundEvents.BOTTLE_FILL,
-      SoundSource.PLAYERS,
-      1.0f,
-      1.0f
-    )
+    level.playPlayerSound(player, SoundEvents.BOTTLE_FILL)
     InteractionResult.SUCCESS
   }
 
@@ -307,7 +293,7 @@ private[casualtiesbelow] object PoppyProcessing {
     if (!player.getInventory.add(filled)) player.drop(filled, false)
 
     player.awardStat(Stats.USE_CAULDRON)
-    level.playSound(null, pos, SoundEvents.BUCKET_FILL, SoundSource.BLOCKS, 1.0f, 1.0f)
+    level.playBlockSound(pos, SoundEvents.BUCKET_FILL)
     level.gameEvent(player, GameEvent.FLUID_PICKUP, pos)
     InteractionResult.SUCCESS
   }
@@ -332,7 +318,7 @@ private[casualtiesbelow] object PoppyProcessing {
     }
 
     player.awardStat(Stats.USE_CAULDRON)
-    level.playSound(null, pos, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f)
+    level.playBlockSound(pos, SoundEvents.BUCKET_EMPTY)
     level.gameEvent(player, GameEvent.FLUID_PLACE, pos)
     InteractionResult.SUCCESS
   }

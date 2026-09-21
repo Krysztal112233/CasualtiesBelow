@@ -6,7 +6,6 @@ import scala.jdk.OptionConverters.*
 import net.minecraft.core.component.DataComponents
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.util.RandomSource
 import net.minecraft.world.effect.MobEffectCategory
 import net.minecraft.world.effect.MobEffectInstance
@@ -24,6 +23,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
@@ -216,14 +216,7 @@ object Discomfort {
     player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, VomitNauseaTicks, 1))
     player
       .level()
-      .playSound(
-        null,
-        player.blockPosition(),
-        SoundEvents.PLAYER_BURP,
-        SoundSource.PLAYERS,
-        1.0f,
-        0.8f
-      )
+      .playPlayerSound(player, SoundEvents.PLAYER_BURP, pitch = 0.8f)
     VitalsMutations.syncNow(player)
   }
 

@@ -4,7 +4,6 @@ import java.util.List
 
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.InteractionResult
@@ -15,6 +14,8 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 
 import net.fabricmc.fabric.api.event.player.UseItemCallback
+
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative filling of empty ampoules from refined poppy extract in the inventory. */
 private[casualtiesbelow] object AmpouleFilling {
@@ -67,14 +68,7 @@ private[casualtiesbelow] object AmpouleFilling {
     }
 
     player.awardStat(Stats.ITEM_USED.get(CasualtiesBelowItems.Ampoule))
-    level.playSound(
-      null,
-      player.blockPosition(),
-      SoundEvents.BOTTLE_FILL,
-      SoundSource.PLAYERS,
-      1.0f,
-      1.0f
-    )
+    level.playPlayerSound(player, SoundEvents.BOTTLE_FILL)
     InteractionResult.SUCCESS
   }
 

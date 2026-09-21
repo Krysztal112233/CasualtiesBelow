@@ -8,7 +8,6 @@ import net.minecraft.core.Direction
 import net.minecraft.core.cauldron.CauldronInteractions
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
-import net.minecraft.sounds.SoundSource
 import net.minecraft.stats.Stats
 import net.minecraft.util.RandomSource
 import net.minecraft.world.InteractionHand
@@ -33,6 +32,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox
 import net.minecraft.world.phys.BlockHitResult
 
 import dev.krysztal.casualtiesbelow.block.entity.SoakingPoppyCauldronBlockEntity
+import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
 
@@ -173,7 +173,7 @@ final class PoppyInfusionCauldronBlock(properties: BlockBehaviour.Properties)
         player.awardStat(Stats.ITEM_USED.get(CasualtiesBelowItems.UnfilteredPoppyLiquid))
         player.awardStat(Stats.USE_CAULDRON)
         LayeredCauldronBlock.lowerFillLevel(state, level, pos)
-        level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0f, 1.0f)
+        level.playBlockSound(pos, SoundEvents.BOTTLE_FILL)
         level.gameEvent(player, GameEvent.FLUID_PICKUP, pos)
       }
       InteractionResult.SUCCESS
@@ -194,7 +194,7 @@ final class PoppyInfusionCauldronBlock(properties: BlockBehaviour.Properties)
             JInteger.valueOf(currentLevel + 1)
           )
         )
-        level.playSound(null, pos, SoundEvents.BOTTLE_EMPTY, SoundSource.BLOCKS, 1.0f, 1.0f)
+        level.playBlockSound(pos, SoundEvents.BOTTLE_EMPTY)
         level.gameEvent(player, GameEvent.FLUID_PLACE, pos)
       }
       InteractionResult.SUCCESS
