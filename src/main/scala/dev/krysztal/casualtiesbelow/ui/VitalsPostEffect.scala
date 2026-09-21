@@ -180,9 +180,15 @@ object VitalsPostEffect {
     val incapacitation =
       maxDimming * Unconsciousness.severityOf(vitals.consciousness.level).toFloat
 
+    // Perceptual compensation: the shader's zoom-ghost and double-vision offsets scale linearly
+    // with strength, so mid-range strengths read as invisible. Ease the blur curve toward the
+    // low end so low-but-conscious levels stay readable.
+    val maxBlur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat
+    val blurStrength = math.pow(progress, 0.6f).toFloat
+
     ConsciousnessVisual(
       darkness = math.max(dimming, incapacitation),
-      blur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat * progress * pulse
+      blur = maxBlur * blurStrength * pulse
     )
   }
 

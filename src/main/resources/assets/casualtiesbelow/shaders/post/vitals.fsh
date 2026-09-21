@@ -18,7 +18,7 @@ layout(std140) uniform VitalsConfig {
 out vec4 fragColor;
 
 const float VignetteOpacityMultiplier = 2.0;
-const float ZoomDistance = 0.025;
+const float ZoomDistance = 0.06;
 const float DoubleVisionBlend = 0.44;
 const vec3 ShockEdgeMultiplier = vec3(0.55, 0.03, 0.01);
 const float ShockNoiseFramesPerTick = 0.1;
@@ -69,7 +69,7 @@ vec3 applyConsciousnessDistortion(
     color += texture(InSampler, coordinates - zoomOffset * 0.75).rgb * 0.16;
     color += texture(InSampler, coordinates - zoomOffset).rgb * 0.12;
 
-    vec2 doubleVisionOffset = texelSize * vec2(6.0, 2.0) * strength;
+    vec2 doubleVisionOffset = texelSize * vec2(14.0, 5.0) * strength;
     vec3 doubleVision = 0.5 * (
         texture(InSampler, clampToTexture(coordinates - doubleVisionOffset, texelSize)).rgb
         + texture(InSampler, clampToTexture(coordinates + doubleVisionOffset, texelSize)).rgb
