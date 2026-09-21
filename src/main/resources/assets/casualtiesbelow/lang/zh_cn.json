@@ -50,5 +50,7 @@
   "advancements.casualtiesbelow.consciousness_minimum.title": "四十六号混凝土拌意大利面",
   "advancements.casualtiesbelow.consciousness_minimum.description": "刚刚说什么了吗？",
   "advancements.casualtiesbelow.hemostasis.title": "死亡慢我一步",
-  "advancements.casualtiesbelow.hemostasis.description": "嗯...我想毁容已经显得不重要了"
+  "advancements.casualtiesbelow.hemostasis.description": "嗯...我想毁容已经显得不重要了",
+  "screen.casualtiesbelow.body_status.stat.body_temperature": "体温",
+  "screen.casualtiesbelow.body_status.stat.wetness": "湿身"
 }

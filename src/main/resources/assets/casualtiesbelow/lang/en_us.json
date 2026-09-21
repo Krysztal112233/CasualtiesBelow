@@ -34,6 +34,8 @@
   "screen.casualtiesbelow.body_status.stat.blood": "Blood",
   "screen.casualtiesbelow.body_status.stat.sepsis": "Sepsis",
   "screen.casualtiesbelow.body_status.stat.discomfort": "Discomfort",
+  "screen.casualtiesbelow.body_status.stat.body_temperature": "Body Temp",
+  "screen.casualtiesbelow.body_status.stat.wetness": "Wetness",
   "death.attack.blood_loss": "%1$s bled out",
   "death.attack.sepsis": "%1$s succumbed to sepsis",
   "death.attack.hypoxia": "%1$s succumbed to hypoxia",

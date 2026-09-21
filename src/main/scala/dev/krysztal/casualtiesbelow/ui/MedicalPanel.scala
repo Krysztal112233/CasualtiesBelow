@@ -15,10 +15,11 @@ import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.pain.PainCalc
 
 /** Medical status panel docked to the left screen edge, in the spirit of Scav Prototype's health
-  * panel: an always-visible vitals section (consciousness, blood oxygen, immune health) on top and
-  * a limb section below it that only appears while a body part is selected. Muscle/skin/vitals
-  * stats are drawn as label + bar; pain and the condition rows (fracture, dislocation, infection,
-  * bleeding) are plain label + value rows. Values in a bad condition are drawn red.
+  * panel: an always-visible vitals section (consciousness, blood oxygen, immune health, body
+  * temperature) on top and a limb section below it that only appears while a body part is selected.
+  * Muscle/skin/vitals stats are drawn as label + bar; pain, body temperature and the condition rows
+  * (fracture, dislocation, infection, bleeding) are plain label + value rows. Values in a bad
+  * condition are drawn red.
   *
   * Stateless and independent of any screen — reusable from screens or HUD overlays. All data is
   * read from the given player's synced components. [[MedicalPanel.Width]] tells callers how much
@@ -58,6 +59,14 @@ object MedicalPanel {
   private val PainBadThreshold = 50.0
   private val ConsciousnessBadThreshold = 50.0
   private val BloodBadThreshold = 70.0
+
+  // Visual warning band for the body-temperature row; mirrors the planned penalty band (see the
+  // 下游对接 design doc) until the band itself lands as config and these read from it.
+  private val BodyTempLowWarning = 35.0
+  private val BodyTempHighWarning = 39.5
+
+  // Wetness row appears only while actually wet, like the limb condition rows.
+  private val WetnessEpsilon = 0.01
 
   /** Renders the panel spanning the full screen height at the left edge.
     *
@@ -170,6 +179,31 @@ object MedicalPanel {
       ),
       vitals.discomfort >= gameplayData.nauseaThreshold
     )
+
+    // Body temperature is a deviation meter, not a depletion bar: a plain row with the °C value,
+    // red outside the safe band.
+    y = extractStatRow(
+      graphics,
+      font,
+      contentX,
+      y,
+      Component.translatable("screen.casualtiesbelow.body_status.stat.body_temperature"),
+      Component.literal(f"${vitals.bodyTemperature}%.1f °C"),
+      vitals.bodyTemperature < BodyTempLowWarning || vitals.bodyTemperature > BodyTempHighWarning
+    )
+    // Wetness only has consequences while present (armor collapse, evaporative cooling), so the
+    // row appears only when wet.
+    if (vitals.wetness > WetnessEpsilon) {
+      y = extractStatRow(
+        graphics,
+        font,
+        contentX,
+        y,
+        Component.translatable("screen.casualtiesbelow.body_status.stat.wetness"),
+        Component.literal((vitals.wetness * 100.0).toInt.toString),
+        false
+      )
+    }
 
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",
     // so it is a plain row (red above the threshold) rather than a depletion bar.
