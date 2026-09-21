@@ -1179,6 +1179,20 @@ object CasualtiesBelowConfig {
       "Hot-reloaded on file change."
     )
   )
+  val EffectiveTemperatureFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "effectiveTemperatureFormula",
+    TemperatureCalc.EffectiveTemperatureFormulaDefault,
+    List("t", "i"),
+    comment = Seq(
+      "Applies armor insulation to the equilibrium core temperature, compiled with EvalEx.",
+      "Available variables: t (equilibrium before armor), i (effective insulation after wetness",
+      "collapse). Insulation is gated to the cold side (t <= 37): in heat it does nothing, so",
+      "clothing cannot make a hot environment feel colder - the heat-side clothing property is",
+      "the dissipation-block coefficient. Initial placeholder, pending calibration. Invalid",
+      "formulas are rejected and corrected to the default. Hot-reloaded on file change."
+    )
+  )
   val DryingCurveFormula: FormulaConfigValue = new FormulaConfigValue(
     Builder,
     "dryingCurveFormula",

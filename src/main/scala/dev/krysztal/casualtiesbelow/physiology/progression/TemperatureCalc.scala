@@ -24,6 +24,12 @@ object TemperatureCalc {
   val ComfortBandFormulaDefault =
     "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))"
 
+  /** Default source of `CasualtiesBelowConfig.EffectiveTemperatureFormula`: armor insulation
+    * shrinks the equilibrium's deviation from normal body temperature on the cold side only.
+    */
+  val EffectiveTemperatureFormulaDefault =
+    "37 + (t - 37) * (1 - i * if(t > 37, 0, 1))"
+
   /** Default source of `CasualtiesBelowConfig.DryingCurveFormula`: wetness lost per second from the
     * drying temperature (this EvalEx configuration has no exp(), so e's power is numeric).
     */
@@ -38,10 +44,14 @@ object TemperatureCalc {
   def apparentTemperature(mapped: Double, immersed: Boolean): Double =
     if (immersed) mapped.max(0.0) else mapped
 
-  /** Armor insulation shrinks the equilibrium's deviation from normal body temperature. */
+  /** Armor insulation shrinks the equilibrium's deviation from normal body temperature, gated to
+    * the cold side (t <= 37): in heat, clothing neither insulates nor refrigerates — the heat-side
+    * thermal role of clothing belongs to the dissipation-block coefficient alone.
+    */
   def effectiveEquilibrium(equilibrium: Double, insulation: Double): Double = {
     val normal = VitalsComponent.NormalBodyTemperature
-    normal + (equilibrium - normal) * (1.0 - insulation)
+    val coldWeight = if (equilibrium > normal) 0.0 else 1.0
+    normal + (equilibrium - normal) * (1.0 - insulation * coldWeight)
   }
 
   /** Approach rate (1/s) from the air time constant, sped up while immersed. */

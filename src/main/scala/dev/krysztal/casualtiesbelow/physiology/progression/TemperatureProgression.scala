@@ -135,7 +135,10 @@ object TemperatureProgression {
 
     // (f) Exponential approach of the armor-weakened equilibrium plus production terms.
     val effectiveEquilibrium =
-      TemperatureCalc.effectiveEquilibrium(equilibrium, effectiveInsulation)
+      CasualtiesBelowConfig.EffectiveTemperatureFormula.evaluate(
+        equilibrium,
+        effectiveInsulation
+      )
     val ratePerSecond = TemperatureCalc.approachRatePerSecond(
       CasualtiesBelowConfig.TauAirMinutes.get(),
       immersed,

@@ -81,7 +81,7 @@ final class TemperatureCalcTest {
   }
 
   @Test
-  def insulationShrinksEquilibriumDeviationFromNormal(): Unit = {
+  def insulationAppliesColdSideOnly(): Unit = {
     assertEquals(
       33.0,
       TemperatureCalc.effectiveEquilibrium(33.0, 0.0),
@@ -92,19 +92,25 @@ final class TemperatureCalcTest {
       35.4,
       TemperatureCalc.effectiveEquilibrium(33.0, 0.6),
       1.0e-9,
-      "60% insulation keeps 40% of the deviation"
+      "60% insulation keeps 40% of the cold deviation"
     )
     assertEquals(
       37.0,
       TemperatureCalc.effectiveEquilibrium(33.0, 1.0),
       1.0e-9,
-      "full insulation cancels the environment"
+      "full insulation cancels the cold environment"
     )
     assertEquals(
-      38.44,
+      40.6,
       TemperatureCalc.effectiveEquilibrium(40.6, 0.6),
       1.0e-9,
-      "hot side shrinks symmetrically"
+      "hot side: insulation is inert, clothing cannot refrigerate"
+    )
+    assertEquals(
+      40.6,
+      TemperatureCalc.effectiveEquilibrium(40.6, 0.0),
+      1.0e-9,
+      "hot side: naked and clothed converge identically"
     )
   }
 
