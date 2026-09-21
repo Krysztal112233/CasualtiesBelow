@@ -10,7 +10,6 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 /** Client-side grime motes for squalid players.
   *
@@ -37,7 +36,7 @@ object GrimeParticles {
   private def spawnForPlayer(level: ClientLevel, player: Player): Unit = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     spawnWashOff(level, player, vitals.dirtiness)
-    if (vitals.dirtiness < CasualtiesBelowConfig.DirtinessBandSqualid.value) return
+    if (vitals.dirtiness < CasualtiesBelowConfig.DirtinessBandSqualid.get()) return
     if (player.getRandom.nextFloat() >= SpawnChancePerTick) return
 
     val random = player.getRandom

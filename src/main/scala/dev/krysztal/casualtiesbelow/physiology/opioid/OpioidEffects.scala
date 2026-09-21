@@ -2,7 +2,6 @@ package dev.krysztal.casualtiesbelow.physiology.opioid
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 /** Pure opioid effect curves. Stored vitals remain unmodified; consumers opt into the relevant
   * derived pressure explicitly.
@@ -37,7 +36,7 @@ object OpioidEffects {
   def causesRespiratoryFailure(efficiency: Double): Boolean = {
     causesRespiratoryFailure(
       efficiency,
-      CasualtiesBelowConfig.OpioidRespiratoryFailureEfficiencyThreshold.value
+      CasualtiesBelowConfig.OpioidRespiratoryFailureEfficiencyThreshold.get()
     )
   }
 
@@ -49,8 +48,8 @@ object OpioidEffects {
   def isInExcitementBand(level: Double): Boolean = {
     isInExcitementBand(
       level,
-      CasualtiesBelowConfig.OpioidExcitementStartLevel.value,
-      CasualtiesBelowConfig.OpioidExcitementEndLevel.value
+      CasualtiesBelowConfig.OpioidExcitementStartLevel.get(),
+      CasualtiesBelowConfig.OpioidExcitementEndLevel.get()
     )
   }
 

@@ -7,7 +7,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes
 import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 /** Configurable fall damage formula, backed by the config's `damageFormula` [[FormulaConfigValue]]
   * (compiled via EvalEx).
@@ -18,7 +17,7 @@ object FallDamageFormula {
   private val formula = CasualtiesBelowConfig.FallDamageFormula
 
   def appliesTo(entity: LivingEntity): Boolean =
-    CasualtiesBelowConfig.AffectAllLivingEntities.value || entity.isInstanceOf[Player]
+    CasualtiesBelowConfig.AffectAllLivingEntities.get() || entity.isInstanceOf[Player]
 
   def calculateCustom(
       entity: LivingEntity,

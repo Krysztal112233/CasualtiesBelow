@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
@@ -24,7 +23,7 @@ object PenaltyBandScenarios {
   def coldDeviationCapsConsciousness(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.value
+    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
     val coldDev = bandLow - 33.0
 
     VitalsMutations.setBodyTemperature(vitals, 33.0)
@@ -42,7 +41,7 @@ object PenaltyBandScenarios {
   def deeperColdDeviationLowersCeiling(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.value
+    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
     val coldDev = bandLow - 30.0
 
     VitalsMutations.setBodyTemperature(vitals, 30.0)
@@ -85,8 +84,8 @@ object PenaltyBandScenarios {
     * asymmetry of the penalty band).
     */
   def coldSideDrainsImmunityHarder(helper: GameTestHelper): Unit = {
-    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.value
-    val bandHigh = CasualtiesBelowConfig.PenaltyBandHighCelsius.value
+    val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+    val bandHigh = CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
     val deviation = 2.0
 
     // Emaciated players (food = 0): no fed regen competes with the temperature drain, but the
@@ -123,8 +122,8 @@ object PenaltyBandScenarios {
     // dirt, poison) are identical in both players and cancel in the difference. Consumers
     // (tickImmune, consciousness) run before the temperature approach step inside one tickPlayer
     // pass, so every tick reads the freshly pinned value — no relaxation drift to absorb.
-    val coldCoef = CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.value
-    val hotCoef = CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.value
+    val coldCoef = CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.get()
+    val hotCoef = CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.get()
     val minutes = 1200.0 / 1200.0
     val expectedExcess = deviation * (coldCoef - hotCoef) * minutes
     helper.assertTrue(
@@ -145,8 +144,8 @@ object PenaltyBandScenarios {
     * `100 - coldDev * coldSlope - hotDev * hotSlope`.
     */
   private def expectedCeiling(coldDev: Double, hotDev: Double): Double = {
-    val coldSlope = CasualtiesBelowConfig.ColdConsciousnessSlopePerDegree.value
-    val hotSlope = CasualtiesBelowConfig.HotConsciousnessSlopePerDegree.value
+    val coldSlope = CasualtiesBelowConfig.ColdConsciousnessSlopePerDegree.get()
+    val hotSlope = CasualtiesBelowConfig.HotConsciousnessSlopePerDegree.get()
     CasualtiesBelowConfig.TemperatureConsciousnessCeilingFormula
       .evaluate(coldDev, hotDev, coldSlope, hotSlope)
       .max(0.0)
@@ -156,7 +155,7 @@ object PenaltyBandScenarios {
   private def startImmune(
       vitals: dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
   ): Double =
-    CasualtiesBelowConfig.MaxImmuneHealth.value.doubleValue()
+    CasualtiesBelowConfig.MaxImmuneHealth.get().doubleValue()
 
   /** One manual tick settles consciousness onto the ceiling: recovery stops there (the bounded next
     * value clamps to the ceiling), and a healthy player (unconscious = false) with a positive

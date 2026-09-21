@@ -20,7 +20,6 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
@@ -132,25 +131,25 @@ final class BodyComponentImpl(val player: Player)
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.LegSpeedPenaltyId,
-      -structuralSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.value
+      -structuralSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.get()
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.LegJumpPenaltyId,
-      -structuralSeverity * CasualtiesBelowConfig.DislocationJumpReduction.value
+      -structuralSeverity * CasualtiesBelowConfig.DislocationJumpReduction.get()
     )
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.LegMuscleSpeedPenaltyId,
       BodyComponentImpl.quantizeMusclePenalty(
-        muscleDeficit * CasualtiesBelowConfig.MuscleSpeedReduction.value
+        muscleDeficit * CasualtiesBelowConfig.MuscleSpeedReduction.get()
       )
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.LegMuscleJumpPenaltyId,
       BodyComponentImpl.quantizeMusclePenalty(
-        muscleDeficit * CasualtiesBelowConfig.MuscleJumpReduction.value
+        muscleDeficit * CasualtiesBelowConfig.MuscleJumpReduction.get()
       )
     )
   }

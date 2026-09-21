@@ -7,7 +7,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
@@ -40,11 +39,11 @@ object OxygenProgression {
         CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick
           .get()
           .doubleValue
-          .max(CasualtiesBelowConfig.BloodOxygenDepletionPerTick.value.doubleValue)
+          .max(CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue)
       } else if (inWall) {
-        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick.value.doubleValue
+        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick.get().doubleValue
       } else if (exhaustedAir) {
-        CasualtiesBelowConfig.BloodOxygenDepletionPerTick.value.doubleValue
+        CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue
       } else {
         0.0
       }
@@ -85,11 +84,11 @@ object OxygenProgression {
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,
-      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.value,
+      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get(),
       respiratoryEfficiency,
       opioidRespiratoryFailure,
       if (opioidRespiratoryFailure) {
-        CasualtiesBelowConfig.OpioidRespiratoryFailureOxygenDrainPerTick.value
+        CasualtiesBelowConfig.OpioidRespiratoryFailureOxygenDrainPerTick.get()
       } else {
         0.0
       }

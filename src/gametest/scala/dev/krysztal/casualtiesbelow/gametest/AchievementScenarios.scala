@@ -15,7 +15,6 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
@@ -115,7 +114,7 @@ object AchievementScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     VitalsMutations.setDiscomfort(
       player.vitals,
-      CasualtiesBelowConfig.MaxDiscomfort.value
+      CasualtiesBelowConfig.MaxDiscomfort.get()
     )
     Discomfort.onFoodEaten(player, new ItemStack(Items.ROTTEN_FLESH))
     assertDone(helper, player, "max_discomfort_food")
@@ -127,7 +126,7 @@ object AchievementScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     VitalsMutations.setDiscomfort(
       player.vitals,
-      CasualtiesBelowConfig.MaxDiscomfort.value
+      CasualtiesBelowConfig.MaxDiscomfort.get()
     )
     Discomfort.onFoodEaten(player, new ItemStack(Items.APPLE))
     assertNotDone(helper, player, "max_discomfort_food")
@@ -147,8 +146,8 @@ object AchievementScenarios {
   /** Near-maximum bleeding that is later fully stopped completes the "Not Today" episode. */
   def hemostasisAfterNearMaxBleedingGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.value *
-      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.value
+    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
+      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.get()
     setBleeding(player, BodyPart.Head, nearMaxRate)
     AchievementHooks.tickForGameTest(player)
     assertNotDone(helper, player, "hemostasis")
@@ -161,8 +160,8 @@ object AchievementScenarios {
   /** Bleeding that never reached the near-maximum threshold does not count, even when stopped. */
   def bleedingBelowThresholdDoesNotGrantHemostasis(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.value *
-      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.value
+    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
+      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.get()
     setBleeding(player, BodyPart.Head, nearMaxRate * 0.5)
     AchievementHooks.tickForGameTest(player)
     setBleeding(player, BodyPart.Head, 0.0)

@@ -13,7 +13,6 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
@@ -32,7 +31,7 @@ object HygieneScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     (1 to 100).foreach(_ => Dirtiness.tickForGameTest(player))
-    val expected = CasualtiesBelowConfig.DirtinessAccrualPerSecond.value / 20.0 * 100
+    val expected = CasualtiesBelowConfig.DirtinessAccrualPerSecond.get() / 20.0 * 100
     helper.assertTrue(
       math.abs(vitals.dirtiness - expected) < 1.0e-9,
       s"100 ticks of base accrual: expected $expected, got ${vitals.dirtiness}"
@@ -55,8 +54,8 @@ object HygieneScenarios {
     helper.setBlock(relative, full)
     val absolute = helper.absolutePos(relative)
 
-    val perTick = CasualtiesBelowConfig.DirtinessWashWaterPerSecond.value / 20.0
-    val pointsPerLevel = CasualtiesBelowConfig.DirtinessCauldronPointsPerLevel.value
+    val perTick = CasualtiesBelowConfig.DirtinessWashWaterPerSecond.get() / 20.0
+    val pointsPerLevel = CasualtiesBelowConfig.DirtinessCauldronPointsPerLevel.get()
     val ticksPerLevel = math.ceil(pointsPerLevel / perTick).toInt
 
     // One tick short of the crossing: the level must be untouched.
@@ -123,7 +122,7 @@ object HygieneScenarios {
     )
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
-    val maxDirtiness = CasualtiesBelowConfig.MaxDirtiness.value
+    val maxDirtiness = CasualtiesBelowConfig.MaxDirtiness.get()
     VitalsMutations.setDirtiness(player.vitals, maxDirtiness / 2)
     val body = CasualtiesBelowComponents.Body.get(player)
     // A main-hand syringe pricks the opposite arm (right-handed default: the left arm).
@@ -138,7 +137,7 @@ object HygieneScenarios {
       0.0
     )
 
-    val expected = CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.value * 0.5 * 0.5
+    val expected = CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.get() * 0.5 * 0.5
     val progress = body.stats(injected).infectionProgress
     helper.assertTrue(progress.isPresent, "dirty injection must seed an infection")
     helper.assertTrue(

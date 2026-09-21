@@ -19,7 +19,6 @@ import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
@@ -43,9 +42,9 @@ object DirtinessSources {
         zombieFamily = attacker.exists(_.is(EntityTypeTags.ZOMBIES)),
         explosion = context.source.is(DamageTypeTags.IS_EXPLOSION),
         monster = attacker.exists(_.getType.getCategory == MobCategory.MONSTER),
-        zombiePulse = CasualtiesBelowConfig.DirtinessZombieHit.value,
-        explosionPulse = CasualtiesBelowConfig.DirtinessExplosion.value,
-        mobPulse = CasualtiesBelowConfig.DirtinessMobHit.value
+        zombiePulse = CasualtiesBelowConfig.DirtinessZombieHit.get(),
+        explosionPulse = CasualtiesBelowConfig.DirtinessExplosion.get(),
+        mobPulse = CasualtiesBelowConfig.DirtinessMobHit.get()
       )
       applyPulse(context.player, base)
     }
@@ -56,7 +55,7 @@ object DirtinessSources {
         case player: ServerPlayer
             if !source
               .is(DamageTypeTags.IS_PROJECTILE) && !source.is(DamageTypeTags.IS_EXPLOSION) =>
-          applyPulse(player, CasualtiesBelowConfig.DirtinessMeleeKill.value)
+          applyPulse(player, CasualtiesBelowConfig.DirtinessMeleeKill.get())
         case _ => ()
       }
     }
@@ -67,9 +66,9 @@ object DirtinessSources {
           val base = digPulse(
             dirty = state.is(CasualtiesBelowTags.DirtyDiggableBlocks),
             dustless = state.is(CasualtiesBelowTags.DustlessDiggableBlocks),
-            dirtyPulse = CasualtiesBelowConfig.DirtinessDigDirtyBlock.value,
-            dustlessPulse = CasualtiesBelowConfig.DirtinessDigDustlessBlock.value,
-            basicPulse = CasualtiesBelowConfig.DirtinessDigBasicBlock.value
+            dirtyPulse = CasualtiesBelowConfig.DirtinessDigDirtyBlock.get(),
+            dustlessPulse = CasualtiesBelowConfig.DirtinessDigDustlessBlock.get(),
+            basicPulse = CasualtiesBelowConfig.DirtinessDigBasicBlock.get()
           )
           // A dustless break raises nothing at all: skip the jitter roll entirely.
           if (base > 0.0) applyPulse(serverPlayer, base)
@@ -82,7 +81,7 @@ object DirtinessSources {
         case (serverPlayer: ServerPlayer, false)
             if entity.isInstanceOf[Animal] &&
               HusbandryTools.contains(serverPlayer.getItemInHand(hand).getItem) =>
-          applyPulse(serverPlayer, CasualtiesBelowConfig.DirtinessHusbandry.value)
+          applyPulse(serverPlayer, CasualtiesBelowConfig.DirtinessHusbandry.get())
         case _ => ()
       }
       InteractionResult.PASS
@@ -96,7 +95,7 @@ object DirtinessSources {
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
     val store = GameplayDataStores.server(player.level().getServer)
     Discomfort.meanOf(stack, GameplayDataSnapshot.capture(store), store).foreach { mean =>
-      applyPulse(player, foodDirt(mean, CasualtiesBelowConfig.DirtinessFoodFraction.value))
+      applyPulse(player, foodDirt(mean, CasualtiesBelowConfig.DirtinessFoodFraction.get()))
     }
   }
 
@@ -149,11 +148,11 @@ object DirtinessSources {
 
   private def applyPulse(player: ServerPlayer, base: Double): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
-    val rolled = rollPulse(base, CasualtiesBelowConfig.DirtinessPulseJitter.value, player.getRandom)
+    val rolled = rollPulse(base, CasualtiesBelowConfig.DirtinessPulseJitter.get(), player.getRandom)
     if (rolled <= 0.0) return
 
     val vitals = player.vitals
-    val next = (vitals.dirtiness + rolled).min(CasualtiesBelowConfig.MaxDirtiness.value)
+    val next = (vitals.dirtiness + rolled).min(CasualtiesBelowConfig.MaxDirtiness.get())
     VitalsMutations.setDirtiness(vitals, next)
     VitalsMutations.syncNow(player)
   }

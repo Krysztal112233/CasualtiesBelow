@@ -20,7 +20,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
@@ -38,14 +37,14 @@ final class VitalsComponentImpl(val player: Player)
     with CopyableComponent[VitalsComponent]
     with AutoSyncedComponent {
   private var infectionState: InfectionSnapshot =
-    InfectionSnapshot(CasualtiesBelowConfig.MaxImmuneHealth.value, 0.0)
+    InfectionSnapshot(CasualtiesBelowConfig.MaxImmuneHealth.get(), 0.0)
   private var consciousnessState: ConsciousnessSnapshot =
     ConsciousnessSnapshot(VitalsComponent.MaxValue, unconscious = false)
   private var shockState: ShockSnapshot = ShockSnapshot(0.0, PainShockStage.Stable)
   private var adrenalineState: AdrenalineState = AdrenalineState.Empty
   private var circulationState: CirculationState = CirculationState(
     VitalsComponent.MaxBloodOxygen,
-    CasualtiesBelowConfig.MaxBloodVolume.value,
+    CasualtiesBelowConfig.MaxBloodVolume.get(),
     hypoxiaExposureTicks = 0,
     totemHemostasisTicks = 0
   )
@@ -124,7 +123,7 @@ final class VitalsComponentImpl(val player: Player)
 
   private[casualtiesbelow] def setImmuneHealth(value: Double): Unit = {
     infectionState = infectionState.copy(
-      immuneHealth = bounded(value, CasualtiesBelowConfig.MaxImmuneHealth.value)
+      immuneHealth = bounded(value, CasualtiesBelowConfig.MaxImmuneHealth.get())
     )
   }
 
@@ -171,25 +170,25 @@ final class VitalsComponentImpl(val player: Player)
 
   private[casualtiesbelow] def setBloodVolume(value: Double): Unit = {
     circulationState = circulationState.copy(
-      bloodVolume = bounded(value, CasualtiesBelowConfig.MaxBloodVolume.value)
+      bloodVolume = bounded(value, CasualtiesBelowConfig.MaxBloodVolume.get())
     )
   }
 
   private[casualtiesbelow] def setSepsis(value: Double): Unit = {
     infectionState =
-      infectionState.copy(sepsis = bounded(value, CasualtiesBelowConfig.MaxSepsis.value))
+      infectionState.copy(sepsis = bounded(value, CasualtiesBelowConfig.MaxSepsis.get()))
   }
 
   override def discomfort: Double = discomfortState
 
   private[casualtiesbelow] def setDiscomfort(value: Double): Unit = {
-    discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.value)
+    discomfortState = bounded(value, CasualtiesBelowConfig.MaxDiscomfort.get())
   }
 
   override def dirtiness: Double = dirtinessState
 
   private[casualtiesbelow] def setDirtiness(value: Double): Unit = {
-    dirtinessState = bounded(value, CasualtiesBelowConfig.MaxDirtiness.value)
+    dirtinessState = bounded(value, CasualtiesBelowConfig.MaxDirtiness.get())
   }
 
   override def opioidLevel: Double = opioidState.level
@@ -263,7 +262,7 @@ final class VitalsComponentImpl(val player: Player)
     setImmuneHealth(
       in.getDoubleOr(
         VitalsComponentImpl.ImmuneHealthKey,
-        CasualtiesBelowConfig.MaxImmuneHealth.value
+        CasualtiesBelowConfig.MaxImmuneHealth.get()
       )
     )
     val savedUnconscious =
@@ -326,7 +325,7 @@ final class VitalsComponentImpl(val player: Player)
       )
     )
     setBloodVolume(
-      in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.value)
+      in.getDoubleOr(VitalsComponentImpl.BloodVolumeKey, CasualtiesBelowConfig.MaxBloodVolume.get())
     )
     applyHypoxiaExposureTicks(
       HypoxiaProgression.normalizeExposureTicks(

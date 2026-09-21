@@ -4,7 +4,6 @@ import net.minecraft.gametest.framework.GameTestHelper
 
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -27,7 +26,7 @@ object SweatScenarios {
     val vitals = player.vitals
     VitalsMutations.setWetness(vitals, 0.0)
     // Above the sweat gate but inside the penalty band: no consciousness pressure interferes.
-    val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.value + 0.5
+    val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.get() + 0.5
 
     val before = vitals.wetness
     (1 to 200).foreach { _ =>
@@ -52,7 +51,7 @@ object SweatScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     VitalsMutations.setWetness(vitals, 0.0)
-    val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.value - 1.5
+    val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.get() - 1.5
 
     (1 to 200).foreach { _ =>
       player.getFoodData.addExhaustion(0.09f)
