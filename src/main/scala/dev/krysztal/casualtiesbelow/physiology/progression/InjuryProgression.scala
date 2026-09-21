@@ -27,6 +27,7 @@ import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidProgression
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
+import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -299,7 +300,23 @@ object InjuryProgression {
       CasualtiesBelowConfig.MaxDirtiness.get(),
       CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.get()
     )
-    val delta = foodDelta - poisonDrain - dirtDrain
+    // Temperature stress: °C outside the penalty band drain immune health per minute, cold harder
+    // than heat; the fed-regen/drain additive semantics below stay unchanged.
+    val temperatureDrain =
+      TemperatureCalc.immuneDrainPerTick(
+        TemperatureCalc.coldDeviation(
+          vitals.bodyTemperature,
+          CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+        ),
+        CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.get()
+      ) + TemperatureCalc.immuneDrainPerTick(
+        TemperatureCalc.hotDeviation(
+          vitals.bodyTemperature,
+          CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
+        ),
+        CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.get()
+      )
+    val delta = foodDelta - poisonDrain - dirtDrain - temperatureDrain
     if (delta == 0.0) return false
 
     val next =

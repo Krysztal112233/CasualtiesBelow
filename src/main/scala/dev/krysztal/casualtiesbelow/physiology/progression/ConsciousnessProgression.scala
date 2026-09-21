@@ -19,10 +19,11 @@ import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
   *
   * Physiological sources contribute pressures rather than assigning consciousness directly. Harm
   * takes precedence over natural recovery; otherwise every active source must permit recovery.
-  * Separate recovery and wake blockers leave room for future states such as head trauma,
-  * temperature stress, or sedation without letting healthy oxygen overwrite them. Pain shock is a
-  * stronger discrete override: its collapsed phase owns literal-zero consciousness, then its
-  * recovery phase temporarily lowers the scalar bound to zero.
+  * Separate recovery and wake blockers leave room for future states such as head trauma or sedation
+  * without letting healthy oxygen overwrite them. Pressure sources: low blood oxygen (recovery/wake
+  * blocker), opioid sedation, and temperature stress outside the penalty band (a ceiling, like
+  * oxygen). Pain shock is a stronger discrete override: its collapsed phase owns literal-zero
+  * consciousness, then its recovery phase temporarily lowers the scalar bound to zero.
   */
 object ConsciousnessProgression {
 
@@ -153,8 +154,38 @@ object ConsciousnessProgression {
         CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
         CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
       ),
-      ConsciousnessPressure(ceiling = OpioidEffects.consciousnessCeiling(vitals.opioidLevel))
+      ConsciousnessPressure(ceiling = OpioidEffects.consciousnessCeiling(vitals.opioidLevel)),
+      temperaturePressure(vitals.bodyTemperature)
     )
+  }
+
+  /** Temperature stress: deviation outside the penalty band caps consciousness like low blood
+    * oxygen does (heatstroke and hypothermia present as impaired awareness). The cap is not a
+    * knockout while it stays above the knockout threshold; below it the capped consciousness itself
+    * produces coma — it cannot reach the wake threshold — until the body rewarms, which is the
+    * deep-band behavior the terminal tier will own.
+    */
+  private[progression] def temperaturePressure(bodyTemperature: Double): ConsciousnessPressure = {
+    val coldDev = TemperatureCalc.coldDeviation(
+      bodyTemperature,
+      CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+    )
+    val hotDev = TemperatureCalc.hotDeviation(
+      bodyTemperature,
+      CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
+    )
+    val ceiling = finiteInRange(
+      CasualtiesBelowConfig.TemperatureConsciousnessCeilingFormula.evaluate(
+        coldDev,
+        hotDev,
+        CasualtiesBelowConfig.ColdConsciousnessSlopePerDegree.get(),
+        CasualtiesBelowConfig.HotConsciousnessSlopePerDegree.get()
+      ),
+      0.0,
+      VitalsComponent.MaxValue,
+      VitalsComponent.MaxValue
+    )
+    ConsciousnessPressure(ceiling = ceiling)
   }
 
   private def applyStep(

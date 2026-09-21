@@ -30,6 +30,13 @@ object TemperatureCalc {
   val EffectiveTemperatureFormulaDefault =
     "37 + (t - 37) * (1 - i * if(t > 37, 0, 1))"
 
+  /** Default source of `CasualtiesBelowConfig.TemperatureConsciousnessCeilingFormula`: the
+    * consciousness ceiling drops by slope per °C of deviation outside the penalty band, cold and
+    * hot sides summed.
+    */
+  val TemperatureConsciousnessCeilingFormulaDefault =
+    "100 - coldDev * coldSlope - hotDev * hotSlope"
+
   /** Default source of `CasualtiesBelowConfig.DryingCurveFormula`: wetness lost per second from the
     * drying temperature (this EvalEx configuration has no exp(), so e's power is numeric).
     */
@@ -43,6 +50,27 @@ object TemperatureCalc {
   /** Liquid water never goes below freezing: immersion floors the apparent temperature at 0°C. */
   def apparentTemperature(mapped: Double, immersed: Boolean): Double =
     if (immersed) mapped.max(0.0) else mapped
+
+  /** Cold-side deviation outside the penalty band: how many °C the body temperature sits below its
+    * lower bound, or zero inside/above the band.
+    */
+  def coldDeviation(bodyTemperature: Double, bandLow: Double): Double =
+    (bandLow - bodyTemperature).max(0.0)
+
+  /** Hot-side deviation outside the penalty band: how many °C the body temperature sits above its
+    * upper bound, or zero inside/below the band.
+    */
+  def hotDeviation(bodyTemperature: Double, bandHigh: Double): Double =
+    (bodyTemperature - bandHigh).max(0.0)
+
+  /** Per-tick immune drain from one side's band deviation: °C × coefficient/min → /tick (1200 ticks
+    * per minute).
+    */
+  def immuneDrainPerTick(
+      deviation: Double,
+      drainPerDegreePerMinute: Double
+  ): Double =
+    deviation * drainPerDegreePerMinute / 1200.0
 
   /** Armor insulation shrinks the equilibrium's deviation from normal body temperature, gated to
     * the cold side (t <= 37): in heat, clothing neither insulates nor refrigerates — the heat-side

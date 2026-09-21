@@ -1107,6 +1107,42 @@ object CasualtiesBelowConfig {
       "outside the comfort band. Initial placeholder, pending calibration."
     )
     .defineInRange("comfortSlope", 0.3, 0.0, 1.0, classOf[Double])
+  val PenaltyBandLowCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Lower bound (°C) of the body-temperature penalty band: below it, consciousness is",
+      "capped and immune health drains. Initial placeholder, pending calibration."
+    )
+    .defineInRange("penaltyBandLowCelsius", 35.0, 0.0, 37.0, classOf[Double])
+  val PenaltyBandHighCelsius: ConfigValue[Double] = Builder
+    .comment(
+      "Upper bound (°C) of the body-temperature penalty band: above it, consciousness is capped",
+      "and immune health drains. Initial placeholder, pending calibration."
+    )
+    .defineInRange("penaltyBandHighCelsius", 39.5, 37.0, 45.0, classOf[Double])
+  val ColdConsciousnessSlopePerDegree: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness-ceiling reduction per °C of cold-side deviation below the penalty band.",
+      "Initial placeholder, pending calibration."
+    )
+    .defineInRange("coldConsciousnessSlopePerDegree", 5.0, 0.0, 50.0, classOf[Double])
+  val HotConsciousnessSlopePerDegree: ConfigValue[Double] = Builder
+    .comment(
+      "Consciousness-ceiling reduction per °C of hot-side deviation above the penalty band.",
+      "Initial placeholder, pending calibration."
+    )
+    .defineInRange("hotConsciousnessSlopePerDegree", 5.0, 0.0, 50.0, classOf[Double])
+  val ColdImmuneDrainPerDegreePerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Immune-health drain per minute per °C of cold-side deviation below the penalty band",
+      "(cold suppresses immunity harder than heat). Initial placeholder, pending calibration."
+    )
+    .defineInRange("coldImmuneDrainPerDegreePerMinute", 1.0, 0.0, 20.0, classOf[Double])
+  val HotImmuneDrainPerDegreePerMinute: ConfigValue[Double] = Builder
+    .comment(
+      "Immune-health drain per minute per °C of hot-side deviation above the penalty band.",
+      "Initial placeholder, pending calibration."
+    )
+    .defineInRange("hotImmuneDrainPerDegreePerMinute", 0.5, 0.0, 20.0, classOf[Double])
   val EvaporationCoolingPerMinute: ConfigValue[Double] = Builder
     .comment(
       "Maximum evaporative cooling (°C/min) at full wetness in fully dry air; scales with wetness",
@@ -1190,6 +1226,20 @@ object CasualtiesBelowConfig {
       "collapse). Insulation is gated to the cold side (t <= 37): in heat it does nothing, so",
       "clothing cannot make a hot environment feel colder - the heat-side clothing property is",
       "the dissipation-block coefficient. Initial placeholder, pending calibration. Invalid",
+      "formulas are rejected and corrected to the default. Hot-reloaded on file change."
+    )
+  )
+  val TemperatureConsciousnessCeilingFormula: FormulaConfigValue = new FormulaConfigValue(
+    Builder,
+    "temperatureConsciousnessCeilingFormula",
+    TemperatureCalc.TemperatureConsciousnessCeilingFormulaDefault,
+    List("coldDev", "hotDev", "coldSlope", "hotSlope"),
+    comment = Seq(
+      "Consciousness ceiling from body-temperature deviation outside the penalty band, compiled",
+      "with EvalEx. Available variables: coldDev/hotDev (°C outside the penalty band on each",
+      "side), coldSlope/hotSlope (ceiling reduction per °C per side). Together with the",
+      "per-minute immune drains this is the penalty band: low heatstroke and hypothermia press",
+      "consciousness instead of dealing damage. Initial placeholder, pending calibration. Invalid",
       "formulas are rejected and corrected to the default. Hot-reloaded on file change."
     )
   )

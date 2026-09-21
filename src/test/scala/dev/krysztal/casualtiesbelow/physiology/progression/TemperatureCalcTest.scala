@@ -193,6 +193,59 @@ final class TemperatureCalcTest {
     assertEquals(0.5, TemperatureCalc.nextWetness(0.4, 0.1), 1.0e-9)
   }
 
+  // NOTE: the 35.0/39.5 band and 5.0 slopes mirror CasualtiesBelowConfig defaults; keep in sync
+  // when calibrating.
+  @Test
+  def penaltyBandDeviationsAreZeroInsideAndLinearOutside(): Unit = {
+    assertEquals(0.0, TemperatureCalc.coldDeviation(36.5, 35.0), 1.0e-9, "inside the band")
+    assertEquals(0.0, TemperatureCalc.hotDeviation(36.5, 39.5), 1.0e-9, "inside the band")
+    assertEquals(0.0, TemperatureCalc.coldDeviation(35.0, 35.0), 1.0e-9, "lower bound included")
+    assertEquals(0.0, TemperatureCalc.hotDeviation(39.5, 39.5), 1.0e-9, "upper bound included")
+    assertEquals(2.0, TemperatureCalc.coldDeviation(33.0, 35.0), 1.0e-9)
+    assertEquals(0.5, TemperatureCalc.hotDeviation(40.0, 39.5), 1.0e-9)
+    assertEquals(
+      0.0,
+      TemperatureCalc.coldDeviation(40.0, 35.0),
+      1.0e-9,
+      "cold deviation ignores hot readings"
+    )
+  }
+
+  @Test
+  def defaultCeilingFormulaSubtractsBothSides(): Unit = {
+    val ceiling = (coldDev: Double, hotDev: Double) =>
+      evaluate(
+        TemperatureCalc.TemperatureConsciousnessCeilingFormulaDefault,
+        Seq("coldDev", "hotDev", "coldSlope", "hotSlope"),
+        coldDev,
+        hotDev,
+        5.0,
+        5.0
+      )
+    assertEquals(100.0, ceiling(0.0, 0.0), 1.0e-9, "in the band the ceiling stays at max")
+    assertEquals(90.0, ceiling(2.0, 0.0), 1.0e-9, "33°C caps consciousness at 90")
+    assertEquals(97.5, ceiling(0.0, 0.5), 1.0e-9, "40°C caps consciousness at 97.5")
+    assertEquals(75.0, ceiling(5.0, 0.0), 1.0e-9, "30°C caps consciousness at 75")
+    assertEquals(87.5, ceiling(2.0, 0.5), 1.0e-9, "both sides sum")
+  }
+
+  @Test
+  def immuneDrainConvertsMinutesToTicks(): Unit = {
+    assertEquals(
+      2.0 * 1.0 / 1200.0,
+      TemperatureCalc.immuneDrainPerTick(2.0, 1.0),
+      1.0e-12,
+      "2°C cold deviation at 1.0/min drains 1/600 per tick"
+    )
+    assertEquals(
+      0.5 * 0.5 / 1200.0,
+      TemperatureCalc.immuneDrainPerTick(0.5, 0.5),
+      1.0e-12,
+      "hot side converts with its own coefficient"
+    )
+    assertEquals(0.0, TemperatureCalc.immuneDrainPerTick(0.0, 5.0), 1.0e-12)
+  }
+
   // ---- Helpers -----------------------------------------------------------------
 
   private def biomeMapping(t: Double): Double =
