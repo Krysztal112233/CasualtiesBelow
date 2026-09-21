@@ -12,10 +12,10 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server authority for the temporary adrenaline reserve and its post-stimulus grace window.
   *
@@ -36,7 +36,7 @@ object Adrenaline {
     * changed. The reserve change is batched into InjuryProgression's single vitals sync.
     */
   def grant(player: ServerPlayer, amount: Double, cause: Identifier): Boolean = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val previous = storedState(vitals)
     val next = grantState(
       previous,

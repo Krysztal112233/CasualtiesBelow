@@ -2,10 +2,10 @@ package dev.krysztal.casualtiesbelow.physiology.progression
 
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.
@@ -42,7 +42,7 @@ object HypoxiaProgression {
     * pain shock and inadequate blood oxygen retain their normal authority.
     */
   def onDeathProtection(player: ServerPlayer): Unit = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     reset(vitals)
     VitalsMutations.setBloodOxygen(vitals, BloodVolume.oxygenCarryingCapacity(vitals))
     ConsciousnessProgression.restoreAfterHypoxiaDeathProtection(player, vitals)

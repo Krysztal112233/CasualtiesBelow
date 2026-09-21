@@ -10,13 +10,13 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Food immune settlement: nourishing food grants a one-off immune dose and contaminated food
   * drains it. Values are path-keyed datapack data: `food_immune/item/<ns>/<path>.json` prices item
@@ -42,7 +42,7 @@ object FoodImmunity {
     val store = GameplayDataStores.server(player.level().getServer)
     resolve(stack.typeHolder(), store).foreach { mean =>
       if (mean != 0.0) {
-        val vitals = ComponentAccess.vitals(player)
+        val vitals = player.vitals
         val amount =
           sample(mean, CasualtiesBelowConfig.FoodImmuneSpreadFraction.get(), player.getRandom)
         val next = (vitals.infection.immuneHealth + amount)

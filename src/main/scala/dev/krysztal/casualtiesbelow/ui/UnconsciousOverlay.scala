@@ -12,7 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Circular state indicator shown while unconscious or in terminal hypoxia.
@@ -71,7 +71,7 @@ object UnconsciousOverlay {
           trackedPlayer = Some(player)
         }
 
-        val vitals = ComponentAccess.vitals(player)
+        val vitals = player.vitals
         val exposureTicks = vitals.hypoxiaExposureTicks
         val terminalActive = exposureTicks > 0
         val shouldShow = vitals.consciousness.unconscious || terminalActive

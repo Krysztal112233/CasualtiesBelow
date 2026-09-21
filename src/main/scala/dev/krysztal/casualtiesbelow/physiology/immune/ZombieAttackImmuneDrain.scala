@@ -4,9 +4,9 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.EntityTypeTags
 
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Zombie-family hits drain immune health, once per hit with no cooldown: getting mobbed is
   * supposed to be deadly for the immune system, and avoiding it is the player's job. One-way
@@ -31,7 +31,7 @@ object ZombieAttackImmuneDrain {
     * jitter)`), floored at zero.
     */
   private def drain(player: ServerPlayer): Unit = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val base = CasualtiesBelowConfig.ZombieHitImmuneDrain.get()
     val jitter = CasualtiesBelowConfig.ZombieHitImmuneDrainJitter.get()
     val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter

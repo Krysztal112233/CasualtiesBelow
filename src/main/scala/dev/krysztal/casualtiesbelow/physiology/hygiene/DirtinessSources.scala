@@ -16,10 +16,10 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 
@@ -151,7 +151,7 @@ object DirtinessSources {
     val rolled = rollPulse(base, CasualtiesBelowConfig.DirtinessPulseJitter.get(), player.getRandom)
     if (rolled <= 0.0) return
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val next = (vitals.dirtiness + rolled).min(CasualtiesBelowConfig.MaxDirtiness.get())
     VitalsMutations.setDirtiness(vitals, next)
     VitalsMutations.syncNow(player)

@@ -11,8 +11,8 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
 /** Server-side firing points for the mod's advancement triggers ([[CasualtiesBelowTriggers]]).
@@ -49,7 +49,7 @@ object AchievementHooks {
   private def onPlayerDeath(player: ServerPlayer, source: DamageSource): Unit = {
     if (player.isCreative || player.isSpectator) return
     if (!source.`is`(CasualtiesBelowDamageTypes.Hypoxia)) return
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val efficiency =
       OpioidEffects.respiratoryEfficiency(vitals.opioidLevel, vitals.opioidDependence)
     if (OpioidEffects.causesRespiratoryFailure(efficiency)) {
@@ -63,7 +63,7 @@ object AchievementHooks {
       hemostasisStates.remove(player)
       return
     }
-    if (ComponentAccess.vitals(player).consciousness.level <= 0.0) {
+    if (player.vitals.consciousness.level <= 0.0) {
       CasualtiesBelowTriggers.ConsciousnessMinimum.trigger(player)
     }
     val body = CasualtiesBelowComponents.Body.get(player)
@@ -93,7 +93,7 @@ object AchievementHooks {
     * lands — the achievement is specifically about *eating* something revolting.
     */
   private[casualtiesbelow] def onFoodDiscomfortSettled(player: ServerPlayer): Unit = {
-    if (ComponentAccess.vitals(player).discomfort >= CasualtiesBelowConfig.MaxDiscomfort.get()) {
+    if (player.vitals.discomfort >= CasualtiesBelowConfig.MaxDiscomfort.get()) {
       CasualtiesBelowTriggers.MaxDiscomfortFood.trigger(player)
     }
   }

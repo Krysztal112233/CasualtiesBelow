@@ -11,9 +11,9 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.InjectionSettlement
@@ -29,7 +29,7 @@ object HygieneScenarios {
     // Pin the weather to clear so rain washing does not mask the base accrual.
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     (1 to 100).foreach(_ => Dirtiness.tickForGameTest(player))
     val expected = CasualtiesBelowConfig.DirtinessAccrualPerSecond.get() / 20.0 * 100
     helper.assertTrue(
@@ -44,7 +44,7 @@ object HygieneScenarios {
     */
   def cauldronSoakWashesAndConsumesLevels(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     VitalsMutations.setDirtiness(vitals, 60.0)
 
     val relative = new BlockPos(1, 1, 1)
@@ -92,7 +92,7 @@ object HygieneScenarios {
     val waterPos = helper.absolutePos(new BlockPos(1, 1, 1))
     player.setPos(waterPos.getX + 0.5, waterPos.getY + 0.1, waterPos.getZ + 0.5)
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     VitalsMutations.setDirtiness(vitals, 5.0)
     player.baseTick()
     helper.assertTrue(player.isInWater, "fake player should register as in water after baseTick")
@@ -123,7 +123,7 @@ object HygieneScenarios {
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
     val maxDirtiness = CasualtiesBelowConfig.MaxDirtiness.get()
-    VitalsMutations.setDirtiness(ComponentAccess.vitals(player), maxDirtiness / 2)
+    VitalsMutations.setDirtiness(player.vitals, maxDirtiness / 2)
     val body = CasualtiesBelowComponents.Body.get(player)
     // A main-hand syringe pricks the opposite arm (right-handed default: the left arm).
     val injected = BodyPart.ArmLeft

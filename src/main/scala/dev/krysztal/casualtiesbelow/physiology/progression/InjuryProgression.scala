@@ -13,11 +13,11 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.BodyTopology
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
@@ -117,7 +117,7 @@ object InjuryProgression {
     }
 
     val body = CasualtiesBelowComponents.Body.get(player)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     var vitalsChanged = OpioidProgression.tick(vitals)
     val walking = isWalking(player)
     val withdrawalPainMultiplier = OpioidWithdrawal.painGrantMultiplier(vitals)

@@ -7,9 +7,9 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.damage.LimbInjuryService
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 
@@ -18,7 +18,7 @@ object OpioidPhaseOneScenarios {
 
   def analgesiaShockSuppression(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     BodyMutations.mutate(player, BodyPart.Torso) { limb => limb.pain = 100.0 }
 
     helper
@@ -52,7 +52,7 @@ object OpioidPhaseOneScenarios {
 
   def overdoseDeath(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
-    VitalsMutations.setOpioidLevel(ComponentAccess.vitals(player), 200.0)
+    VitalsMutations.setOpioidLevel(player.vitals, 200.0)
 
     helper.succeedWhen(() => {
       InjuryProgression.tickForGameTest(player)
@@ -66,7 +66,7 @@ object OpioidPhaseOneScenarios {
 
   def withdrawalTrio(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     player.getFoodData.setFoodLevel(20)
     VitalsMutations.setImmuneHealth(vitals, 100.0)
     VitalsMutations.setOpioidDependence(vitals, 50.0)
@@ -75,7 +75,7 @@ object OpioidPhaseOneScenarios {
     // Positive control: equally fed, no dependence — its immune health must regenerate,
     // proving the harness can observe the regeneration that withdrawal cancels.
     val control = survivalPlayer(helper)
-    val controlVitals = ComponentAccess.vitals(control)
+    val controlVitals = control.vitals
     control.getFoodData.setFoodLevel(20)
     VitalsMutations.setImmuneHealth(controlVitals, 100.0)
 

@@ -14,8 +14,8 @@ import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedCallback
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedContext
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 
@@ -126,7 +126,7 @@ object LimbInjuryService {
     val random = player.getRandom
     val normalizedPainMultiplier = AdrenalinePain.normalizeMultiplier(painMultiplier)
     val withdrawalMultiplier =
-      OpioidWithdrawal.painGrantMultiplier(ComponentAccess.vitals(player))
+      OpioidWithdrawal.painGrantMultiplier(player.vitals)
 
     val effectiveDamage = (damage + rollJitter(random, jitter)).max(0.0)
     val basePain = AdrenalinePain.scale(pain, normalizedPainMultiplier) * withdrawalMultiplier

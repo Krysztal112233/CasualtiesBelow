@@ -18,13 +18,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
@@ -113,7 +113,7 @@ object Discomfort {
       case None                    => ()
       case Some(mean) if mean <= 0 => ()
       case Some(mean)              =>
-        val vitals = ComponentAccess.vitals(player)
+        val vitals = player.vitals
         var amount = sample(mean, player.getRandom)
         if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
           amount *= CasualtiesBelowConfig.DiscomfortNauseousMultiplier.get()
@@ -155,7 +155,7 @@ object Discomfort {
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
 
     // Decay: fast while merely queasy ("tough it out"), slow once actually sick, so high
     // discomfort asks for active resolution (or a vomit) instead of being waited out. Withdrawal

@@ -2,9 +2,9 @@ package dev.krysztal.casualtiesbelow.gametest
 
 import net.minecraft.gametest.framework.GameTestHelper
 
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureProgression
@@ -23,7 +23,7 @@ object SweatScenarios {
   def hotExertionProducesSweat(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     VitalsMutations.setWetness(vitals, 0.0)
     // Above the sweat gate but inside the penalty band: no consciousness pressure interferes.
     val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.get() + 0.5
@@ -49,7 +49,7 @@ object SweatScenarios {
   def coolCoreSuppressesSweat(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     VitalsMutations.setWetness(vitals, 0.0)
     val pinnedCore = CasualtiesBelowConfig.SweatCoreTempThreshold.get() - 1.5
 
@@ -70,14 +70,14 @@ object SweatScenarios {
     helper.getLevel.setRainLevel(0.0f)
     val beforeDirtiness = {
       val control = GameTestPlayers.createSurvivalPlayer(helper)
-      val controlVitals = ComponentAccess.vitals(control)
+      val controlVitals = control.vitals
       val start = controlVitals.dirtiness
       (1 to 1200).foreach(_ => Dirtiness.tickForGameTest(control))
       controlVitals.dirtiness - start
     }
 
     val sweating = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(sweating)
+    val vitals = sweating.vitals
     val start = vitals.dirtiness
     (1 to 1200).foreach { _ =>
       Dirtiness.markSweating(sweating.getUUID)

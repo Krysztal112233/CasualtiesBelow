@@ -9,10 +9,10 @@ import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server-authoritative settlement of batched injection progress reported by the injection screen.
   *
@@ -68,7 +68,7 @@ private[casualtiesbelow] object InjectionSettlement {
       LiquidContents.AmpouleDroplets
     )
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     // Dirty needle: contamination scales with the player's dirtiness and the pushed fraction,
     // never with speed — a careful push through dirty skin still infects.
     val infectionSeed = infectionSeedFor(

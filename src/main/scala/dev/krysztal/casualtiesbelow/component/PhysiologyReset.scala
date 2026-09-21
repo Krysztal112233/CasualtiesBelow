@@ -4,6 +4,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
@@ -15,7 +16,7 @@ object PhysiologyReset {
   def reset(player: ServerPlayer): Unit = {
     BodyMutations.reset(player)
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     VitalsMutations.setImmuneHealth(vitals, CasualtiesBelowConfig.MaxImmuneHealth.get())
     VitalsMutations.setBloodOxygen(vitals, VitalsComponent.MaxBloodOxygen)
     VitalsMutations.setBloodVolume(vitals, CasualtiesBelowConfig.MaxBloodVolume.get())

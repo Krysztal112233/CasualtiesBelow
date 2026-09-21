@@ -16,9 +16,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Dirtiness: the whole-body hygiene axis. The environment and the player's own actions push it up;
   * only water washes it down. One-way feedback by design: physiological states (infection, pain,
@@ -76,7 +76,7 @@ object Dirtiness {
       return
     }
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val level = player.level()
     val biome = level.getBiome(player.blockPosition())
 
@@ -171,7 +171,7 @@ object Dirtiness {
   ): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val current = vitals.dirtiness
     if (current <= 0.0) {
       cauldronProgress.remove(player.getUUID)

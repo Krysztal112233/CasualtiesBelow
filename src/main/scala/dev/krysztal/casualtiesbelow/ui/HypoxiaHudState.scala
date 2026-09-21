@@ -9,7 +9,7 @@ import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Client-side animation state for the drowning HUD.
@@ -128,7 +128,7 @@ object HypoxiaHudState {
           snapToPlayer(player)
         }
         if (!minecraft.isPaused) {
-          val vitals = ComponentAccess.vitals(player)
+          val vitals = player.vitals
           tickOxygen(vitals.circulation.bloodOxygen)
           tickExposure(vitals.hypoxiaExposureTicks)
           tickDirection(vitals.consciousness.level, vitals.hypoxiaExposureTicks > 0)
@@ -141,7 +141,7 @@ object HypoxiaHudState {
   }
 
   private def snapToPlayer(player: LocalPlayer): Unit = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     trackedPlayer = Some(player)
     previousOxygen = vitals.circulation.bloodOxygen
     displayOxygen = vitals.circulation.bloodOxygen

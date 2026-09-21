@@ -28,12 +28,12 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.PhysiologyReset
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
@@ -319,7 +319,7 @@ object CasualtiesBelowCommands {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     val src = ctx.getSource
     players.foreach { player =>
-      val vitals = ComponentAccess.vitals(player)
+      val vitals = player.vitals
       val name = player.getName.getString
       stat match {
         case Some(s) =>
@@ -348,7 +348,7 @@ object CasualtiesBelowCommands {
     val players = EntityArgument.getPlayers(ctx, "targets").asScala.toList
     val src = ctx.getSource
     players.foreach { player =>
-      val vitals = ComponentAccess.vitals(player)
+      val vitals = player.vitals
       name match {
         case "immune_health" =>
           VitalsMutations.setImmuneHealth(vitals, value)

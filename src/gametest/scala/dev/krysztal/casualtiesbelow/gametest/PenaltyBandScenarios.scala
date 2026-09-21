@@ -3,9 +3,9 @@ package dev.krysztal.casualtiesbelow.gametest
 import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
 
@@ -22,7 +22,7 @@ object PenaltyBandScenarios {
   /** Cold deviation below the band caps consciousness without knocking the player out. */
   def coldDeviationCapsConsciousness(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
     val coldDev = bandLow - 33.0
 
@@ -40,7 +40,7 @@ object PenaltyBandScenarios {
   /** A deeper cold deviation lowers the ceiling further, still without a knockout. */
   def deeperColdDeviationLowersCeiling(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val bandLow = CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
     val coldDev = bandLow - 30.0
 
@@ -60,7 +60,7 @@ object PenaltyBandScenarios {
     */
   def insideBandIsPressureFree(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val immuneBefore = vitals.infection.immuneHealth
     // Food pinned to the middle band (neither fed nor hungry): zero food delta, so even a small
     // erroneous temperature drain cannot hide behind fed regen plus the max clamp.
@@ -95,7 +95,7 @@ object PenaltyBandScenarios {
     // equilibrium, so re-pin it before each tick: this scenario measures the drain channels, not
     // the approach dynamics (those are covered by TemperatureScenarios).
     val coldPlayer = GameTestPlayers.createSurvivalPlayer(helper)
-    val coldVitals = ComponentAccess.vitals(coldPlayer)
+    val coldVitals = coldPlayer.vitals
     coldPlayer.getFoodData.setFoodLevel(0)
     coldPlayer.getFoodData.setSaturation(0.0f)
     val coldTarget = bandLow - deviation
@@ -106,7 +106,7 @@ object PenaltyBandScenarios {
     val coldLoss = startImmune(coldVitals) - coldVitals.infection.immuneHealth
 
     val hotPlayer = GameTestPlayers.createSurvivalPlayer(helper)
-    val hotVitals = ComponentAccess.vitals(hotPlayer)
+    val hotVitals = hotPlayer.vitals
     hotPlayer.getFoodData.setFoodLevel(0)
     hotPlayer.getFoodData.setSaturation(0.0f)
     val hotTarget = bandHigh + deviation
@@ -167,7 +167,7 @@ object PenaltyBandScenarios {
       ceiling: Double,
       message: String
   ): Unit = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     helper.assertTrue(
       math.abs(vitals.consciousness.level - ceiling) < 0.001,
       s"$message: level ${vitals.consciousness.level} vs ceiling $ceiling"

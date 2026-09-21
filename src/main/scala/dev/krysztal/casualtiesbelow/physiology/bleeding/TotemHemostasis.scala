@@ -2,10 +2,10 @@ package dev.krysztal.casualtiesbelow.physiology.bleeding
 
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
 
 /** Physiological blood adapter after vanilla death protection rescues blood loss or starvation.
@@ -21,7 +21,7 @@ object TotemHemostasis {
     * has already consumed the protection item and applied its normal effects before this runs.
     */
   def activate(player: ServerPlayer): Unit = {
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val effectiveMaxBlood = BloodVolume.effectiveMaximum(vitals)
     val restoreFraction =
       CasualtiesBelowConfig.TotemBloodRestoreFraction

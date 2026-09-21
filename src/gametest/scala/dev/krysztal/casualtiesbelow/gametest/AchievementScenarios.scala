@@ -12,10 +12,10 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks
@@ -66,7 +66,7 @@ object AchievementScenarios {
   /** Dying of hypoxia while opioids suppress respiration is an overdose death. */
   def opioidOverdoseDeathGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    VitalsMutations.setOpioidLevel(ComponentAccess.vitals(player), 200.0)
+    VitalsMutations.setOpioidLevel(player.vitals, 200.0)
     player.hurtServer(
       helper.getLevel,
       CasualtiesBelowDamageTypes.hypoxia(helper.getLevel),
@@ -94,7 +94,7 @@ object AchievementScenarios {
   def consciousnessMinimumGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     VitalsMutations.applyConsciousnessState(
-      ComponentAccess.vitals(player),
+      player.vitals,
       ConsciousnessSnapshot(0.0, true)
     )
     AchievementHooks.tickForGameTest(player)
@@ -113,7 +113,7 @@ object AchievementScenarios {
   def maxDiscomfortFoodGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     VitalsMutations.setDiscomfort(
-      ComponentAccess.vitals(player),
+      player.vitals,
       CasualtiesBelowConfig.MaxDiscomfort.get()
     )
     Discomfort.onFoodEaten(player, new ItemStack(Items.ROTTEN_FLESH))
@@ -125,7 +125,7 @@ object AchievementScenarios {
   def ordinaryFoodDoesNotGrantMaxDiscomfort(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     VitalsMutations.setDiscomfort(
-      ComponentAccess.vitals(player),
+      player.vitals,
       CasualtiesBelowConfig.MaxDiscomfort.get()
     )
     Discomfort.onFoodEaten(player, new ItemStack(Items.APPLE))

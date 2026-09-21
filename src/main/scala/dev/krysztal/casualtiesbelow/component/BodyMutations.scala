@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 private[casualtiesbelow] final case class BodyMutation(
     before: LimbSnapshot,
@@ -31,7 +32,7 @@ object BodyMutations {
       part: BodyPart,
       markDirty: Boolean = false
   )(operation: MutableLimbState => Unit): BodyMutation = {
-    val body = ComponentAccess.body(player)
+    val body = player.body
     val current = body.mutableCopy(part)
     val before = current.snapshot
     val updated = current.copy()
@@ -51,7 +52,7 @@ object BodyMutations {
       state: MutableLimbState,
       markDirty: Boolean = false
   ): BodyMutation = {
-    val body = ComponentAccess.body(player)
+    val body = player.body
     val current = body.mutableCopy(part)
     val normalized = MutableLimbState.normalize(state)
     val changed = normalized != current
@@ -70,12 +71,12 @@ object BodyMutations {
   }
 
   private[casualtiesbelow] def reset(player: Player): Unit = {
-    val body = ComponentAccess.body(player)
+    val body = player.body
     BodyPart.values.foreach { part => body.replace(part, MutableLimbState()) }
   }
 
   private[casualtiesbelow] def reconcileMovementModifiers(player: Player): Unit =
-    ComponentAccess.body(player).reconcileMovementModifiers()
+    player.body.reconcileMovementModifiers()
 
   private def flushDirty(): Unit = {
     if (DirtyPlayers.isEmpty) return

@@ -13,10 +13,10 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties
 
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
-import dev.krysztal.casualtiesbelow.component.ComponentAccess
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
+import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
@@ -50,7 +50,7 @@ object TemperatureScenarios {
   def coreApproachesEquilibriumFromBothSides(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
 
     VitalsMutations.setBodyTemperature(vitals, equilibrium - 2.0)
@@ -87,7 +87,7 @@ object TemperatureScenarios {
   def immersionAcceleratesApproachAndSoaks(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val airEquilibrium = equilibriumAt(helper, player, immersed = false)
     val waterEquilibrium = equilibriumAt(helper, player, immersed = true)
     helper.assertTrue(
@@ -131,7 +131,7 @@ object TemperatureScenarios {
   def exerciseHeatRaisesCore(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
     VitalsMutations.setBodyTemperature(vitals, equilibrium)
 
@@ -153,7 +153,7 @@ object TemperatureScenarios {
   def onFireHeatsAndFlashDries(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
     VitalsMutations.setBodyTemperature(vitals, equilibrium)
     VitalsMutations.setWetness(vitals, 0.8)
@@ -209,8 +209,8 @@ object TemperatureScenarios {
       resetCore(equilibrium, naked, leather)
       tick(naked, 200)
       tick(leather, 200)
-      val nakedDirect = ComponentAccess.vitals(naked).bodyTemperature - equilibrium
-      val leatherDirect = ComponentAccess.vitals(leather).bodyTemperature - equilibrium
+      val nakedDirect = naked.vitals.bodyTemperature - equilibrium
+      val leatherDirect = leather.vitals.bodyTemperature - equilibrium
       helper.assertTrue(
         nakedDirect > 0.5,
         s"direct probe heat must warm the naked player, got $nakedDirect after 10 s"
@@ -225,8 +225,8 @@ object TemperatureScenarios {
       resetCore(equilibrium, naked, leather)
       tick(naked, 200)
       tick(leather, 200)
-      val nakedCooled = equilibrium - ComponentAccess.vitals(naked).bodyTemperature
-      val leatherCooled = equilibrium - ComponentAccess.vitals(leather).bodyTemperature
+      val nakedCooled = equilibrium - naked.vitals.bodyTemperature
+      val leatherCooled = equilibrium - leather.vitals.bodyTemperature
       helper.assertTrue(
         nakedCooled > 0.5,
         s"dissipative probe cooling must cool the naked player, got $nakedCooled after 10 s"
@@ -298,7 +298,7 @@ object TemperatureScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     // Feet inside the source block: the check reads the feet block and the one below.
     player.setPos(absolute.getX + 0.5, absolute.getY.toDouble, absolute.getZ + 0.5)
-    val vitals = ComponentAccess.vitals(player)
+    val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
     VitalsMutations.setBodyTemperature(vitals, equilibrium)
 
@@ -330,7 +330,5 @@ object TemperatureScenarios {
   }
 
   private def resetCore(equilibrium: Double, players: ServerPlayer*): Unit =
-    players.foreach(player =>
-      VitalsMutations.setBodyTemperature(ComponentAccess.vitals(player), equilibrium)
-    )
+    players.foreach(player => VitalsMutations.setBodyTemperature(player.vitals, equilibrium))
 }
