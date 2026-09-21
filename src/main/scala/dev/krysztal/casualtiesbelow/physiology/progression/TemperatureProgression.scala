@@ -23,6 +23,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.mixin.FoodDataAccessor
+import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 
 /** Body temperature progression: the environment pulls the core temperature towards an equilibrium
   * while internal heat production acts on it directly.
@@ -62,7 +63,7 @@ object TemperatureProgression {
     BodyHeatContributionCallback.EVENT.register(EvaporativeCooling)
     DryingBonusCallback.EVENT.register(FireDryingBonus)
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
-      ExerciseHeat.discard(handler.player.getUUID)
+      ExertionTracker.discard(handler.player.getUUID)
       ()
     }
   }
@@ -158,17 +159,33 @@ object TemperatureProgression {
     )
     val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
 
-    // (g) Wetness axis: fast accrual while immersed, slow in rain, temperature-driven drying
-    // otherwise. The drying bonus (on fire) feeds only this curve — never core temperature.
+    // (g) Wetness axis: fast accrual while immersed, slow in rain, otherwise drying — with sweat
+    // added on top of the non-immersion branches while the core runs hot.
+    val exertionPerSecond =
+      if (!immersed) ExertionTracker.exhaustionPerSecond(player.getUUID) else 0.0
+    val sweatPerSecond =
+      if (
+        exertionPerSecond > 0.0 &&
+        nextCore > CasualtiesBelowConfig.SweatCoreTempThreshold.get()
+      ) {
+        Dirtiness.markSweating(player.getUUID)
+        CasualtiesBelowConfig.SweatWetnessPerSecond.get() * TemperatureCalc.sweatRateFraction(
+          exertionPerSecond,
+          SprintExhaustionPerSecond
+        )
+      } else {
+        0.0
+      }
     val deltaWetness =
       if (immersed) {
         CasualtiesBelowConfig.ImmersionWetnessPerSecond.get() * SecondsPerTick
       } else if (level.isRainingAt(pos)) {
-        CasualtiesBelowConfig.RainWetnessPerSecond.get() * SecondsPerTick
+        CasualtiesBelowConfig.RainWetnessPerSecond
+          .get() * SecondsPerTick + sweatPerSecond * SecondsPerTick
       } else {
         val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
         -CasualtiesBelowConfig.DryingCurveFormula.evaluate(apparent + dryingBonus) *
-          airDryness * SecondsPerTick
+          airDryness * SecondsPerTick + sweatPerSecond * SecondsPerTick
       }
     val nextWetness = TemperatureCalc.nextWetness(wetness, deltaWetness)
     val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
@@ -178,11 +195,11 @@ object TemperatureProgression {
     (coreChanged || wetnessChanged) && syncTick
   }
 
-  /** Drops this player's exercise tracking state when progression is skipped (death,
+  /** Drops this player's exertion tracking state when progression is skipped (death,
     * creative/spectator).
     */
   private[casualtiesbelow] def discard(player: ServerPlayer): Unit =
-    ExerciseHeat.discard(player.getUUID)
+    ExertionTracker.discard(player.getUUID)
 
   /** Per-tick context handed to the built-in contribution listeners during dispatch. */
   private final case class TickFrame(
@@ -199,15 +216,25 @@ object TemperatureProgression {
   /** Shared contribution accumulator: one allocation, reset before every dispatch. */
   private val ContributionAccumulator = new BodyHeatContributionCallback.Accumulator
 
-  /** Exercise heat: vanilla's exhaustion bookkeeping already prices each activity, so its per-tick
-    * delta is the exertion signal. The periodic 4.0 hunger-billing drain shows up as a negative
-    * delta and is truncated (it is an accounting artifact, not negative exercise). The delta is
-    * smoothed with an exponential moving average over roughly five seconds so single actions (a
-    * jump, an attack) register as brief warmth instead of one-tick spikes.
+  /** Vanilla sprinting accrues exhaustion at ~0.56/s; it anchors the exertion fraction for both
+    * exercise heat and sweating.
     */
-  private object ExerciseHeat extends BodyHeatContributionCallback {
+  private val SprintExhaustionPerSecond = 0.56
 
-    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
+  /** Shared exertion signal: vanilla's exhaustion bookkeeping already prices each activity, so its
+    * per-tick delta is the signal. The periodic 4.0 hunger-billing drain shows up as a negative
+    * delta and is truncated (an accounting artifact, not negative exercise). The delta is smoothed
+    * with an exponential moving average over roughly five seconds so single actions (a jump, an
+    * attack) register as brief exertion instead of one-tick spikes. Used by the exercise-heat and
+    * sweating listeners; [[discard]] clears a player's state.
+    */
+  private object ExertionTracker {
+
+    /** Smoothed exhaustion rate in units per second; 0 before any exertion is observed. */
+    def exhaustionPerSecond(id: UUID): Double =
+      tracked.get(id).fold(0.0)(_.smoothedPerTick * TicksPerSecond)
+
+    def observe(player: ServerPlayer): Double = {
       val exhaustion = player.getFoodData
         .asInstanceOf[FoodDataAccessor]
         .casualtiesbelow$getExhaustionLevel()
@@ -215,12 +242,7 @@ object TemperatureProgression {
       val delta = (exhaustion - track.lastExhaustion).toDouble.max(0.0)
       track.lastExhaustion = exhaustion
       track.smoothedPerTick += (delta - track.smoothedPerTick) * SmoothingAlpha
-      val exhaustionPerSecond = track.smoothedPerTick * TicksPerSecond
-      if (exhaustionPerSecond > 0.0) {
-        context.addDirect(
-          exhaustionPerSecond * CasualtiesBelowConfig.ExerciseHeatPerExhaustionPerSecond.get()
-        )
-      }
+      track.smoothedPerTick * TicksPerSecond
     }
 
     def discard(id: UUID): Unit = tracked.remove(id)
@@ -233,6 +255,21 @@ object TemperatureProgression {
 
     /** EMA weight for a ~5 second (100 tick) window. */
     private val SmoothingAlpha = 2.0 / (100.0 + 1.0)
+  }
+
+  /** Exercise heat: the shared exertion signal converts to direct-channel heat at the configured
+    * rate per exhaustion unit.
+    */
+  private object ExerciseHeat extends BodyHeatContributionCallback {
+
+    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
+      val exhaustionPerSecond = ExertionTracker.observe(player)
+      if (exhaustionPerSecond > 0.0) {
+        context.addDirect(
+          exhaustionPerSecond * CasualtiesBelowConfig.ExerciseHeatPerExhaustionPerSecond.get()
+        )
+      }
+    }
   }
 
   /** Fire/lava contact heat: direct contact transfers heat regardless of insulation (convection

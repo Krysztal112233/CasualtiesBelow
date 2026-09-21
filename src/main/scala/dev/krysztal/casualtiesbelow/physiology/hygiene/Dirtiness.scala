@@ -28,8 +28,9 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   * Per server tick and per player (skipped in creative/spectator, like the rest of physiology):
   *
   *   - passive accrual runs at the configured per-second rate with situational multipliers stacked
-  *     multiplicatively: sprinting (sweat), a full armor set (heat buildup) and Nether biomes (ash,
-  *     compounding vanilla's no-water rule)
+  *     multiplicatively: sprinting, a full armor set (heat buildup), Nether biomes (ash,
+  *     compounding vanilla's no-water rule) and sweating while the core runs hot (marked each tick
+  *     by the temperature progression)
   *   - immersion in water washes at the configured rate, dampened in murky water (biome tag
   *     `casualtiesbelow:dirty_water`); rain is a slower free wash. Immersion wins over rain when
   *     both apply. Washing always far outruns accrual, so hygiene is a plannable resource rather
@@ -47,8 +48,16 @@ object Dirtiness {
     ServerTickEvents.END_SERVER_TICK.register { server =>
       ticks += 1
       val syncTick = ticks % SyncIntervalTicks == 0
-      server.getPlayerList.getPlayers.forEach { player =>
-        tickPlayer(player, syncTick)
+      try {
+        server.getPlayerList.getPlayers.forEach { player =>
+          tickPlayer(player, syncTick)
+        }
+      } finally {
+        // Sweat flags are set from the temperature progression while it ticks under
+        // InjuryProgression's END_SERVER_TICK listener; read once per loop, then cleared. A flag
+        // set after the loop in the same game tick waits one tick, which is harmless for a
+        // per-second accrual multiplier.
+        sweatingNow.clear()
       }
     }
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
@@ -76,6 +85,11 @@ object Dirtiness {
       CasualtiesBelowConfig.DirtinessSprintMultiplier.get(),
       CasualtiesBelowConfig.DirtinessArmoredMultiplier.get(),
       CasualtiesBelowConfig.DirtinessNetherMultiplier.get(),
+      if (sweatingNow.contains(player.getUUID)) {
+        CasualtiesBelowConfig.SweatDirtinessMultiplier.get()
+      } else {
+        1.0
+      },
       sprinting = player.isSprinting,
       fullyArmored = isFullyArmored(player),
       inNether = biome.is(BiomeTags.IS_NETHER)
@@ -96,6 +110,16 @@ object Dirtiness {
     }
   }
 
+  /** Marks the player as sweating this tick so the hygiene accrual picks it up. Called by the
+    * temperature progression only while sweat is actually produced (hot core plus active exertion);
+    * flags are read and cleared by this object's own END_SERVER_TICK loop, so the contract is
+    * at-most-one-tick staleness and no cleanup on disconnect is needed.
+    */
+  private[casualtiesbelow] def markSweating(id: UUID): Unit = {
+    sweatingNow += id
+    ()
+  }
+
   /** Passive accrual for one tick: the per-second base with situational multipliers stacked
     * multiplicatively.
     */
@@ -104,6 +128,7 @@ object Dirtiness {
       sprintMultiplier: Double,
       armoredMultiplier: Double,
       netherMultiplier: Double,
+      sweatMultiplier: Double,
       sprinting: Boolean,
       fullyArmored: Boolean,
       inNether: Boolean
@@ -111,7 +136,8 @@ object Dirtiness {
     val situational =
       (if (sprinting) sprintMultiplier else 1.0) *
         (if (fullyArmored) armoredMultiplier else 1.0) *
-        (if (inNether) netherMultiplier else 1.0)
+        (if (inNether) netherMultiplier else 1.0) *
+        sweatMultiplier
     basePerSecond.max(0.0) * situational / TicksPerSecond
   }
 
@@ -226,6 +252,7 @@ object Dirtiness {
   private val ArmorSlots =
     List(EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD)
   private val cauldronProgress = mutable.HashMap.empty[UUID, Double]
+  private val sweatingNow = mutable.Set.empty[UUID]
   private var ticks = 0
   private val TicksPerSecond = 20
   private val SyncIntervalTicks = 20

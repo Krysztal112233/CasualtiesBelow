@@ -261,6 +261,40 @@ final class TemperatureCalcTest {
       0.3
     )
 
+  @Test
+  def sweatRateFractionScalesToSprintAndSaturates(): Unit = {
+    assertEquals(
+      0.0,
+      TemperatureCalc.sweatRateFraction(0.0, 0.56),
+      1.0e-9,
+      "no exertion, no sweat"
+    )
+    assertEquals(
+      0.5,
+      TemperatureCalc.sweatRateFraction(0.28, 0.56),
+      1.0e-9,
+      "half sprint exertion gives half the sweat rate"
+    )
+    assertEquals(
+      1.0,
+      TemperatureCalc.sweatRateFraction(0.56, 0.56),
+      1.0e-9,
+      "sprint reference exertion gives the full sweat rate"
+    )
+    assertEquals(
+      1.0,
+      TemperatureCalc.sweatRateFraction(5.0, 0.56),
+      1.0e-9,
+      "beyond the sprint reference the sweat rate saturates"
+    )
+    assertEquals(
+      0.0,
+      TemperatureCalc.sweatRateFraction(-1.0, 0.56),
+      1.0e-9,
+      "a negative exertion signal must not sweat"
+    )
+  }
+
   private def collapse(wetness: Double): Double =
     evaluate(TemperatureCalc.WetnessCollapseFormulaDefault, Seq("wetness"), wetness)
 

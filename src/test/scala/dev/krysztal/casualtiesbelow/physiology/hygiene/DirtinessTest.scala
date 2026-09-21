@@ -14,6 +14,7 @@ final class DirtinessTest {
         2.5,
         1.3,
         1.5,
+        1.0,
         sprinting = false,
         fullyArmored = false,
         inNether = false
@@ -25,11 +26,12 @@ final class DirtinessTest {
   @Test
   def situationalMultipliersStackMultiplicatively(): Unit = {
     assertEquals(
-      0.0015 * 2.5 * 1.3 * 1.5,
+      0.0015 * 2.5 * 1.3 * 1.5 * 1.5,
       Dirtiness.accrualPerTick(
         0.03,
         2.5,
         1.3,
+        1.5,
         1.5,
         sprinting = true,
         fullyArmored = true,
@@ -107,6 +109,7 @@ final class DirtinessTest {
         -1.0,
         2.5,
         1.3,
+        1.5,
         1.5,
         sprinting = true,
         fullyArmored = true,

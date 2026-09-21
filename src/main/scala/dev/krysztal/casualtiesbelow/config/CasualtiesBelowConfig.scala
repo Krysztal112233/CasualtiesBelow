@@ -1143,6 +1143,25 @@ object CasualtiesBelowConfig {
       "Initial placeholder, pending calibration."
     )
     .defineInRange("hotImmuneDrainPerDegreePerMinute", 0.5, 0.0, 20.0, classOf[Double])
+  val SweatCoreTempThreshold: ConfigValue[Double] = Builder
+    .comment(
+      "Core temperature (°C) above which exertion produces sweat (wetness). Initial placeholder,",
+      "pending calibration."
+    )
+    .defineInRange("sweatCoreTempThreshold", 37.0, 30.0, 45.0, classOf[Double])
+  val SweatWetnessPerSecond: ConfigValue[Double] = Builder
+    .comment(
+      "Wetness produced per second at full sprint exertion while the core temperature is above",
+      "the sweat threshold. Initial placeholder, pending calibration."
+    )
+    .defineInRange("sweatWetnessPerSecond", 0.15, 0.0, 1.0, classOf[Double])
+  val SweatDirtinessMultiplier: ConfigValue[Double] = Builder
+    .comment(
+      "Multiplier on passive dirtiness accrual while sweating (sweat gathers grime). Stacked",
+      "multiplicatively with the other situational multipliers. Initial placeholder, pending",
+      "calibration."
+    )
+    .defineInRange("sweatDirtinessMultiplier", 1.5, 1.0, 10.0, classOf[Double])
   val EvaporationCoolingPerMinute: ConfigValue[Double] = Builder
     .comment(
       "Maximum evaporative cooling (°C/min) at full wetness in fully dry air; scales with wetness",
