@@ -11,6 +11,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.pain.PainCalc
 
@@ -97,7 +98,7 @@ object MedicalPanel {
     val gameplayData = GameplayDataSnapshot.current
     graphics.text(
       font,
-      Component.translatable("screen.casualtiesbelow.body_status.section.vitals"),
+      "screen.casualtiesbelow.body_status.section.vitals".translatable(),
       contentX,
       y,
       HeaderColor,
@@ -109,7 +110,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.consciousness"),
+      "screen.casualtiesbelow.body_status.stat.consciousness".translatable(),
       vitals.consciousness.level,
       ConsciousnessBadThreshold
     )
@@ -118,7 +119,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.blood_oxygen"),
+      "screen.casualtiesbelow.body_status.stat.blood_oxygen".translatable(),
       vitals.circulation.bloodOxygen,
       gameplayData.bloodOxygenHypoxiaThreshold
     )
@@ -133,7 +134,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.immune_health"),
+      "screen.casualtiesbelow.body_status.stat.immune_health".translatable(),
       vitals.infection.immuneHealth,
       CasualtiesBelowConfig.immuneBreakEven,
       maxImmune
@@ -148,7 +149,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.blood"),
+      "screen.casualtiesbelow.body_status.stat.blood".translatable(),
       if (effectiveMaxBlood > 0.0) vitals.circulation.bloodVolume / effectiveMaxBlood * 100.0
       else 0.0,
       BloodBadThreshold
@@ -160,7 +161,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.sepsis"),
+      "screen.casualtiesbelow.body_status.stat.sepsis".translatable(),
       Component.literal(
         (vitals.infection.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
       ),
@@ -173,7 +174,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.discomfort"),
+      "screen.casualtiesbelow.body_status.stat.discomfort".translatable(),
       Component.literal(
         (vitals.discomfort / gameplayData.maxDiscomfort * 100.0).toInt.toString
       ),
@@ -187,8 +188,8 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.body_temperature"),
-      Component.literal(f"${vitals.bodyTemperature}%.1f °C"),
+      "screen.casualtiesbelow.body_status.stat.body_temperature".translatable(),
+      f"${vitals.bodyTemperature}%.1f °C".literal,
       vitals.bodyTemperature < BodyTempLowWarning || vitals.bodyTemperature > BodyTempHighWarning
     )
     // Wetness only has consequences while present (armor collapse, evaporative cooling), so the
@@ -199,7 +200,7 @@ object MedicalPanel {
         font,
         contentX,
         y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.wetness"),
+        "screen.casualtiesbelow.body_status.stat.wetness".translatable(),
         Component.literal((vitals.wetness * 100.0).toInt.toString),
         false
       )
@@ -213,7 +214,7 @@ object MedicalPanel {
       font,
       contentX,
       y,
-      Component.translatable("screen.casualtiesbelow.body_status.stat.pain"),
+      "screen.casualtiesbelow.body_status.stat.pain".translatable(),
       Component.literal(totalPain.toInt.toString),
       totalPain > PainBadThreshold
     )
@@ -221,7 +222,7 @@ object MedicalPanel {
     hoveredPart.foreach { part =>
       val stats = body.stats(part)
       y += SectionGap / 2
-      val partName = Component.translatable(s"bodypart.casualtiesbelow.${part.id}")
+      val partName = s"bodypart.casualtiesbelow.${part.id}".translatable()
       graphics.text(font, partName, contentX, y, HeaderColor, true)
       y += SectionGap
       y = extractStatBar(
@@ -229,7 +230,7 @@ object MedicalPanel {
         font,
         contentX,
         y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.muscle_health"),
+        "screen.casualtiesbelow.body_status.stat.muscle_health".translatable(),
         stats.muscleHealth,
         MuscleBadThreshold
       )
@@ -238,7 +239,7 @@ object MedicalPanel {
         font,
         contentX,
         y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.skin_integrity"),
+        "screen.casualtiesbelow.body_status.stat.skin_integrity".translatable(),
         stats.skinIntegrity,
         SkinBadThreshold
       )
@@ -247,7 +248,7 @@ object MedicalPanel {
         font,
         contentX,
         y,
-        Component.translatable("screen.casualtiesbelow.body_status.stat.pain"),
+        "screen.casualtiesbelow.body_status.stat.pain".translatable(),
         Component.literal(stats.pain.toInt.toString),
         stats.pain > PainBadThreshold
       )
@@ -325,26 +326,25 @@ object MedicalPanel {
     */
   private def conditionRows(stats: LimbSnapshot): List[(Component, Component)] = {
     def stat(id: String): Component =
-      Component.translatable(s"screen.casualtiesbelow.body_status.stat.$id")
+      s"screen.casualtiesbelow.body_status.stat.$id".translatable()
 
     val rows = List(
       Option.when(stats.fractureRecoveryTicks.isPresent) {
         val ticks = stats.fractureRecoveryTicks.getAsInt
-        stat("fracture") -> Component.translatable(
-          "screen.casualtiesbelow.body_status.value.minutes",
+        stat("fracture") -> "screen.casualtiesbelow.body_status.value.minutes".translatable(
           f"${ticks / 20.0 / 60.0}%.1f"
         )
       },
       Option.when(stats.dislocated) {
-        stat("dislocated") -> Component.translatable("gui.yes")
+        stat("dislocated") -> "gui.yes".translatable()
       },
       Option.when(stats.infectionProgress.isPresent) {
         val progress = stats.infectionProgress.getAsDouble
-        stat("infection") -> Component.literal(f"$progress%.0f%%")
+        stat("infection") -> f"$progress%.0f%%".literal
       },
       Option.when(stats.externalBleedingRate > 0.0) {
         val bleedingPerSecond = stats.externalBleedingRate * SharedConstants.TICKS_PER_SECOND
-        stat("bleeding") -> Component.literal(f"$bleedingPerSecond%.2f mL/s")
+        stat("bleeding") -> f"$bleedingPerSecond%.2f mL/s".literal
       }
     )
     rows.flatten

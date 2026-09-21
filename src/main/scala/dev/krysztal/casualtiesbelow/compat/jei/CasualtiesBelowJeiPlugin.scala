@@ -22,6 +22,7 @@ import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 
@@ -73,21 +74,19 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     groups.foreach { case ((mean, level), pairs) =>
       val headline = level match {
         case Some(tier) =>
-          Component.translatable("jei.casualtiesbelow.discomfort.tier", tier, fmt(mean))
+          "jei.casualtiesbelow.discomfort.tier".translatable(tier, fmt(mean))
         case None =>
-          Component.translatable("jei.casualtiesbelow.discomfort.override", fmt(mean))
+          "jei.casualtiesbelow.discomfort.override".translatable(fmt(mean))
       }
       registration.addItemStackInfo(
         pairs.map((_, item) => new ItemStack(item)).asJava,
         headline,
-        Component.translatable(
-          "jei.casualtiesbelow.discomfort.thresholds",
+        "jei.casualtiesbelow.discomfort.thresholds".translatable(
           fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
           fmt(data.vomitChanceThreshold)
         ),
-        Component.translatable(
-          "jei.casualtiesbelow.discomfort.vomiting",
+        "jei.casualtiesbelow.discomfort.vomiting".translatable(
           fmt(data.vomitMinChancePerTick * 100.0),
           fmt(data.vomitMaxChancePerTick * 100.0),
           fmt(data.vomitRelief),
@@ -99,15 +98,13 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     if (!stewOverridden) {
       registration.addItemStackInfo(
         List(new ItemStack(Items.SUSPICIOUS_STEW)).asJava,
-        Component.translatable("jei.casualtiesbelow.discomfort.stew"),
-        Component.translatable(
-          "jei.casualtiesbelow.discomfort.thresholds",
+        "jei.casualtiesbelow.discomfort.stew".translatable(),
+        "jei.casualtiesbelow.discomfort.thresholds".translatable(
           fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
           fmt(data.vomitChanceThreshold)
         ),
-        Component.translatable(
-          "jei.casualtiesbelow.discomfort.vomiting",
+        "jei.casualtiesbelow.discomfort.vomiting".translatable(
           fmt(data.vomitMinChancePerTick * 100.0),
           fmt(data.vomitMaxChancePerTick * 100.0),
           fmt(data.vomitRelief),
@@ -196,9 +193,8 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     groups.foreach { case ((slot, skin, muscle, isOverride), items) =>
       registration.addItemStackInfo(
         items.map(new ItemStack(_)).asJava,
-        Component.translatable(
-          "jei.casualtiesbelow.armor.factors",
-          Component.translatable(s"jei.casualtiesbelow.armor.slot.${slot.getSerializedName}"),
+        "jei.casualtiesbelow.armor.factors".translatable(
+          s"jei.casualtiesbelow.armor.slot.${slot.getSerializedName}".translatable(),
           fmt(skin),
           fmt(muscle)
         ),
@@ -206,7 +202,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
           if (isOverride) "jei.casualtiesbelow.armor.override"
           else "jei.casualtiesbelow.armor.formula"
         ),
-        Component.translatable("jei.casualtiesbelow.armor.bypass")
+        "jei.casualtiesbelow.armor.bypass".translatable()
       )
     }
   }
@@ -288,7 +284,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
               fmt(profile.bleedRatePerWound),
               fmt(profile.painPerPoint)
             ),
-            Component.translatable("jei.casualtiesbelow.weapon.note")
+            "jei.casualtiesbelow.weapon.note".translatable()
           )
         }
       }

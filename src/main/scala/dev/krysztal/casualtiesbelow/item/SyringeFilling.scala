@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.item
 import java.util.List
 
 import net.minecraft.core.component.DataComponents
-import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
@@ -15,6 +14,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative drawing of one liquid dose into an empty syringe. Filled refined ampoules
@@ -48,7 +48,7 @@ private[casualtiesbelow] object SyringeFilling {
     ) match {
       case None =>
         player.sendOverlayMessage(
-          Component.translatable("message.casualtiesbelow.syringe.liquid_required")
+          "message.casualtiesbelow.syringe.liquid_required".translatable()
         )
       case Some(source) =>
         val sourceStack = inventory.getItem(source.slot)

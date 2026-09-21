@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionBatchPayload
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
@@ -60,7 +61,7 @@ class InjectionScreen private (
     hand: InteractionHand,
     contents: SyringeContents,
     calibrated: Boolean
-) extends Screen(Component.translatable("screen.casualtiesbelow.injection")) {
+) extends Screen("screen.casualtiesbelow.injection".translatable()) {
 
   /** A screen that pauses the world would let players inject safely mid-combat; keep it ticking,
     * like the body status screen.

@@ -19,7 +19,6 @@ import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.SharedSuggestionProvider
 import net.minecraft.commands.arguments.EntityArgument
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
@@ -33,6 +32,7 @@ import dev.krysztal.casualtiesbelow.component.PhysiologyReset
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
@@ -50,9 +50,9 @@ import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgress
   */
 object CasualtiesBelowCommands {
   private val UnknownPart =
-    SimpleCommandExceptionType(Component.literal("Unknown body part"))
+    SimpleCommandExceptionType("Unknown body part".literal)
   private val UnknownStat =
-    SimpleCommandExceptionType(Component.literal("Unknown limb stat"))
+    SimpleCommandExceptionType("Unknown limb stat".literal)
 
   private val StatNames = List(
     "muscle_health",
@@ -232,9 +232,7 @@ object CasualtiesBelowCommands {
             BodyMutations.syncNow(player)
             ctx.getSource.sendSuccess(
               () =>
-                Component.literal(
-                  s"${player.getName.getString} ${part.id}.$name = ${statValue(result.after, name)}"
-                ),
+                s"${player.getName.getString} ${part.id}.$name = ${statValue(result.after, name)}".literal,
               false
             )
           }
@@ -256,7 +254,7 @@ object CasualtiesBelowCommands {
           BodyMutations.mutate(player, part)(clear)
           BodyMutations.syncNow(player)
           ctx.getSource.sendSuccess(
-            () => Component.literal(s"${player.getName.getString} ${part.id}.$name = none"),
+            () => s"${player.getName.getString} ${part.id}.$name = none".literal,
             false
           )
         }
@@ -278,13 +276,13 @@ object CasualtiesBelowCommands {
         case Some(s) =>
           val value = statValue(stats, s)
           src.sendSuccess(
-            () => Component.literal(s"$name ${part.id}.$s = $value"),
+            () => s"$name ${part.id}.$s = $value".literal,
             false
           )
         case None =>
-          src.sendSuccess(() => Component.literal(s"$name ${part.id}:"), false)
+          src.sendSuccess(() => s"$name ${part.id}:".literal, false)
           StatNames.foreach { s =>
-            src.sendSuccess(() => Component.literal(s"  $s = ${statValue(stats, s)}"), false)
+            src.sendSuccess(() => s"  $s = ${statValue(stats, s)}".literal, false)
           }
       }
     }
@@ -305,7 +303,7 @@ object CasualtiesBelowCommands {
     players.foreach { player =>
       PhysiologyReset.reset(player)
       ctx.getSource.sendSuccess(
-        () => Component.literal(s"Fully recovered ${player.getName.getString}"),
+        () => s"Fully recovered ${player.getName.getString}".literal,
         false
       )
     }
@@ -324,14 +322,14 @@ object CasualtiesBelowCommands {
       stat match {
         case Some(s) =>
           src.sendSuccess(
-            () => Component.literal(s"$name $s = ${vitalsValue(vitals, s)}"),
+            () => s"$name $s = ${vitalsValue(vitals, s)}".literal,
             false
           )
         case None =>
-          src.sendSuccess(() => Component.literal(s"$name vitals:"), false)
+          src.sendSuccess(() => s"$name vitals:".literal, false)
           VitalsStatNames.foreach { s =>
             src.sendSuccess(
-              () => Component.literal(s"  $s = ${vitalsValue(vitals, s)}"),
+              () => s"  $s = ${vitalsValue(vitals, s)}".literal,
               false
             )
           }
@@ -383,8 +381,7 @@ object CasualtiesBelowCommands {
       }
       VitalsMutations.syncNow(player)
       src.sendSuccess(
-        () =>
-          Component.literal(s"${player.getName.getString} $name = ${vitalsValue(vitals, name)}"),
+        () => s"${player.getName.getString} $name = ${vitalsValue(vitals, name)}".literal,
         false
       )
     }

@@ -2,7 +2,6 @@ package dev.krysztal.casualtiesbelow.item
 
 import java.util.List
 
-import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.stats.Stats
 import net.minecraft.world.InteractionHand
@@ -15,6 +14,7 @@ import net.minecraft.world.level.Level
 
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative filling of empty ampoules from refined poppy extract in the inventory. */
@@ -48,7 +48,7 @@ private[casualtiesbelow] object AmpouleFilling {
     )
     if (sourceSlot < 0) {
       player.sendOverlayMessage(
-        Component.translatable("message.casualtiesbelow.ampoule.refined_extract_required")
+        "message.casualtiesbelow.ampoule.refined_extract_required".translatable()
       )
       return InteractionResult.SUCCESS
     }

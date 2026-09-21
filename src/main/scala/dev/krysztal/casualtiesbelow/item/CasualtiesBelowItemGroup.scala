@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.item
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceKey
 import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.ItemStack
@@ -11,6 +10,7 @@ import net.minecraft.world.item.ItemStack
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 
 /** Owns the mod's creative-mode tab and the display order of its content. */
 object CasualtiesBelowItemGroup {
@@ -23,7 +23,7 @@ object CasualtiesBelowItemGroup {
       Key,
       FabricCreativeModeTab
         .builder()
-        .title(Component.translatable("itemGroup.casualtiesbelow"))
+        .title("itemGroup.casualtiesbelow".translatable())
         .icon(() => ItemStack(CasualtiesBelowItems.BasicBandage))
         .displayItems { (_, output) =>
           output.accept(CasualtiesBelowItems.FiberCloth)

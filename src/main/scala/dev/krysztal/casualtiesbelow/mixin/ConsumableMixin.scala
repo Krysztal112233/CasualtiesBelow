@@ -1,7 +1,6 @@
 package dev.krysztal.casualtiesbelow.mixin
 
 import net.minecraft.core.component.DataComponents
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.player.Player
@@ -9,6 +8,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.Consumable
 import net.minecraft.world.level.Level
 
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.immune.FoodImmunity
@@ -34,7 +34,7 @@ abstract class ConsumableMixin {
     user match {
       case serverPlayer: ServerPlayer if !Discomfort.allowsEating(serverPlayer, stack) =>
         serverPlayer.sendSystemMessage(
-          Component.translatable("message.casualtiesbelow.discomfort.refused"),
+          "message.casualtiesbelow.discomfort.refused".translatable(),
           true
         )
         cir.setReturnValue(false)

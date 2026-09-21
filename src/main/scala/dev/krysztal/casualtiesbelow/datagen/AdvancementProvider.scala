@@ -8,7 +8,6 @@ import net.minecraft.advancements.AdvancementHolder
 import net.minecraft.advancements.AdvancementType
 import net.minecraft.advancements.triggers.InventoryChangeTrigger
 import net.minecraft.core.HolderLookup
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.Identifier
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.ItemLike
@@ -16,6 +15,7 @@ import net.minecraft.world.level.ItemLike
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider
 
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 import dev.krysztal.casualtiesbelow.progression.PlayerEventTrigger
@@ -38,8 +38,8 @@ final class AdvancementProvider(
       .advancement()
       .display(
         CasualtiesBelowItems.BasicBandage,
-        Component.translatable("advancements.casualtiesbelow.root.title"),
-        Component.translatable("advancements.casualtiesbelow.root.description"),
+        "advancements.casualtiesbelow.root.title".translatable(),
+        "advancements.casualtiesbelow.root.description".translatable(),
         // 26.2 convention: ResourceTexture expands this to textures/<path>.png itself.
         Identifier.withDefaultNamespace("gui/advancements/backgrounds/adventure"),
         AdvancementType.TASK,
@@ -116,8 +116,8 @@ final class AdvancementProvider(
       .parent(root)
       .display(
         item,
-        Component.translatable(s"advancements.casualtiesbelow.$path.title"),
-        Component.translatable(s"advancements.casualtiesbelow.$path.description"),
+        s"advancements.casualtiesbelow.$path.title".translatable(),
+        s"advancements.casualtiesbelow.$path.description".translatable(),
         null,
         frame,
         true,
@@ -142,8 +142,8 @@ final class AdvancementProvider(
       .parent(root)
       .display(
         icon,
-        Component.translatable(s"advancements.casualtiesbelow.$path.title"),
-        Component.translatable(s"advancements.casualtiesbelow.$path.description"),
+        s"advancements.casualtiesbelow.$path.title".translatable(),
+        s"advancements.casualtiesbelow.$path.description".translatable(),
         null,
         frame,
         true,

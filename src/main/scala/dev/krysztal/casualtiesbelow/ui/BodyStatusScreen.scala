@@ -4,7 +4,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.client.input.KeyEvent
 import net.minecraft.client.player.LocalPlayer
-import net.minecraft.network.chat.Component
 import net.minecraft.util.Mth
 import net.minecraft.util.Util
 
@@ -12,6 +11,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelowClient
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
 
 /** Body status screen, summoned by the open-screen keybind (default: R). Pressing the keybind again
@@ -34,8 +34,7 @@ import dev.krysztal.casualtiesbelow.ui.bodypart.BodyPartRenderer
   * pain (amplitude scales with pain). The hovered part is brightened, and its stats are shown in
   * the [[MedicalPanel]] docked to the left screen edge.
   */
-class BodyStatusScreen
-    extends Screen(Component.translatable("screen.casualtiesbelow.body_status")) {
+class BodyStatusScreen extends Screen("screen.casualtiesbelow.body_status".translatable()) {
 
   /** Wall-clock open timestamp; animation stays independent of game tick rate. */
   private var openedAtMs = Util.getMillis()
@@ -112,7 +111,7 @@ class BodyStatusScreen
     )
     graphics.fill(x, y, x + panelWidth, y + panelHeight, BodyStatusScreen.PanelFillColor)
 
-    val title = Component.translatable("screen.casualtiesbelow.body_status")
+    val title = "screen.casualtiesbelow.body_status".translatable()
     graphics.text(
       font,
       title,

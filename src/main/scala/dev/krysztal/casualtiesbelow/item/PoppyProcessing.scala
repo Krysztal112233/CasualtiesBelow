@@ -5,7 +5,6 @@ import java.util.List
 
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
@@ -30,6 +29,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
@@ -182,7 +182,7 @@ private[casualtiesbelow] object PoppyProcessing {
     val waterBottleSlot = findWaterBottleSlot(inventory.getNonEquipmentItems)
     if (waterBottleSlot < 0) {
       player.sendOverlayMessage(
-        Component.translatable("message.casualtiesbelow.poppy.water_bottle_required")
+        "message.casualtiesbelow.poppy.water_bottle_required".translatable()
       )
       return InteractionResult.SUCCESS
     }
@@ -222,14 +222,14 @@ private[casualtiesbelow] object PoppyProcessing {
     val bottleSlot = findUnfilteredBottleSlot(inventory.getNonEquipmentItems)
     if (bottleSlot < 0) {
       player.sendOverlayMessage(
-        Component.translatable("message.casualtiesbelow.poppy.unfiltered_bottle_required")
+        "message.casualtiesbelow.poppy.unfiltered_bottle_required".translatable()
       )
       return InteractionResult.SUCCESS
     }
     val waterBottleSlot = findWaterBottleSlot(inventory.getNonEquipmentItems)
     if (waterBottleSlot < 0) {
       player.sendOverlayMessage(
-        Component.translatable("message.casualtiesbelow.poppy.water_bottle_required")
+        "message.casualtiesbelow.poppy.water_bottle_required".translatable()
       )
       return InteractionResult.SUCCESS
     }
@@ -282,7 +282,7 @@ private[casualtiesbelow] object PoppyProcessing {
     val currentLevel = state.getValue[JInteger](LayeredCauldronBlock.LEVEL).intValue()
     if (currentLevel < FullCauldronLevel) {
       player.sendOverlayMessage(
-        Component.translatable("message.casualtiesbelow.poppy.full_infusion_required")
+        "message.casualtiesbelow.poppy.full_infusion_required".translatable()
       )
       return InteractionResult.SUCCESS
     }

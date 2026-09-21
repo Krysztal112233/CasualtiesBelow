@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.item
 
-import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.stats.Stats
@@ -18,6 +17,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
+import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 
@@ -55,9 +55,8 @@ final class BasicBandageItem(properties: Item.Properties) extends Item(propertie
             player.awardStat(Stats.ITEM_USED.get(this))
             level.playPlayerSound(player, SoundEvents.WOOL_PLACE, volume = 0.8f, pitch = 1.1f)
             player.sendOverlayMessage(
-              Component.translatable(
-                "message.casualtiesbelow.bandage.applied",
-                Component.translatable(s"bodypart.casualtiesbelow.${part.id}")
+              "message.casualtiesbelow.bandage.applied".translatable(
+                s"bodypart.casualtiesbelow.${part.id}".translatable()
               )
             )
             stack.hurtAndBreak(1, player, player.getUsedItemHand())
@@ -81,7 +80,7 @@ object BasicBandageItem {
 
   private def notifyNoTreatableInjury(player: Player): Unit = {
     player.sendOverlayMessage(
-      Component.translatable("message.casualtiesbelow.bandage.no_treatable_injury")
+      "message.casualtiesbelow.bandage.no_treatable_injury".translatable()
     )
   }
 
