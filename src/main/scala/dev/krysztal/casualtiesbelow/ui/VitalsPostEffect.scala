@@ -55,6 +55,7 @@ object VitalsPostEffect {
     EffectBlock("GrimeConfig", Vector(_.grimeVignette))
   )
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
+  private val BlurPerceptionExponent = 0.6
   private val ShockPulseSpeed = (2.0 * Math.PI / 20.0).toFloat
   private val ShockLoadInterpolationTicks = 5.0f
   private val ShockPulseMinimumModulation = 0.05f
@@ -189,7 +190,7 @@ object VitalsPostEffect {
     // with strength, so mid-range strengths read as invisible. Ease the blur curve toward the
     // low end so low-but-conscious levels stay readable.
     val maxBlur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat
-    val blurStrength = math.pow(progress, 0.6f).toFloat
+    val blurStrength = math.pow(progress.toDouble, BlurPerceptionExponent).toFloat
 
     ConsciousnessVisual(
       darkness = math.max(dimming, incapacitation),
@@ -389,8 +390,8 @@ object VitalsPostEffect {
     try {
       val size =
         (1 to block.members.size).foldLeft(new Std140SizeCalculator())((calc, _) => calc.putFloat())
-      val builder = Std140Builder.onStack(stack, size.get())
-      block.members.foreach(_ => builder.putFloat(0.0f))
+      val builder =
+        block.members.foldLeft(Std140Builder.onStack(stack, size.get()))((b, _) => b.putFloat(0.0f))
       RenderSystem
         .getDevice()
         .createBuffer(
