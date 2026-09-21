@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative filling of empty ampoules from refined poppy extract in the inventory. */
@@ -73,17 +74,15 @@ private[casualtiesbelow] object AmpouleFilling {
   }
 
   private[item] def isEmptyAmpoule(stack: ItemStack, ampouleItem: Item): Boolean =
-    !stack.isEmpty &&
-      stack.getItem == ampouleItem &&
-      stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent) == null
+    !stack.isEmpty && stack.getItem == ampouleItem && stack.liquidContents.isEmpty
 
   private[item] def isEligibleRefinedExtract(stack: ItemStack, refinedItem: Item): Boolean = {
     if (stack.isEmpty || stack.getItem != refinedItem) return false
 
-    val contents = stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
-    contents != null &&
-    contents.liquid == LiquidContents.RefinedPoppyExtract.liquid &&
-    contents.droplets >= LiquidContents.AmpouleDroplets
+    stack.liquidContents.exists(contents =>
+      contents.liquid == LiquidContents.RefinedPoppyExtract.liquid &&
+        contents.droplets >= LiquidContents.AmpouleDroplets
+    )
   }
 
   private[item] def findRefinedExtractSlot(items: List[ItemStack], refinedItem: Item): Int = {
@@ -97,10 +96,7 @@ private[casualtiesbelow] object AmpouleFilling {
 
   private[item] def filledAmpouleStack(ampouleItem: Item): ItemStack = {
     val stack = new ItemStack(ampouleItem)
-    stack.set(
-      CasualtiesBelowDataComponents.LiquidContentsComponent,
-      LiquidContents.RefinedPoppyAmpoule
-    )
+    stack.withLiquidContents(LiquidContents.RefinedPoppyAmpoule)
     stack
   }
 
@@ -111,15 +107,14 @@ private[casualtiesbelow] object AmpouleFilling {
   ): ItemStack = {
     require(isEligibleRefinedExtract(source, refinedItem), "source must contain one ampoule dose")
 
-    val contents = source.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
+    val contents = source.liquidContents.getOrElse(
+      throw IllegalArgumentException("source must contain one ampoule dose")
+    )
     val remaining = contents.droplets - LiquidContents.AmpouleDroplets
     if (remaining == 0L) new ItemStack(emptyBottleItem)
     else {
       val updated = source.copy()
-      updated.set(
-        CasualtiesBelowDataComponents.LiquidContentsComponent,
-        contents.copy(droplets = remaining)
-      )
+      updated.withLiquidContents(contents.copy(droplets = remaining))
       updated
     }
   }

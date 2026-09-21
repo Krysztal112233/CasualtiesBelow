@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative drawing of one liquid dose into an empty syringe. Filled refined ampoules
@@ -101,16 +102,15 @@ private[casualtiesbelow] object SyringeFilling {
 
   private[item] def isFilledRefinedAmpoule(stack: ItemStack, ampouleItem: Item): Boolean = {
     if (stack.isEmpty || stack.getItem != ampouleItem) return false
-    val contents = stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
-    contents != null && contents == LiquidContents.RefinedPoppyAmpoule
+    stack.liquidContents.contains(LiquidContents.RefinedPoppyAmpoule)
   }
 
   private[item] def isEligibleCrudeBottle(stack: ItemStack, crudeBottleItem: Item): Boolean = {
     if (stack.isEmpty || stack.getItem != crudeBottleItem) return false
-    val contents = stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
-    contents != null &&
-    contents.liquid == LiquidContents.CrudePoppyLiquid.liquid &&
-    contents.droplets >= LiquidContents.AmpouleDroplets
+    stack.liquidContents.exists(contents =>
+      contents.liquid == LiquidContents.CrudePoppyLiquid.liquid &&
+        contents.droplets >= LiquidContents.AmpouleDroplets
+    )
   }
 
   private[item] def filledSyringeStack(
@@ -134,10 +134,7 @@ private[casualtiesbelow] object SyringeFilling {
     )
     val dose = measuredDose(baseDose, syringe.calibrated, jitterUnit)
     val stack = new ItemStack(syringe)
-    stack.set(
-      CasualtiesBelowDataComponents.SyringeContentsComponent,
-      SyringeContents(liquid, LiquidContents.AmpouleDroplets, dose)
-    )
+    stack.withSyringeContents(SyringeContents(liquid, LiquidContents.AmpouleDroplets, dose))
     stack.set(DataComponents.MAX_STACK_SIZE, 1)
     stack
   }
@@ -199,10 +196,11 @@ private[casualtiesbelow] object SyringeFilling {
       source: ItemStack,
       emptyBottleItem: Item
   ): ItemStack = {
-    val contents = source.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
+    val contents = source.liquidContents.getOrElse(
+      throw IllegalArgumentException("source must contain one crude syringe dose")
+    )
     require(
-      contents != null &&
-        contents.liquid == LiquidContents.CrudePoppyLiquid.liquid &&
+      contents.liquid == LiquidContents.CrudePoppyLiquid.liquid &&
         contents.droplets >= LiquidContents.AmpouleDroplets,
       "source must contain one crude syringe dose"
     )
@@ -210,10 +208,7 @@ private[casualtiesbelow] object SyringeFilling {
     if (remaining == 0L) new ItemStack(emptyBottleItem)
     else {
       val updated = source.copy()
-      updated.set(
-        CasualtiesBelowDataComponents.LiquidContentsComponent,
-        contents.copy(droplets = remaining)
-      )
+      updated.withLiquidContents(contents.copy(droplets = remaining))
       updated
     }
   }

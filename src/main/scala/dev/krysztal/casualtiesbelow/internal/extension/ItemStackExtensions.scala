@@ -7,6 +7,8 @@ import net.minecraft.world.item.alchemy.Potions
 
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.DryingStage
+import dev.krysztal.casualtiesbelow.item.LiquidContents
+import dev.krysztal.casualtiesbelow.item.SyringeContents
 
 /** Enrichments over [ItemStack] shared by mod-internal call sites.
   *
@@ -38,5 +40,27 @@ private[casualtiesbelow] object ItemStackExtensions {
       val contents = stack.get(DataComponents.POTION_CONTENTS)
       contents != null && contents.is(Potions.WATER)
     }
+
+    /** The drawn syringe contents, if the syringe is filled. */
+    def syringeContents: Option[SyringeContents] = Option(
+      stack.get(CasualtiesBelowDataComponents.SyringeContentsComponent)
+    )
+
+    /** Replaces the syringe's drawn contents in place. */
+    def withSyringeContents(contents: SyringeContents): Unit = stack.set(
+      CasualtiesBelowDataComponents.SyringeContentsComponent,
+      contents
+    )
+
+    /** The carried liquid of bottles, ampoules and crude containers, if any. */
+    def liquidContents: Option[LiquidContents] = Option(
+      stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
+    )
+
+    /** Replaces the carried liquid in place. */
+    def withLiquidContents(contents: LiquidContents): Unit = stack.set(
+      CasualtiesBelowDataComponents.LiquidContentsComponent,
+      contents
+    )
   }
 }

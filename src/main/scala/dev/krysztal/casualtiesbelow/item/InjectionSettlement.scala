@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server-authoritative settlement of batched injection progress reported by the injection screen.
@@ -45,8 +46,11 @@ private[casualtiesbelow] object InjectionSettlement {
       averageSpeed: Double
   ): Unit = {
     val stack = player.getItemInHand(hand)
-    val contents = stack.get(CasualtiesBelowDataComponents.SyringeContentsComponent)
-    if (stack.isEmpty || contents == null) return
+    if (stack.isEmpty) return
+    val contents = stack.syringeContents match {
+      case Some(contents) => contents
+      case None           => return
+    }
     // The client session seeds from a contents snapshot; settle only against that same syringe.
     // A mid-session stack swap (or a partially clamped earlier batch) breaks the identity and
     // fails closed: the batch is ignored rather than settled against the wrong stack.
@@ -100,7 +104,7 @@ private[casualtiesbelow] object InjectionSettlement {
 
     remainder(contents, applied) match {
       case Some(remaining) =>
-        stack.set(CasualtiesBelowDataComponents.SyringeContentsComponent, remaining)
+        stack.withSyringeContents(remaining)
       case None =>
         player.awardStat(Stats.ITEM_USED.get(stack.getItem))
         if (!player.hasInfiniteMaterials()) stack.consume(1, player)

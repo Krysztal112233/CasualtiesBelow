@@ -20,9 +20,9 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionBatchPayload
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
-import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.InjectionSession
 import dev.krysztal.casualtiesbelow.item.LiquidContents
 import dev.krysztal.casualtiesbelow.item.SyringeContents
@@ -557,8 +557,12 @@ object InjectionScreen {
     */
   def openFor(player: Player, hand: InteractionHand): Unit = {
     val stack = player.getItemInHand(hand)
-    val contents = stack.get(CasualtiesBelowDataComponents.SyringeContentsComponent)
-    if (stack.isEmpty || contents == null || contents.droplets <= 0L) return
+    if (stack.isEmpty) return
+    val contents = stack.syringeContents match {
+      case Some(contents) => contents
+      case None           => return
+    }
+    if (contents.droplets <= 0L) return
     stack.getItem match {
       case syringe: SyringeItem =>
         Minecraft

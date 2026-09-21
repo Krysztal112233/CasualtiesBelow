@@ -254,8 +254,7 @@ private[casualtiesbelow] object PoppyProcessing {
   private def isUnfilteredBottle(stack: ItemStack): Boolean = {
     if (stack.isEmpty || stack.getItem != CasualtiesBelowItems.UnfilteredPoppyLiquid) return false
 
-    val contents = stack.get(CasualtiesBelowDataComponents.LiquidContentsComponent)
-    contents != null && isUnfilteredBottleContents(contents)
+    stack.liquidContents.exists(isUnfilteredBottleContents)
   }
 
   private def findUnfilteredBottleSlot(items: List[ItemStack]): Int = {

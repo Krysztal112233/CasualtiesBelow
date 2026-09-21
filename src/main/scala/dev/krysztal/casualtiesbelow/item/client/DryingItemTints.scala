@@ -21,7 +21,7 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
-import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.item.FiberClothDryingInputs
 
 /** Adds stack-component-driven drying tints to the vanilla flat models of the built-in fiber
@@ -85,14 +85,10 @@ private[item] final case class DryingTint(fallback: ItemTintSource) extends Item
       level: ClientLevel,
       owner: LivingEntity
   ): Int = {
-    val stage = itemStack.get(CasualtiesBelowDataComponents.DryingStageComponent)
-    if (stage == null) fallback.calculate(itemStack, level, owner)
-    else {
-      stage.value match {
-        case 1 => DryingTint.Stage1Color
-        case 2 => DryingTint.Stage2Color
-        case _ => fallback.calculate(itemStack, level, owner)
-      }
+    itemStack.dryingStage match {
+      case 1 => DryingTint.Stage1Color
+      case 2 => DryingTint.Stage2Color
+      case _ => fallback.calculate(itemStack, level, owner)
     }
   }
 
