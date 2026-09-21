@@ -33,24 +33,27 @@ import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import org.lwjgl.system.MemoryStack
 
 /** Full-screen vitals effects applied to the world before the GUI. Each gameplay mechanism computes
-  * an independent visual channel; the channels are composed into one post-chain uniform block so
-  * their ordering and overlap remain explicit without multiplying full-screen passes.
+  * an independent visual channel; the channels are composed into one fullscreen post pass where
+  * every visual axis owns its own named uniform block (and shader include), so new axes join
+  * without touching the existing ones.
   */
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
   private val ChainId = CasualtiesBelow.ofIdentifier("vitals")
-  private val UniformGroup = "VitalsConfig"
-  private val UniformBufferSize = new Std140SizeCalculator()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .putFloat()
-    .get()
   private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
+
+  /** One uniform block per visual axis. The block name must match the group in
+    * `post_effect/vitals.json` and the std140 declaration in the axis' shader include; members are
+    * written in declaration order. Adding an axis means one entry here plus its own JSON block and
+    * shader include — no existing axis changes.
+    */
+  private val EffectBlocks: Vector[EffectBlock] = Vector(
+    EffectBlock("ConsciousnessConfig", Vector(_.darkness, _.blur)),
+    EffectBlock("BloodLossConfig", Vector(_.desaturation)),
+    EffectBlock("DiscomfortConfig", Vector(_.discomfortVignette)),
+    EffectBlock("ShockConfig", Vector(_.shock, _.shockNoise, _.shockTime)),
+    EffectBlock("GrimeConfig", Vector(_.grimeVignette))
+  )
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
   private val ShockPulseSpeed = (2.0 * Math.PI / 20.0).toFloat
   private val ShockLoadInterpolationTicks = 5.0f
@@ -58,7 +61,7 @@ object VitalsPostEffect {
   private val ShockTimePeriodTicks = 20000
 
   private var cachedChain: Option[PostChain] = None
-  private var cachedConfigBuffer: Option[GpuBuffer] = None
+  private var cachedBuffers: Map[String, GpuBuffer] = Map.empty
   private var shockInterpolationPlayer: Option[UUID] = None
   private var observedShockLoad = 0.0f
   private var displayedShockLoad = 0.0f
@@ -77,8 +80,10 @@ object VitalsPostEffect {
           .getShaderManager()
           .getPostChain(ChainId, LevelTargetBundle.MAIN_TARGETS)
       ).foreach { chain =>
-        configBuffer(chain).foreach { buffer =>
-          writeStrengths(buffer, strengths)
+        effectBuffers(chain).foreach { buffers =>
+          EffectBlocks.foreach { block =>
+            buffers.get(block.name).foreach(buffer => writeBlock(buffer, block.values(strengths)))
+          }
           chain.process(gameRenderer.mainRenderTarget(), resourcePool)
         }
       }
@@ -326,57 +331,70 @@ object VitalsPostEffect {
     strengths.grimeVignette > 0.0f
   }
 
-  private def configBuffer(chain: PostChain): Option[GpuBuffer] = {
-    val needsInstall = cachedChain.forall(_ ne chain) || cachedConfigBuffer.exists(_.isClosed)
+  /** Per-axis uniform buffers for the chain's single pass, installed once per chain instance.
+    * Returns None unless every axis block is present, keeping the previous all-or-nothing behavior
+    * when assets and code disagree.
+    */
+  private def effectBuffers(chain: PostChain): Option[Map[String, GpuBuffer]] = {
+    val needsInstall =
+      cachedChain.forall(_ ne chain) || cachedBuffers.values.exists(_.isClosed)
     if (needsInstall) {
       cachedChain = Some(chain)
-      cachedConfigBuffer = installConfigBuffer(chain)
+      cachedBuffers = installBuffers(chain)
     }
-    cachedConfigBuffer
+    if (cachedBuffers.size == EffectBlocks.size) Some(cachedBuffers) else None
   }
 
-  private def installConfigBuffer(chain: PostChain): Option[GpuBuffer] = {
+  private def installBuffers(chain: PostChain): Map[String, GpuBuffer] = {
     val uniformMap = chain
       .asInstanceOf[PostChainAccessor]
       .casualtiesbelow$getPasses()
       .asScala
       .iterator
       .map(_.asInstanceOf[PostPassAccessor].casualtiesbelow$getCustomUniforms())
-      .find(_.containsKey(UniformGroup))
+      .find(_.containsKey(EffectBlocks.head.name))
 
     uniformMap
       .map { uniforms =>
-        val buffer = createConfigBuffer()
-        Option(uniforms.put(UniformGroup, buffer)).foreach(_.close())
-        buffer
+        EffectBlocks.flatMap(block => installBuffer(uniforms, block)).toMap
       }
-      .orElse {
+      .getOrElse {
         CasualtiesBelow.Logger.warn(
           "Post chain {} has no {} uniform buffer; vitals effects are disabled",
           ChainId,
-          UniformGroup
+          EffectBlocks.head.name
         )
-        None
+        Map.empty
       }
   }
 
-  private def createConfigBuffer(): GpuBuffer = {
+  private def installBuffer(
+      uniforms: java.util.Map[String, GpuBuffer],
+      block: EffectBlock
+  ): Option[(String, GpuBuffer)] =
+    if (!uniforms.containsKey(block.name)) {
+      CasualtiesBelow.Logger.warn(
+        "Post chain pass is missing the {} uniform buffer; that axis is disabled",
+        block.name
+      )
+      None
+    } else {
+      val buffer = createBlockBuffer(block)
+      Option(uniforms.put(block.name, buffer)).foreach(_.close())
+      Some(block.name -> buffer)
+    }
+
+  private def createBlockBuffer(block: EffectBlock): GpuBuffer = {
     val stack = MemoryStack.stackPush()
     try {
-      val builder = Std140Builder.onStack(stack, UniformBufferSize)
-      builder
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
-        .putFloat(0.0f)
+      val size =
+        (1 to block.members.size).foldLeft(new Std140SizeCalculator())((calc, _) => calc.putFloat())
+      val builder = Std140Builder.onStack(stack, size.get())
+      block.members.foreach(_ => builder.putFloat(0.0f))
       RenderSystem
         .getDevice()
         .createBuffer(
-          () => "CasualtiesBelow / vitals effects",
+          () => s"CasualtiesBelow / vitals effects / ${block.name}",
           UniformBufferUsage,
           builder.get()
         )
@@ -385,19 +403,12 @@ object VitalsPostEffect {
     }
   }
 
-  private def writeStrengths(buffer: GpuBuffer, strengths: EffectStrengths): Unit = {
+  private def writeBlock(buffer: GpuBuffer, values: Vector[Float]): Unit = {
     val view = buffer.map(false, true)
     try {
-      Std140Builder
-        .intoBuffer(view.data())
-        .putFloat(strengths.darkness)
-        .putFloat(strengths.blur)
-        .putFloat(strengths.desaturation)
-        .putFloat(strengths.discomfortVignette)
-        .putFloat(strengths.shock)
-        .putFloat(strengths.shockNoise)
-        .putFloat(strengths.shockTime)
-        .putFloat(strengths.grimeVignette)
+      values.foldLeft(Std140Builder.intoBuffer(view.data()))((builder, value) =>
+        builder.putFloat(value)
+      )
     } finally {
       view.close()
     }
@@ -424,6 +435,16 @@ object VitalsPostEffect {
   private final case class BloodLossVisual(desaturation: Float)
 
   private final case class PainShockVisual(strength: Float, noise: Float, time: Float)
+
+  /** A named std140 uniform block owning part of EffectStrengths; members map 1:1 to the block
+    * declaration in the axis' shader include and to its `post_effect/vitals.json` entry.
+    */
+  private final case class EffectBlock(
+      name: String,
+      members: Vector[EffectStrengths => Float]
+  ) {
+    def values(strengths: EffectStrengths): Vector[Float] = members.map(_(strengths))
+  }
 
   private final case class EffectStrengths(
       darkness: Float,

@@ -15,7 +15,7 @@
       ],
       "output": "swap",
       "uniforms": {
-        "VitalsConfig": [
+        "ConsciousnessConfig": [
           {
             "name": "DarknessStrength",
             "type": "float",
@@ -25,17 +25,23 @@
             "name": "BlurStrength",
             "type": "float",
             "value": 0.0
-          },
+          }
+        ],
+        "BloodLossConfig": [
           {
             "name": "DesaturationStrength",
             "type": "float",
             "value": 0.0
-          },
+          }
+        ],
+        "DiscomfortConfig": [
           {
             "name": "DiscomfortVignetteStrength",
             "type": "float",
             "value": 0.0
-          },
+          }
+        ],
+        "ShockConfig": [
           {
             "name": "ShockStrength",
             "type": "float",
@@ -50,7 +56,9 @@
             "name": "ShockTime",
             "type": "float",
             "value": 0.0
-          },
+          }
+        ],
+        "GrimeConfig": [
           {
             "name": "GrimeVignetteStrength",
             "type": "float",
