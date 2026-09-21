@@ -5,7 +5,6 @@ import java.util.List
 
 import net.minecraft.core.BlockPos
 import net.minecraft.core.Direction
-import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
@@ -18,7 +17,6 @@ import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.minecraft.world.item.alchemy.Potions
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Blocks
 import net.minecraft.world.level.block.LayeredCauldronBlock
@@ -33,6 +31,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 
 /** Server-authoritative, no-GUI poppy processing on vanilla-shaped cauldrons. */
 private[casualtiesbelow] object PoppyProcessing {
@@ -344,17 +343,10 @@ private[casualtiesbelow] object PoppyProcessing {
         .getValue[JInteger](LayeredCauldronBlock.LEVEL)
         .intValue() == FullCauldronLevel
 
-  private[item] def isWaterBottle(stack: ItemStack): Boolean = {
-    if (stack.getItem != Items.POTION) return false
-
-    val contents = stack.get(DataComponents.POTION_CONTENTS)
-    contents != null && contents.is(Potions.WATER)
-  }
-
   private[item] def findWaterBottleSlot(items: List[ItemStack]): Int = {
     var slot = 0
     while (slot < items.size()) {
-      if (isWaterBottle(items.get(slot))) return slot
+      if (items.get(slot).isWaterBottle) return slot
       slot += 1
     }
     -1

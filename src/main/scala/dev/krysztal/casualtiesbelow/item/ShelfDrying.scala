@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.entity.ShelfBlockEntity
 import net.minecraft.world.level.block.state.BlockState
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 
 /** Server-side drying behavior shared by every vanilla shelf wood variant. */
 private[casualtiesbelow] object ShelfDrying {
@@ -38,28 +39,15 @@ private[casualtiesbelow] object ShelfDrying {
     if (stack.isEmpty || !stack.is(CasualtiesBelowTags.DriesToFiberClothItems)) return
     if (!shouldAdvance(random.nextFloat())) return
 
-    val nextStage = advanceStage(stageOf(stack))
+    val nextStage = advanceStage(stack.dryingStage)
     if (nextStage >= RequiredAdvances) {
       shelf.setItemNoUpdate(slot, convertedStack(stack, CasualtiesBelowItems.FiberCloth))
     } else {
-      applyInProgressStage(stack, nextStage)
+      stack.withDryingStage(nextStage)
     }
 
     // Persist and synchronize the changed stack without ShelfBlockEntity's BLOCK_ACTIVATE event.
     shelf.setChanged(null)
-  }
-
-  private[item] def applyInProgressStage(stack: ItemStack, stage: Int): Unit = {
-    require(stage > 0 && stage < RequiredAdvances, s"invalid in-progress drying stage: $stage")
-    stack.set(
-      CasualtiesBelowDataComponents.DryingStageComponent,
-      DryingStage(stage)
-    )
-  }
-
-  private[item] def stageOf(stack: ItemStack): Int = {
-    val stage = stack.get(CasualtiesBelowDataComponents.DryingStageComponent)
-    if (stage == null) 0 else stage.value
   }
 
   private[item] def shouldAdvance(roll: Float): Boolean = roll < SuccessChance

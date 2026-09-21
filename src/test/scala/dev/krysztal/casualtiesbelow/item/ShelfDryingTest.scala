@@ -10,6 +10,8 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+
 import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -46,7 +48,7 @@ final class ShelfDryingTest {
 
     val fresh = new ItemStack(Items.VINE)
     assertNull(fresh.get(CasualtiesBelowDataComponents.DryingStageComponent))
-    assertEquals(0, ShelfDrying.stageOf(fresh))
+    assertEquals(0, fresh.dryingStage)
   }
 
   @Test
@@ -55,11 +57,11 @@ final class ShelfDryingTest {
 
     assertThrows(
       classOf[IllegalArgumentException],
-      () => ShelfDrying.applyInProgressStage(input, 0)
+      () => input.withDryingStage(0)
     )
     assertThrows(
       classOf[IllegalArgumentException],
-      () => ShelfDrying.applyInProgressStage(input, ShelfDrying.RequiredAdvances)
+      () => input.withDryingStage(ShelfDrying.RequiredAdvances)
     )
 
     assertNull(input.get(CasualtiesBelowDataComponents.DryingStageComponent))
@@ -68,7 +70,7 @@ final class ShelfDryingTest {
   @Test
   def componentAppliesToWholeStackWithoutReducingItsLimit(): Unit = {
     val input = new ItemStack(Items.VINE, 64)
-    ShelfDrying.applyInProgressStage(input, 2)
+    input.withDryingStage(2)
 
     assertEquals(64, input.getCount)
     assertEquals(64, input.getMaxStackSize)
@@ -96,7 +98,7 @@ final class ShelfDryingTest {
 
   private def withStage(value: Int): ItemStack = {
     val stack = new ItemStack(Items.VINE, 16)
-    ShelfDrying.applyInProgressStage(stack, value)
+    stack.withDryingStage(value)
     stack
   }
 }

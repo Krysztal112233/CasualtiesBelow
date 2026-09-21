@@ -19,6 +19,8 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 
+import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+
 import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -62,9 +64,9 @@ final class PoppyProcessingTest {
     val water = PotionContents.createItemStack(Items.POTION, Potions.WATER)
     val awkward = PotionContents.createItemStack(Items.POTION, Potions.AWKWARD)
 
-    assertTrue(PoppyProcessing.isWaterBottle(water))
-    assertFalse(PoppyProcessing.isWaterBottle(awkward))
-    assertFalse(PoppyProcessing.isWaterBottle(new ItemStack(Items.GLASS_BOTTLE)))
+    assertTrue(water.isWaterBottle)
+    assertFalse(awkward.isWaterBottle)
+    assertFalse(new ItemStack(Items.GLASS_BOTTLE).isWaterBottle)
   }
 
   @Test

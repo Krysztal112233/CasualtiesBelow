@@ -40,4 +40,13 @@ object DryingStage {
   val Codec: Codec[DryingStage] = ExtraCodecs
     .intRange(1, ShelfDrying.RequiredAdvances - 1)
     .xmap(value => DryingStage(value.intValue()), stage => Integer.valueOf(stage.value))
+
+  /** Validates the in-progress range before a stack mutation carries the component. */
+  private[casualtiesbelow] def inProgress(value: Int): DryingStage = {
+    require(
+      value > 0 && value < ShelfDrying.RequiredAdvances,
+      s"invalid in-progress drying stage: $value"
+    )
+    new DryingStage(value)
+  }
 }
