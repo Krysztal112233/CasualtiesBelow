@@ -25,6 +25,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.mixin.PostChainAccessor
 import dev.krysztal.casualtiesbelow.mixin.PostPassAccessor
@@ -156,7 +157,7 @@ object VitalsPostEffect {
     // Smooth the 1 Hz-synced body temperature once per frame and share it between the frost and
     // heat ramps — calling the smoother twice would double-advance the interpolation.
     val smoothedTemperature =
-      if (CasualtiesBelowConfig.TemperatureOverlayEnabled.get()) {
+      if (CasualtiesBelowConfig.TemperatureOverlayEnabled.value) {
         smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
       } else {
         snapBodyTemperature(player, vitals.bodyTemperature)
@@ -185,9 +186,9 @@ object VitalsPostEffect {
     TemperatureVisuals
       .frostStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.FrostOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.FrostOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.FrostOverlayMaxStrength.get()
+        CasualtiesBelowConfig.FrostOverlayStartCelsius.value,
+        CasualtiesBelowConfig.FrostOverlayFullSpanCelsius.value,
+        CasualtiesBelowConfig.FrostOverlayMaxStrength.value
       )
       .toFloat
   }
@@ -199,9 +200,9 @@ object VitalsPostEffect {
     TemperatureVisuals
       .heatStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.HeatOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.HeatOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.HeatOverlayMaxStrength.get()
+        CasualtiesBelowConfig.HeatOverlayStartCelsius.value,
+        CasualtiesBelowConfig.HeatOverlayFullSpanCelsius.value,
+        CasualtiesBelowConfig.HeatOverlayMaxStrength.value
       )
       .toFloat
   }
@@ -213,10 +214,10 @@ object VitalsPostEffect {
   private def grimeVisual(vitals: VitalsComponent): Float = {
     val progress = progressAbove(
       vitals.dirtiness,
-      CasualtiesBelowConfig.DirtinessBandGrimy.get(),
-      CasualtiesBelowConfig.MaxDirtiness.get()
+      CasualtiesBelowConfig.DirtinessBandGrimy.value,
+      CasualtiesBelowConfig.MaxDirtiness.value
     )
-    CasualtiesBelowConfig.DirtinessGrimeVignetteMaxOpacity.get().toFloat * progress
+    CasualtiesBelowConfig.DirtinessGrimeVignetteMaxOpacity.value.toFloat * progress
   }
 
   private def consciousnessVisual(
@@ -224,7 +225,7 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       deltaTracker: DeltaTracker
   ): ConsciousnessVisual = {
-    val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.get()
+    val dimThreshold = CasualtiesBelowConfig.ConsciousnessDimThreshold.value
     val progress = Mth.clamp(
       ((dimThreshold - vitals.consciousness.level) / math.max(dimThreshold, 1.0e-6)).toFloat,
       0.0f,
@@ -237,7 +238,7 @@ object VitalsPostEffect {
       } else {
         1.0f
       }
-    val maxDimming = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.get().toFloat
+    val maxDimming = CasualtiesBelowConfig.ConsciousnessMaxDimOpacity.value.toFloat
     val dimming = maxDimming * progress * pulse
     val incapacitation =
       maxDimming * Unconsciousness.severityOf(vitals.consciousness.level).toFloat
@@ -245,7 +246,7 @@ object VitalsPostEffect {
     // Perceptual compensation: the shader's zoom-ghost and double-vision offsets scale linearly
     // with strength, so mid-range strengths read as invisible. Ease the blur curve toward the
     // low end so low-but-conscious levels stay readable.
-    val maxBlur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.get().toFloat
+    val maxBlur = CasualtiesBelowConfig.ConsciousnessMaxBlurStrength.value.toFloat
     val blurStrength = math.pow(progress.toDouble, BlurPerceptionExponent).toFloat
 
     ConsciousnessVisual(
@@ -264,7 +265,7 @@ object VitalsPostEffect {
       gameplayData.maxDiscomfort
     )
     DiscomfortVisual(
-      vignette = CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.get().toFloat * progress
+      vignette = CasualtiesBelowConfig.DiscomfortMaxVignetteOpacity.value.toFloat * progress
     )
   }
 
@@ -272,9 +273,9 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       gameplayData: GameplayDataSnapshot
   ): BloodLossVisual = {
-    val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.get()
+    val desaturationStart = CasualtiesBelowConfig.BloodDesaturationStartFraction.value
     val fullDesaturation =
-      math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.get(), desaturationStart)
+      math.min(CasualtiesBelowConfig.BloodFullDesaturationFraction.value, desaturationStart)
     val bloodFraction = vitals.circulation.bloodVolume / gameplayData.maxBloodVolume
     BloodLossVisual(
       desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
@@ -289,7 +290,7 @@ object VitalsPostEffect {
   ): PainShockVisual = {
     PainShockVisual(
       strength = shockVisualStrength(player, vitals, gameplayData, deltaTracker),
-      noise = CasualtiesBelowConfig.ShockVisualNoiseStrength.get().toFloat,
+      noise = CasualtiesBelowConfig.ShockVisualNoiseStrength.value.toFloat,
       time = (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
         deltaTracker.getGameTimeDeltaPartialTick(true)
     )
@@ -301,7 +302,7 @@ object VitalsPostEffect {
       gameplayData: GameplayDataSnapshot,
       deltaTracker: DeltaTracker
   ): Float = {
-    val visualStart = CasualtiesBelowConfig.ShockVisualStartLoad.get().toFloat
+    val visualStart = CasualtiesBelowConfig.ShockVisualStartLoad.value.toFloat
     val actualLoad = Mth.clamp(vitals.shock.load.toFloat, 0.0f, 100.0f)
     val warningStage =
       vitals.shock.stage == PainShockStage.Stable ||
@@ -319,14 +320,14 @@ object VitalsPostEffect {
     val pulseProgress = progressAbove(load, pulseStart, collapseThreshold)
     val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
     val pulseWave = 0.5f + 0.5f * Mth.sin(time * ShockPulseSpeed)
-    val pulseDepth = CasualtiesBelowConfig.ShockVisualPulseStrength.get().toFloat
+    val pulseDepth = CasualtiesBelowConfig.ShockVisualPulseStrength.value.toFloat
     val modulation = Mth.clamp(
       1.0f - pulseDepth * pulseProgress * pulseWave,
       ShockPulseMinimumModulation,
       1.0f
     )
     Mth.clamp(
-      CasualtiesBelowConfig.ShockVisualMaxStrength.get().toFloat * progress * modulation,
+      CasualtiesBelowConfig.ShockVisualMaxStrength.value.toFloat * progress * modulation,
       0.0f,
       1.0f
     )

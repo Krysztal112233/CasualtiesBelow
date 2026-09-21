@@ -16,6 +16,7 @@ import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Food immune settlement: nourishing food grants a one-off immune dose and contaminated food
@@ -44,10 +45,10 @@ object FoodImmunity {
       if (mean != 0.0) {
         val vitals = player.vitals
         val amount =
-          sample(mean, CasualtiesBelowConfig.FoodImmuneSpreadFraction.get(), player.getRandom)
+          sample(mean, CasualtiesBelowConfig.FoodImmuneSpreadFraction.value, player.getRandom)
         val next = (vitals.infection.immuneHealth + amount)
           .max(0.0)
-          .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+          .min(CasualtiesBelowConfig.MaxImmuneHealth.value)
         if (next != vitals.infection.immuneHealth) {
           VitalsMutations.setImmuneHealth(vitals, next)
           VitalsMutations.syncNow(player)

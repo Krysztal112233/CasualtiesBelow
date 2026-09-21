@@ -15,6 +15,7 @@ import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
 /** Server-authoritative drawing of one liquid dose into an empty syringe. Filled refined ampoules
@@ -125,11 +126,11 @@ private[casualtiesbelow] object SyringeFilling {
     val baseDose = sampledBaseDose(
       sourceKind,
       gaussianSample,
-      CasualtiesBelowConfig.OpioidRefinedSyringeDose.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMean.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseSigma.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMinimum.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMaximum.get()
+      CasualtiesBelowConfig.OpioidRefinedSyringeDose.value,
+      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMean.value,
+      CasualtiesBelowConfig.OpioidCrudeSyringeDoseSigma.value,
+      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMinimum.value,
+      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMaximum.value
     )
     val dose = measuredDose(baseDose, syringe.calibrated, jitterUnit)
     val stack = new ItemStack(syringe)
@@ -177,7 +178,7 @@ private[casualtiesbelow] object SyringeFilling {
       baseDose,
       calibrated,
       jitterUnit,
-      CasualtiesBelowConfig.OpioidUnmarkedSyringeJitterFraction.get()
+      CasualtiesBelowConfig.OpioidUnmarkedSyringeJitterFraction.value
     )
   }
 

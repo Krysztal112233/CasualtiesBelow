@@ -16,6 +16,7 @@ import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -280,9 +281,9 @@ object TemperatureScenarios {
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
     CasualtiesBelowConfig.ComfortBandFormula.evaluate(
       apparent,
-      CasualtiesBelowConfig.ComfortLowCelsius.get(),
-      CasualtiesBelowConfig.ComfortHighCelsius.get(),
-      CasualtiesBelowConfig.ComfortSlope.get()
+      CasualtiesBelowConfig.ComfortLowCelsius.value,
+      CasualtiesBelowConfig.ComfortHighCelsius.value,
+      CasualtiesBelowConfig.ComfortSlope.value
     )
   }
 

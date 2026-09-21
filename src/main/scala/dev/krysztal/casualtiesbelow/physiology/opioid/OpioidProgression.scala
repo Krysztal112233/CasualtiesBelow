@@ -4,6 +4,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 /** Server-tick evolution of the hidden acute opioid level and synced long-term dependence. */
 object OpioidProgression {
@@ -25,8 +26,8 @@ object OpioidProgression {
 
     val next = nextWithdrawalDiscomfort(
       vitals.discomfort,
-      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortPerTick.get(),
-      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortTarget.get()
+      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortPerTick.value,
+      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortTarget.value
     )
     if (next == vitals.discomfort) return false
 
@@ -47,9 +48,9 @@ object OpioidProgression {
     nextState(
       level,
       dependence,
-      CasualtiesBelowConfig.OpioidLevelDecayPerTick.get(),
-      CasualtiesBelowConfig.OpioidDependenceExposurePerLevelPerTick.get(),
-      CasualtiesBelowConfig.OpioidDependenceDecayPerTick.get()
+      CasualtiesBelowConfig.OpioidLevelDecayPerTick.value,
+      CasualtiesBelowConfig.OpioidDependenceExposurePerLevelPerTick.value,
+      CasualtiesBelowConfig.OpioidDependenceDecayPerTick.value
     )
   }
 

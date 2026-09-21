@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server-authoritative settlement of batched injection progress reported by the injection screen.
@@ -56,13 +57,13 @@ private[casualtiesbelow] object InjectionSettlement {
 
     val doseDelta = doseFor(contents.opioidDose, applied, contents.droplets)
     val discomfort = sideEffect(
-      CasualtiesBelowConfig.InjectionFullDoseSideEffectDiscomfort.get(),
+      CasualtiesBelowConfig.InjectionFullDoseSideEffectDiscomfort.value,
       speed,
       applied,
       LiquidContents.AmpouleDroplets
     )
     val pain = sideEffect(
-      CasualtiesBelowConfig.InjectionFullDoseSideEffectPain.get(),
+      CasualtiesBelowConfig.InjectionFullDoseSideEffectPain.value,
       speed,
       applied,
       LiquidContents.AmpouleDroplets
@@ -72,9 +73,9 @@ private[casualtiesbelow] object InjectionSettlement {
     // Dirty needle: contamination scales with the player's dirtiness and the pushed fraction,
     // never with speed — a careful push through dirty skin still infects.
     val infectionSeed = infectionSeedFor(
-      CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.get(),
+      CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.value,
       vitals.dirtiness,
-      CasualtiesBelowConfig.MaxDirtiness.get(),
+      CasualtiesBelowConfig.MaxDirtiness.value,
       applied,
       LiquidContents.AmpouleDroplets
     )

@@ -4,6 +4,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 
 /** Bounded mutations of the server-authoritative blood volume.
   *
@@ -14,7 +15,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 object BloodVolume {
 
   /** Healthy configured blood capacity, normalized to a finite non-negative value. */
-  def healthyMaximum: Double = nonNegative(CasualtiesBelowConfig.MaxBloodVolume.get())
+  def healthyMaximum: Double = nonNegative(CasualtiesBelowConfig.MaxBloodVolume.value)
 
   /** Current effective capacity after sepsis, normalized to the healthy configured capacity. */
   def effectiveMaximum(vitals: VitalsComponent): Double = {
@@ -29,7 +30,7 @@ object BloodVolume {
     oxygenCarryingCapacity(
       vitals.circulation.bloodVolume,
       healthyMaximum,
-      CasualtiesBelowConfig.FullOxygenBloodFraction.get()
+      CasualtiesBelowConfig.FullOxygenBloodFraction.value
     )
   }
 

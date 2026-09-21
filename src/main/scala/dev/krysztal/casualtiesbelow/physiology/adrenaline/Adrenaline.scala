@@ -15,6 +15,7 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server authority for the temporary adrenaline reserve and its post-stimulus grace window.
@@ -41,8 +42,8 @@ object Adrenaline {
     val next = grantState(
       previous,
       amount,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get()
+      CasualtiesBelowConfig.MaxAdrenaline.value,
+      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.value
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -61,8 +62,8 @@ object Adrenaline {
     val previous = storedState(vitals)
     val next = advanceState(
       previous,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineDecayPerTick.get()
+      CasualtiesBelowConfig.MaxAdrenaline.value,
+      CasualtiesBelowConfig.AdrenalineDecayPerTick.value
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -83,12 +84,12 @@ object Adrenaline {
       requestedAmount: Double
   ): Boolean = {
     val previous = storedState(vitals)
-    val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.MaxAdrenaline.get())
+    val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.MaxAdrenaline.value)
     val next =
       if (amount > 0.0) {
         AdrenalineState(
           amount,
-          freshGraceTicks(CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get())
+          freshGraceTicks(CasualtiesBelowConfig.AdrenalineCombatGraceTicks.value)
         )
       } else AdrenalineState.Empty
     applyState(vitals, next)
@@ -108,7 +109,7 @@ object Adrenaline {
 
   /** Finite, config-bounded server value used by the pain-shock threshold calculation. */
   def currentAmount(vitals: VitalsComponent): Double =
-    normalizeAmount(vitals.adrenaline, CasualtiesBelowConfig.MaxAdrenaline.get())
+    normalizeAmount(vitals.adrenaline, CasualtiesBelowConfig.MaxAdrenaline.value)
 
   /** Server-side save/copy normalization. */
   private[casualtiesbelow] def normalizeStoredState(
@@ -118,8 +119,8 @@ object Adrenaline {
     normalizeStoredState(
       amount,
       graceTicks,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get()
+      CasualtiesBelowConfig.MaxAdrenaline.value,
+      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.value
     )
 
   private[casualtiesbelow] def normalizeStoredState(

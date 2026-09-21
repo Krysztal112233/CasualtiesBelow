@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
@@ -75,8 +76,8 @@ object AchievementHooks {
   }
 
   private def tickHemostasis(player: ServerPlayer, totalBleeding: Double): Unit = {
-    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
-      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.get()
+    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.value *
+      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.value
     val previous =
       Option(hemostasisStates.get(player)).getOrElse(HemostasisEpisode.State.Idle)
     val (next, completed) = HemostasisEpisode.next(previous, totalBleeding, nearMaxRate)
@@ -93,7 +94,7 @@ object AchievementHooks {
     * lands — the achievement is specifically about *eating* something revolting.
     */
   private[casualtiesbelow] def onFoodDiscomfortSettled(player: ServerPlayer): Unit = {
-    if (player.vitals.discomfort >= CasualtiesBelowConfig.MaxDiscomfort.get()) {
+    if (player.vitals.discomfort >= CasualtiesBelowConfig.MaxDiscomfort.value) {
       CasualtiesBelowTriggers.MaxDiscomfortFood.trigger(player)
     }
   }

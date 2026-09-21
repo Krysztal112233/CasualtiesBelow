@@ -17,6 +17,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
@@ -170,10 +171,10 @@ object InjuryProgression {
     // recovery means eating well.
     val maxBlood = BloodVolume.effectiveMaximum(vitals)
     vitalsChanged = BloodVolume.clamp(vitals, maxBlood) || vitalsChanged
-    if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.get()) {
+    if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.value) {
       val regenerated = BloodVolume.restore(
         vitals,
-        CasualtiesBelowConfig.FedBloodRegenPerTick.get(),
+        CasualtiesBelowConfig.FedBloodRegenPerTick.value,
         maxBlood
       )
       vitalsChanged = regenerated > 0.0 || vitalsChanged
@@ -262,10 +263,10 @@ object InjuryProgression {
     */
   private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
     val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length
-    val gain = CasualtiesBelowConfig.SepsisGainPerTick.get() * infectionLoad / maxLoad
-    val next = (vitals.infection.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
+    val gain = CasualtiesBelowConfig.SepsisGainPerTick.value * infectionLoad / maxLoad
+    val next = (vitals.infection.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.value)
       .max(0.0)
-      .min(CasualtiesBelowConfig.MaxSepsis.get())
+      .min(CasualtiesBelowConfig.MaxSepsis.value)
     if (next == vitals.infection.sepsis) return false
 
     VitalsMutations.setSepsis(vitals, next)
@@ -281,24 +282,24 @@ object InjuryProgression {
     val food = player.getFoodData.getFoodLevel
     val foodDelta: Double =
       if (
-        food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue &&
+        food >= CasualtiesBelowConfig.FedFoodLevelThreshold.value.intValue &&
         !OpioidWithdrawal.isActive(vitals)
       ) {
-        CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
-      } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
-        -CasualtiesBelowConfig.HungryImmuneDrainPerTick.get()
+        CasualtiesBelowConfig.FedImmuneRegenPerTick.value
+      } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.value.intValue) {
+        -CasualtiesBelowConfig.HungryImmuneDrainPerTick.value
       } else {
         0.0
       }
 
     val poisonDrain = Option(player.getEffect(MobEffects.POISON)).fold(0.0) { effect =>
-      CasualtiesBelowConfig.PoisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
+      CasualtiesBelowConfig.PoisonImmuneDrainPerTick.value * (effect.getAmplifier + 1)
     }
     val dirtDrain = Dirtiness.immuneDrainPerTick(
       vitals.dirtiness,
-      CasualtiesBelowConfig.DirtinessImmuneDrainStart.get(),
-      CasualtiesBelowConfig.MaxDirtiness.get(),
-      CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.get()
+      CasualtiesBelowConfig.DirtinessImmuneDrainStart.value,
+      CasualtiesBelowConfig.MaxDirtiness.value,
+      CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.value
     )
     // Temperature stress: °C outside the penalty band drain immune health per minute, cold harder
     // than heat; the fed-regen/drain additive semantics below stay unchanged.
@@ -306,15 +307,15 @@ object InjuryProgression {
       TemperatureCalc.immuneDrainPerTick(
         TemperatureCalc.coldDeviation(
           vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+          CasualtiesBelowConfig.PenaltyBandLowCelsius.value
         ),
-        CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.get()
+        CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.value
       ) + TemperatureCalc.immuneDrainPerTick(
         TemperatureCalc.hotDeviation(
           vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
+          CasualtiesBelowConfig.PenaltyBandHighCelsius.value
         ),
-        CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.get()
+        CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.value
       )
     val delta = foodDelta - poisonDrain - dirtDrain - temperatureDrain
     if (delta == 0.0) return false
@@ -322,7 +323,7 @@ object InjuryProgression {
     val next =
       (vitals.infection.immuneHealth + delta)
         .max(0.0)
-        .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+        .min(CasualtiesBelowConfig.MaxImmuneHealth.value)
     if (next == vitals.infection.immuneHealth) return false
 
     VitalsMutations.setImmuneHealth(vitals, next)
@@ -390,7 +391,7 @@ object InjuryProgression {
     if (stats.externalBleedingRate <= 0.0) return false
 
     val capped = stats.externalBleedingRate.min(BleedingCalc.cap(stats.skinIntegrity))
-    val clotted = (capped - CasualtiesBelowConfig.ClottingRatePerTick.get()).max(0.0)
+    val clotted = (capped - CasualtiesBelowConfig.ClottingRatePerTick.value).max(0.0)
     stats.externalBleedingRate = clotted
     clotted == 0.0
   }
@@ -411,12 +412,12 @@ object InjuryProgression {
       fightShare: Double,
       random: RandomSource
   )(using stats: MutableLimbState): Boolean = {
-    val immuneFraction = immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
+    val immuneFraction = immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.value
     stats.infectionProgress match {
       case Some(progress) =>
-        val spread = CasualtiesBelowConfig.InfectionSpreadPerTick.get() * (1.0 - immuneFraction)
+        val spread = CasualtiesBelowConfig.InfectionSpreadPerTick.value * (1.0 - immuneFraction)
         val fight =
-          CasualtiesBelowConfig.InfectionFightPerTick.get() * immuneFraction * fightShare
+          CasualtiesBelowConfig.InfectionFightPerTick.value * immuneFraction * fightShare
         val next = (progress + spread - fight).min(MutableLimbState.MaxValue)
         if (next <= 0.0) {
           stats.infectionProgress = None
@@ -434,8 +435,8 @@ object InjuryProgression {
             .get() * skinDamage / MutableLimbState.MaxValue *
             Dirtiness.infectionChanceMultiplier(
               dirtiness,
-              CasualtiesBelowConfig.MaxDirtiness.get(),
-              CasualtiesBelowConfig.DirtinessInfectionChanceMultiplierAtMax.get()
+              CasualtiesBelowConfig.MaxDirtiness.value,
+              CasualtiesBelowConfig.DirtinessInfectionChanceMultiplierAtMax.value
             )
         if (random.nextFloat() < chance) {
           stats.infectionProgress = Some(InfectionOnsetSeed)
@@ -454,10 +455,10 @@ object InjuryProgression {
     * suppresses the spread.
     */
   private def tickContagion(player: ServerPlayer, body: BodyComponent): Unit = {
-    val start = CasualtiesBelowConfig.InfectionContagionStartProgress.get()
-    val full = CasualtiesBelowConfig.InfectionContagionFullProgress.get()
+    val start = CasualtiesBelowConfig.InfectionContagionStartProgress.value
+    val full = CasualtiesBelowConfig.InfectionContagionFullProgress.value
     val ramp = (full - start).max(1.0)
-    val maxChance = CasualtiesBelowConfig.InfectionContagionMaxChancePerTick.get()
+    val maxChance = CasualtiesBelowConfig.InfectionContagionMaxChancePerTick.value
 
     BodyPart.values.foreach { part =>
       val stats = body.stats(part)
@@ -490,19 +491,19 @@ object InjuryProgression {
   ): Unit = {
     if (stats.infectionProgress.isEmpty) return
 
-    val start = CasualtiesBelowConfig.InfectionEffectStartProgress.get()
-    val full = CasualtiesBelowConfig.InfectionEffectFullProgress.get()
+    val start = CasualtiesBelowConfig.InfectionEffectStartProgress.value
+    val full = CasualtiesBelowConfig.InfectionEffectFullProgress.value
     val ramp = (full - start).max(1.0)
     val severity = ((stats.infectionProgress.get - start) / ramp).max(0.0).min(1.0)
     if (severity <= 0.0) return
 
     stats.pain = infectionPainAfterGrant(
       stats.pain,
-      CasualtiesBelowConfig.InfectionPainPerTick.get() * severity,
+      CasualtiesBelowConfig.InfectionPainPerTick.value * severity,
       painGrantMultiplier
     )
     stats.muscleHealth =
-      (stats.muscleHealth - CasualtiesBelowConfig.InfectionMuscleDecayPerTick.get() * severity)
+      (stats.muscleHealth - CasualtiesBelowConfig.InfectionMuscleDecayPerTick.value * severity)
         .max(0.0)
   }
 
@@ -524,15 +525,15 @@ object InjuryProgression {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= MutableLimbState.MaxValue) return
 
-    val minMultiplier = CasualtiesBelowConfig.SkinRegenMinImmuneMultiplier.get()
+    val minMultiplier = CasualtiesBelowConfig.SkinRegenMinImmuneMultiplier.value
     val immuneMultiplier =
       minMultiplier +
-        (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.get()
+        (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.MaxImmuneHealth.value
     val multiplier =
       immuneMultiplier * Dirtiness.skinRegenMultiplier(
         dirtiness,
-        CasualtiesBelowConfig.MaxDirtiness.get(),
-        CasualtiesBelowConfig.DirtinessSkinRegenMinMultiplier.get()
+        CasualtiesBelowConfig.MaxDirtiness.value,
+        CasualtiesBelowConfig.DirtinessSkinRegenMinMultiplier.value
       )
     stats.skinIntegrity =
       (stats.skinIntegrity + SkinRegenPerTick * multiplier).min(MutableLimbState.MaxValue)
@@ -546,7 +547,7 @@ object InjuryProgression {
   private def tickRegenerationSkin(multiplier: Double)(using stats: MutableLimbState): Boolean = {
     if (multiplier <= 0.0 || stats.skinIntegrity >= MutableLimbState.MaxValue) return false
 
-    val restore = CasualtiesBelowConfig.RegenerationSkinRestorePerTick.get() * multiplier
+    val restore = CasualtiesBelowConfig.RegenerationSkinRestorePerTick.value * multiplier
     if (restore <= 0.0) return false
 
     val previousSkin = stats.skinIntegrity
@@ -572,7 +573,7 @@ object InjuryProgression {
   private def tickPainDecay()(using stats: MutableLimbState): Unit = {
     if (stats.pain <= 0.0) return
 
-    stats.pain = (stats.pain - CasualtiesBelowConfig.PainDecayPerTick.get()).max(0.0)
+    stats.pain = (stats.pain - CasualtiesBelowConfig.PainDecayPerTick.value).max(0.0)
   }
 
   /** Walking strain: pain scaled by the leg's tissue damage (muscle and skin), at the configured
@@ -602,12 +603,12 @@ object InjuryProgression {
 
     val fractureRate: Double =
       if (stats.fractureRecoveryTicks.isDefined) {
-        CasualtiesBelowConfig.FracturedWalkingPainPerTick.get()
+        CasualtiesBelowConfig.FracturedWalkingPainPerTick.value
       } else {
         0.0
       }
     val dislocationRate: Double =
-      if (stats.dislocated) CasualtiesBelowConfig.DislocatedWalkingPainPerTick.get() else 0.0
+      if (stats.dislocated) CasualtiesBelowConfig.DislocatedWalkingPainPerTick.value else 0.0
     fractureRate + dislocationRate
   }
 

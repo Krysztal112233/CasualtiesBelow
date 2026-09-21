@@ -6,6 +6,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
 /** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
@@ -72,7 +73,7 @@ object PainCalc {
   /** Whole-body pain from a collection of limb pain values, using the configured strategy. */
   def total(pains: Iterable[Double]): Double = {
     val values = pains.toSeq
-    val result = CasualtiesBelowConfig.PainStrategy.get() match {
+    val result = CasualtiesBelowConfig.PainStrategy.value match {
       case TotalPainStrategy.Max       => values.maxOption.getOrElse(0.0)
       case TotalPainStrategy.Sum       => values.sum
       case TotalPainStrategy.Geometric => geometric(values)
@@ -84,8 +85,8 @@ object PainCalc {
     * out, falls back to `max`.
     */
   private def geometric(pains: Seq[Double]): Double = {
-    val decay = CasualtiesBelowConfig.TotalPainDecay.get()
-    val filterThreshold = CasualtiesBelowConfig.TotalPainFilterThreshold.get()
+    val decay = CasualtiesBelowConfig.TotalPainDecay.value
+    val filterThreshold = CasualtiesBelowConfig.TotalPainFilterThreshold.value
 
     val sorted = pains.filter(_ >= filterThreshold).sortBy(-_)
     // When every pain is below the filter threshold, the worst single pain still counts.

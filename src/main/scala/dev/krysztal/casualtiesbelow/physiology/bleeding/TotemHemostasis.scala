@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.extension.ConfigValueExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
 
@@ -44,7 +45,7 @@ object TotemHemostasis {
     if (duration <= 0 || remaining <= 0) return 1.0
 
     val initialReduction =
-      CasualtiesBelowConfig.TotemHemostasisInitialReduction.get().doubleValue.max(0.0).min(1.0)
+      CasualtiesBelowConfig.TotemHemostasisInitialReduction.value.doubleValue.max(0.0).min(1.0)
     1.0 - initialReduction * remaining.toDouble / duration.toDouble
   }
 
@@ -63,7 +64,7 @@ object TotemHemostasis {
   }
 
   private def configuredDurationTicks: Int = {
-    CasualtiesBelowConfig.TotemHemostasisDurationTicks.get().intValue.max(0)
+    CasualtiesBelowConfig.TotemHemostasisDurationTicks.value.intValue.max(0)
   }
 
   private val MinimumRestoreFraction = 0.000001
