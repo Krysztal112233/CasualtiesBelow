@@ -20,14 +20,16 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
-import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
-import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.physiology.circulation.Circulation
+import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.infection.Infection
+import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidProgression
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureProgression
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -51,7 +53,7 @@ import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
   *     limbs (see [[tickInfection]], [[tickContagion]]), and it scales skin regrowth (see
   *     [[tickSkinRegen]])
   *   - immune health is a lifestyle stat decoupled from infection: a full stomach restores it,
-  *     while hunger and active vanilla Poison drain it (see [[tickImmune]])
+  *     while hunger and active vanilla Poison drain it (see [[Infection]])
   *   - skin naturally regrows once a wound has clotted shut; vanilla Regeneration adds micro-repair
   *     even while bleeding and tightens the bleeding cap as the skin closes; muscle regrows
   *     regardless (slower)
@@ -162,52 +164,14 @@ object InjuryProgression {
     // Pain shock reads the fully updated per-limb pains and current adrenaline. Awake-load integer
     // crossings request owner-only warning interpolation syncs; phase transitions sync at once.
     vitalsChanged = PainShock.tick(player, body, vitals) || vitalsChanged
-    vitalsChanged = tickSepsis(vitals, infectionLoad) || vitalsChanged
-    vitalsChanged = tickImmune(vitals, player) || vitalsChanged
+    vitalsChanged = Infection.tick(vitals, infectionLoad, player) || vitalsChanged
 
-    // Sepsis compresses the effective blood cap; well-fed players regenerate blood up to it.
-    // Blood over the cap is lost outright: surviving sepsis leaves the body drained, and
-    // recovery means eating well.
-    val maxBlood = BloodVolume.effectiveMaximum(vitals)
-    vitalsChanged = BloodVolume.clamp(vitals, maxBlood) || vitalsChanged
-    if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.get()) {
-      val regenerated = BloodVolume.restore(
-        vitals,
-        CasualtiesBelowConfig.FedBloodRegenPerTick.get(),
-        maxBlood
-      )
-      vitalsChanged = regenerated > 0.0 || vitalsChanged
-    }
-
-    // Accepted vanilla starvation pulses are translated first. The final blood check below keeps
-    // source priority deterministic if bleeding also applies in this tick.
-    val starvation = StarvationProgression.consume(player, vitals, maxBlood)
-    vitalsChanged = starvation.changed || vitalsChanged
-
-    if (totalBleeding > 0.0) {
-      val actualBleeding = totalBleeding * TotemHemostasis.bleedingMultiplier(vitals)
-      if (actualBleeding > 0.0) {
-        val drained = BloodVolume.drain(vitals, actualBleeding, maxBlood)
-        vitalsChanged = drained > 0.0 || vitalsChanged
-      }
-    }
-    // The timer is hidden client-side state: advancing it does not force an extra sync. Any blood
-    // change already syncs through vitalsChanged, while persistence always writes the live value.
-    TotemHemostasis.tick(vitals)
-
-    // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
-    // threshold. Blood-loss death protection restores blood synchronously in the vanilla totem
-    // path; an unrescued player remains at zero and dies normally.
-    if (vitals.circulation.bloodVolume <= 0.0) {
-      val fatal =
-        if (maxBlood <= 0.0) {
-          CasualtiesBelowDamageTypes.sepsis(player.level())
-        } else if (starvation.reachedZero) {
-          CasualtiesBelowDamageTypes.starvation(player.level())
-        } else {
-          CasualtiesBelowDamageTypes.bloodLoss(player.level())
-        }
-      player.hurtServer(player.level(), fatal, Float.MaxValue)
+    // One circulation pass: the sepsis-compressed blood cap, fed regeneration, starvation pulses,
+    // bleeding drain scaled by totem hemostasis, and the zero-blood fatality check (which applies
+    // its own damage and reports back so this pass can stop for the player).
+    val circulation = Circulation.tick(player, vitals, totalBleeding)
+    vitalsChanged = circulation.changed || vitalsChanged
+    if (circulation.zeroBlood) {
       if (vitalsChanged) {
         VitalsMutations.syncNow(player)
       }
@@ -217,7 +181,7 @@ object InjuryProgression {
     // Read vanilla's already-updated air supply after the blood changes above: blood volume sets
     // oxygen capacity, while fully exhausted air gates depletion. Consciousness progression then
     // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
-    val oxygen = OxygenProgression.tick(player, vitals)
+    val oxygen = Circulation.tickOxygen(player, vitals)
     vitalsChanged = oxygen.changed || vitalsChanged
     vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
 
@@ -228,7 +192,7 @@ object InjuryProgression {
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this
     // player's progression returns immediately after the fatal call.
-    val hypoxia = HypoxiaProgression.tick(vitals, oxygen.respirationFailed)
+    val hypoxia = Circulation.tickHypoxia(vitals, oxygen.respirationFailed)
     vitalsChanged = hypoxia.syncDue || vitalsChanged
     if (hypoxia.fatal) {
       player.hurtServer(
@@ -251,82 +215,6 @@ object InjuryProgression {
     if (vitalsChanged) {
       VitalsMutations.syncNow(player)
     }
-  }
-
-  /** Sepsis is the whole-body consequence of infection: it builds in proportion to the total
-    * infection load (the sum of all limbs' infection progress) and recovers at a fixed rate, so
-    * below the break-even load it drains away on its own. Its effect is applied where blood is
-    * handled: the effective blood volume cap is compressed linearly with sepsis (see
-    * [[CasualtiesBelowConfig.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis.
-    * Returns whether the value changed.
-    */
-  private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
-    val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length
-    val gain = CasualtiesBelowConfig.SepsisGainPerTick.get() * infectionLoad / maxLoad
-    val next = (vitals.infection.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
-      .max(0.0)
-      .min(CasualtiesBelowConfig.MaxSepsis.get())
-    if (next == vitals.infection.sepsis) return false
-
-    VitalsMutations.setSepsis(vitals, next)
-    true
-  }
-
-  /** Immune health is a lifestyle stat deliberately decoupled from infection load. Being well-fed
-    * restores it slowly and hunger drains it (thresholds mirror vanilla's regeneration/sprinting
-    * cutoffs). Active vanilla Poison adds a continuous drain scaled linearly by effect level,
-    * independently of whether a poison damage pulse lands. Returns whether the value changed.
-    */
-  private def tickImmune(vitals: VitalsComponentImpl, player: ServerPlayer): Boolean = {
-    val food = player.getFoodData.getFoodLevel
-    val foodDelta: Double =
-      if (
-        food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue &&
-        !OpioidWithdrawal.isActive(vitals)
-      ) {
-        CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
-      } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
-        -CasualtiesBelowConfig.HungryImmuneDrainPerTick.get()
-      } else {
-        0.0
-      }
-
-    val poisonDrain = Option(player.getEffect(MobEffects.POISON)).fold(0.0) { effect =>
-      CasualtiesBelowConfig.PoisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
-    }
-    val dirtDrain = Dirtiness.immuneDrainPerTick(
-      vitals.dirtiness,
-      CasualtiesBelowConfig.DirtinessImmuneDrainStart.get(),
-      CasualtiesBelowConfig.MaxDirtiness.get(),
-      CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.get()
-    )
-    // Temperature stress: °C outside the penalty band drain immune health per minute, cold harder
-    // than heat; the fed-regen/drain additive semantics below stay unchanged.
-    val temperatureDrain =
-      TemperatureCalc.immuneDrainPerTick(
-        TemperatureCalc.coldDeviation(
-          vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
-        ),
-        CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.get()
-      ) + TemperatureCalc.immuneDrainPerTick(
-        TemperatureCalc.hotDeviation(
-          vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
-        ),
-        CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.get()
-      )
-    val delta = foodDelta - poisonDrain - dirtDrain - temperatureDrain
-    if (delta == 0.0) return false
-
-    val next =
-      (vitals.infection.immuneHealth + delta)
-        .max(0.0)
-        .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
-    if (next == vitals.infection.immuneHealth) return false
-
-    VitalsMutations.setImmuneHealth(vitals, next)
-    true
   }
 
   /** One tick of evolution for one limb, mutating the given copy in place. `strainPainRate` is the

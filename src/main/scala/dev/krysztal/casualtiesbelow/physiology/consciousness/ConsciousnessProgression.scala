@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.consciousness
 
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
@@ -14,6 +14,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 
 /** Central authority for continuous consciousness and discrete unconsciousness transitions.
   *
@@ -25,7 +26,7 @@ import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
   * oxygen). Pain shock is a stronger discrete override: its collapsed phase owns literal-zero
   * consciousness, then its recovery phase temporarily lowers the scalar bound to zero.
   */
-object ConsciousnessProgression {
+private[casualtiesbelow] object ConsciousnessProgression {
 
   /** Advances consciousness and reconciles its hysteretic state. Returns whether either stored
     * value changed.
@@ -165,7 +166,9 @@ object ConsciousnessProgression {
     * produces coma — it cannot reach the wake threshold — until the body rewarms, which is the
     * deep-band behavior the terminal tier will own.
     */
-  private[progression] def temperaturePressure(bodyTemperature: Double): ConsciousnessPressure = {
+  private[casualtiesbelow] def temperaturePressure(
+      bodyTemperature: Double
+  ): ConsciousnessPressure = {
     val coldDev = TemperatureCalc.coldDeviation(
       bodyTemperature,
       CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
@@ -218,7 +221,7 @@ object ConsciousnessProgression {
     step.level != previousConsciousness || step.unconscious != previousUnconscious
   }
 
-  private[progression] def advance(
+  private[casualtiesbelow] def advance(
       current: Double,
       unconscious: Boolean,
       pressures: List[ConsciousnessPressure],
@@ -243,7 +246,7 @@ object ConsciousnessProgression {
     reconcile(next, unconscious, pressures, wakeThreshold, knockoutThreshold, minimum)
   }
 
-  private[progression] def reconcile(
+  private[casualtiesbelow] def reconcile(
       consciousness: Double,
       unconscious: Boolean,
       pressures: List[ConsciousnessPressure],
@@ -296,7 +299,7 @@ object ConsciousnessProgression {
       .min(VitalsComponent.MaxValue)
   }
 
-  private[progression] def hypoxiaPressure(
+  private[casualtiesbelow] def hypoxiaPressure(
       bloodOxygen: Double,
       recoveryThreshold: Double,
       oxygenCapMultiplier: Double
@@ -419,7 +422,7 @@ object ConsciousnessProgression {
   }
 }
 
-private[progression] final case class ConsciousnessPressure(
+private[casualtiesbelow] final case class ConsciousnessPressure(
     lossPerTick: Double = 0.0,
     recoveryBlocked: Boolean = false,
     wakeBlocked: Boolean = false,

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.nutrition
 
 import java.util.UUID
 
@@ -12,7 +12,7 @@ import net.minecraft.world.damagesource.DamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 
 /** Translates accepted vanilla starvation pulses into bounded blood loss.
   *
@@ -22,7 +22,7 @@ import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
   * bounded UUID-keyed amount. [[InjuryProgression]] consumes that transient amount later in the
   * same server tick, before external bleeding, and owns the final fatal-source decision.
   */
-object StarvationProgression {
+private[casualtiesbelow] object StarvationProgression {
 
   /** Whether `FoodData.tick` should invoke its vanilla starvation hurt call. Pulses stop before the
     * call once blood reaches the custom difficulty floor, and never run for physiology-frozen game
@@ -61,7 +61,7 @@ object StarvationProgression {
   /** Consumes this player's queued pulses and applies their linear blood loss at the current
     * difficulty floor. Peaceful remains lossless even if difficulty changed after the callback.
     */
-  private[progression] def consume(
+  private[casualtiesbelow] def consume(
       player: ServerPlayer,
       vitals: VitalsComponentImpl,
       maximum: Double
@@ -82,12 +82,12 @@ object StarvationProgression {
   }
 
   /** Discards a queued pulse when progression is skipped for a frozen or dead player. */
-  private[progression] def discard(player: ServerPlayer): Unit = {
+  private[casualtiesbelow] def discard(player: ServerPlayer): Unit = {
     queuedDamage.remove(player.getUUID)
   }
 
   /** Drops entries for players who disconnected before the end-of-tick consumer ran. */
-  private[progression] def discardRemaining(): Unit = {
+  private[casualtiesbelow] def discardRemaining(): Unit = {
     queuedDamage.clear()
   }
 
@@ -116,7 +116,7 @@ object StarvationProgression {
   private val MaximumQueuedDamagePerPlayer = Float.MaxValue.toDouble
 }
 
-private[progression] final case class StarvationResult(
+private[casualtiesbelow] final case class StarvationResult(
     changed: Boolean = false,
     reachedZero: Boolean = false
 )

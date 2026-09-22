@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.immune
+package dev.krysztal.casualtiesbelow.physiology.infection
 
 import scala.jdk.OptionConverters.*
 import scala.jdk.StreamConverters.*

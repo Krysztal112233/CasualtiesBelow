@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.blood
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
@@ -11,7 +11,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   * reconciliation handle invalid stored values and bounds consistently. Admin/reset/serialization
   * code may still assign authoritative values directly.
   */
-object BloodVolume {
+private[casualtiesbelow] object BloodVolume {
 
   /** Healthy configured blood capacity, normalized to a finite non-negative value. */
   def healthyMaximum: Double = nonNegative(CasualtiesBelowConfig.MaxBloodVolume.get())
@@ -37,7 +37,7 @@ object BloodVolume {
     * `fullOxygenFraction` of healthy volume retains full oxygen capacity; below it, capacity falls
     * linearly to zero. Zero blood always has zero capacity.
     */
-  private[blood] def oxygenCarryingCapacity(
+  private[circulation] def oxygenCarryingCapacity(
       bloodVolume: Double,
       healthyMaximum: Double,
       fullOxygenFraction: Double

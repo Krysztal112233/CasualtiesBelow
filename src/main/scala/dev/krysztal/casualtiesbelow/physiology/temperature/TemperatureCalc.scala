@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.temperature
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 

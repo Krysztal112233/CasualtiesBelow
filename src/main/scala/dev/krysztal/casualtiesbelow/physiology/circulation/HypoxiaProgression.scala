@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import net.minecraft.server.level.ServerPlayer
 
@@ -6,7 +6,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.
   *
@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
   * even though blood oxygen and consciousness then recover gradually. The final fatal hit remains
   * owned by [[InjuryProgression]].
   */
-object HypoxiaProgression {
+private[casualtiesbelow] object HypoxiaProgression {
 
   private val SyncIntervalTicks = 20
 

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.consciousness
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage

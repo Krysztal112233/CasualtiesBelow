@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.level.gamerules.GameRules
@@ -7,7 +7,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
 /** Couples vanilla breath, in-wall suffocation, and custom blood volume into blood oxygen.
@@ -21,12 +21,12 @@ import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
   * This object does not write consciousness. [[ConsciousnessProgression]] interprets the stored
   * oxygen as a pressure, while [[HypoxiaProgression]] owns hidden terminal exposure metadata.
   */
-object OxygenProgression {
+private[casualtiesbelow] object OxygenProgression {
 
   /** Advances blood oxygen by one server tick and reports both mutation and breathing ownership for
     * downstream terminal-hypoxia progression.
     */
-  private[progression] def tick(
+  private[casualtiesbelow] def tick(
       player: ServerPlayer,
       vitals: VitalsComponentImpl
   ): OxygenProgressionResult = {
@@ -95,7 +95,7 @@ object OxygenProgression {
     )
   }
 
-  private[progression] def nextBloodOxygen(
+  private[casualtiesbelow] def nextBloodOxygen(
       bloodOxygen: Double,
       carryingCapacity: Double,
       breathingBlocked: Boolean,
@@ -114,7 +114,7 @@ object OxygenProgression {
     )
   }
 
-  private[progression] def nextBloodOxygen(
+  private[casualtiesbelow] def nextBloodOxygen(
       bloodOxygen: Double,
       carryingCapacity: Double,
       breathingBlocked: Boolean,
@@ -157,7 +157,7 @@ object OxygenProgression {
   }
 }
 
-private[progression] final case class OxygenProgressionResult(
+private[casualtiesbelow] final case class OxygenProgressionResult(
     changed: Boolean,
     breathingBlocked: Boolean,
     respirationFailed: Boolean,

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.temperature
 
 import java.lang.{Boolean => JBoolean}
 import java.util.UUID

@@ -11,7 +11,7 @@ import net.minecraft.world.level.Level
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
-import dev.krysztal.casualtiesbelow.physiology.immune.FoodImmunity
+import dev.krysztal.casualtiesbelow.physiology.infection.FoodImmunity
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

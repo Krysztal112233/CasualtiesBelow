@@ -6,8 +6,8 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
-import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
-import dev.krysztal.casualtiesbelow.physiology.progression.HypoxiaProgression
+import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
+import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue
 import org.spongepowered.asm.mixin.Mixin

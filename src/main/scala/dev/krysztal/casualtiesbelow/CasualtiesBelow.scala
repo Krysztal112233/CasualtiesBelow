@@ -25,9 +25,9 @@ import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.hygiene.DirtinessSources
-import dev.krysztal.casualtiesbelow.physiology.immune.ZombieAttackImmuneDrain
+import dev.krysztal.casualtiesbelow.physiology.infection.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
-import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureProgression
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureProgression
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks
 import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 

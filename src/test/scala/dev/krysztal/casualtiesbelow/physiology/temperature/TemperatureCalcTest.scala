@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.progression
+package dev.krysztal.casualtiesbelow.physiology.temperature
 
 import net.minecraft.SharedConstants
 import net.minecraft.server.Bootstrap

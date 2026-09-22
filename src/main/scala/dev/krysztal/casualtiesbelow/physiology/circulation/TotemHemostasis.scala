@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.bleeding
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import net.minecraft.server.level.ServerPlayer
 
@@ -6,7 +6,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
+import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 
 /** Physiological blood adapter after vanilla death protection rescues blood loss or starvation.
   *
@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.physiology.blood.BloodVolume
   * wounds. The hidden countdown is server-authoritative and freezes whenever injury progression is
   * frozen (creative or spectator mode).
   */
-object TotemHemostasis {
+private[casualtiesbelow] object TotemHemostasis {
 
   /** Applies the user-configured rescue and immediately syncs the restored blood volume. Vanilla
     * has already consumed the protection item and applied its normal effects before this runs.

@@ -13,7 +13,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.data.WoundProfiles
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineRules
-import dev.krysztal.casualtiesbelow.physiology.progression.StarvationProgression
+import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
 
 /** Classifies incoming damage and delegates every matched rule to the central wound executor. */
 object LimbDamage {

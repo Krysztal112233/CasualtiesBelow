@@ -22,12 +22,12 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
-import dev.krysztal.casualtiesbelow.physiology.bleeding.TotemHemostasis
-import dev.krysztal.casualtiesbelow.physiology.blood.CirculationState
+import dev.krysztal.casualtiesbelow.physiology.circulation.CirculationState
+import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
+import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
+import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
-import dev.krysztal.casualtiesbelow.physiology.progression.HypoxiaProgression
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent

@@ -8,7 +8,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.physiology.discomfort.DiscomfortDistribution as Distribution
 import dev.krysztal.casualtiesbelow.physiology.pain.TotalPainStrategy
-import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig

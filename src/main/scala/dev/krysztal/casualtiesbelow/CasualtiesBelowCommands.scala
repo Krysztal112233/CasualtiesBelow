@@ -35,8 +35,8 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
+import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.physiology.progression.ConsciousnessProgression
 
 /** Debug/admin commands for inspecting and editing body and vitals state:
   *

@@ -7,7 +7,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
-import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 
 /** In-game validation of the temperature penalty band (see the 下游对接 design doc): deviation outside
   * the band caps consciousness like low blood oxygen and drains immune health, cold side harder

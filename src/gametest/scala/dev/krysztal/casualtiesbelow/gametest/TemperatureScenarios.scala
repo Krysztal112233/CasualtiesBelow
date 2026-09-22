@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
-import dev.krysztal.casualtiesbelow.physiology.progression.TemperatureCalc
+import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 
 /** In-game validation of the body-temperature progression.
   *

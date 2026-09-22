@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.blood
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.CirculationSnapshot
 

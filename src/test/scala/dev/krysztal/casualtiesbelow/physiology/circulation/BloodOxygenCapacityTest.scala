@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.blood
+package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
