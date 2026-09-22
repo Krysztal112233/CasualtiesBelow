@@ -14,8 +14,8 @@ object OpioidWithdrawal {
     isActive(
       level,
       dependence,
-      CasualtiesBelowConfig.OpioidWithdrawalDependenceThreshold.get(),
-      CasualtiesBelowConfig.OpioidWithdrawalLevelPerDependence.get()
+      CasualtiesBelowConfig.opioid.withdrawalDependenceThreshold.get(),
+      CasualtiesBelowConfig.opioid.withdrawalLevelPerDependence.get()
     )
   }
 
@@ -29,6 +29,6 @@ object OpioidWithdrawal {
   }
 
   def painGrantMultiplier(vitals: VitalsComponent): Double = {
-    if (isActive(vitals)) CasualtiesBelowConfig.OpioidWithdrawalPainMultiplier.get() else 1.0
+    if (isActive(vitals)) CasualtiesBelowConfig.opioid.withdrawalPainMultiplier.get() else 1.0
   }
 }

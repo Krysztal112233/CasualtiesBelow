@@ -125,11 +125,11 @@ private[casualtiesbelow] object SyringeFilling {
     val baseDose = sampledBaseDose(
       sourceKind,
       gaussianSample,
-      CasualtiesBelowConfig.OpioidRefinedSyringeDose.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMean.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseSigma.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMinimum.get(),
-      CasualtiesBelowConfig.OpioidCrudeSyringeDoseMaximum.get()
+      CasualtiesBelowConfig.opioid.refinedSyringeDose.get(),
+      CasualtiesBelowConfig.opioid.crudeSyringeDoseMean.get(),
+      CasualtiesBelowConfig.opioid.crudeSyringeDoseSigma.get(),
+      CasualtiesBelowConfig.opioid.crudeSyringeDoseMinimum.get(),
+      CasualtiesBelowConfig.opioid.crudeSyringeDoseMaximum.get()
     )
     val dose = measuredDose(baseDose, syringe.calibrated, jitterUnit)
     val stack = new ItemStack(syringe)
@@ -174,7 +174,7 @@ private[casualtiesbelow] object SyringeFilling {
       baseDose,
       calibrated,
       jitterUnit,
-      CasualtiesBelowConfig.OpioidUnmarkedSyringeJitterFraction.get()
+      CasualtiesBelowConfig.opioid.unmarkedSyringeJitterFraction.get()
     )
   }
 

@@ -24,7 +24,7 @@ private[casualtiesbelow] object TotemHemostasis {
     val vitals = player.vitals
     val effectiveMaxBlood = BloodVolume.effectiveMaximum(vitals)
     val restoreFraction =
-      CasualtiesBelowConfig.TotemBloodRestoreFraction
+      CasualtiesBelowConfig.bleeding.totemBloodRestoreFraction
         .get()
         .doubleValue
         .max(MinimumRestoreFraction)
@@ -44,7 +44,11 @@ private[casualtiesbelow] object TotemHemostasis {
     if (duration <= 0 || remaining <= 0) return 1.0
 
     val initialReduction =
-      CasualtiesBelowConfig.TotemHemostasisInitialReduction.get().doubleValue.max(0.0).min(1.0)
+      CasualtiesBelowConfig.bleeding.totemHemostasisInitialReduction
+        .get()
+        .doubleValue
+        .max(0.0)
+        .min(1.0)
     1.0 - initialReduction * remaining.toDouble / duration.toDouble
   }
 
@@ -63,7 +67,7 @@ private[casualtiesbelow] object TotemHemostasis {
   }
 
   private def configuredDurationTicks: Int = {
-    CasualtiesBelowConfig.TotemHemostasisDurationTicks.get().intValue.max(0)
+    CasualtiesBelowConfig.bleeding.totemHemostasisDurationTicks.get().intValue.max(0)
   }
 
   private val MinimumRestoreFraction = 0.000001

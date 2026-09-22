@@ -14,7 +14,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 private[casualtiesbelow] object BloodVolume {
 
   /** Healthy configured blood capacity, normalized to a finite non-negative value. */
-  def healthyMaximum: Double = nonNegative(CasualtiesBelowConfig.MaxBloodVolume.get())
+  def healthyMaximum: Double = nonNegative(CasualtiesBelowConfig.vitals.maxBloodVolume.get())
 
   /** Current effective capacity after sepsis, normalized to the healthy configured capacity. */
   def effectiveMaximum(vitals: VitalsComponent): Double = {
@@ -29,7 +29,7 @@ private[casualtiesbelow] object BloodVolume {
     oxygenCarryingCapacity(
       vitals.circulation.bloodVolume,
       healthyMaximum,
-      CasualtiesBelowConfig.FullOxygenBloodFraction.get()
+      CasualtiesBelowConfig.vitals.fullOxygenBloodFraction.get()
     )
   }
 

@@ -9,8 +9,8 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   *
   * A wound-capable injury first reduces skin integrity, then grants bleeding capped from the
   * resulting skin state. The cap is linear in skin damage: intact skin cannot bleed and fully
-  * destroyed skin permits [[CasualtiesBelowConfig.MaxExternalBleedingRate]]. Repeated wounds can
-  * still increase bleeding after skin reaches zero, up to that cap.
+  * destroyed skin permits [[CasualtiesBelowConfig.bleeding.maxExternalBleedingRate]]. Repeated
+  * wounds can still increase bleeding after skin reaches zero, up to that cap.
   */
 object BleedingCalc {
 
@@ -27,7 +27,7 @@ object BleedingCalc {
   ): Unit = {
     if (skinDamage <= 0.0) return
 
-    val jitter = CasualtiesBelowConfig.BleedingRateJitter.get()
+    val jitter = CasualtiesBelowConfig.bleeding.bleedingRateJitter.get()
     val rolledRate =
       bleedingRate * (1.0 + (random.nextDouble() * 2.0 - 1.0) * jitter)
     stats.skinIntegrity = (stats.skinIntegrity - skinDamage).max(0.0)
@@ -57,6 +57,6 @@ object BleedingCalc {
   def cap(skinIntegrity: Double): Double = {
     val skinDamageFraction =
       (1.0 - skinIntegrity / MutableLimbState.MaxValue).max(0.0).min(1.0)
-    CasualtiesBelowConfig.MaxExternalBleedingRate.get() * skinDamageFraction
+    CasualtiesBelowConfig.bleeding.maxExternalBleedingRate.get() * skinDamageFraction
   }
 }

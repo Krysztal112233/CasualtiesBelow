@@ -127,7 +127,7 @@ object MedicalPanel {
     // Immune health displays its actual value while the bar fill uses the configured maximum; red
     // below the infection break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the
     // immune system can no longer outpace infections.
-    val maxImmune = CasualtiesBelowConfig.MaxImmuneHealth.get()
+    val maxImmune = CasualtiesBelowConfig.vitals.maxImmuneHealth.get()
 
     y = extractStatBar(
       graphics,
@@ -163,7 +163,8 @@ object MedicalPanel {
       y,
       "screen.casualtiesbelow.body_status.stat.sepsis".translatable(),
       Component.literal(
-        (vitals.infection.sepsis / CasualtiesBelowConfig.MaxSepsis.get() * 100.0).toInt.toString
+        (vitals.infection.sepsis / CasualtiesBelowConfig.sepsis.maxSepsis
+          .get() * 100.0).toInt.toString
       ),
       vitals.infection.sepsis > 0.0
     )

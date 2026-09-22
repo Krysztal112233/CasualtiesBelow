@@ -86,7 +86,7 @@ private[casualtiesbelow] object HypoxiaProgression {
   }
 
   private def configuredDuration: Int = {
-    CasualtiesBelowConfig.TerminalHypoxiaDurationTicks.get().intValue.max(1)
+    CasualtiesBelowConfig.hazards.terminalHypoxiaDurationTicks.get().intValue.max(1)
   }
 
   private def normalizeExposureTicks(ticks: Int, duration: Int): Int = {

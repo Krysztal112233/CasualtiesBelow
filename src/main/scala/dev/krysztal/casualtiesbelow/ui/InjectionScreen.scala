@@ -208,7 +208,7 @@ class InjectionScreen private (
           InjectionLayout.NeedleLength - InjectionLayout.BarrelHeight
         if (barrelTopY >= deepestTop) {
           val gap = (mouseY - plungerPadCenterY).toDouble
-          (gap / CasualtiesBelowConfig.InjectionFullSpeedPressDepthPixels.get().toDouble)
+          (gap / CasualtiesBelowConfig.injection.fullSpeedPressDepthPixels.get().toDouble)
             .max(0.0)
             .min(1.0)
         } else 0.0
@@ -216,7 +216,7 @@ class InjectionScreen private (
 
     if (speedFraction > 0.0) {
       val droplets = speedFraction *
-        CasualtiesBelowConfig.InjectionMaxSpeedFractionPerSecond.get() *
+        CasualtiesBelowConfig.injection.maxSpeedFractionPerSecond.get() *
         LiquidContents.AmpouleDroplets.toDouble * dtSeconds
       session.advance(speedFraction, droplets)
     }
@@ -236,7 +236,7 @@ class InjectionScreen private (
     val now = Util.getMillis()
     if (
       now - lastFlushMs >=
-        CasualtiesBelowConfig.InjectionBatchIntervalMilliseconds.get().longValue()
+        CasualtiesBelowConfig.injection.batchIntervalMilliseconds.get().longValue()
     ) {
       flushPending()
     }

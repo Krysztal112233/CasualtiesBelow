@@ -75,8 +75,8 @@ object AchievementHooks {
   }
 
   private def tickHemostasis(player: ServerPlayer, totalBleeding: Double): Unit = {
-    val nearMaxRate = CasualtiesBelowConfig.MaxExternalBleedingRate.get() *
-      CasualtiesBelowConfig.NotTodayNearMaxBleedingFraction.get()
+    val nearMaxRate = CasualtiesBelowConfig.bleeding.maxExternalBleedingRate.get() *
+      CasualtiesBelowConfig.progression.notTodayNearMaxBleedingFraction.get()
     val previous =
       Option(hemostasisStates.get(player)).getOrElse(HemostasisEpisode.State.Idle)
     val (next, completed) = HemostasisEpisode.next(previous, totalBleeding, nearMaxRate)
@@ -93,7 +93,7 @@ object AchievementHooks {
     * lands — the achievement is specifically about *eating* something revolting.
     */
   private[casualtiesbelow] def onFoodDiscomfortSettled(player: ServerPlayer): Unit = {
-    if (player.vitals.discomfort >= CasualtiesBelowConfig.MaxDiscomfort.get()) {
+    if (player.vitals.discomfort >= CasualtiesBelowConfig.discomfort.maxValue.get()) {
       CasualtiesBelowTriggers.MaxDiscomfortFood.trigger(player)
     }
   }

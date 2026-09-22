@@ -31,7 +31,7 @@ object HygieneScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     (1 to 100).foreach(_ => Dirtiness.tickForGameTest(player))
-    val expected = CasualtiesBelowConfig.DirtinessAccrualPerSecond.get() / 20.0 * 100
+    val expected = CasualtiesBelowConfig.dirtiness.accrualPerSecond.get() / 20.0 * 100
     helper.assertTrue(
       math.abs(vitals.dirtiness - expected) < 1.0e-9,
       s"100 ticks of base accrual: expected $expected, got ${vitals.dirtiness}"
@@ -54,8 +54,8 @@ object HygieneScenarios {
     helper.setBlock(relative, full)
     val absolute = helper.absolutePos(relative)
 
-    val perTick = CasualtiesBelowConfig.DirtinessWashWaterPerSecond.get() / 20.0
-    val pointsPerLevel = CasualtiesBelowConfig.DirtinessCauldronPointsPerLevel.get()
+    val perTick = CasualtiesBelowConfig.dirtiness.washWaterPerSecond.get() / 20.0
+    val pointsPerLevel = CasualtiesBelowConfig.dirtiness.cauldronPointsPerLevel.get()
     val ticksPerLevel = math.ceil(pointsPerLevel / perTick).toInt
 
     // One tick short of the crossing: the level must be untouched.
@@ -122,7 +122,7 @@ object HygieneScenarios {
     )
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
-    val maxDirtiness = CasualtiesBelowConfig.MaxDirtiness.get()
+    val maxDirtiness = CasualtiesBelowConfig.dirtiness.maxValue.get()
     VitalsMutations.setDirtiness(player.vitals, maxDirtiness / 2)
     val body = CasualtiesBelowComponents.Body.get(player)
     // A main-hand syringe pricks the opposite arm (right-handed default: the left arm).
@@ -137,7 +137,7 @@ object HygieneScenarios {
       0.0
     )
 
-    val expected = CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.get() * 0.5 * 0.5
+    val expected = CasualtiesBelowConfig.dirtiness.injectionSeedAtMax.get() * 0.5 * 0.5
     val progress = body.stats(injected).infectionProgress
     helper.assertTrue(progress.isPresent, "dirty injection must seed an infection")
     helper.assertTrue(

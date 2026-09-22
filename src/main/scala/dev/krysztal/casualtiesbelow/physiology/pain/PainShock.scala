@@ -57,7 +57,7 @@ object PainShock {
     }
 
     val wakeLoadCap =
-      CasualtiesBelowConfig.ShockWakeLoadCap.get().doubleValue.max(0.0).min(MaxLoad)
+      CasualtiesBelowConfig.pain.shockWakeLoadCap.get().doubleValue.max(0.0).min(MaxLoad)
     val retainedLoad = normalizeLoad(vitals.shock.load).min(wakeLoadCap)
     val previousLoad = normalizeLoad(vitals.shock.load)
     val previousStage = vitals.shock.stage
@@ -133,7 +133,7 @@ object PainShock {
     val effectiveThreshold = effectiveCollapseThreshold(
       threshold,
       adrenaline,
-      CasualtiesBelowConfig.AdrenalineShockProtectionPerPoint.get()
+      CasualtiesBelowConfig.adrenaline.shockProtectionPerPoint.get()
     )
     // At exact equality retain the serialized phase: Collapsed means the load arrived from below,
     // while Recovering means it returned from above. The phase is the directional memory.
@@ -182,7 +182,7 @@ object PainShock {
     val effectiveThreshold = effectiveCollapseThreshold(
       baseThreshold,
       Adrenaline.currentAmount(vitals),
-      CasualtiesBelowConfig.AdrenalineShockProtectionPerPoint.get()
+      CasualtiesBelowConfig.adrenaline.shockProtectionPerPoint.get()
     )
     val nextStage =
       transition(previousStage, previousLoad, nextLoad, baseThreshold, effectiveThreshold)
@@ -254,14 +254,14 @@ object PainShock {
 
   private def nextLoadFromPain(currentLoad: Double, totalPain: Double): Double = {
     val pain = finite(totalPain).max(0.0).min(100.0)
-    val startPain = CasualtiesBelowConfig.ShockAccumulationStartPain.get().doubleValue
+    val startPain = CasualtiesBelowConfig.pain.shockAccumulationStartPain.get().doubleValue
     val fullRatePain =
-      CasualtiesBelowConfig.ShockMaximumRatePain.get().doubleValue.max(startPain)
+      CasualtiesBelowConfig.pain.shockMaximumRatePain.get().doubleValue.max(startPain)
     val maximumGain =
-      CasualtiesBelowConfig.ShockMaximumGainPerTick.get().doubleValue.max(0.0)
+      CasualtiesBelowConfig.pain.shockMaximumGainPerTick.get().doubleValue.max(0.0)
     val delta =
       if (pain <= startPain) {
-        -CasualtiesBelowConfig.ShockRecoveryPerTick.get().doubleValue.max(0.0)
+        -CasualtiesBelowConfig.pain.shockRecoveryPerTick.get().doubleValue.max(0.0)
       } else if (fullRatePain <= startPain) {
         maximumGain
       } else {
@@ -271,7 +271,7 @@ object PainShock {
   }
 
   private def collapseThreshold: Double = {
-    CasualtiesBelowConfig.ShockCollapseThreshold.get().doubleValue.max(0.0).min(MaxLoad)
+    CasualtiesBelowConfig.pain.shockCollapseThreshold.get().doubleValue.max(0.0).min(MaxLoad)
   }
 
   private def crossedInteger(previousLoad: Double, nextLoad: Double): Boolean = {

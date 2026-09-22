@@ -39,7 +39,7 @@ private[casualtiesbelow] object Consciousness {
           vitals.consciousness.level,
           vitals.consciousness.unconscious,
           currentPressures(vitals),
-          CasualtiesBelowConfig.ConsciousnessRecoveryPerTick.get(),
+          CasualtiesBelowConfig.vitals.consciousnessRecoveryPerTick.get(),
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
@@ -152,8 +152,8 @@ private[casualtiesbelow] object Consciousness {
     List(
       hypoxiaPressure(
         vitals.circulation.bloodOxygen,
-        CasualtiesBelowConfig.ConsciousnessRecoveryOxygenThreshold.get(),
-        CasualtiesBelowConfig.ConsciousnessOxygenCapMultiplier.get()
+        CasualtiesBelowConfig.vitals.consciousnessRecoveryOxygenThreshold.get(),
+        CasualtiesBelowConfig.vitals.consciousnessOxygenCapMultiplier.get()
       ),
       ConsciousnessPressure(ceiling = OpioidEffects.consciousnessCeiling(vitals.opioidLevel)),
       temperaturePressure(vitals.bodyTemperature)
@@ -171,18 +171,18 @@ private[casualtiesbelow] object Consciousness {
   ): ConsciousnessPressure = {
     val coldDev = TemperatureCalc.coldDeviation(
       bodyTemperature,
-      CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+      CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
     )
     val hotDev = TemperatureCalc.hotDeviation(
       bodyTemperature,
-      CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
+      CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
     )
     val ceiling = finiteInRange(
-      CasualtiesBelowConfig.TemperatureConsciousnessCeilingFormula.evaluate(
+      CasualtiesBelowConfig.temperature.temperatureConsciousnessCeilingFormula.evaluate(
         coldDev,
         hotDev,
-        CasualtiesBelowConfig.ColdConsciousnessSlopePerDegree.get(),
-        CasualtiesBelowConfig.HotConsciousnessSlopePerDegree.get()
+        CasualtiesBelowConfig.temperature.coldConsciousnessSlopePerDegree.get(),
+        CasualtiesBelowConfig.temperature.hotConsciousnessSlopePerDegree.get()
       ),
       0.0,
       VitalsComponent.MaxValue,

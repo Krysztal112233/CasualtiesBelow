@@ -276,13 +276,13 @@ object TemperatureScenarios {
       .asInstanceOf[BiomeInvoker]
       .casualtiesbelow$invokeGetTemperature(pos, level.getSeaLevel)
     val mapped =
-      CasualtiesBelowConfig.BiomeMappingFormula.evaluate(vanillaTemperature.toDouble)
+      CasualtiesBelowConfig.temperature.biomeMappingFormula.evaluate(vanillaTemperature.toDouble)
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
-    CasualtiesBelowConfig.ComfortBandFormula.evaluate(
+    CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
       apparent,
-      CasualtiesBelowConfig.ComfortLowCelsius.get(),
-      CasualtiesBelowConfig.ComfortHighCelsius.get(),
-      CasualtiesBelowConfig.ComfortSlope.get()
+      CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortSlope.get()
     )
   }
 

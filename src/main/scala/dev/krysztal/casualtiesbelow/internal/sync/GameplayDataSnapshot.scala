@@ -167,30 +167,31 @@ object GameplayDataSnapshot {
   ): GameplayDataSnapshot = {
     val config = CasualtiesBelowConfig
     GameplayDataSnapshot(
-      maxBloodVolume = config.MaxBloodVolume.get(),
-      bloodOxygenHypoxiaThreshold = config.BloodOxygenHypoxiaThreshold.get(),
+      maxBloodVolume = config.vitals.maxBloodVolume.get(),
+      bloodOxygenHypoxiaThreshold = config.vitals.bloodOxygenHypoxiaThreshold.get(),
       consciousnessKnockoutThreshold = config.effectiveConsciousnessKnockoutThreshold,
       unconsciousWakeThreshold = config.effectiveConsciousnessWakeThreshold,
-      shockCollapseThreshold = config.ShockCollapseThreshold.get(),
-      terminalHypoxiaDurationTicks = config.TerminalHypoxiaDurationTicks.get().intValue.max(1),
-      armorSkinFormula = config.ArmorSkinFactorFormula.spec.get(),
-      armorMuscleFormula = config.ArmorMuscleFactorFormula.spec.get(),
-      maxDiscomfort = config.MaxDiscomfort.get(),
+      shockCollapseThreshold = config.pain.shockCollapseThreshold.get(),
+      terminalHypoxiaDurationTicks =
+        config.hazards.terminalHypoxiaDurationTicks.get().intValue.max(1),
+      armorSkinFormula = config.armor.armorSkinFactorFormula.spec.get(),
+      armorMuscleFormula = config.armor.armorMuscleFactorFormula.spec.get(),
+      maxDiscomfort = config.discomfort.maxValue.get(),
       discomfortLevelMeans = List(
-        config.DiscomfortLevel1Mean.get(),
-        config.DiscomfortLevel2Mean.get(),
-        config.DiscomfortLevel3Mean.get()
+        config.discomfort.level1Mean.get(),
+        config.discomfort.level2Mean.get(),
+        config.discomfort.level3Mean.get()
       ),
-      nauseaThreshold = config.DiscomfortNauseaThreshold.get(),
-      refusalThreshold = config.DiscomfortRefusalThreshold.get(),
-      vomitChanceThreshold = config.DiscomfortVomitChanceThreshold.get(),
-      vomitMinChancePerTick = config.DiscomfortVomitMinChancePerTick.get(),
+      nauseaThreshold = config.discomfort.nauseaThreshold.get(),
+      refusalThreshold = config.discomfort.refusalThreshold.get(),
+      vomitChanceThreshold = config.discomfort.vomitChanceThreshold.get(),
+      vomitMinChancePerTick = config.discomfort.vomitMinChancePerTick.get(),
       vomitMaxChancePerTick = math.max(
-        config.DiscomfortVomitMaxChancePerTick.get(),
-        config.DiscomfortVomitMinChancePerTick.get()
+        config.discomfort.vomitMaxChancePerTick.get(),
+        config.discomfort.vomitMinChancePerTick.get()
       ),
-      vomitRelief = config.DiscomfortVomitRelief.get(),
-      vomitReliefSpreadFraction = config.DiscomfortVomitReliefSpreadFraction.get(),
+      vomitRelief = config.discomfort.vomitRelief.get(),
+      vomitReliefSpreadFraction = config.discomfort.vomitReliefSpreadFraction.get(),
       gameplayData = gameplayData
     )
   }

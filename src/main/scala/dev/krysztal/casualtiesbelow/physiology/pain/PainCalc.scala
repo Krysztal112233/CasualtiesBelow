@@ -72,7 +72,7 @@ object PainCalc {
   /** Whole-body pain from a collection of limb pain values, using the configured strategy. */
   def total(pains: Iterable[Double]): Double = {
     val values = pains.toSeq
-    val result = CasualtiesBelowConfig.PainStrategy.get() match {
+    val result = CasualtiesBelowConfig.pain.totalPainStrategy.get() match {
       case TotalPainStrategy.Max       => values.maxOption.getOrElse(0.0)
       case TotalPainStrategy.Sum       => values.sum
       case TotalPainStrategy.Geometric => geometric(values)
@@ -84,8 +84,8 @@ object PainCalc {
     * out, falls back to `max`.
     */
   private def geometric(pains: Seq[Double]): Double = {
-    val decay = CasualtiesBelowConfig.TotalPainDecay.get()
-    val filterThreshold = CasualtiesBelowConfig.TotalPainFilterThreshold.get()
+    val decay = CasualtiesBelowConfig.pain.totalPainDecay.get()
+    val filterThreshold = CasualtiesBelowConfig.pain.totalPainFilterThreshold.get()
 
     val sorted = pains.filter(_ >= filterThreshold).sortBy(-_)
     // When every pain is below the filter threshold, the worst single pain still counts.

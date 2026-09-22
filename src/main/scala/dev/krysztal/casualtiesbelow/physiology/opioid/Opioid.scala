@@ -25,8 +25,8 @@ object Opioid {
 
     val next = nextWithdrawalDiscomfort(
       vitals.discomfort,
-      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortPerTick.get(),
-      CasualtiesBelowConfig.OpioidWithdrawalDiscomfortTarget.get()
+      CasualtiesBelowConfig.opioid.withdrawalDiscomfortPerTick.get(),
+      CasualtiesBelowConfig.opioid.withdrawalDiscomfortTarget.get()
     )
     if (next == vitals.discomfort) return false
 
@@ -47,9 +47,9 @@ object Opioid {
     nextState(
       level,
       dependence,
-      CasualtiesBelowConfig.OpioidLevelDecayPerTick.get(),
-      CasualtiesBelowConfig.OpioidDependenceExposurePerLevelPerTick.get(),
-      CasualtiesBelowConfig.OpioidDependenceDecayPerTick.get()
+      CasualtiesBelowConfig.opioid.levelDecayPerTick.get(),
+      CasualtiesBelowConfig.opioid.dependenceExposurePerLevelPerTick.get(),
+      CasualtiesBelowConfig.opioid.dependenceDecayPerTick.get()
     )
   }
 

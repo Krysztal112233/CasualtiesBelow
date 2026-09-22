@@ -115,27 +115,27 @@ object Discomfort {
       case Some(mean)              =>
         val vitals = player.vitals
         var amount = sample(mean, player.getRandom)
-        if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
-          amount *= CasualtiesBelowConfig.DiscomfortNauseousMultiplier.get()
+        if (vitals.discomfort >= CasualtiesBelowConfig.discomfort.nauseaThreshold.get()) {
+          amount *= CasualtiesBelowConfig.discomfort.alreadyNauseousMultiplier.get()
         }
         if (!player.getFoodData.needsFood()) {
-          amount *= CasualtiesBelowConfig.DiscomfortOvereatingMultiplier.get()
+          amount *= CasualtiesBelowConfig.discomfort.overeatingMultiplier.get()
         }
         if (
           vitals.infection.sepsis > 0.0 ||
-          vitals.consciousness.level < CasualtiesBelowConfig.DiscomfortPoorConditionConsciousness
+          vitals.consciousness.level < CasualtiesBelowConfig.discomfort.poorConditionConsciousnessThreshold
             .get()
         ) {
-          amount *= CasualtiesBelowConfig.DiscomfortPoorConditionMultiplier.get()
+          amount *= CasualtiesBelowConfig.discomfort.poorConditionMultiplier.get()
         }
         amount *= Dirtiness.foodDiscomfortMultiplier(
           vitals.dirtiness,
-          CasualtiesBelowConfig.MaxDirtiness.get(),
-          CasualtiesBelowConfig.DirtinessFoodDiscomfortMultiplierAtMax.get()
+          CasualtiesBelowConfig.dirtiness.maxValue.get(),
+          CasualtiesBelowConfig.dirtiness.foodDiscomfortMultiplierAtMax.get()
         )
         VitalsMutations.setDiscomfort(
           vitals,
-          (vitals.discomfort + amount).min(CasualtiesBelowConfig.MaxDiscomfort.get())
+          (vitals.discomfort + amount).min(CasualtiesBelowConfig.discomfort.maxValue.get())
         )
         AchievementHooks.onFoodDiscomfortSettled(player)
         VitalsMutations.syncNow(player)
@@ -164,9 +164,9 @@ object Discomfort {
       val next = nextAfterOrdinaryDecay(
         vitals.discomfort,
         OpioidWithdrawal.isActive(vitals),
-        CasualtiesBelowConfig.DiscomfortNauseaThreshold.get(),
-        CasualtiesBelowConfig.DiscomfortDecayLowPerSecond.get(),
-        CasualtiesBelowConfig.DiscomfortDecayHighPerSecond.get()
+        CasualtiesBelowConfig.discomfort.nauseaThreshold.get(),
+        CasualtiesBelowConfig.discomfort.decayRateLowPerSecond.get(),
+        CasualtiesBelowConfig.discomfort.decayRateHighPerSecond.get()
       )
       if (next != vitals.discomfort) {
         VitalsMutations.setDiscomfort(vitals, next)
@@ -174,7 +174,7 @@ object Discomfort {
       }
     }
 
-    if (vitals.discomfort >= CasualtiesBelowConfig.DiscomfortNauseaThreshold.get()) {
+    if (vitals.discomfort >= CasualtiesBelowConfig.discomfort.nauseaThreshold.get()) {
       player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NauseaRefreshTicks, 0))
     }
 
@@ -201,10 +201,10 @@ object Discomfort {
   private def vomit(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val food = player.getFoodData
     food.setFoodLevel(
-      (food.getFoodLevel - CasualtiesBelowConfig.DiscomfortVomitHungerPenalty.get()).max(0)
+      (food.getFoodLevel - CasualtiesBelowConfig.discomfort.vomitHungerPenalty.get()).max(0)
     )
     food.setSaturation(
-      (food.getSaturationLevel - CasualtiesBelowConfig.DiscomfortVomitSaturationPenalty
+      (food.getSaturationLevel - CasualtiesBelowConfig.discomfort.vomitSaturationPenalty
         .get()
         .floatValue)
         .max(0.0f)
@@ -221,32 +221,32 @@ object Discomfort {
   }
 
   private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {
-    val threshold = CasualtiesBelowConfig.DiscomfortVomitChanceThreshold.get()
+    val threshold = CasualtiesBelowConfig.discomfort.vomitChanceThreshold.get()
     if (discomfort <= threshold) return false
 
-    val maxDiscomfort = CasualtiesBelowConfig.MaxDiscomfort.get()
+    val maxDiscomfort = CasualtiesBelowConfig.discomfort.maxValue.get()
     val progress =
       if (maxDiscomfort <= threshold) 1.0
       else ((discomfort - threshold) / (maxDiscomfort - threshold)).max(0.0).min(1.0)
-    val minChance = CasualtiesBelowConfig.DiscomfortVomitMinChancePerTick.get()
+    val minChance = CasualtiesBelowConfig.discomfort.vomitMinChancePerTick.get()
     val maxChance =
-      math.max(CasualtiesBelowConfig.DiscomfortVomitMaxChancePerTick.get(), minChance)
+      math.max(CasualtiesBelowConfig.discomfort.vomitMaxChancePerTick.get(), minChance)
     random.nextDouble() < minChance + (maxChance - minChance) * progress
   }
 
   private def sampleVomitRelief(random: RandomSource): Double = {
-    val mean = CasualtiesBelowConfig.DiscomfortVomitRelief.get()
-    val spread = mean * CasualtiesBelowConfig.DiscomfortVomitReliefSpreadFraction.get()
+    val mean = CasualtiesBelowConfig.discomfort.vomitRelief.get()
+    val spread = mean * CasualtiesBelowConfig.discomfort.vomitReliefSpreadFraction.get()
     mean + (random.nextDouble() * 2.0 - 1.0) * spread
   }
 
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles
-    * proportionally ([[CasualtiesBelowConfig.DiscomfortSpreadFraction]]).
+    * proportionally ([[CasualtiesBelowConfig.discomfort.spreadFraction]]).
     */
   private def sample(mean: Double, random: RandomSource): Double = {
-    val spread = mean * CasualtiesBelowConfig.DiscomfortSpreadFraction.get()
+    val spread = mean * CasualtiesBelowConfig.discomfort.spreadFraction.get()
     val sampled =
-      CasualtiesBelowConfig.DiscomfortDistribution.get() match {
+      CasualtiesBelowConfig.discomfort.distribution.get() match {
         case DiscomfortDistribution.Uniform =>
           mean + (random.nextDouble() * 2.0 - 1.0) * spread
         case DiscomfortDistribution.Gaussian =>

@@ -86,16 +86,16 @@ object Temperature {
       .asInstanceOf[BiomeInvoker]
       .casualtiesbelow$invokeGetTemperature(pos, level.getSeaLevel)
     val mapped =
-      CasualtiesBelowConfig.BiomeMappingFormula.evaluate(vanillaTemperature.toDouble)
+      CasualtiesBelowConfig.temperature.biomeMappingFormula.evaluate(vanillaTemperature.toDouble)
     val immersed = player.isInWater
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
 
     // (b) Equilibrium core temperature from the comfort band.
-    val equilibrium = CasualtiesBelowConfig.ComfortBandFormula.evaluate(
+    val equilibrium = CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
       apparent,
-      CasualtiesBelowConfig.ComfortLowCelsius.get(),
-      CasualtiesBelowConfig.ComfortHighCelsius.get(),
-      CasualtiesBelowConfig.ComfortSlope.get()
+      CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortSlope.get()
     )
 
     // (c) Armor scan: coverage-weighted material coefficients over the four armor slots.
@@ -116,7 +116,7 @@ object Temperature {
     // (d) Wetness collapses both armor coefficients together: soaked armor neither insulates
     // nor stifles. Fire resistance is the fire layer's own coefficient and does not collapse.
     val wetness = vitals.wetness
-    val collapse = CasualtiesBelowConfig.WetnessCollapseFormula
+    val collapse = CasualtiesBelowConfig.temperature.wetnessCollapseFormula
       .evaluate(wetness)
       .max(0.0)
       .min(1.0)
@@ -136,14 +136,14 @@ object Temperature {
 
     // (f) Exponential approach of the armor-weakened equilibrium plus production terms.
     val effectiveEquilibrium =
-      CasualtiesBelowConfig.EffectiveTemperatureFormula.evaluate(
+      CasualtiesBelowConfig.temperature.effectiveTemperatureFormula.evaluate(
         equilibrium,
         effectiveInsulation
       )
     val ratePerSecond = TemperatureCalc.approachRatePerSecond(
-      CasualtiesBelowConfig.TauAirMinutes.get(),
+      CasualtiesBelowConfig.temperature.tauAirMinutes.get(),
       immersed,
-      CasualtiesBelowConfig.ImmersionRateMultiplier.get()
+      CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
     )
     val productionPerSecond = TemperatureCalc.productionPerSecond(
       ContributionAccumulator.directTotal,
@@ -166,10 +166,11 @@ object Temperature {
     val sweatPerSecond =
       if (
         exertionPerSecond > 0.0 &&
-        nextCore > CasualtiesBelowConfig.SweatCoreTempThreshold.get()
+        nextCore > CasualtiesBelowConfig.temperature.sweatCoreTempThreshold.get()
       ) {
         Dirtiness.markSweating(player.getUUID)
-        CasualtiesBelowConfig.SweatWetnessPerSecond.get() * TemperatureCalc.sweatRateFraction(
+        CasualtiesBelowConfig.temperature.sweatWetnessPerSecond
+          .get() * TemperatureCalc.sweatRateFraction(
           exertionPerSecond,
           SprintExhaustionPerSecond
         )
@@ -178,13 +179,13 @@ object Temperature {
       }
     val deltaWetness =
       if (immersed) {
-        CasualtiesBelowConfig.ImmersionWetnessPerSecond.get() * SecondsPerTick
+        CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * SecondsPerTick
       } else if (level.isRainingAt(pos)) {
-        CasualtiesBelowConfig.RainWetnessPerSecond
+        CasualtiesBelowConfig.temperature.rainWetnessPerSecond
           .get() * SecondsPerTick + sweatPerSecond * SecondsPerTick
       } else {
         val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
-        -CasualtiesBelowConfig.DryingCurveFormula.evaluate(apparent + dryingBonus) *
+        -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(apparent + dryingBonus) *
           airDryness * SecondsPerTick + sweatPerSecond * SecondsPerTick
       }
     val nextWetness = TemperatureCalc.nextWetness(wetness, deltaWetness)
@@ -266,7 +267,8 @@ object Temperature {
       val exhaustionPerSecond = ExertionTracker.observe(player)
       if (exhaustionPerSecond > 0.0) {
         context.addDirect(
-          exhaustionPerSecond * CasualtiesBelowConfig.ExerciseHeatPerExhaustionPerSecond.get()
+          exhaustionPerSecond * CasualtiesBelowConfig.temperature.exerciseHeatPerExhaustionPerSecond
+            .get()
         )
       }
     }
@@ -284,11 +286,11 @@ object Temperature {
     override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
       val tier: Double =
         if (player.isInLava) {
-          CasualtiesBelowConfig.LavaContactHeatPerMinute.get().doubleValue
+          CasualtiesBelowConfig.temperature.lavaContactHeatPerMinute.get().doubleValue
         } else if (player.isOnFire) {
-          CasualtiesBelowConfig.OnFireHeatPerMinute.get().doubleValue
+          CasualtiesBelowConfig.temperature.onFireHeatPerMinute.get().doubleValue
         } else if (standingOnHeatSource(player)) {
-          CasualtiesBelowConfig.HeatSourceBlockHeatPerMinute.get().doubleValue
+          CasualtiesBelowConfig.temperature.heatSourceBlockHeatPerMinute.get().doubleValue
         } else {
           0.0
         }
@@ -323,7 +325,8 @@ object Temperature {
       frame.foreach { f =>
         if (f.wetness > 0.0) {
           context.addDissipative(
-            f.wetness * f.airDryness * CasualtiesBelowConfig.EvaporationCoolingPerMinute.get()
+            f.wetness * f.airDryness * CasualtiesBelowConfig.temperature.evaporationCoolingPerMinute
+              .get()
           )
         }
       }
@@ -334,7 +337,7 @@ object Temperature {
   private object FireDryingBonus extends DryingBonusCallback {
     override def dryingBonus(player: ServerPlayer): Double =
       if (player.isOnFire) {
-        CasualtiesBelowConfig.FireDryingBonusDegrees.get()
+        CasualtiesBelowConfig.temperature.fireDryingBonusDegrees.get()
       } else {
         0.0
       }

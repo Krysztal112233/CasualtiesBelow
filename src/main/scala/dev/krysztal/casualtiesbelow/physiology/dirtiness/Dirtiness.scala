@@ -81,12 +81,12 @@ object Dirtiness {
     val biome = level.getBiome(player.blockPosition())
 
     val accrual = accrualPerTick(
-      CasualtiesBelowConfig.DirtinessAccrualPerSecond.get(),
-      CasualtiesBelowConfig.DirtinessSprintMultiplier.get(),
-      CasualtiesBelowConfig.DirtinessArmoredMultiplier.get(),
-      CasualtiesBelowConfig.DirtinessNetherMultiplier.get(),
+      CasualtiesBelowConfig.dirtiness.accrualPerSecond.get(),
+      CasualtiesBelowConfig.dirtiness.sprintMultiplier.get(),
+      CasualtiesBelowConfig.dirtiness.armoredMultiplier.get(),
+      CasualtiesBelowConfig.dirtiness.netherMultiplier.get(),
       if (sweatingNow.contains(player.getUUID)) {
-        CasualtiesBelowConfig.SweatDirtinessMultiplier.get()
+        CasualtiesBelowConfig.temperature.sweatDirtinessMultiplier.get()
       } else {
         1.0
       },
@@ -95,15 +95,17 @@ object Dirtiness {
       inNether = biome.is(BiomeTags.IS_NETHER)
     )
     val wash = washPerTick(
-      CasualtiesBelowConfig.DirtinessWashWaterPerSecond.get(),
-      CasualtiesBelowConfig.DirtinessWashRainPerSecond.get(),
-      CasualtiesBelowConfig.DirtyWaterWashMultiplier.get(),
+      CasualtiesBelowConfig.dirtiness.washWaterPerSecond.get(),
+      CasualtiesBelowConfig.dirtiness.washRainPerSecond.get(),
+      CasualtiesBelowConfig.dirtiness.dirtyWaterWashMultiplier.get(),
       inWater = player.isInWater,
       inRain = level.isRainingAt(player.blockPosition()),
       murkyWater = biome.is(CasualtiesBelowTags.DirtyWaterBiomes)
     )
     val next =
-      (vitals.dirtiness + accrual - wash).max(0.0).min(CasualtiesBelowConfig.MaxDirtiness.get())
+      (vitals.dirtiness + accrual - wash)
+        .max(0.0)
+        .min(CasualtiesBelowConfig.dirtiness.maxValue.get())
     if (next != vitals.dirtiness) {
       VitalsMutations.setDirtiness(vitals, next)
       if (syncTick) VitalsMutations.syncNow(player)
@@ -179,7 +181,7 @@ object Dirtiness {
     }
 
     val washed =
-      (CasualtiesBelowConfig.DirtinessWashWaterPerSecond
+      (CasualtiesBelowConfig.dirtiness.washWaterPerSecond
         .get()
         .doubleValue
         .max(0.0) / TicksPerSecond)
@@ -187,7 +189,7 @@ object Dirtiness {
     if (washed <= 0.0) return
     VitalsMutations.setDirtiness(vitals, current - washed)
 
-    val pointsPerLevel = CasualtiesBelowConfig.DirtinessCauldronPointsPerLevel.get()
+    val pointsPerLevel = CasualtiesBelowConfig.dirtiness.cauldronPointsPerLevel.get()
     if (pointsPerLevel <= 0.0) return // configured as free washing: no level consumption
     val id = player.getUUID
     val progress = cauldronProgress.getOrElse(id, 0.0) + washed

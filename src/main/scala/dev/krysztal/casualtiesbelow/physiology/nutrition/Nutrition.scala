@@ -72,7 +72,11 @@ private[casualtiesbelow] object Nutrition {
     }
 
     val fraction =
-      CasualtiesBelowConfig.StarvationBloodLossFractionPerDamage.get().doubleValue.max(0.0).min(1.0)
+      CasualtiesBelowConfig.hazards.starvationBloodLossFractionPerDamage
+        .get()
+        .doubleValue
+        .max(0.0)
+        .min(1.0)
     val requestedLoss = BloodVolume.healthyMaximum * fraction * damage
     val drained = BloodVolume.drain(vitals, requestedLoss, maximum, bloodFloor(player, maximum))
     StarvationResult(
@@ -96,9 +100,13 @@ private[casualtiesbelow] object Nutrition {
     */
   private def bloodFloor(player: ServerPlayer, maximum: Double): Double = {
     val easyFraction =
-      CasualtiesBelowConfig.EasyStarvationBloodFloorFraction.get().doubleValue.max(0.0).min(1.0)
+      CasualtiesBelowConfig.hazards.easyStarvationBloodFloorFraction
+        .get()
+        .doubleValue
+        .max(0.0)
+        .min(1.0)
     val normalFraction =
-      CasualtiesBelowConfig.NormalStarvationBloodFloorFraction
+      CasualtiesBelowConfig.hazards.normalStarvationBloodFloorFraction
         .get()
         .doubleValue
         .max(0.0)

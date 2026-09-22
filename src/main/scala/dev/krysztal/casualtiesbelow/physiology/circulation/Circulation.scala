@@ -40,10 +40,12 @@ private[casualtiesbelow] object Circulation {
 
     val maxBlood = BloodVolume.effectiveMaximum(vitals)
     changed = BloodVolume.clamp(vitals, maxBlood) || changed
-    if (player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.FedFoodLevelThreshold.get()) {
+    if (
+      player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.immune.fedFoodLevelThreshold.get()
+    ) {
       val regenerated = BloodVolume.restore(
         vitals,
-        CasualtiesBelowConfig.FedBloodRegenPerTick.get(),
+        CasualtiesBelowConfig.vitals.fedBloodRegenPerTick.get(),
         maxBlood
       )
       changed = regenerated > 0.0 || changed

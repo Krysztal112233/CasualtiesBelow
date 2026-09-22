@@ -320,7 +320,7 @@ object WoundApplications {
       damage * enchantmentRatio * (1.0 - slotFormulaFactor(
         player,
         EquipmentSlot.FEET,
-        CasualtiesBelowConfig.BootsCushionFormula
+        CasualtiesBelowConfig.fall.bootsCushionFormula
       ))
   }
 
@@ -334,7 +334,7 @@ object WoundApplications {
       severity * (1.0 - slotFormulaFactor(
         player,
         EquipmentSlot.LEGS,
-        CasualtiesBelowConfig.LeggingsConditionProtectionFormula
+        CasualtiesBelowConfig.fall.leggingsConditionProtectionFormula
       ))
   }
 

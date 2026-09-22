@@ -17,26 +17,26 @@ object OpioidEffects {
   }
 
   def analgesiaFraction(level: Double, dependence: Double): Double = {
-    boundedFraction(CasualtiesBelowConfig.OpioidAnalgesiaFormula.evaluate(level, dependence))
+    boundedFraction(CasualtiesBelowConfig.opioid.opioidAnalgesiaFormula.evaluate(level, dependence))
   }
 
   def consciousnessCeiling(level: Double): Double = {
     bounded(
-      CasualtiesBelowConfig.OpioidSedationCeilingFormula.evaluate(level),
+      CasualtiesBelowConfig.opioid.opioidSedationCeilingFormula.evaluate(level),
       VitalsComponent.MaxValue
     )
   }
 
   def respiratoryEfficiency(level: Double, dependence: Double): Double = {
     boundedFraction(
-      CasualtiesBelowConfig.OpioidRespiratoryEfficiencyFormula.evaluate(level, dependence)
+      CasualtiesBelowConfig.opioid.opioidRespiratoryEfficiencyFormula.evaluate(level, dependence)
     )
   }
 
   def causesRespiratoryFailure(efficiency: Double): Boolean = {
     causesRespiratoryFailure(
       efficiency,
-      CasualtiesBelowConfig.OpioidRespiratoryFailureEfficiencyThreshold.get()
+      CasualtiesBelowConfig.opioid.respiratoryFailureEfficiencyThreshold.get()
     )
   }
 
@@ -48,8 +48,8 @@ object OpioidEffects {
   def isInExcitementBand(level: Double): Boolean = {
     isInExcitementBand(
       level,
-      CasualtiesBelowConfig.OpioidExcitementStartLevel.get(),
-      CasualtiesBelowConfig.OpioidExcitementEndLevel.get()
+      CasualtiesBelowConfig.opioid.excitementStartLevel.get(),
+      CasualtiesBelowConfig.opioid.excitementEndLevel.get()
     )
   }
 

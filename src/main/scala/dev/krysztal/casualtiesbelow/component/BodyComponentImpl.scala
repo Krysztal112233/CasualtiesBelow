@@ -131,25 +131,25 @@ final class BodyComponentImpl(val player: Player)
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.LegSpeedPenaltyId,
-      -structuralSeverity * CasualtiesBelowConfig.DislocationSpeedReduction.get()
+      -structuralSeverity * CasualtiesBelowConfig.movement.dislocationSpeedReduction.get()
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.LegJumpPenaltyId,
-      -structuralSeverity * CasualtiesBelowConfig.DislocationJumpReduction.get()
+      -structuralSeverity * CasualtiesBelowConfig.movement.dislocationJumpReduction.get()
     )
     reconcileAttribute(
       Attributes.MOVEMENT_SPEED,
       BodyComponentImpl.LegMuscleSpeedPenaltyId,
       BodyComponentImpl.quantizeMusclePenalty(
-        muscleDeficit * CasualtiesBelowConfig.MuscleSpeedReduction.get()
+        muscleDeficit * CasualtiesBelowConfig.movement.muscleSpeedReduction.get()
       )
     )
     reconcileAttribute(
       Attributes.JUMP_STRENGTH,
       BodyComponentImpl.LegMuscleJumpPenaltyId,
       BodyComponentImpl.quantizeMusclePenalty(
-        muscleDeficit * CasualtiesBelowConfig.MuscleJumpReduction.get()
+        muscleDeficit * CasualtiesBelowConfig.movement.muscleJumpReduction.get()
       )
     )
   }

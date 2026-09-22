@@ -61,22 +61,22 @@ object ArmorProtection {
       case Some(entry) =>
         val skinFactor = entry.skinFactor.toScala
           .flatMap(_.evaluate(armor, toughness))
-          .getOrElse(config.ArmorSkinFactorFormula.evaluate(armor, toughness))
+          .getOrElse(config.armor.armorSkinFactorFormula.evaluate(armor, toughness))
           .max(0.0)
           .min(1.0)
         val muscleFactor = entry.muscleFactor.toScala
           .flatMap(_.evaluate(armor, toughness, skinFactor))
-          .getOrElse(config.ArmorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
+          .getOrElse(config.armor.armorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
           .max(0.0)
           .min(1.0)
         applyFactors(profile, skinFactor, muscleFactor)
       case None =>
         if (armor <= 0.0 && toughness <= 0.0) return profile
-        val skinFactor = config.ArmorSkinFactorFormula
+        val skinFactor = config.armor.armorSkinFactorFormula
           .evaluate(armor, toughness)
           .max(0.0)
           .min(1.0)
-        val muscleFactor = config.ArmorMuscleFactorFormula
+        val muscleFactor = config.armor.armorMuscleFactorFormula
           .evaluate(armor, toughness, skinFactor)
           .max(0.0)
           .min(1.0)

@@ -38,10 +38,11 @@ private[casualtiesbelow] object Infection {
     */
   private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
     val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length
-    val gain = CasualtiesBelowConfig.SepsisGainPerTick.get() * infectionLoad / maxLoad
-    val next = (vitals.infection.sepsis + gain - CasualtiesBelowConfig.SepsisDecayPerTick.get())
-      .max(0.0)
-      .min(CasualtiesBelowConfig.MaxSepsis.get())
+    val gain = CasualtiesBelowConfig.sepsis.sepsisGainPerTick.get() * infectionLoad / maxLoad
+    val next =
+      (vitals.infection.sepsis + gain - CasualtiesBelowConfig.sepsis.sepsisDecayPerTick.get())
+        .max(0.0)
+        .min(CasualtiesBelowConfig.sepsis.maxSepsis.get())
     if (next == vitals.infection.sepsis) return false
 
     VitalsMutations.setSepsis(vitals, next)
@@ -57,24 +58,24 @@ private[casualtiesbelow] object Infection {
     val food = player.getFoodData.getFoodLevel
     val foodDelta: Double =
       if (
-        food >= CasualtiesBelowConfig.FedFoodLevelThreshold.get().intValue &&
+        food >= CasualtiesBelowConfig.immune.fedFoodLevelThreshold.get().intValue &&
         !OpioidWithdrawal.isActive(vitals)
       ) {
-        CasualtiesBelowConfig.FedImmuneRegenPerTick.get()
-      } else if (food < CasualtiesBelowConfig.HungryFoodLevelThreshold.get().intValue) {
-        -CasualtiesBelowConfig.HungryImmuneDrainPerTick.get()
+        CasualtiesBelowConfig.immune.fedImmuneRegenPerTick.get()
+      } else if (food < CasualtiesBelowConfig.immune.hungryFoodLevelThreshold.get().intValue) {
+        -CasualtiesBelowConfig.immune.hungryImmuneDrainPerTick.get()
       } else {
         0.0
       }
 
     val poisonDrain = Option(player.getEffect(MobEffects.POISON)).fold(0.0) { effect =>
-      CasualtiesBelowConfig.PoisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
+      CasualtiesBelowConfig.immune.poisonImmuneDrainPerTick.get() * (effect.getAmplifier + 1)
     }
     val dirtDrain = Dirtiness.immuneDrainPerTick(
       vitals.dirtiness,
-      CasualtiesBelowConfig.DirtinessImmuneDrainStart.get(),
-      CasualtiesBelowConfig.MaxDirtiness.get(),
-      CasualtiesBelowConfig.DirtinessImmuneDrainMaxPerTick.get()
+      CasualtiesBelowConfig.dirtiness.immuneDrainStartDirtiness.get(),
+      CasualtiesBelowConfig.dirtiness.maxValue.get(),
+      CasualtiesBelowConfig.dirtiness.immuneDrainMaxPerTick.get()
     )
     // Temperature stress: °C outside the penalty band drain immune health per minute, cold harder
     // than heat; the fed-regen/drain additive semantics below stay unchanged.
@@ -82,15 +83,15 @@ private[casualtiesbelow] object Infection {
       TemperatureCalc.immuneDrainPerTick(
         TemperatureCalc.coldDeviation(
           vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandLowCelsius.get()
+          CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
         ),
-        CasualtiesBelowConfig.ColdImmuneDrainPerDegreePerMinute.get()
+        CasualtiesBelowConfig.temperature.coldImmuneDrainPerDegreePerMinute.get()
       ) + TemperatureCalc.immuneDrainPerTick(
         TemperatureCalc.hotDeviation(
           vitals.bodyTemperature,
-          CasualtiesBelowConfig.PenaltyBandHighCelsius.get()
+          CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
         ),
-        CasualtiesBelowConfig.HotImmuneDrainPerDegreePerMinute.get()
+        CasualtiesBelowConfig.temperature.hotImmuneDrainPerDegreePerMinute.get()
       )
     val delta = foodDelta - poisonDrain - dirtDrain - temperatureDrain
     if (delta == 0.0) return false
@@ -98,7 +99,7 @@ private[casualtiesbelow] object Infection {
     val next =
       (vitals.infection.immuneHealth + delta)
         .max(0.0)
-        .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+        .min(CasualtiesBelowConfig.vitals.maxImmuneHealth.get())
     if (next == vitals.infection.immuneHealth) return false
 
     VitalsMutations.setImmuneHealth(vitals, next)

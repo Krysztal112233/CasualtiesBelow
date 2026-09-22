@@ -14,10 +14,10 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 object FallDamageFormula {
   private val VanillaDistanceEpsilon = 1.0e-6
 
-  private val formula = CasualtiesBelowConfig.FallDamageFormula
+  private val formula = CasualtiesBelowConfig.fall.fallDamageFormula
 
   def appliesTo(entity: LivingEntity): Boolean =
-    CasualtiesBelowConfig.AffectAllLivingEntities.get() || entity.isInstanceOf[Player]
+    CasualtiesBelowConfig.fall.affectAllLivingEntities.get() || entity.isInstanceOf[Player]
 
   def calculateCustom(
       entity: LivingEntity,

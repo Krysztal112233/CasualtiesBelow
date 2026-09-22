@@ -13,37 +13,39 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
   */
 object TemperatureCalc {
 
-  /** Default source of `CasualtiesBelowConfig.BiomeMappingFormula`: anchors the vanilla rain/snow
-    * line 0.15 to 0°C and desert 2.0 to 40°C.
+  /** Default source of `CasualtiesBelowConfig.temperature.biomeMappingFormula`: anchors the vanilla
+    * rain/snow line 0.15 to 0°C and desert 2.0 to 40°C.
     */
   val BiomeMappingFormulaDefault = "(t - 0.15) * 40 / 1.85"
 
-  /** Default source of `CasualtiesBelowConfig.ComfortBandFormula`: inside the band the equilibrium
-    * is normal body temperature, outside it deviates by the slope.
+  /** Default source of `CasualtiesBelowConfig.temperature.comfortBandFormula`: inside the band the
+    * equilibrium is normal body temperature, outside it deviates by the slope.
     */
   val ComfortBandFormulaDefault =
     "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))"
 
-  /** Default source of `CasualtiesBelowConfig.EffectiveTemperatureFormula`: armor insulation
-    * shrinks the equilibrium's deviation from normal body temperature on the cold side only.
+  /** Default source of `CasualtiesBelowConfig.temperature.effectiveTemperatureFormula`: armor
+    * insulation shrinks the equilibrium's deviation from normal body temperature on the cold side
+    * only.
     */
   val EffectiveTemperatureFormulaDefault =
     "37 + (t - 37) * (1 - i * if(t > 37, 0, 1))"
 
-  /** Default source of `CasualtiesBelowConfig.TemperatureConsciousnessCeilingFormula`: the
-    * consciousness ceiling drops by slope per °C of deviation outside the penalty band, cold and
-    * hot sides summed.
+  /** Default source of `CasualtiesBelowConfig.temperature.temperatureConsciousnessCeilingFormula`:
+    * the consciousness ceiling drops by slope per °C of deviation outside the penalty band, cold
+    * and hot sides summed.
     */
   val TemperatureConsciousnessCeilingFormulaDefault =
     "100 - coldDev * coldSlope - hotDev * hotSlope"
 
-  /** Default source of `CasualtiesBelowConfig.DryingCurveFormula`: wetness lost per second from the
-    * drying temperature (this EvalEx configuration has no exp(), so e's power is numeric).
+  /** Default source of `CasualtiesBelowConfig.temperature.dryingCurveFormula`: wetness lost per
+    * second from the drying temperature (this EvalEx configuration has no exp(), so e's power is
+    * numeric).
     */
   val DryingCurveFormulaDefault = "0.0014 * 2.718281828459045^(0.06 * t)"
 
-  /** Default source of `CasualtiesBelowConfig.WetnessCollapseFormula`: fraction of armor thermal
-    * coefficients surviving at a given wetness.
+  /** Default source of `CasualtiesBelowConfig.temperature.wetnessCollapseFormula`: fraction of
+    * armor thermal coefficients surviving at a given wetness.
     */
   val WetnessCollapseFormulaDefault = "1 - 0.85 * wetness"
 

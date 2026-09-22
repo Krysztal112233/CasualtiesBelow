@@ -60,13 +60,13 @@ private[casualtiesbelow] object InjectionSettlement {
 
     val doseDelta = doseFor(contents.opioidDose, applied, contents.droplets)
     val discomfort = sideEffect(
-      CasualtiesBelowConfig.InjectionFullDoseSideEffectDiscomfort.get(),
+      CasualtiesBelowConfig.injection.fullDoseSideEffectDiscomfort.get(),
       speed,
       applied,
       LiquidContents.AmpouleDroplets
     )
     val pain = sideEffect(
-      CasualtiesBelowConfig.InjectionFullDoseSideEffectPain.get(),
+      CasualtiesBelowConfig.injection.fullDoseSideEffectPain.get(),
       speed,
       applied,
       LiquidContents.AmpouleDroplets
@@ -76,9 +76,9 @@ private[casualtiesbelow] object InjectionSettlement {
     // Dirty needle: contamination scales with the player's dirtiness and the pushed fraction,
     // never with speed — a careful push through dirty skin still infects.
     val infectionSeed = infectionSeedFor(
-      CasualtiesBelowConfig.DirtinessInjectionSeedAtMax.get(),
+      CasualtiesBelowConfig.dirtiness.injectionSeedAtMax.get(),
       vitals.dirtiness,
-      CasualtiesBelowConfig.MaxDirtiness.get(),
+      CasualtiesBelowConfig.dirtiness.maxValue.get(),
       applied,
       LiquidContents.AmpouleDroplets
     )

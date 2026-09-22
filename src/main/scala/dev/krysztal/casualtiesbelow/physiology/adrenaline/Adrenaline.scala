@@ -41,8 +41,8 @@ object Adrenaline {
     val next = grantState(
       previous,
       amount,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get()
+      CasualtiesBelowConfig.adrenaline.maxValue.get(),
+      CasualtiesBelowConfig.adrenaline.combatGraceTicks.get()
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -61,8 +61,8 @@ object Adrenaline {
     val previous = storedState(vitals)
     val next = advanceState(
       previous,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineDecayPerTick.get()
+      CasualtiesBelowConfig.adrenaline.maxValue.get(),
+      CasualtiesBelowConfig.adrenaline.decayPerTick.get()
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -83,12 +83,12 @@ object Adrenaline {
       requestedAmount: Double
   ): Boolean = {
     val previous = storedState(vitals)
-    val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.MaxAdrenaline.get())
+    val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.adrenaline.maxValue.get())
     val next =
       if (amount > 0.0) {
         AdrenalineState(
           amount,
-          freshGraceTicks(CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get())
+          freshGraceTicks(CasualtiesBelowConfig.adrenaline.combatGraceTicks.get())
         )
       } else AdrenalineState.Empty
     applyState(vitals, next)
@@ -108,7 +108,7 @@ object Adrenaline {
 
   /** Finite, config-bounded server value used by the pain-shock threshold calculation. */
   def currentAmount(vitals: VitalsComponent): Double =
-    normalizeAmount(vitals.adrenaline, CasualtiesBelowConfig.MaxAdrenaline.get())
+    normalizeAmount(vitals.adrenaline, CasualtiesBelowConfig.adrenaline.maxValue.get())
 
   /** Server-side save/copy normalization. */
   private[casualtiesbelow] def normalizeStoredState(
@@ -118,8 +118,8 @@ object Adrenaline {
     normalizeStoredState(
       amount,
       graceTicks,
-      CasualtiesBelowConfig.MaxAdrenaline.get(),
-      CasualtiesBelowConfig.AdrenalineCombatGraceTicks.get()
+      CasualtiesBelowConfig.adrenaline.maxValue.get(),
+      CasualtiesBelowConfig.adrenaline.combatGraceTicks.get()
     )
 
   private[casualtiesbelow] def normalizeStoredState(

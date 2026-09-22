@@ -30,8 +30,8 @@ import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
   * carries no instant drain by default.
   *
   * The dose floats (gaussian around the entry mean, see
-  * [[CasualtiesBelowConfig.FoodImmuneSpreadFraction]]) with the mean's sign preserved: jitter never
-  * turns a nourishing food harmful or vice versa.
+  * [[CasualtiesBelowConfig.immune.foodImmuneSpreadFraction]]) with the mean's sign preserved:
+  * jitter never turns a nourishing food harmful or vice versa.
   */
 object FoodImmunity {
 
@@ -44,10 +44,14 @@ object FoodImmunity {
       if (mean != 0.0) {
         val vitals = player.vitals
         val amount =
-          sample(mean, CasualtiesBelowConfig.FoodImmuneSpreadFraction.get(), player.getRandom)
+          sample(
+            mean,
+            CasualtiesBelowConfig.immune.foodImmuneSpreadFraction.get(),
+            player.getRandom
+          )
         val next = (vitals.infection.immuneHealth + amount)
           .max(0.0)
-          .min(CasualtiesBelowConfig.MaxImmuneHealth.get())
+          .min(CasualtiesBelowConfig.vitals.maxImmuneHealth.get())
         if (next != vitals.infection.immuneHealth) {
           VitalsMutations.setImmuneHealth(vitals, next)
           VitalsMutations.syncNow(player)

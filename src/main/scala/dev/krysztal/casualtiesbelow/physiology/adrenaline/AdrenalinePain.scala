@@ -13,8 +13,8 @@ object AdrenalinePain {
   def currentMultiplier(vitals: VitalsComponent): Double =
     multiplier(
       Adrenaline.currentAmount(vitals),
-      CasualtiesBelowConfig.AdrenalinePainReductionPerPoint.get(),
-      CasualtiesBelowConfig.AdrenalineMaxPainReductionFraction.get()
+      CasualtiesBelowConfig.adrenaline.painReductionPerPoint.get(),
+      CasualtiesBelowConfig.adrenaline.maxPainReductionFraction.get()
     )
 
   private[casualtiesbelow] def multiplier(

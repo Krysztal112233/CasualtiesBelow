@@ -36,14 +36,14 @@ private[casualtiesbelow] object OxygenProgression {
         player.getMaxAirSupply > 0 && player.getAirSupply <= 0
     val deprivationRate =
       if (inWall && exhaustedAir) {
-        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick
+        CasualtiesBelowConfig.hazards.inWallBloodOxygenDepletionPerTick
           .get()
           .doubleValue
-          .max(CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue)
+          .max(CasualtiesBelowConfig.vitals.bloodOxygenDepletionPerTick.get().doubleValue)
       } else if (inWall) {
-        CasualtiesBelowConfig.InWallBloodOxygenDepletionPerTick.get().doubleValue
+        CasualtiesBelowConfig.hazards.inWallBloodOxygenDepletionPerTick.get().doubleValue
       } else if (exhaustedAir) {
-        CasualtiesBelowConfig.BloodOxygenDepletionPerTick.get().doubleValue
+        CasualtiesBelowConfig.vitals.bloodOxygenDepletionPerTick.get().doubleValue
       } else {
         0.0
       }
@@ -84,11 +84,11 @@ private[casualtiesbelow] object OxygenProgression {
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,
-      CasualtiesBelowConfig.BloodOxygenRecoveryPerTick.get(),
+      CasualtiesBelowConfig.vitals.bloodOxygenRecoveryPerTick.get(),
       respiratoryEfficiency,
       opioidRespiratoryFailure,
       if (opioidRespiratoryFailure) {
-        CasualtiesBelowConfig.OpioidRespiratoryFailureOxygenDrainPerTick.get()
+        CasualtiesBelowConfig.opioid.respiratoryFailureOxygenDrainPerTick.get()
       } else {
         0.0
       }
