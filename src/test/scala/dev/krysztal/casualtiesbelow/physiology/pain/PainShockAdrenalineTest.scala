@@ -1,7 +1,7 @@
 package dev.krysztal.casualtiesbelow.physiology.pain
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -82,7 +82,7 @@ final class PainShockAdrenalineTest {
 
   @Test
   def deferredUsesOrdinaryConsciousnessRules(): Unit = {
-    val normalized = ConsciousnessProgression.normalizeStoredState(
+    val normalized = Consciousness.normalizeStoredState(
       75.0,
       Some(false),
       floor = 10.0,

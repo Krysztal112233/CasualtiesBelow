@@ -8,7 +8,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 

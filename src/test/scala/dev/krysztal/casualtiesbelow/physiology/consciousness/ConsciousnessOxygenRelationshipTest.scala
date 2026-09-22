@@ -31,7 +31,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def knockoutThresholdIsIndependentFromTheOrdinaryFloor(): Unit = {
-    val atThreshold = ConsciousnessProgression.reconcile(
+    val atThreshold = Consciousness.reconcile(
       KnockoutThreshold,
       unconscious = false,
       List(ConsciousnessPressure()),
@@ -42,7 +42,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertEquals(KnockoutThreshold, atThreshold.level, 1.0e-9)
     assertTrue(atThreshold.unconscious)
 
-    val aboveThreshold = ConsciousnessProgression.reconcile(
+    val aboveThreshold = Consciousness.reconcile(
       Math.nextUp(KnockoutThreshold),
       unconscious = false,
       List(ConsciousnessPressure()),
@@ -55,7 +55,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def wakingRequiresBothHysteresisAndEnoughOxygen(): Unit = {
-    val belowWake = ConsciousnessProgression.reconcile(
+    val belowWake = Consciousness.reconcile(
       Math.nextDown(WakeThreshold),
       unconscious = true,
       List(ConsciousnessPressure()),
@@ -65,7 +65,7 @@ final class ConsciousnessOxygenRelationshipTest {
     )
     assertTrue(belowWake.unconscious)
 
-    val oxygenBlocked = ConsciousnessProgression.reconcile(
+    val oxygenBlocked = Consciousness.reconcile(
       WakeThreshold,
       unconscious = true,
       List(hypoxia(60.0)),
@@ -75,7 +75,7 @@ final class ConsciousnessOxygenRelationshipTest {
     )
     assertTrue(oxygenBlocked.unconscious)
 
-    val recovered = ConsciousnessProgression.reconcile(
+    val recovered = Consciousness.reconcile(
       WakeThreshold,
       unconscious = true,
       List(hypoxia(75.0)),
@@ -108,7 +108,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def storedStableStateUsesKnockoutThresholdWhilePainShockRecoveryKeepsLiteralRange(): Unit = {
-    val stable = ConsciousnessProgression.normalizeStoredState(
+    val stable = Consciousness.normalizeStoredState(
       25.0,
       Some(false),
       Floor,
@@ -118,7 +118,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertEquals(25.0, stable.level, 1.0e-9)
     assertTrue(stable.unconscious)
 
-    val recovering = ConsciousnessProgression.normalizeStoredState(
+    val recovering = Consciousness.normalizeStoredState(
       5.0,
       Some(false),
       Floor,
@@ -135,7 +135,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertEquals(0.0, invalidOxygen.ceiling, 1.0e-9)
     assertTrue(invalidOxygen.recoveryBlocked)
 
-    val invalidCurrent = ConsciousnessProgression.advance(
+    val invalidCurrent = Consciousness.advance(
       Double.NaN,
       unconscious = false,
       List(ConsciousnessPressure()),
@@ -147,7 +147,7 @@ final class ConsciousnessOxygenRelationshipTest {
     assertEquals(Floor, invalidCurrent.level, 1.0e-9)
     assertTrue(invalidCurrent.unconscious)
 
-    val invalidPressure = ConsciousnessProgression.advance(
+    val invalidPressure = Consciousness.advance(
       100.0,
       unconscious = false,
       List(ConsciousnessPressure(lossPerTick = Double.NaN, ceiling = Double.NaN)),
@@ -162,7 +162,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def aMaximumKnockoutThresholdCannotOscillateIntoAnImpossibleWake(): Unit = {
-    val entered = ConsciousnessProgression.reconcile(
+    val entered = Consciousness.reconcile(
       100.0,
       unconscious = false,
       List(ConsciousnessPressure()),
@@ -172,7 +172,7 @@ final class ConsciousnessOxygenRelationshipTest {
     )
     assertTrue(entered.unconscious)
 
-    val remained = ConsciousnessProgression.reconcile(
+    val remained = Consciousness.reconcile(
       entered.level,
       entered.unconscious,
       List(ConsciousnessPressure()),
@@ -185,7 +185,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def synchronizedClientStateTrustsTheServerLatch(): Unit = {
-    val synchronized = ConsciousnessProgression.normalizeSyncedState(
+    val synchronized = Consciousness.normalizeSyncedState(
       0.0,
       Some(false),
       PainShockStage.Stable
@@ -196,7 +196,7 @@ final class ConsciousnessOxygenRelationshipTest {
 
   @Test
   def painShockRecoveryUsesTheStableWakeThresholdBeforeReturningToStable(): Unit = {
-    val stillRecovering = ConsciousnessProgression.reconcile(
+    val stillRecovering = Consciousness.reconcile(
       5.0,
       unconscious = true,
       List(ConsciousnessPressure()),
@@ -206,7 +206,7 @@ final class ConsciousnessOxygenRelationshipTest {
     )
     assertTrue(stillRecovering.unconscious)
 
-    val readyForStable = ConsciousnessProgression.reconcile(
+    val readyForStable = Consciousness.reconcile(
       WakeThreshold,
       unconscious = true,
       List(ConsciousnessPressure()),
@@ -218,7 +218,7 @@ final class ConsciousnessOxygenRelationshipTest {
   }
 
   private def hypoxia(oxygen: Double): ConsciousnessPressure = {
-    ConsciousnessProgression.hypoxiaPressure(oxygen, RecoveryThreshold, CapMultiplier)
+    Consciousness.hypoxiaPressure(oxygen, RecoveryThreshold, CapMultiplier)
   }
 
   private def advance(
@@ -226,7 +226,7 @@ final class ConsciousnessOxygenRelationshipTest {
       unconscious: Boolean,
       pressure: ConsciousnessPressure
   ): ConsciousnessSnapshot = {
-    ConsciousnessProgression.advance(
+    Consciousness.advance(
       consciousness,
       unconscious,
       List(pressure),

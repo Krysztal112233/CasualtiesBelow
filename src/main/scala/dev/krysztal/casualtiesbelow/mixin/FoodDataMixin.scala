@@ -7,7 +7,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.food.FoodData
 
-import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
+import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation
@@ -42,7 +42,7 @@ abstract class FoodDataMixin {
       original: Operation[JBoolean],
       _tickPlayer: ServerPlayer
   ): Boolean = {
-    if (!StarvationProgression.shouldApplyVanillaPulse(player)) return false
+    if (!Nutrition.shouldApplyVanillaPulse(player)) return false
 
     original.call(player, level, source, amount).booleanValue
   }

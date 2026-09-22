@@ -6,7 +6,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.
   *
@@ -45,7 +45,7 @@ private[casualtiesbelow] object HypoxiaProgression {
     val vitals = player.vitals
     reset(vitals)
     VitalsMutations.setBloodOxygen(vitals, BloodVolume.oxygenCarryingCapacity(vitals))
-    ConsciousnessProgression.restoreAfterHypoxiaDeathProtection(player, vitals)
+    Consciousness.restoreAfterHypoxiaDeathProtection(player, vitals)
     VitalsMutations.syncNow(player)
   }
 

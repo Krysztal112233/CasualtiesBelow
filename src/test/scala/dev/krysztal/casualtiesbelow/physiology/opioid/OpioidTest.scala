@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-final class OpioidProgressionTest {
+final class OpioidTest {
 
   @Test
   def acuteLevelDecaysLinearlyToZero(): Unit = {
@@ -40,7 +40,7 @@ final class OpioidProgressionTest {
 
   @Test
   def exposureAndDecayApplyInTheSameTick(): Unit = {
-    val next = OpioidProgression.nextState(50.0, 10.0, 0.0083, 0.0000125, 0.000125)
+    val next = Opioid.nextState(50.0, 10.0, 0.0083, 0.0000125, 0.000125)
     assertEquals(10.0005, next.dependence, 1.0e-12)
   }
 
@@ -48,7 +48,7 @@ final class OpioidProgressionTest {
   def withdrawalDiscomfortRisesWhileOrdinaryDiscomfortStillDecays(): Unit = {
     val afterWithdrawal = Iterator
       .iterate(10.0) { discomfort =>
-        val gained = OpioidProgression.nextWithdrawalDiscomfort(discomfort, 0.0025, 35.0)
+        val gained = Opioid.nextWithdrawalDiscomfort(discomfort, 0.0025, 35.0)
         Discomfort.nextAfterOrdinaryDecay(gained, true, 30.0, 0.5, 0.2)
       }
       .drop(400)
@@ -79,7 +79,7 @@ final class OpioidProgressionTest {
   }
 
   private def nextState(level: Double, dependence: Double): OpioidState = {
-    OpioidProgression.nextState(
+    Opioid.nextState(
       level,
       dependence,
       LevelDecayPerTick,

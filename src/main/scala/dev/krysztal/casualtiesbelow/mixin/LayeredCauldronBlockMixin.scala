@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 import net.minecraft.world.level.block.state.BlockState
 
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At

@@ -23,7 +23,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.mixin.FoodDataAccessor
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
 /** Body temperature progression: the environment pulls the core temperature towards an equilibrium
   * while internal heat production acts on it directly.
@@ -52,7 +52,7 @@ import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
   * Units: the recurrence runs in seconds (Δt = 1/20 s, rates per second); contribution events and
   * their config values speak °C per minute and are divided by 60 at the point of application.
   */
-object TemperatureProgression {
+object Temperature {
 
   /** Registers the built-in heat contributors. The progression itself is driven from
     * [[InjuryProgression.tickPlayer]], so no tick event is registered here.

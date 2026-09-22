@@ -40,7 +40,7 @@ final class OpioidEffectsTest {
     assertTrue(OpioidEffects.isInExcitementBand(120.0, 50.0, 120.0))
     assertFalse(OpioidEffects.isInExcitementBand(120.001, 50.0, 120.0))
 
-    val atBandStart = OpioidProgression.nextState(50.0, 0.0, 0.0083, 0.0000125, 0.000125)
+    val atBandStart = Opioid.nextState(50.0, 0.0, 0.0083, 0.0000125, 0.000125)
     assertEquals(49.9917, atBandStart.level, 1.0e-9)
     assertEquals(0.0005, atBandStart.dependence, 1.0e-12)
   }

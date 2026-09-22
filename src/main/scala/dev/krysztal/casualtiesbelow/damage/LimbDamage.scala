@@ -13,7 +13,7 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.data.WoundProfiles
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineRules
-import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
+import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
 
 /** Classifies incoming damage and delegates every matched rule to the central wound executor. */
 object LimbDamage {
@@ -60,7 +60,7 @@ object LimbDamage {
     // Preserve the existing wound/starvation contract, which excludes every blocked hit.
     if (blocked) return
 
-    StarvationProgression.onAfterDamage(player, source, damageTaken)
+    Nutrition.onAfterDamage(player, source, damageTaken)
     WoundProfiles
       .classify(player.level(), player, source, gameplayData.woundRules)
       .foreach(rule =>

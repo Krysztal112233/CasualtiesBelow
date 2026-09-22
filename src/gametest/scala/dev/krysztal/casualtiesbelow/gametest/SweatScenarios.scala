@@ -5,9 +5,9 @@ import net.minecraft.gametest.framework.GameTestHelper
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
-import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureProgression
+import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
 
 /** In-game validation of sweating and its hygiene coupling (see the 下游对接 design doc): a hot core
   * plus active exertion adds wetness on the sweat axis, and sweat accelerates passive dirtiness

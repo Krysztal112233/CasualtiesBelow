@@ -2,9 +2,9 @@ package dev.krysztal.casualtiesbelow.physiology.temperature
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 
-/** Pure formula steps of the body-temperature recurrence, extracted from [[TemperatureProgression]]
-  * so every stage can be unit-tested without a running game: the progression reads config and world
-  * state, then delegates the math here.
+/** Pure formula steps of the body-temperature recurrence, extracted from [[Temperature]] so every
+  * stage can be unit-tested without a running game: the progression reads config and world state,
+  * then delegates the math here.
   *
   * The default EvalEx sources of the configurable curves also live here (not in the config file) so
   * unit tests can compile them directly — config values cannot be read without a loaded config

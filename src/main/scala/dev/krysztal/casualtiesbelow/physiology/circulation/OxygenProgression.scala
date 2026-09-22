@@ -18,8 +18,8 @@ import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
   * breathing block. Simultaneous blocks use the stronger configured deprivation rate rather than
   * stacking. Vanilla drowning/in-wall damage pulses are not translated into another loss.
   *
-  * This object does not write consciousness. [[ConsciousnessProgression]] interprets the stored
-  * oxygen as a pressure, while [[HypoxiaProgression]] owns hidden terminal exposure metadata.
+  * This object does not write consciousness. [[Consciousness]] interprets the stored oxygen as a
+  * pressure, while [[HypoxiaProgression]] owns hidden terminal exposure metadata.
   */
 private[casualtiesbelow] object OxygenProgression {
 

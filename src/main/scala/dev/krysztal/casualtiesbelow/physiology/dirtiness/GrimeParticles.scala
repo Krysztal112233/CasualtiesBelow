@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.hygiene
+package dev.krysztal.casualtiesbelow.physiology.dirtiness
 
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.particles.DustParticleOptions

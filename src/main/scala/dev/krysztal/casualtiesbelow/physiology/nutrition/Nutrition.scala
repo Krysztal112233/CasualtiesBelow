@@ -22,7 +22,7 @@ import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
   * bounded UUID-keyed amount. [[InjuryProgression]] consumes that transient amount later in the
   * same server tick, before external bleeding, and owns the final fatal-source decision.
   */
-private[casualtiesbelow] object StarvationProgression {
+private[casualtiesbelow] object Nutrition {
 
   /** Whether `FoodData.tick` should invoke its vanilla starvation hurt call. Pulses stop before the
     * call once blood reaches the custom difficulty floor, and never run for physiology-frozen game

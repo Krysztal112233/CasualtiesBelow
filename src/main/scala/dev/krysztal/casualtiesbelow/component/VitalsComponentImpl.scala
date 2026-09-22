@@ -25,7 +25,7 @@ import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.physiology.circulation.CirculationState
 import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
 import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 
@@ -87,13 +87,13 @@ final class VitalsComponentImpl(val player: Player)
     applyShockState(normalizedShock)
     val normalizedConsciousness =
       if (player.level().isClientSide()) {
-        ConsciousnessProgression.normalizeSyncedState(
+        Consciousness.normalizeSyncedState(
           source.consciousness.level,
           Some(source.consciousness.unconscious),
           normalizedShock.stage
         )
       } else {
-        ConsciousnessProgression.normalizeStoredState(
+        Consciousness.normalizeStoredState(
           source.consciousness.level,
           Some(source.consciousness.unconscious),
           CasualtiesBelowConfig.effectiveConsciousnessFloor,
@@ -303,13 +303,13 @@ final class VitalsComponentImpl(val player: Player)
       in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue)
     val normalizedConsciousness =
       if (player.level().isClientSide()) {
-        ConsciousnessProgression.normalizeSyncedState(
+        Consciousness.normalizeSyncedState(
           savedConsciousness,
           savedUnconscious,
           normalizedShock.stage
         )
       } else {
-        ConsciousnessProgression.normalizeStoredState(
+        Consciousness.normalizeStoredState(
           savedConsciousness,
           savedUnconscious,
           CasualtiesBelowConfig.effectiveConsciousnessFloor,

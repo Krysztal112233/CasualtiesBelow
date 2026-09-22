@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.InjectionSettlement
 import dev.krysztal.casualtiesbelow.item.LiquidContents
 import dev.krysztal.casualtiesbelow.item.SyringeContents
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
 /** In-game validation of dirtiness progression: passive accrual and cauldron washing. */
 object HygieneScenarios {

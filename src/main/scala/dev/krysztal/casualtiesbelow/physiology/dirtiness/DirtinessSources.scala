@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.hygiene
+package dev.krysztal.casualtiesbelow.physiology.dirtiness
 
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.DamageTypeTags
@@ -103,7 +103,7 @@ object DirtinessSources {
     * dustless blocks raise nothing, everything else is the basic default. Dirty wins over dustless
     * when a datapack puts a block in both tags.
     */
-  private[hygiene] def digPulse(
+  private[dirtiness] def digPulse(
       dirty: Boolean,
       dustless: Boolean,
       dirtyPulse: Double,
@@ -118,7 +118,7 @@ object DirtinessSources {
   /** Dirtiness of one incoming hit, before jitter. Zombie-family contact grime takes precedence
     * over the blast coating, which takes precedence over generic monster melee.
     */
-  private[hygiene] def hitDirt(
+  private[dirtiness] def hitDirt(
       zombieFamily: Boolean,
       explosion: Boolean,
       monster: Boolean,
@@ -133,11 +133,11 @@ object DirtinessSources {
   }
 
   /** Food pulse: the hygiene-risk fraction of the food's discomfort mean. */
-  private[hygiene] def foodDirt(mean: Double, fraction: Double): Double =
+  private[dirtiness] def foodDirt(mean: Double, fraction: Double): Double =
     mean.max(0.0) * fraction.max(0.0)
 
   /** Rolls one pulse: base × (1 ± jitter), never negative. */
-  private[hygiene] def rollPulse(
+  private[dirtiness] def rollPulse(
       base: Double,
       jitterFraction: Double,
       random: RandomSource

@@ -26,7 +26,7 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
   * oxygen). Pain shock is a stronger discrete override: its collapsed phase owns literal-zero
   * consciousness, then its recovery phase temporarily lowers the scalar bound to zero.
   */
-private[casualtiesbelow] object ConsciousnessProgression {
+private[casualtiesbelow] object Consciousness {
 
   /** Advances consciousness and reconciles its hysteretic state. Returns whether either stored
     * value changed.

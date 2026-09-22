@@ -6,7 +6,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 
 /** Server-tick evolution of the hidden acute opioid level and synced long-term dependence. */
-object OpioidProgression {
+object Opioid {
 
   /** Advances both opioid axes and withdrawal discomfort. Returns whether client-visible state
     * changed; level-only decay deliberately does not request synchronization.

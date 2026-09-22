@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.hygiene
+package dev.krysztal.casualtiesbelow.physiology.dirtiness
 
 import java.util.UUID
 
@@ -123,7 +123,7 @@ object Dirtiness {
   /** Passive accrual for one tick: the per-second base with situational multipliers stacked
     * multiplicatively.
     */
-  private[hygiene] def accrualPerTick(
+  private[dirtiness] def accrualPerTick(
       basePerSecond: Double,
       sprintMultiplier: Double,
       armoredMultiplier: Double,
@@ -143,7 +143,7 @@ object Dirtiness {
 
   /** Wash for one tick: immersion wins over rain when both apply; murky water dampens immersion.
     */
-  private[hygiene] def washPerTick(
+  private[dirtiness] def washPerTick(
       waterPerSecond: Double,
       rainPerSecond: Double,
       murkyMultiplier: Double,

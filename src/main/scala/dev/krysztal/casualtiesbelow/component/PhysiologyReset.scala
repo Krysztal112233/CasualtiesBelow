@@ -8,7 +8,7 @@ import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
 import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 
 /** Atomic administrative reset of body and whole-player physiology. */
@@ -32,7 +32,7 @@ object PhysiologyReset {
     Adrenaline.reset(player, vitals)
     Adrenaline.discard(player)
     PainShock.resetHealthy(player, vitals)
-    ConsciousnessProgression.resetHealthy(player, vitals)
+    Consciousness.resetHealthy(player, vitals)
 
     BodyMutations.syncNow(player)
     VitalsMutations.syncNow(player)

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.hygiene
+package dev.krysztal.casualtiesbelow.physiology.dirtiness
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

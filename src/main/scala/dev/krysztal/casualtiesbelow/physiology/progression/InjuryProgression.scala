@@ -21,15 +21,15 @@ import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
 import dev.krysztal.casualtiesbelow.physiology.circulation.Circulation
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
-import dev.krysztal.casualtiesbelow.physiology.hygiene.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.infection.Infection
-import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
-import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidProgression
+import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
+import dev.krysztal.casualtiesbelow.physiology.opioid.Opioid
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureProgression
+import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -46,7 +46,7 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureProgressio
   *   - exhausted vanilla air gates blood-oxygen depletion; moderate blood loss retains full
   *     carrying capacity, then capacity falls linearly below its configured fraction; current
   *     oxygen sets a hard consciousness ceiling, while independent knockout/wake hysteresis owns
-  *     the recoverable unconscious state (see [[OxygenProgression]], [[ConsciousnessProgression]])
+  *     the recoverable unconscious state (see [[OxygenProgression]], [[Consciousness]])
   *   - wounds with meaningful skin damage can get infected; the immune system fights infections
   *     with its total capacity split across all infected limbs, against per-limb spread rates
   *     proportional to its complement; past a progress ramp an infection can also seed adjacent
@@ -91,7 +91,7 @@ object InjuryProgression {
     } finally {
       // No player references are retained, and entries for players who disconnected during this
       // tick cannot leak into a later tick.
-      StarvationProgression.discardRemaining()
+      Nutrition.discardRemaining()
     }
   }
 
@@ -101,14 +101,14 @@ object InjuryProgression {
 
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
     if (!player.isAlive) {
-      StarvationProgression.discard(player)
+      Nutrition.discard(player)
       Adrenaline.discard(player)
-      TemperatureProgression.discard(player)
+      Temperature.discard(player)
       return
     }
     if (player.isCreative || player.isSpectator) {
-      StarvationProgression.discard(player)
-      TemperatureProgression.discard(player)
+      Nutrition.discard(player)
+      Temperature.discard(player)
       // A command or another mod can change modes after an accepted survival hit but before this
       // END_SERVER_TICK pass. Physiology remains frozen in creative/spectator, while the already
       // committed public reserve still needs its one owner sync.
@@ -120,7 +120,7 @@ object InjuryProgression {
 
     val body = CasualtiesBelowComponents.Body.get(player)
     val vitals = player.vitals
-    var vitalsChanged = OpioidProgression.tick(vitals)
+    var vitalsChanged = Opioid.tick(vitals)
     val walking = isWalking(player)
     val withdrawalPainMultiplier = OpioidWithdrawal.painGrantMultiplier(vitals)
     val regenerationMultiplier =
@@ -183,11 +183,11 @@ object InjuryProgression {
     // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
     val oxygen = Circulation.tickOxygen(player, vitals)
     vitalsChanged = oxygen.changed || vitalsChanged
-    vitalsChanged = ConsciousnessProgression.tick(player, vitals) || vitalsChanged
+    vitalsChanged = Consciousness.tick(player, vitals) || vitalsChanged
 
     // Body temperature runs off the same per-player pass; its own module doc lays out the
     // approach/equilibrium recurrence and the heat contribution events.
-    vitalsChanged = TemperatureProgression.tick(player, vitals, syncTick) || vitalsChanged
+    vitalsChanged = Temperature.tick(player, vitals, syncTick) || vitalsChanged
 
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this

@@ -35,7 +35,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
-import dev.krysztal.casualtiesbelow.physiology.consciousness.ConsciousnessProgression
+import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 
 /** Debug/admin commands for inspecting and editing body and vitals state:
@@ -351,7 +351,7 @@ object CasualtiesBelowCommands {
         case "immune_health" =>
           VitalsMutations.setImmuneHealth(vitals, value)
         case "consciousness" =>
-          ConsciousnessProgression.applyAuthoritativeEdit(player, vitals, value)
+          Consciousness.applyAuthoritativeEdit(player, vitals, value)
         case "pain_shock_load" =>
           PainShock.applyAuthoritativeEdit(player, vitals, value)
         case "adrenaline" =>
@@ -377,7 +377,7 @@ object CasualtiesBelowCommands {
           VitalsMutations.setOpioidDependence(vitals, value)
       }
       if (name != "consciousness") {
-        ConsciousnessProgression.reconcileAfterEdit(player, vitals)
+        Consciousness.reconcileAfterEdit(player, vitals)
       }
       VitalsMutations.syncNow(player)
       src.sendSuccess(

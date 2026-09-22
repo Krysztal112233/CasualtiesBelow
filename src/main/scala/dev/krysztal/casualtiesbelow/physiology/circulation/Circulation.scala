@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.physiology.nutrition.StarvationProgression
+import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
 
 /** Single access point for the circulation vital: blood volume, blood oxygen, terminal hypoxia
   * exposure, and totem-driven hemostasis. Everything outside this package that touches the
@@ -51,7 +51,7 @@ private[casualtiesbelow] object Circulation {
 
     // Accepted vanilla starvation pulses are translated first. The final blood check below keeps
     // source priority deterministic if bleeding also applies in this tick.
-    val starvation = StarvationProgression.consume(player, vitals, maxBlood)
+    val starvation = Nutrition.consume(player, vitals, maxBlood)
     changed = starvation.changed || changed
 
     if (totalBleeding > 0.0) {

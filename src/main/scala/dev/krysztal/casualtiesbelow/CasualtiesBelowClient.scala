@@ -18,7 +18,7 @@ import dev.krysztal.casualtiesbelow.item.InjectionScreenHook
 import dev.krysztal.casualtiesbelow.item.client.DryingItemTints
 import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingParticles
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
-import dev.krysztal.casualtiesbelow.physiology.hygiene.GrimeParticles
+import dev.krysztal.casualtiesbelow.physiology.dirtiness.GrimeParticles
 import dev.krysztal.casualtiesbelow.ui.BloodBarHud
 import dev.krysztal.casualtiesbelow.ui.BodyStatusScreen
 import dev.krysztal.casualtiesbelow.ui.HypoxiaHudState
