@@ -34,6 +34,20 @@ eclipse {
 // `./gradlew sources`: extract readable Minecraft + Fabric API sources (see AGENTS.md).
 apply(from = "gradle/sources.gradle.kts")
 
+// `./gradlew scaladoc`: Scala 3 API docs for the main source set → build/docs/scaladoc/index.html.
+// The doc tool type-checks the sources itself; it deliberately does NOT inherit the compile
+// scalacOptions (no-indent / explicit-nulls are compile-time policy, not documentation concerns).
+val modVersion = property("mod_version") as String
+tasks.scaladoc {
+    scalaDocOptions.additionalParameters =
+        listOf(
+            "-project-name",
+            "CasualtiesBelow",
+            "-project-version",
+            modVersion,
+        )
+}
+
 version = property("mod_version") as String
 group = property("maven_group") as String
 
