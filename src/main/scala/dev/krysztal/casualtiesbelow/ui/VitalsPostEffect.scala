@@ -2,13 +2,7 @@ package dev.krysztal.casualtiesbelow.ui
 
 import java.util.UUID
 
-import scala.jdk.CollectionConverters.*
-
-import com.mojang.blaze3d.buffers.GpuBuffer
-import com.mojang.blaze3d.buffers.Std140Builder
-import com.mojang.blaze3d.buffers.Std140SizeCalculator
 import com.mojang.blaze3d.resource.CrossFrameResourcePool
-import com.mojang.blaze3d.systems.RenderSystem
 import net.minecraft.client.DeltaTracker
 import net.minecraft.client.Minecraft
 import net.minecraft.client.player.LocalPlayer
@@ -26,11 +20,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
-import dev.krysztal.casualtiesbelow.mixin.PostChainAccessor
-import dev.krysztal.casualtiesbelow.mixin.PostPassAccessor
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
-
-import org.lwjgl.system.MemoryStack
 
 /** Full-screen vitals effects applied to the world before the GUI. Each gameplay mechanism computes
   * an independent visual channel; the channels are composed into one fullscreen post pass where
@@ -40,7 +30,6 @@ import org.lwjgl.system.MemoryStack
 @Environment(EnvType.CLIENT)
 object VitalsPostEffect {
   private val ChainId = CasualtiesBelow.ofIdentifier("vitals")
-  private val UniformBufferUsage = GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_MAP_WRITE
 
   /** One uniform block per visual axis. The block name must match the group in
     * `post_effect/vitals.json` and the std140 declaration in the axis' shader include; members are
@@ -55,6 +44,9 @@ object VitalsPostEffect {
     EffectBlock("GrimeConfig", Vector(_.grimeVignette)),
     EffectBlock("TemperatureConfig", Vector(_.frost, _.heat, _.heatTime))
   )
+  private val buffers = new PostEffectBuffers(
+    EffectBlocks.map(block => UniformBlock(block.name, block.members.size))
+  )
   private val PulseSpeed = (2.0 * Math.PI / 40.0).toFloat
   private val BlurPerceptionExponent = 0.6
   private val ShockPulseSpeed = (2.0 * Math.PI / 20.0).toFloat
@@ -63,8 +55,6 @@ object VitalsPostEffect {
   private val ShockTimePeriodTicks = 20000
   private val TemperatureInterpolationTicks = 20.0f
 
-  private var cachedChain: Option[PostChain] = None
-  private var cachedBuffers: Map[String, GpuBuffer] = Map.empty
   private var shockInterpolationPlayer: Option[UUID] = None
   private var observedShockLoad = 0.0f
   private var displayedShockLoad = 0.0f
@@ -89,9 +79,11 @@ object VitalsPostEffect {
           .getShaderManager()
           .getPostChain(ChainId, LevelTargetBundle.MAIN_TARGETS)
       ).foreach { chain =>
-        effectBuffers(chain).foreach { buffers =>
+        buffers.forChain(chain).foreach { installed =>
           EffectBlocks.foreach { block =>
-            buffers.get(block.name).foreach(buffer => writeBlock(buffer, block.values(strengths)))
+            installed
+              .get(block.name)
+              .foreach(buffer => buffers.write(buffer, block.values(strengths)))
           }
           chain.process(gameRenderer.mainRenderTarget(), resourcePool)
         }
@@ -440,89 +432,6 @@ object VitalsPostEffect {
     strengths.grimeVignette > 0.0f ||
     strengths.frost > 0.0f ||
     strengths.heat > 0.0f
-  }
-
-  /** Per-axis uniform buffers for the chain's single pass, installed once per chain instance.
-    * Returns None unless every axis block is present, keeping the previous all-or-nothing behavior
-    * when assets and code disagree.
-    */
-  private def effectBuffers(chain: PostChain): Option[Map[String, GpuBuffer]] = {
-    val needsInstall =
-      cachedChain.forall(_ ne chain) || cachedBuffers.values.exists(_.isClosed)
-    if (needsInstall) {
-      cachedChain = Some(chain)
-      cachedBuffers = installBuffers(chain)
-    }
-    if (cachedBuffers.size == EffectBlocks.size) Some(cachedBuffers) else None
-  }
-
-  private def installBuffers(chain: PostChain): Map[String, GpuBuffer] = {
-    val uniformMap = chain
-      .asInstanceOf[PostChainAccessor]
-      .casualtiesbelow$getPasses()
-      .asScala
-      .iterator
-      .map(_.asInstanceOf[PostPassAccessor].casualtiesbelow$getCustomUniforms())
-      .find(_.containsKey(EffectBlocks.head.name))
-
-    uniformMap
-      .map { uniforms =>
-        EffectBlocks.flatMap(block => installBuffer(uniforms, block)).toMap
-      }
-      .getOrElse {
-        CasualtiesBelow.Logger.warn(
-          "Post chain {} has no {} uniform buffer; vitals effects are disabled",
-          ChainId,
-          EffectBlocks.head.name
-        )
-        Map.empty
-      }
-  }
-
-  private def installBuffer(
-      uniforms: java.util.Map[String, GpuBuffer],
-      block: EffectBlock
-  ): Option[(String, GpuBuffer)] =
-    if (!uniforms.containsKey(block.name)) {
-      CasualtiesBelow.Logger.warn(
-        "Post chain pass is missing the {} uniform buffer; that axis is disabled",
-        block.name
-      )
-      None
-    } else {
-      val buffer = createBlockBuffer(block)
-      Option(uniforms.put(block.name, buffer)).foreach(_.close())
-      Some(block.name -> buffer)
-    }
-
-  private def createBlockBuffer(block: EffectBlock): GpuBuffer = {
-    val stack = MemoryStack.stackPush()
-    try {
-      val size =
-        (1 to block.members.size).foldLeft(new Std140SizeCalculator())((calc, _) => calc.putFloat())
-      val builder =
-        block.members.foldLeft(Std140Builder.onStack(stack, size.get()))((b, _) => b.putFloat(0.0f))
-      RenderSystem
-        .getDevice()
-        .createBuffer(
-          () => s"CasualtiesBelow / vitals effects / ${block.name}",
-          UniformBufferUsage,
-          builder.get()
-        )
-    } finally {
-      stack.close()
-    }
-  }
-
-  private def writeBlock(buffer: GpuBuffer, values: Vector[Float]): Unit = {
-    val view = buffer.map(false, true)
-    try {
-      values.foldLeft(Std140Builder.intoBuffer(view.data()))((builder, value) =>
-        builder.putFloat(value)
-      )
-    } finally {
-      view.close()
-    }
   }
 
   private def progressAbove(value: Double, threshold: Double, maximum: Double): Float = {
