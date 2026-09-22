@@ -205,7 +205,7 @@ class InjectionScreen private (
         // Only a needle pinned against the pierce depth converts cursor travel into plunger
         // pressure; while the barrel is lifting the needle out, speed stays zero.
         val deepestTop = skinTopY + InjectionScreen.PierceDepthPixels -
-          InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
+          InjectionLayout.NeedleLength - InjectionLayout.BarrelHeight
         if (barrelTopY >= deepestTop) {
           val gap = (mouseY - plungerPadCenterY).toDouble
           (gap / CasualtiesBelowConfig.InjectionFullSpeedPressDepthPixels.get().toDouble)
@@ -275,7 +275,7 @@ class InjectionScreen private (
     )
     val homeTop = homeTopY(skinTop)
     val deepestTop = skinTop + InjectionScreen.PierceDepthPixels -
-      InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
+      InjectionLayout.NeedleLength - InjectionLayout.BarrelHeight
     barrelTopY = Mth.clamp(
       mouseY - grabOffsetY,
       homeTop.max(regionTop + InjectionScreen.TitleClearanceY),
@@ -298,7 +298,7 @@ class InjectionScreen private (
   private def updatePiercedDrag(mouseY: Int, skinTop: Int): Unit = {
     if (!grabbingSyringe) return
     val deepestTop = skinTop + InjectionScreen.PierceDepthPixels -
-      InjectionScreen.NeedleLength - InjectionScreen.BarrelHeight
+      InjectionLayout.NeedleLength - InjectionLayout.BarrelHeight
     val desiredTop = mouseY - grabOffsetY
     if (desiredTop >= deepestTop) {
       barrelTopY = deepestTop
@@ -315,22 +315,19 @@ class InjectionScreen private (
     * the full window only gets the dim backdrop. Derived from `width`/`height`, so a window resize
     * re-derives everything downstream.
     */
-  private def regionLeft: Int = ((width * (1.0 - InjectionScreen.RegionWidthFraction)) / 2).toInt
-  private def regionTop: Int = ((height * (1.0 - InjectionScreen.RegionHeightFraction)) / 2).toInt
-  private def regionRight: Int = width - regionLeft
-  private def regionBottom: Int = height - regionTop
-  private def regionCenterX: Int = (regionLeft + regionRight) / 2
+  // Viewport geometry is pure layout; syringe drag state stays on the screen.
+  private def layout: InjectionLayout = InjectionLayout(width, height)
 
-  /** The skin is the bottom third of the viewport. */
-  private def skinTopY: Int = regionBottom - (regionBottom - regionTop) / 3
-
-  /** Barrel top when the syringe rests at its anchor above the skin. */
-  private def homeTopY(skinTop: Int): Int =
-    skinTop - InjectionScreen.NeedleLength -
-      InjectionScreen.BarrelHeight - InjectionScreen.HoverGapPixels
+  private def regionLeft: Int = layout.regionLeft
+  private def regionTop: Int = layout.regionTop
+  private def regionRight: Int = layout.regionRight
+  private def regionBottom: Int = layout.regionBottom
+  private def regionCenterX: Int = layout.regionCenterX
+  private def skinTopY: Int = layout.skinTopY
+  private def homeTopY(skinTop: Int): Int = layout.homeTopY(skinTop)
 
   private def needleTipY: Int =
-    barrelTopY + InjectionScreen.BarrelHeight + InjectionScreen.NeedleLength
+    barrelTopY + InjectionLayout.BarrelHeight + InjectionLayout.NeedleLength
 
   /** Plunger seal depth within the barrel: the plunger is the cumulative injected amount, so a
     * syringe resumed after an abort starts partway down.
@@ -379,7 +376,7 @@ class InjectionScreen private (
   private def extractSyringe(graphics: GuiGraphicsExtractor, skinTop: Int): Unit = {
     val left = syringeX - InjectionScreen.BarrelWidth / 2
     val right = syringeX + InjectionScreen.BarrelWidth / 2
-    val bottom = barrelTopY + InjectionScreen.BarrelHeight
+    val bottom = barrelTopY + InjectionLayout.BarrelHeight
 
     // Needle (drawn first so the barrel overlaps its top). Pre-pierce the tip is clamped at the
     // skin line: the press travel below the surface is an invisible resistance zone (input only),
@@ -507,7 +504,7 @@ class InjectionScreen private (
     mouseX >= syringeX - InjectionScreen.BarrelWidth &&
     mouseX <= syringeX + InjectionScreen.BarrelWidth &&
     mouseY >= barrelTopY - InjectionScreen.PlungerPadHeight - InjectionScreen.PlungerRodLength &&
-    mouseY <= barrelTopY + InjectionScreen.BarrelHeight + InjectionScreen.NeedleLength
+    mouseY <= barrelTopY + InjectionLayout.BarrelHeight + InjectionLayout.NeedleLength
   }
 
   /** Best-effort final report on teardown (death or world exit — vanilla closes screens in both,
@@ -577,10 +574,6 @@ object InjectionScreen {
   private val HintSpacing = 12
   private val TitleClearanceY = 30
 
-  /** Fraction of the window occupied by the scene viewport, centered on both axes. */
-  private val RegionWidthFraction = 0.6
-  private val RegionHeightFraction = 0.8
-
   /** Baked skin-band texture (epidermis-to-subcutaneous gradient), blitted stretched over the band;
     * sized near 1:1 at typical window dimensions so stretching artifacts stay negligible. The alpha
     * channel carries the edge feather (sides + bottom fade to transparent).
@@ -594,17 +587,14 @@ object InjectionScreen {
     * render time).
     */
   private val SkinEdgeFeather = 48
-  private val HoverGapPixels = 48
   private val BarrelWidth = 16
-  private val BarrelHeight = 52
   private val BarrelPadding = 3
   private val NeedleWidth = 2
-  private val NeedleLength = 16
   private val PlungerRodWidth = 3
   private val PlungerRodLength = 14
   private val PlungerPadWidth = 12
   private val PlungerPadHeight = 4
-  private val PlungerTravel = BarrelHeight - 2 * BarrelPadding
+  private val PlungerTravel = InjectionLayout.BarrelHeight - 2 * BarrelPadding
   private val PierceDepthPixels = 6
   private val SkinLineThickness = 2
   private val ScaleMarkCount = 10
