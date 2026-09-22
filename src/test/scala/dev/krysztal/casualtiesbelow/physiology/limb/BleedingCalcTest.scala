@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.bleeding
+package dev.krysztal.casualtiesbelow.physiology.limb
 
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 

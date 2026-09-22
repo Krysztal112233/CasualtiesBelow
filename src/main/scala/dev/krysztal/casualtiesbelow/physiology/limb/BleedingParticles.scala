@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.physiology.bleeding
+package dev.krysztal.casualtiesbelow.physiology.limb
 
 import net.minecraft.client.multiplayer.ClientLevel
 import net.minecraft.core.particles.DustParticleOptions

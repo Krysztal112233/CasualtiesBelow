@@ -35,7 +35,7 @@ import dev.krysztal.casualtiesbelow.internal.data.HitLocation
 import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundApplication
 import dev.krysztal.casualtiesbelow.internal.data.ResolvedWoundContribution
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
-import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
+import dev.krysztal.casualtiesbelow.physiology.limb.BleedingCalc
 
 /** Executes the typed applications of one classified damage event. All body mutation still passes
   * through [[LimbInjuryService]], preserving per-limb armor, jitter, callbacks, and batched sync.

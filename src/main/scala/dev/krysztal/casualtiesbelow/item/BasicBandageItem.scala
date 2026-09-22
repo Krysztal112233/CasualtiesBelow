@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.bleeding.BleedingCalc
+import dev.krysztal.casualtiesbelow.physiology.limb.BleedingCalc
 
 /** Reusable basic bandage. Holding use for two seconds treats one automatically selected limb;
   * interrupted uses and uses without an eligible injury have no effect and cost no durability.
