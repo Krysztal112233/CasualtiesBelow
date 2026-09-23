@@ -34,9 +34,18 @@ trait BodyHeatContributionContext {
   */
 trait BodyHeatContributionCallback {
 
-  /** Queried every tick for a player's heat contributions. `frame` carries this tick's environment
-    * (fire resistance, wetness, air dryness) explicitly; it is valid only for the duration of the
-    * synchronous dispatch that passes it.
+  /** Queries a listener for one player's body-heat contribution this tick. Implementations combine
+    * the player's own state with the frame's environment snapshot, then write any resulting rate
+    * into the context: direct-channel rates for heat that bypasses armor (exercise, fire contact),
+    * dissipative-channel rates for cooling that armor may weaken (evaporative cooling).
+    *
+    * @param player
+    *   the player being ticked: the listener's subject and its window onto game state
+    * @param frame
+    *   this tick's environment snapshot; valid only for the duration of this synchronous dispatch
+    * @param context
+    *   the write-only accumulator the contribution goes into; do not retain it or call it outside
+    *   the callback
     */
   def contribute(
       player: ServerPlayer,
@@ -47,9 +56,16 @@ trait BodyHeatContributionCallback {
 
 object BodyHeatContributionCallback {
 
-  /** Per-tick environment handed to listeners alongside the context: the armor-surviving fire
-    * resistance a listener may use to self-mitigate, skin wetness, and the air dryness driving
-    * evaporation. Server thread only; do not retain it beyond the dispatch.
+  /** Per-tick environment handed to listeners alongside the context. Server thread only; do not
+    * retain it beyond the dispatch.
+    *
+    * @param fireResistance
+    *   the coverage-weighted armor coefficient against fire contact, deliberately not collapsed by
+    *   wetness; heat sources use it to self-mitigate at the source
+    * @param wetness
+    *   the player's skin wetness (0..1); the strength of evaporative cooling
+    * @param airDryness
+    *   `1 - biome downfall`, the air's headroom for evaporation: a jungle reads ~0, a desert ~1
     */
   final case class Frame(
       fireResistance: Double,
