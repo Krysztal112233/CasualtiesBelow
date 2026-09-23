@@ -9,12 +9,10 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.FoodDataExtensions.*
 
-/** Shared exertion signal: vanilla's exhaustion bookkeeping already prices each activity, so its
-  * per-tick delta is the signal. The periodic 4.0 hunger-billing drain shows up as a negative delta
-  * and is truncated (an accounting artifact, not negative exercise). The delta is smoothed with an
-  * exponential moving average over roughly five seconds so single actions (a jump, an attack)
-  * register as brief exertion instead of one-tick spikes. Used by the exercise-heat and sweating
-  * listeners; [[discard]] clears a player's state.
+/** Turns vanilla exhaustion deltas into a shared exertion signal.
+  *
+  * Hunger-billing drops are ignored; a ~5-second EMA smooths activity for exercise heat and
+  * sweating. [[discard]] clears player state.
   */
 private[temperature] object ExertionTracker {
 
