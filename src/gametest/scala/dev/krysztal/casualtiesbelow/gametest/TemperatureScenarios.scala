@@ -40,7 +40,11 @@ object TemperatureScenarios {
   @volatile private var probeDissipativePerMinute = 0.0
 
   BodyHeatContributionCallback.EVENT.register(new BodyHeatContributionCallback {
-    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
+    override def contribute(
+        player: ServerPlayer,
+        frame: BodyHeatContributionCallback.Frame,
+        context: BodyHeatContributionContext
+    ): Unit = {
       if (probeDirectPerMinute != 0.0) context.addDirect(probeDirectPerMinute)
       if (probeDissipativePerMinute != 0.0) context.addDissipative(probeDissipativePerMinute)
     }

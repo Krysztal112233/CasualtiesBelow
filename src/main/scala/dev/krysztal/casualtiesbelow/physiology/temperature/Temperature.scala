@@ -119,16 +119,15 @@ object Temperature {
     val effectiveInsulation = insulation * collapse
     val effectiveDissipationBlock = dissipationBlock * collapse
 
-    // (e) Heat contributions. The frame hands this tick's armor/wetness context to the built-in
-    // listeners; it is valid only for the synchronous dispatch below.
+    // (e) Heat contributions. The frame carries this tick's armor/wetness context to the
+    // listeners; dispatch is synchronous on the server thread. A fresh accumulator per dispatch:
+    // partial sums die with the object if a listener throws, no reset to remember.
     val airDryness = 1.0 - BiomeClimateAccess.downfall(biome).toDouble
-    frame = Some(TickFrame(fireResistance, wetness, airDryness))
-    try {
-      ContributionAccumulator.reset()
-      BodyHeatContributionCallback.EVENT.invoker().contribute(player, ContributionAccumulator)
-    } finally {
-      frame = None
-    }
+    val frame = BodyHeatContributionCallback.Frame(fireResistance, wetness, airDryness)
+    val context = new BodyHeatContributionCallback.Accumulator
+    BodyHeatContributionCallback.EVENT
+      .invoker()
+      .contribute(player, frame, context)
 
     // (f) Exponential approach of the armor-weakened equilibrium plus production terms.
     val effectiveEquilibrium =
@@ -142,8 +141,8 @@ object Temperature {
       CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
     )
     val productionPerSecond = TemperatureCalc.productionPerSecond(
-      ContributionAccumulator.directTotal,
-      ContributionAccumulator.dissipativeTotal,
+      context.directTotal,
+      context.dissipativeTotal,
       effectiveDissipationBlock
     )
     val nextCore = TemperatureCalc.nextCoreTemperature(
@@ -198,21 +197,6 @@ object Temperature {
   private[casualtiesbelow] def discard(player: ServerPlayer): Unit =
     ExertionTracker.discard(player.getUUID)
 
-  /** Per-tick context handed to the built-in contribution listeners during dispatch. */
-  private final case class TickFrame(
-      fireResistance: Double,
-      wetness: Double,
-      airDryness: Double
-  )
-
-  /** Valid only while [[BodyHeatContributionCallback]] is being dispatched from [[tick]]; the
-    * firing side is the only producer, on the server thread.
-    */
-  private var frame: Option[TickFrame] = None
-
-  /** Shared contribution accumulator: one allocation, reset before every dispatch. */
-  private val ContributionAccumulator = new BodyHeatContributionCallback.Accumulator
-
   /** Vanilla sprinting accrues exhaustion at ~0.56/s; it anchors the exertion fraction for both
     * exercise heat and sweating.
     */
@@ -259,7 +243,11 @@ object Temperature {
     */
   private object ExerciseHeat extends BodyHeatContributionCallback {
 
-    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
+    override def contribute(
+        player: ServerPlayer,
+        frame: BodyHeatContributionCallback.Frame,
+        context: BodyHeatContributionContext
+    ): Unit = {
       val exhaustionPerSecond = ExertionTracker.observe(player)
       if (exhaustionPerSecond > 0.0) {
         context.addDirect(
@@ -279,7 +267,11 @@ object Temperature {
     */
   private object FireContactHeat extends BodyHeatContributionCallback {
 
-    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
+    override def contribute(
+        player: ServerPlayer,
+        frame: BodyHeatContributionCallback.Frame,
+        context: BodyHeatContributionContext
+    ): Unit = {
       val tier: Double =
         if (player.isInLava) {
           CasualtiesBelowConfig.temperature.lavaContactHeatPerMinute.get().doubleValue
@@ -291,7 +283,7 @@ object Temperature {
           0.0
         }
       if (tier > 0.0) {
-        val resistance = frame.fold(0.0)(_.fireResistance)
+        val resistance = frame.fireResistance
         context.addDirect(tier * (1.0 - resistance))
       }
     }
@@ -317,14 +309,16 @@ object Temperature {
     */
   private object EvaporativeCooling extends BodyHeatContributionCallback {
 
-    override def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit = {
-      frame.foreach { f =>
-        if (f.wetness > 0.0) {
-          context.addDissipative(
-            f.wetness * f.airDryness * CasualtiesBelowConfig.temperature.evaporationCoolingPerMinute
-              .get()
-          )
-        }
+    override def contribute(
+        player: ServerPlayer,
+        frame: BodyHeatContributionCallback.Frame,
+        context: BodyHeatContributionContext
+    ): Unit = {
+      if (frame.wetness > 0.0) {
+        context.addDissipative(
+          frame.wetness * frame.airDryness * CasualtiesBelowConfig.temperature.evaporationCoolingPerMinute
+            .get()
+        )
       }
     }
   }

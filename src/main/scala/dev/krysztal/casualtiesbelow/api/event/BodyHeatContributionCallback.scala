@@ -33,20 +33,40 @@ trait BodyHeatContributionContext {
   * ticks only by the firing side. Fired on the server thread only; not thread-safe.
   */
 trait BodyHeatContributionCallback {
-  def contribute(player: ServerPlayer, context: BodyHeatContributionContext): Unit
+
+  /** Queried every tick for a player's heat contributions. `frame` carries this tick's environment
+    * (fire resistance, wetness, air dryness) explicitly; it is valid only for the duration of the
+    * synchronous dispatch that passes it.
+    */
+  def contribute(
+      player: ServerPlayer,
+      frame: BodyHeatContributionCallback.Frame,
+      context: BodyHeatContributionContext
+  ): Unit
 }
 
 object BodyHeatContributionCallback {
+
+  /** Per-tick environment handed to listeners alongside the context: the armor-surviving fire
+    * resistance a listener may use to self-mitigate, skin wetness, and the air dryness driving
+    * evaporation. Server thread only; do not retain it beyond the dispatch.
+    */
+  final case class Frame(
+      fireResistance: Double,
+      wetness: Double,
+      airDryness: Double
+  )
+
   val EVENT: Event[BodyHeatContributionCallback] = EventFactory.createArrayBacked(
     classOf[BodyHeatContributionCallback],
     (listeners: Array[BodyHeatContributionCallback]) =>
-      (player: ServerPlayer, context: BodyHeatContributionContext) =>
-        listeners.foreach(_.contribute(player, context))
+      (player: ServerPlayer, frame: Frame, context: BodyHeatContributionContext) =>
+        listeners.foreach(_.contribute(player, frame, context))
   )
 
-  /** Default mutable context: two accumulators, one per channel. Create one per invocation, or
-    * reuse an instance across ticks by calling [[reset]] before each use. Not thread-safe: use on
-    * the server thread only.
+  /** Default mutable context: two accumulators, one per channel. The firing side creates one per
+    * dispatch and reads the totals afterwards; listeners must not retain it or call it outside the
+    * callback. Not thread-safe: use on the server thread only.
     */
   final class Accumulator extends BodyHeatContributionContext {
     private var direct: Double = 0.0
@@ -60,16 +80,10 @@ object BodyHeatContributionCallback {
       dissipative += ratePerMinute
     }
 
-    /** Sum of all [[addDirect]] rates since construction or the last [[reset]]. */
+    /** Sum of all [[addDirect]] rates since construction. */
     def directTotal: Double = direct
 
-    /** Sum of all [[addDissipative]] rates since construction or the last [[reset]]. */
+    /** Sum of all [[addDissipative]] rates since construction. */
     def dissipativeTotal: Double = dissipative
-
-    /** Clears both accumulators so this instance can be reused for the next invocation. */
-    def reset(): Unit = {
-      direct = 0.0
-      dissipative = 0.0
-    }
   }
 }
