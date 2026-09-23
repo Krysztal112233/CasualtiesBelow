@@ -158,19 +158,19 @@ private[config] object TemperatureValues {
           "Direct contact heat (°C/min) for the extreme tier: touching lava. Initial placeholder,",
           "pending calibration."
         )
-        .defineInRange("heatExtremePerMinute", 18.0, 0.0, 100.0, classOf[Double]),
+        .defineInRange("heatExtremePerMinute", 32.0, 0.0, 100.0, classOf[Double]),
       heatStrongPerMinute = b
         .comment(
           "Direct contact heat (°C/min) for the strong tier: standing in a fire block or the",
           "burning DOT. Initial placeholder, pending calibration."
         )
-        .defineInRange("heatStrongPerMinute", 8.0, 0.0, 100.0, classOf[Double]),
+        .defineInRange("heatStrongPerMinute", 14.0, 0.0, 100.0, classOf[Double]),
       heatNormalPerMinute = b
         .comment(
           "Direct contact heat (°C/min) for the normal tier: standing on a magma block or a lit",
           "campfire. Initial placeholder, pending calibration."
         )
-        .defineInRange("heatNormalPerMinute", 1.5, 0.0, 100.0, classOf[Double]),
+        .defineInRange("heatNormalPerMinute", 8, 0.0, 100.0, classOf[Double]),
       fireDryingBonusDegrees = b
         .comment(
           "Apparent-temperature bonus (°C) fed to the drying curve while on fire; dries wetness in",
