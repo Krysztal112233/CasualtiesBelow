@@ -70,6 +70,19 @@ final class VitalsDetectionTest {
   }
 
   @Test
+  def bloodLossCueUsesFixedFullVolumeTimeBands(): Unit = {
+    assertEquals(None, bloodLossAmplifier(18000.0, 0.7))
+    assertEquals(Some(0), bloodLossAmplifier(18000.0, 0.8))
+    assertEquals(Some(0), bloodLossAmplifier(18000.0, 1.5))
+    assertEquals(Some(1), bloodLossAmplifier(18000.0, 2.4))
+    assertEquals(Some(2), bloodLossAmplifier(18000.0, 6.0))
+    assertEquals(Some(3), bloodLossAmplifier(18000.0, 6.1))
+    assertEquals(None, bloodLossAmplifier(18000.0, 0.0))
+    assertEquals(None, bloodLossAmplifier(0.0, 1.0))
+    assertEquals(None, bloodLossAmplifier(18000.0, Double.NaN))
+  }
+
+  @Test
   def shockCueFollowsTheActiveEpisodeStages(): Unit = {
     assertEquals(None, painShockAmplifierFromStage(PainShockStage.Stable))
     assertEquals(Some(0), painShockAmplifierFromStage(PainShockStage.Deferred))

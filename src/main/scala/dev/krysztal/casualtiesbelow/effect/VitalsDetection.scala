@@ -2,16 +2,20 @@ package dev.krysztal.casualtiesbelow.effect
 
 import net.minecraft.server.level.ServerPlayer
 
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
 
 private[effect] trait VitalsEffectSynchronizer {
   def synchronizeFromVitals(player: ServerPlayer): Unit
 }
 
 private[effect] type MobEffectAmplifierResolver = ServerPlayer => Option[Int]
+
+private val TicksPerMinute = 1200.0
 
 private[effect] val opioidAnalgesiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierForValue(player.vitals.opioidLevel, VitalsComponent.MaxOpioidLevel, tierCount = 5)
@@ -49,6 +53,23 @@ private[effect] val hypovolemiaAmplifierFromVitals: MobEffectAmplifierResolver =
     player.vitals.circulation.bloodVolume,
     CasualtiesBelowConfig.vitals.maxBloodVolume.get()
   )
+
+private[effect] val bloodLossAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  if (player.isCreative || player.isSpectator) None
+  else {
+    bloodLossAmplifier(
+      CasualtiesBelowConfig.vitals.maxBloodVolume.get(),
+      currentEffectiveBleedingRate(player)
+    )
+  }
+
+/** Sums the active limb rates with the same temporary hemostasis modifier used by circulation. */
+private[effect] def currentEffectiveBleedingRate(player: ServerPlayer): Double = {
+  val externalRate = BodyPart.values.iterator
+    .map(part => player.body.stats(part).externalBleedingRate)
+    .sum
+  externalRate * TotemHemostasis.bleedingMultiplier(player.vitals)
+}
 
 private[effect] val sepsisAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierAboveThreshold(player.vitals.infection.sepsis, 0.0)
@@ -103,6 +124,30 @@ private[effect] def hypovolemiaAmplifier(
     else if (volumeFraction > 0.8) Some(0)
     else if (volumeFraction > 0.7) Some(1)
     else if (volumeFraction > 0.5) Some(2)
+    else Some(3)
+  }
+}
+
+/** Maps the current external bleed rate to a constant-rate estimate from full to 20% blood volume.
+  */
+private[effect] def bloodLossAmplifier(
+    maximumBloodVolume: Double,
+    effectiveBleedingRatePerTick: Double
+): Option[Int] = {
+  if (
+    !maximumBloodVolume.isFinite ||
+    maximumBloodVolume <= 0.0 ||
+    !effectiveBleedingRatePerTick.isFinite ||
+    effectiveBleedingRatePerTick <= 0.0
+  ) {
+    None
+  } else {
+    val minutesToTwentyPercent =
+      maximumBloodVolume * 0.8 / (effectiveBleedingRatePerTick * TicksPerMinute)
+    if (!minutesToTwentyPercent.isFinite || minutesToTwentyPercent > 15.0) None
+    else if (minutesToTwentyPercent >= 8.0) Some(0)
+    else if (minutesToTwentyPercent >= 5.0) Some(1)
+    else if (minutesToTwentyPercent >= 2.0) Some(2)
     else Some(3)
   }
 }

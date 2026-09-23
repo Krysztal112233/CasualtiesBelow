@@ -56,6 +56,15 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
         hypovolemiaAmplifierFromVitals
       )
     )
+  private[casualtiesbelow] val BloodLoss: Holder[MobEffect] =
+    register(
+      "blood_loss",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x9c3b49,
+        bloodLossAmplifierFromVitals
+      )
+    )
   private[casualtiesbelow] val Sepsis: Holder[MobEffect] =
     register(
       "sepsis",

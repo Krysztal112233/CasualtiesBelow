@@ -2,10 +2,12 @@ package dev.krysztal.casualtiesbelow.gametest
 
 import net.minecraft.gametest.framework.GameTestHelper
 
+import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
+import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
@@ -27,6 +29,9 @@ object VitalsEffectScenarios {
     VitalsMutations.setOpioidDependence(vitals, 40.0)
     VitalsMutations.setBloodOxygen(vitals, hypoxiaThreshold - 0.1)
     VitalsMutations.setBloodVolume(vitals, maxBloodVolume * 0.9)
+    BodyMutations.mutate(player, BodyPart.Head, markDirty = false) { state =>
+      state.externalBleedingRate = 0.4
+    }
     VitalsMutations.setSepsis(vitals, 1.0)
     VitalsMutations.setBodyTemperature(vitals, coldThreshold - 0.1)
     VitalsMutations.applyConsciousnessState(
@@ -60,6 +65,10 @@ object VitalsEffectScenarios {
     helper.assertTrue(
       Option(player.getEffect(CasualtiesBelowEffects.Hypovolemia)).exists(_.getAmplifier == 0),
       "10% blood-volume loss should produce a hypovolemia I cue"
+    )
+    helper.assertTrue(
+      Option(player.getEffect(CasualtiesBelowEffects.BloodLoss)).exists(_.getAmplifier == 0),
+      "an 8–15 minute full-volume bleed estimate should produce a blood-loss I cue"
     )
     helper.assertTrue(
       Option(player.getEffect(CasualtiesBelowEffects.Sepsis)).exists(_.getAmplifier == 0),
@@ -104,6 +113,9 @@ object VitalsEffectScenarios {
     VitalsMutations.setOpioidDependence(vitals, 0.0)
     VitalsMutations.setBloodOxygen(vitals, VitalsComponent.MaxBloodOxygen)
     VitalsMutations.setBloodVolume(vitals, maxBloodVolume)
+    BodyMutations.mutate(player, BodyPart.Head, markDirty = false) { state =>
+      state.externalBleedingRate = 0.0
+    }
     VitalsMutations.setSepsis(vitals, 0.0)
     VitalsMutations.setBodyTemperature(vitals, VitalsComponent.NormalBodyTemperature)
     VitalsMutations.applyConsciousnessState(
@@ -121,6 +133,7 @@ object VitalsEffectScenarios {
         CasualtiesBelowEffects.OpioidDependence,
         CasualtiesBelowEffects.Hypoxia,
         CasualtiesBelowEffects.Hypovolemia,
+        CasualtiesBelowEffects.BloodLoss,
         CasualtiesBelowEffects.Sepsis,
         CasualtiesBelowEffects.Hypothermia,
         CasualtiesBelowEffects.Hyperthermia,
