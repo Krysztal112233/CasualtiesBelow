@@ -33,7 +33,9 @@ Each package has a single entry:
 The facades exist only where driver logic was absorbed; where the main module
 was already a cohesive entry, no forwarding shell was added.
 
-> [!NOTE] Storage is deliberately not here. Canonical values live in
+> [!NOTE]
+>
+> Storage is deliberately not here. Canonical values live in
 > `component/VitalsComponentImpl` and are written through
 > `component/VitalsMutations`; this tree contains only time-evolution logic.
 > That split is why physiology modules are almost all pure and unit-testable.
