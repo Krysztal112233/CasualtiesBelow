@@ -7,7 +7,7 @@ import scala.collection.mutable
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.mixin.FoodDataAccessor
+import dev.krysztal.casualtiesbelow.internal.extension.FoodDataExtensions.*
 
 /** Shared exertion signal: vanilla's exhaustion bookkeeping already prices each activity, so its
   * per-tick delta is the signal. The periodic 4.0 hunger-billing drain shows up as a negative delta
@@ -23,9 +23,7 @@ private[temperature] object ExertionTracker {
     tracked.get(id).fold(0.0)(_.smoothedPerTick * Consts.TicksPerSecond)
 
   def observe(player: ServerPlayer): Double = {
-    val exhaustion = player.getFoodData
-      .asInstanceOf[FoodDataAccessor]
-      .casualtiesbelow$getExhaustionLevel()
+    val exhaustion = player.getFoodData.exhaustionLevel
     val track = tracked.getOrElseUpdate(player.getUUID, new Track(exhaustion))
     val delta = (exhaustion - track.lastExhaustion).toDouble.max(0.0)
     track.lastExhaustion = exhaustion

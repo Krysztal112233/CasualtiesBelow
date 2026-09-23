@@ -19,7 +19,6 @@ import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
-import dev.krysztal.casualtiesbelow.mixin.FoodDataAccessor
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
 /** Body temperature progression: the environment pulls the core temperature towards an equilibrium
