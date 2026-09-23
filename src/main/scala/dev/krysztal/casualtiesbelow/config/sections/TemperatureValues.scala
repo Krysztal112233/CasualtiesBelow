@@ -26,9 +26,11 @@ private[config] final case class TemperatureValues(
     sweatDirtinessMultiplier: ConfigValue[Double],
     evaporationCoolingPerMinute: ConfigValue[Double],
     exerciseHeatPerExhaustionPerSecond: ConfigValue[Double],
+
     heatStrongPerMinute: ConfigValue[Double],
     heatExtremePerMinute: ConfigValue[Double],
     heatNormalPerMinute: ConfigValue[Double],
+
     fireDryingBonusDegrees: ConfigValue[Double],
     immersionWetnessPerSecond: ConfigValue[Double],
     rainWetnessPerSecond: ConfigValue[Double],
@@ -39,9 +41,11 @@ private[config] final case class TemperatureValues(
     dryingCurveFormula: FormulaConfigValue,
     wetnessCollapseFormula: FormulaConfigValue,
     temperatureOverlayEnabled: ConfigValue[Boolean],
+
     frostOverlayStartCelsius: ConfigValue[Double],
     frostOverlayFullSpanCelsius: ConfigValue[Double],
     frostOverlayMaxStrength: ConfigValue[Double],
+
     heatOverlayStartCelsius: ConfigValue[Double],
     heatOverlayFullSpanCelsius: ConfigValue[Double],
     heatOverlayMaxStrength: ConfigValue[Double]
@@ -154,13 +158,13 @@ private[config] object TemperatureValues {
           "Direct contact heat (°C/min) for the extreme tier: touching lava. Initial placeholder,",
           "pending calibration."
         )
-        .defineInRange("heatExtremePerMinute", 10.0, 0.0, 1000.0, classOf[Double]),
+        .defineInRange("heatExtremePerMinute", 18.0, 0.0, 100.0, classOf[Double]),
       heatStrongPerMinute = b
         .comment(
           "Direct contact heat (°C/min) for the strong tier: standing in a fire block or the",
           "burning DOT. Initial placeholder, pending calibration."
         )
-        .defineInRange("heatStrongPerMinute", 3.0, 0.0, 100.0, classOf[Double]),
+        .defineInRange("heatStrongPerMinute", 8.0, 0.0, 100.0, classOf[Double]),
       heatNormalPerMinute = b
         .comment(
           "Direct contact heat (°C/min) for the normal tier: standing on a magma block or a lit",
