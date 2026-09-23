@@ -60,7 +60,8 @@ object CasualtiesBelowDataDefaults {
     "cut" -> WoundProfile.linear(2.0, 3.0, 0.2, 4.0),
     "blunt" -> WoundProfile.linear(0.0, 3.0, 0.1, 4.0),
     "pierce" -> WoundProfile.linear(3.0, 2.0, 0.15, 5.0),
-    "burn" -> WoundProfile.linear(4.0, 2, 0, 2.0),
+    "burn" -> WoundProfile.linear(4.0, 2.0, 0.0, 2.0),
+    "lava_burn" -> WoundProfile.linear(4.0, 3.0, 0.0, 4.0),
     "prick" -> WoundProfile.linear(1.5, 0.0, 0.05, 1.0),
     "blast" -> WoundProfile.linear(2.0, 2.0, 0.25, 6.0),
     "fall" -> WoundProfile.linear(4.0, 4.0, 0.5, 6.0)
@@ -103,6 +104,15 @@ object CasualtiesBelowDataDefaults {
     )
 
     List(
+      "lava" -> rule(
+        localized(
+          "lava_burn",
+          target = HitLocationTargetData(FirePositionlessWeights),
+          hemostasis = Some(HemostasisData(0.2, 0.25))
+        ),
+        damageTypes = Some(exact(DamageTypes.LAVA)),
+        priority = 110
+      ),
       "fire" -> rule(
         localized(
           "burn",
