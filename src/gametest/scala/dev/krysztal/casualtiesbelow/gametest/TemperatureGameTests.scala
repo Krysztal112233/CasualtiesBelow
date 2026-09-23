@@ -30,18 +30,23 @@ final class TemperatureGameTests {
   }
 
   @GameTest(maxTicks = 20)
-  def magmaBlockHeats(helper: GameTestHelper): Unit = {
-    TemperatureScenarios.magmaBlockHeats(helper)
+  def hotFloorDamageHeats(helper: GameTestHelper): Unit = {
+    TemperatureScenarios.hotFloorDamageHeats(helper)
   }
 
   @GameTest(maxTicks = 20)
-  def litCampfireHeats(helper: GameTestHelper): Unit = {
-    TemperatureScenarios.litCampfireHeats(helper)
+  def campfireDamageHeats(helper: GameTestHelper): Unit = {
+    TemperatureScenarios.campfireDamageHeats(helper)
   }
 
   @GameTest(maxTicks = 20)
-  def unlitCampfireDoesNotHeat(helper: GameTestHelper): Unit = {
-    TemperatureScenarios.unlitCampfireDoesNotHeat(helper)
+  def lavaDamageOutranksBurning(helper: GameTestHelper): Unit = {
+    TemperatureScenarios.lavaDamageOutranksBurning(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def unrelatedDamageDoesNotHeat(helper: GameTestHelper): Unit = {
+    TemperatureScenarios.unrelatedDamageDoesNotHeat(helper)
   }
 
   @GameTest(maxTicks = 20)

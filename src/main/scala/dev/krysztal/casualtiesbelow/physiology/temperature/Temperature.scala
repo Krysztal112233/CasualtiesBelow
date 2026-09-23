@@ -26,20 +26,20 @@ import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
   *
   * Every tick, per player (driven from [[InjuryProgression.tickPlayer]]):
   *
-  *   1. the vanilla height-adjusted biome temperature maps to an apparent temperature (°C); while
-  *      immersed, the water takes over with a 0°C floor for liquid water
-  *   2. the comfort band maps the apparent temperature to an equilibrium core temperature: inside
-  *      the band the equilibrium is normal body temperature (no drift), outside it deviates by the
-  *      configured slope
-  *   3. armor weakens the equilibrium's pull: each worn piece contributes its material's insulation
-  *      and dissipation-block coefficients (data-driven, keyed by equipment asset id) weighted by
-  *      body coverage; wetness collapses both coefficients together, so soaked armor neither keeps
-  *      you warm nor keeps you stifled
-  *   4. heat contributions arrive through [[BodyHeatContributionCallback]]: `addDirect` bypasses
-  *      armor (exercise heat, fire/lava contact heat), `addDissipative` is scaled by the armor's
-  *      surviving dissipation block (evaporative cooling)
-  *   5. the core temperature approaches the armor-weakened equilibrium exponentially with the
-  *      configured time constant (faster while immersed), plus the production terms
+  *   - the vanilla height-adjusted biome temperature maps to an apparent temperature (°C); while
+  *     immersed, the water takes over with a 0°C floor for liquid water
+  *   - the comfort band maps the apparent temperature to an equilibrium core temperature: inside
+  *     the band the equilibrium is normal body temperature (no drift), outside it deviates by the
+  *     configured slope
+  *   - armor weakens the equilibrium's pull: each worn piece contributes its material's insulation
+  *     and dissipation-block coefficients (data-driven, keyed by equipment asset id) weighted by
+  *     body coverage; wetness collapses both coefficients together, so soaked armor neither keeps
+  *     you warm nor keeps you stifled
+  *   - heat contributions arrive through [[BodyHeatContributionCallback]]: `addDirect` bypasses
+  *     armor (exercise heat, fire/lava contact heat), `addDissipative` is scaled by the armor's
+  *     surviving dissipation block (evaporative cooling)
+  *   - the core temperature approaches the armor-weakened equilibrium exponentially with the
+  *     configured time constant (faster while immersed), plus the production terms
   *
   * The wetness axis (0..1) accrues while immersed or in rain and dries along a temperature-driven
   * curve scaled by air dryness (`1 - downfall`); [[DryingBonusCallback]] feeds extra drying
@@ -55,9 +55,11 @@ object Temperature {
     */
   def register(): Unit = {
     HeatContributions.register()
+    HeatDamageContribution.register()
     DryingBonusCallback.EVENT.register(FireDryingBonus)
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
       ExertionTracker.discard(handler.player.getUUID);
+      HeatDamageContribution.discard(handler.player.getUUID);
     }
   }
 
@@ -228,8 +230,10 @@ object Temperature {
   /** Drops this player's exertion tracking state when progression is skipped (death,
     * creative/spectator).
     */
-  private[casualtiesbelow] def discard(player: ServerPlayer): Unit =
+  private[casualtiesbelow] def discard(player: ServerPlayer): Unit = {
     ExertionTracker.discard(player.getUUID)
+    HeatDamageContribution.discard(player.getUUID)
+  }
 
   /** Vanilla sprinting accrues exhaustion at ~0.56/s; it anchors the exertion fraction for both
     * exercise heat and sweating.

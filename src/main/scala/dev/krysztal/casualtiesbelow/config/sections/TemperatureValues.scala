@@ -26,9 +26,9 @@ private[config] final case class TemperatureValues(
     sweatDirtinessMultiplier: ConfigValue[Double],
     evaporationCoolingPerMinute: ConfigValue[Double],
     exerciseHeatPerExhaustionPerSecond: ConfigValue[Double],
-    onFireHeatPerMinute: ConfigValue[Double],
-    lavaContactHeatPerMinute: ConfigValue[Double],
-    heatSourceBlockHeatPerMinute: ConfigValue[Double],
+    heatStrongPerMinute: ConfigValue[Double],
+    heatExtremePerMinute: ConfigValue[Double],
+    heatNormalPerMinute: ConfigValue[Double],
     fireDryingBonusDegrees: ConfigValue[Double],
     immersionWetnessPerSecond: ConfigValue[Double],
     rainWetnessPerSecond: ConfigValue[Double],
@@ -149,23 +149,24 @@ private[config] object TemperatureValues {
           "Initial placeholder, pending calibration."
         )
         .defineInRange("exerciseHeatPerExhaustionPerSecond", 0.9, 0.0, 10.0, classOf[Double]),
-      onFireHeatPerMinute = b
+      heatExtremePerMinute = b
         .comment(
-          "Direct contact heat (°C/min) while on fire or inside a fire block. Initial placeholder,",
+          "Direct contact heat (°C/min) for the extreme tier: touching lava. Initial placeholder,",
           "pending calibration."
         )
-        .defineInRange("onFireHeatPerMinute", 3.0, 0.0, 100.0, classOf[Double]),
-      lavaContactHeatPerMinute = b
+        .defineInRange("heatExtremePerMinute", 10.0, 0.0, 1000.0, classOf[Double]),
+      heatStrongPerMinute = b
         .comment(
-          "Direct contact heat (°C/min) while touching lava. Initial placeholder, pending calibration."
+          "Direct contact heat (°C/min) for the strong tier: standing in a fire block or the",
+          "burning DOT. Initial placeholder, pending calibration."
         )
-        .defineInRange("lavaContactHeatPerMinute", 10.0, 0.0, 1000.0, classOf[Double]),
-      heatSourceBlockHeatPerMinute = b
+        .defineInRange("heatStrongPerMinute", 3.0, 0.0, 100.0, classOf[Double]),
+      heatNormalPerMinute = b
         .comment(
-          "Direct contact heat (°C/min) while standing on a heat-source block (magma block, lit",
-          "campfire). Initial placeholder, pending calibration."
+          "Direct contact heat (°C/min) for the normal tier: standing on a magma block or a lit",
+          "campfire. Initial placeholder, pending calibration."
         )
-        .defineInRange("heatSourceBlockHeatPerMinute", 1.5, 0.0, 100.0, classOf[Double]),
+        .defineInRange("heatNormalPerMinute", 1.5, 0.0, 100.0, classOf[Double]),
       fireDryingBonusDegrees = b
         .comment(
           "Apparent-temperature bonus (°C) fed to the drying curve while on fire; dries wetness in",

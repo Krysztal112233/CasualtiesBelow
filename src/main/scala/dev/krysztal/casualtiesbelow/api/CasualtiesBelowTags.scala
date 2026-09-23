@@ -32,6 +32,24 @@ object CasualtiesBelowTags {
   val FallImpacts: TagKey[DamageType] =
     TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("fall_impacts"))
 
+  /** Damage types that supply the extreme direct-contact heat tier — lava by default (see
+    * `temperature.HeatDamageContribution`). Datapacks may extend the tier.
+    */
+  val HeatExtreme: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("heat_extreme"))
+
+  /** Damage types that supply the strong direct-contact heat tier: standing in fire and the burning
+    * DOT (see `temperature.HeatDamageContribution`). Datapacks may extend the tier.
+    */
+  val HeatStrong: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("heat_strong"))
+
+  /** Damage types that supply the normal contact heat tier: magma blocks (sneak-exempt by vanilla)
+    * and campfires (see `temperature.HeatDamageContribution`). Datapacks may extend.
+    */
+  val HeatNormal: TagKey[DamageType] =
+    TagKey.create(Registries.DAMAGE_TYPE, CasualtiesBelowApi.id("heat_normal"))
+
   /** Melee weapons that cut skin open (swords, axes by default). */
   val SharpMeleeItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("sharp_melee"))
@@ -82,10 +100,4 @@ object CasualtiesBelowTags {
     */
   val DustlessDiggableBlocks: TagKey[Block] =
     TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dustless_diggable"))
-
-  /** Blocks that provide direct-contact heat when stood on (magma blocks, campfires; see the
-    * body-temperature system). LIT state is checked by the reader; the tag is block-level.
-    */
-  val HeatSourceBlocks: TagKey[Block] =
-    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("heat_sources"))
 }

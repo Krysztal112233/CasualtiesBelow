@@ -53,5 +53,13 @@ final class DamageTypeTagProvider(
     // `#minecraft:is_fall` also includes pearl and stalagmite damage, which deliberately use
     // localized prick/pierce rules. This semantic tag starts with exact fall impact only.
     builder(CasualtiesBelowTags.FallImpacts).add(DamageTypes.FALL)
+
+    // Direct-contact heat tiers for the temperature system: each tier maps to one config rate,
+    // and datapacks extend a tier by adding damage types to its tag. `#minecraft:is_fire`
+    // members like fireballs are deliberately absent — transient impacts are not contact heat.
+    builder(CasualtiesBelowTags.HeatExtreme).add(DamageTypes.LAVA)
+    builder(CasualtiesBelowTags.HeatStrong).add(DamageTypes.IN_FIRE, DamageTypes.ON_FIRE)
+    builder(CasualtiesBelowTags.HeatNormal)
+      .add(DamageTypes.HOT_FLOOR, DamageTypes.CAMPFIRE)
   }
 }

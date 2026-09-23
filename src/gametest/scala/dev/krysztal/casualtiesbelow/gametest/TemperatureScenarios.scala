@@ -1,7 +1,5 @@
 package dev.krysztal.casualtiesbelow.gametest
 
-import java.lang.{Boolean => JBoolean}
-
 import net.minecraft.core.BlockPos
 import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.server.level.ServerPlayer
@@ -9,7 +7,6 @@ import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Blocks
-import net.minecraft.world.level.block.state.properties.BlockStateProperties
 
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
@@ -161,10 +158,18 @@ object TemperatureScenarios {
     VitalsMutations.setBodyTemperature(vitals, equilibrium)
     VitalsMutations.setWetness(vitals, 0.8)
 
-    // The manual ticks never drive baseTick, so the fire neither decays nor deals damage.
-    player.igniteForTicks(160)
+    // The manual ticks never drive baseTick, so the burning DOT is emitted by hand at its
+    // vanilla rhythm — one on_fire hit every 20 ticks, through the real damage-entry pipeline.
+    // igniteForTicks keeps the flag lit for the flash-dry side of the assertion.
+    player.igniteForTicks(340)
     helper.assertTrue(player.isOnFire, "player must be on fire after igniteForTicks")
-    tick(player, 300)
+    val sources = helper.getLevel.damageSources()
+    (1 to 300).foreach { i =>
+      if (i % 20 == 0) {
+        player.hurtServer(helper.getLevel, sources.onFire(), 1.0f)
+      }
+      tick(player, 1)
+    }
     helper.assertTrue(
       vitals.bodyTemperature > equilibrium + 0.15,
       s"fire contact heat must warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
@@ -176,19 +181,62 @@ object TemperatureScenarios {
     helper.succeed()
   }
 
-  /** Standing in a magma block applies the heat-source tier. */
-  def magmaBlockHeats(helper: GameTestHelper): Unit = {
-    heatSourceCase(helper, Blocks.MAGMA_BLOCK.defaultBlockState(), heats = true)
+  /** The hot_floor damage type applies the medium contact tier, per tick while standing on it. */
+  def hotFloorDamageHeats(helper: GameTestHelper): Unit = {
+    contactDamageHeats(helper, _.hotFloor())
   }
 
-  /** Standing in a lit campfire applies the heat-source tier. */
-  def litCampfireHeats(helper: GameTestHelper): Unit = {
-    heatSourceCase(helper, campfireState(lit = true), heats = true)
+  /** The campfire damage type applies the medium contact tier. */
+  def campfireDamageHeats(helper: GameTestHelper): Unit = {
+    contactDamageHeats(helper, _.campfire())
   }
 
-  /** An unlit campfire is in the tag but its LIT property excludes it: no heat. */
-  def unlitCampfireDoesNotHeat(helper: GameTestHelper): Unit = {
-    heatSourceCase(helper, campfireState(lit = false), heats = false)
+  /** The lava damage type applies the extreme tier, strictly above the burning tier — each at its
+    * honest vanilla rhythm: lava attempts per tick, the burning DOT once per 20 ticks.
+    */
+  def lavaDamageOutranksBurning(helper: GameTestHelper): Unit = {
+    helper.getLevel.setRainLevel(0.0f)
+    val lavaPlayer = GameTestPlayers.createSurvivalPlayer(helper)
+    val firePlayer = GameTestPlayers.createSurvivalPlayer(helper)
+    val equilibrium = equilibriumAt(helper, lavaPlayer)
+    resetCore(equilibrium, lavaPlayer, firePlayer)
+
+    val sources = helper.getLevel.damageSources()
+    (1 to 200).foreach { i =>
+      lavaPlayer.hurtServer(helper.getLevel, sources.lava(), 4.0f)
+      if (i % 20 == 0) {
+        firePlayer.hurtServer(helper.getLevel, sources.onFire(), 1.0f)
+      }
+      tick(lavaPlayer, 1)
+      tick(firePlayer, 1)
+    }
+    val lavaRise = lavaPlayer.vitals.bodyTemperature - equilibrium
+    val fireRise = firePlayer.vitals.bodyTemperature - equilibrium
+    helper.assertTrue(
+      lavaRise > fireRise,
+      s"the lava tier must outrank the burning tier, got $lavaRise vs $fireRise"
+    )
+    helper.succeed()
+  }
+
+  /** Damage outside the fire table never arms the archive: the core does not move. */
+  def unrelatedDamageDoesNotHeat(helper: GameTestHelper): Unit = {
+    helper.getLevel.setRainLevel(0.0f)
+    val player = GameTestPlayers.createSurvivalPlayer(helper)
+    val vitals = player.vitals
+    val equilibrium = equilibriumAt(helper, player)
+    VitalsMutations.setBodyTemperature(vitals, equilibrium)
+
+    val sources = helper.getLevel.damageSources()
+    (1 to 10).foreach { _ =>
+      player.hurtServer(helper.getLevel, sources.magic(), 1.0f)
+      tick(player, 1)
+    }
+    helper.assertTrue(
+      math.abs(vitals.bodyTemperature - equilibrium) <= 1e-9,
+      s"unrelated damage must not warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
+    )
+    helper.succeed()
   }
 
   /** Channel × armor semantics with the probe listener: the direct channel bypasses armor (full
@@ -283,41 +331,30 @@ object TemperatureScenarios {
     )
   }
 
-  private def heatSourceCase(
+  /** Contact sources fire the entry-layer event once per tick; emulate standing in the source for
+    * ten ticks and expect the medium tier to warm the core.
+    */
+  private def contactDamageHeats(
       helper: GameTestHelper,
-      state: net.minecraft.world.level.block.state.BlockState,
-      heats: Boolean
+      pick: net.minecraft.world.damagesource.DamageSources => net.minecraft.world.damagesource.DamageSource
   ): Unit = {
     helper.getLevel.setRainLevel(0.0f)
-    val relative = new BlockPos(1, 1, 1)
-    helper.setBlock(relative, state)
-    val absolute = helper.absolutePos(relative)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    // Feet inside the source block: the check reads the feet block and the one below.
-    player.setPos(absolute.getX + 0.5, absolute.getY.toDouble, absolute.getZ + 0.5)
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
     VitalsMutations.setBodyTemperature(vitals, equilibrium)
 
-    tick(player, 400)
-    if (heats) {
-      helper.assertTrue(
-        vitals.bodyTemperature > equilibrium + 0.1,
-        s"heat source block must warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
-      )
-    } else {
-      helper.assertTrue(
-        math.abs(vitals.bodyTemperature - equilibrium) < 0.03,
-        s"unlit campfire must not warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
-      )
+    val sources = helper.getLevel.damageSources()
+    (1 to 40).foreach { _ =>
+      player.hurtServer(helper.getLevel, pick(sources), 1.0f)
+      tick(player, 1)
     }
+    helper.assertTrue(
+      vitals.bodyTemperature > equilibrium,
+      s"contact damage must warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
+    )
     helper.succeed()
   }
-
-  private def campfireState(lit: Boolean) =
-    Blocks.CAMPFIRE
-      .defaultBlockState()
-      .setValue[JBoolean, JBoolean](BlockStateProperties.LIT, JBoolean.valueOf(lit))
 
   private def equipFullLeather(player: ServerPlayer): Unit = {
     player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET))
