@@ -38,6 +38,60 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
         opioidDependenceAmplifierFromVitals
       )
     )
+  private[casualtiesbelow] val Hypoxia: Holder[MobEffect] =
+    register(
+      "hypoxia",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x6579a8,
+        hypoxiaAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val BloodLoss: Holder[MobEffect] =
+    register(
+      "blood_loss",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x9f3441,
+        bloodLossAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Sepsis: Holder[MobEffect] =
+    register(
+      "sepsis",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x9b587a,
+        sepsisAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Hypothermia: Holder[MobEffect] =
+    register(
+      "hypothermia",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x5dadd6,
+        hypothermiaAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Hyperthermia: Holder[MobEffect] =
+    register(
+      "hyperthermia",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0xd96b31,
+        hyperthermiaAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Unconsciousness: Holder[MobEffect] =
+    register(
+      "unconsciousness",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x404058,
+        unconsciousnessAmplifierFromVitals
+      )
+    )
 
   def register(): Unit = {
     ServerTickEvents.START_SERVER_TICK.register { server =>
