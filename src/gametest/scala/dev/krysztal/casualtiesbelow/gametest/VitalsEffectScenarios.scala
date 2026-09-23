@@ -18,7 +18,6 @@ object VitalsEffectScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     val maxBloodVolume = CasualtiesBelowConfig.vitals.maxBloodVolume.get()
-    val bloodLossStart = CasualtiesBelowConfig.vitals.bloodDesaturationStartFraction.get()
     val hypoxiaThreshold = CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
     val coldThreshold = CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
     val hotThreshold = CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
@@ -27,7 +26,7 @@ object VitalsEffectScenarios {
     VitalsMutations.setOpioidLevel(vitals, 40.0)
     VitalsMutations.setOpioidDependence(vitals, 40.0)
     VitalsMutations.setBloodOxygen(vitals, hypoxiaThreshold - 0.1)
-    VitalsMutations.setBloodVolume(vitals, maxBloodVolume * bloodLossStart - 1.0)
+    VitalsMutations.setBloodVolume(vitals, maxBloodVolume * 0.9)
     VitalsMutations.setSepsis(vitals, 1.0)
     VitalsMutations.setBodyTemperature(vitals, coldThreshold - 0.1)
     VitalsMutations.applyConsciousnessState(
@@ -59,8 +58,8 @@ object VitalsEffectScenarios {
       "severe low blood oxygen should produce a hypoxia cue"
     )
     helper.assertTrue(
-      Option(player.getEffect(CasualtiesBelowEffects.BloodLoss)).exists(_.getAmplifier == 0),
-      "blood volume below the desaturation onset should produce a blood-loss cue"
+      Option(player.getEffect(CasualtiesBelowEffects.Hypovolemia)).exists(_.getAmplifier == 0),
+      "10% blood-volume loss should produce a hypovolemia I cue"
     )
     helper.assertTrue(
       Option(player.getEffect(CasualtiesBelowEffects.Sepsis)).exists(_.getAmplifier == 0),
@@ -121,7 +120,7 @@ object VitalsEffectScenarios {
         CasualtiesBelowEffects.OpioidAnalgesia,
         CasualtiesBelowEffects.OpioidDependence,
         CasualtiesBelowEffects.Hypoxia,
-        CasualtiesBelowEffects.BloodLoss,
+        CasualtiesBelowEffects.Hypovolemia,
         CasualtiesBelowEffects.Sepsis,
         CasualtiesBelowEffects.Hypothermia,
         CasualtiesBelowEffects.Hyperthermia,

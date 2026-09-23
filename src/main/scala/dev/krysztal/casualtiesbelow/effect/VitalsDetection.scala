@@ -44,12 +44,10 @@ private[effect] val hypoxiaAmplifierFromVitals: MobEffectAmplifierResolver = pla
     CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
   )
 
-/** Activates alongside the existing blood-desaturation warning, normalized to healthy volume. */
-private[effect] val bloodLossAmplifierFromVitals: MobEffectAmplifierResolver = player =>
-  bloodLossAmplifier(
+private[effect] val hypovolemiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  hypovolemiaAmplifier(
     player.vitals.circulation.bloodVolume,
-    CasualtiesBelowConfig.vitals.maxBloodVolume.get(),
-    CasualtiesBelowConfig.vitals.bloodDesaturationStartFraction.get()
+    CasualtiesBelowConfig.vitals.maxBloodVolume.get()
   )
 
 private[effect] val sepsisAmplifierFromVitals: MobEffectAmplifierResolver = player =>
@@ -92,21 +90,20 @@ private[effect] def amplifierAtOrAboveThreshold(value: Double, threshold: Double
   else amplifierWhen(value >= threshold)
 }
 
-private[effect] def bloodLossAmplifier(
+/** Maps 10%, 20%, 30%, and 50% loss of healthy blood volume to amplifiers I through IV. */
+private[effect] def hypovolemiaAmplifier(
     bloodVolume: Double,
-    maximumBloodVolume: Double,
-    thresholdFraction: Double
+    maximumBloodVolume: Double
 ): Option[Int] = {
-  if (
-    !bloodVolume.isFinite ||
-    !maximumBloodVolume.isFinite ||
-    maximumBloodVolume <= 0.0 ||
-    !thresholdFraction.isFinite
-  ) {
+  if (!bloodVolume.isFinite || !maximumBloodVolume.isFinite || maximumBloodVolume <= 0.0) {
     None
   } else {
-    val normalizedVolume = bloodVolume.max(0.0).min(maximumBloodVolume)
-    amplifierBelowThreshold(normalizedVolume / maximumBloodVolume, thresholdFraction)
+    val volumeFraction = bloodVolume.max(0.0).min(maximumBloodVolume) / maximumBloodVolume
+    if (volumeFraction > 0.9) None
+    else if (volumeFraction > 0.8) Some(0)
+    else if (volumeFraction > 0.7) Some(1)
+    else if (volumeFraction > 0.5) Some(2)
+    else Some(3)
   }
 }
 

@@ -49,12 +49,24 @@ final class VitalsDetectionTest {
   }
 
   @Test
-  def bloodLossCueUsesFractionOfHealthyMaximum(): Unit = {
-    assertEquals(None, bloodLossAmplifier(4500.0, 5000.0, 0.9))
-    assertEquals(Some(0), bloodLossAmplifier(4499.0, 5000.0, 0.9))
-    assertEquals(None, bloodLossAmplifier(5000.0, 5000.0, 0.9))
-    assertEquals(None, bloodLossAmplifier(4000.0, 0.0, 0.9))
-    assertEquals(None, bloodLossAmplifier(Double.NaN, 5000.0, 0.9))
+  def hypovolemiaStartsAtTenPercentLossAndHasFourTiers(): Unit = {
+    assertEquals(None, hypovolemiaAmplifier(5000.0, 5000.0))
+    assertEquals(None, hypovolemiaAmplifier(4500.1, 5000.0))
+    assertEquals(Some(0), hypovolemiaAmplifier(4500.0, 5000.0))
+    assertEquals(Some(0), hypovolemiaAmplifier(4000.1, 5000.0))
+    assertEquals(Some(1), hypovolemiaAmplifier(4000.0, 5000.0))
+    assertEquals(Some(1), hypovolemiaAmplifier(3500.1, 5000.0))
+    assertEquals(Some(2), hypovolemiaAmplifier(3500.0, 5000.0))
+    assertEquals(Some(2), hypovolemiaAmplifier(2500.1, 5000.0))
+    assertEquals(Some(3), hypovolemiaAmplifier(2500.0, 5000.0))
+    assertEquals(Some(3), hypovolemiaAmplifier(0.0, 5000.0))
+  }
+
+  @Test
+  def invalidBloodVolumesDoNotProduceHypovolemia(): Unit = {
+    assertEquals(None, hypovolemiaAmplifier(4000.0, 0.0))
+    assertEquals(None, hypovolemiaAmplifier(Double.NaN, 5000.0))
+    assertEquals(None, hypovolemiaAmplifier(4000.0, Double.PositiveInfinity))
   }
 
   @Test
