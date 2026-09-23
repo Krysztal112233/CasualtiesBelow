@@ -19,6 +19,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
@@ -63,8 +64,7 @@ object Temperature {
     BodyHeatContributionCallback.EVENT.register(EvaporativeCooling)
     DryingBonusCallback.EVENT.register(FireDryingBonus)
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
-      ExertionTracker.discard(handler.player.getUUID)
-      ()
+      ExertionTracker.discard(handler.player.getUUID);
     }
   }
 
@@ -155,7 +155,7 @@ object Temperature {
       effectiveEquilibrium,
       ratePerSecond,
       productionPerSecond,
-      SecondsPerTick
+      Consts.SecondsPerTick
     )
     val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
 
@@ -179,14 +179,14 @@ object Temperature {
       }
     val deltaWetness =
       if (immersed) {
-        CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * SecondsPerTick
+        CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * Consts.SecondsPerTick
       } else if (level.isRainingAt(pos)) {
         CasualtiesBelowConfig.temperature.rainWetnessPerSecond
-          .get() * SecondsPerTick + sweatPerSecond * SecondsPerTick
+          .get() * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
       } else {
         val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
         -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(apparent + dryingBonus) *
-          airDryness * SecondsPerTick + sweatPerSecond * SecondsPerTick
+          airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
       }
     val nextWetness = TemperatureCalc.nextWetness(wetness, deltaWetness)
     val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
@@ -233,7 +233,7 @@ object Temperature {
 
     /** Smoothed exhaustion rate in units per second; 0 before any exertion is observed. */
     def exhaustionPerSecond(id: UUID): Double =
-      tracked.get(id).fold(0.0)(_.smoothedPerTick * TicksPerSecond)
+      tracked.get(id).fold(0.0)(_.smoothedPerTick * Consts.TicksPerSecond)
 
     def observe(player: ServerPlayer): Double = {
       val exhaustion = player.getFoodData
@@ -243,7 +243,7 @@ object Temperature {
       val delta = (exhaustion - track.lastExhaustion).toDouble.max(0.0)
       track.lastExhaustion = exhaustion
       track.smoothedPerTick += (delta - track.smoothedPerTick) * SmoothingAlpha
-      track.smoothedPerTick * TicksPerSecond
+      track.smoothedPerTick * Consts.TicksPerSecond
     }
 
     def discard(id: UUID): Unit = tracked.remove(id)
@@ -342,11 +342,6 @@ object Temperature {
         0.0
       }
   }
-
-  /** Tick length in seconds: all recurrence math runs per second. */
-  private val SecondsPerTick = 1.0 / 20.0
-
-  private val TicksPerSecond = 20.0
 
   /** Armor coverage weights by body surface: chest > legs > head ≈ feet. */
   private val ArmorSlotWeights: List[(EquipmentSlot, Double)] = List(

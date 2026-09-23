@@ -18,6 +18,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Dirtiness: the whole-body hygiene axis. The environment and the player's own actions push it up;
@@ -140,7 +141,7 @@ object Dirtiness {
         (if (fullyArmored) armoredMultiplier else 1.0) *
         (if (inNether) netherMultiplier else 1.0) *
         sweatMultiplier
-    basePerSecond.max(0.0) * situational / TicksPerSecond
+    basePerSecond.max(0.0) * situational / Consts.TicksPerSecond
   }
 
   /** Wash for one tick: immersion wins over rain when both apply; murky water dampens immersion.
@@ -157,7 +158,7 @@ object Dirtiness {
       if (inWater) waterPerSecond.max(0.0) * (if (murkyWater) murkyMultiplier else 1.0)
       else if (inRain) rainPerSecond.max(0.0)
       else 0.0
-    perSecond / TicksPerSecond
+    perSecond / Consts.TicksPerSecond
   }
 
   /** Washes a player standing in a water cauldron at the immersion rate (cauldron water is clean,
@@ -184,7 +185,7 @@ object Dirtiness {
       (CasualtiesBelowConfig.dirtiness.washWaterPerSecond
         .get()
         .doubleValue
-        .max(0.0) / TicksPerSecond)
+        .max(0.0) / Consts.TicksPerSecond)
         .min(current)
     if (washed <= 0.0) return
     VitalsMutations.setDirtiness(vitals, current - washed)
@@ -248,14 +249,11 @@ object Dirtiness {
   }
 
   private def isFullyArmored(player: ServerPlayer): Boolean = {
-    ArmorSlots.forall(slot => !player.getItemBySlot(slot).isEmpty)
+    Consts.ArmorSlots.forall(slot => !player.getItemBySlot(slot).isEmpty)
   }
 
-  private val ArmorSlots =
-    List(EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD)
   private val cauldronProgress = mutable.HashMap.empty[UUID, Double]
   private val sweatingNow = mutable.Set.empty[UUID]
   private var ticks = 0
-  private val TicksPerSecond = 20
   private val SyncIntervalTicks = 20
 }

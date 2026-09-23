@@ -20,6 +20,7 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
@@ -134,9 +135,6 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
 
   // --- armor wound protection ----------------------------------------------
 
-  private val ArmorSlots =
-    List(EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET)
-
   private def registerArmor(
       registration: IRecipeRegistration
   )(using data: GameplayDataSnapshot, store: GameplayDataStore): Unit = {
@@ -150,7 +148,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY)
       val ovr = GameplayDataLookup.armorProtection(stack, store)
 
-      ArmorSlots.foreach { slot =>
+      Consts.ArmorSlots.foreach { slot =>
         val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot)
         val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot)
         if (armor > 0.0 || toughness > 0.0) {
@@ -170,7 +168,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
     BuiltInRegistries.ITEM.forEach { item =>
       val stack = new ItemStack(item)
       Option(stack.get(DataComponents.EQUIPPABLE))
-        .filter(equippable => ArmorSlots.contains(equippable.slot()))
+        .filter(equippable => Consts.ArmorSlots.contains(equippable.slot()))
         .foreach { equippable =>
           val slot = equippable.slot()
           if (!covered.contains(item -> slot)) {
