@@ -16,8 +16,8 @@ import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
+import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 
@@ -272,11 +272,7 @@ object TemperatureScenarios {
     val level = helper.getLevel
     val pos = player.blockPosition()
     val biome = level.getBiome(pos).value()
-    val vanillaTemperature = biome
-      .asInstanceOf[BiomeInvoker]
-      .casualtiesbelow$invokeGetTemperature(pos, level.getSeaLevel)
-    val mapped =
-      CasualtiesBelowConfig.temperature.biomeMappingFormula.evaluate(vanillaTemperature.toDouble)
+    val mapped = biome.mappedTemperature(pos, level.getSeaLevel)
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
     CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
       apparent,

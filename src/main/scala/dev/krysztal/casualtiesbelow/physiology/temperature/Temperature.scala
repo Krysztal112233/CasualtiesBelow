@@ -22,7 +22,7 @@ import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.mixin.BiomeInvoker
+import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.mixin.FoodDataAccessor
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
@@ -82,11 +82,7 @@ object Temperature {
 
     // (a) Apparent temperature: biome-mapped; while immersed the water takes over and liquid
     // water never goes below freezing.
-    val vanillaTemperature = biome
-      .asInstanceOf[BiomeInvoker]
-      .casualtiesbelow$invokeGetTemperature(pos, level.getSeaLevel)
-    val mapped =
-      CasualtiesBelowConfig.temperature.biomeMappingFormula.evaluate(vanillaTemperature.toDouble)
+    val mapped = biome.mappedTemperature(pos, level.getSeaLevel)
     val immersed = player.isInWater
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
 
