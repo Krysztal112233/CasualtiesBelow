@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "casualtiesbelow",
+  "accessWidener": "casualtiesbelow.classtweaker",
   "version": "${version}",
   "name": "Casualties: Below",
   "description": "Down, down, down.",

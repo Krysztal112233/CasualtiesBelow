@@ -14,9 +14,9 @@ import dev.krysztal.casualtiesbelow.api.event.DryingBonusCallback
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
@@ -72,23 +72,87 @@ object Temperature {
     val level = player.level()
     val pos = player.blockPosition()
     val biome = level.getBiome(pos).value()
+    val immersed = player.isInWater
 
     // (a) Apparent temperature: biome-mapped; while immersed the water takes over and liquid
-    // water never goes below freezing.
-    val mapped = biome.mappedTemperature(pos, level.getSeaLevel)
-    val immersed = player.isInWater
-    val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
-
-    // (b) Equilibrium core temperature from the comfort band.
-    val equilibrium = CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
-      apparent,
-      CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
-      CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
-      CasualtiesBelowConfig.temperature.comfortSlope.get()
+    // water never goes below freezing. Air dryness (1 - downfall) drives evaporation later.
+    val apparent = TemperatureCalc.apparentTemperature(
+      biome.mappedTemperature(pos, level.getSeaLevel),
+      immersed
     )
+    val airDryness = biome.airDryness
 
-    // (c) Armor scan: coverage-weighted material coefficients over the four armor slots.
-    val store = GameplayDataStores.server(level.getServer)
+    // (c)(d) Armor scan with wetness collapse folded in: soaked armor neither insulates nor
+    // stifles. Fire resistance is the fire layer's own coefficient and does not collapse.
+    val armor =
+      armorThermalCoefficients(player, GameplayDataStores.server(level.getServer), vitals.wetness)
+
+    // (e) Heat contributions. The frame carries this tick's armor/wetness context to the
+    // listeners; dispatch is synchronous on the server thread. A fresh accumulator per dispatch:
+    // partial sums die with the object if a listener throws, no reset to remember.
+    val frame =
+      BodyHeatContributionCallback.Frame(armor.fireResistance, vitals.wetness, airDryness)
+    val context = new BodyHeatContributionCallback.Accumulator
+    BodyHeatContributionCallback.EVENT
+      .invoker()
+      .contribute(player, frame, context)
+
+    // (b)(f) Equilibrium from the comfort band, then the armor-weakened exponential approach
+    // plus the production terms.
+    val (coreChanged, nextCore) = {
+      val equilibrium = CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
+        apparent,
+        CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
+        CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
+        CasualtiesBelowConfig.temperature.comfortSlope.get()
+      )
+      val effectiveEquilibrium =
+        CasualtiesBelowConfig.temperature.effectiveTemperatureFormula.evaluate(
+          equilibrium,
+          armor.effectiveInsulation
+        )
+      val nextCore = TemperatureCalc.nextCoreTemperature(
+        vitals.bodyTemperature,
+        effectiveEquilibrium,
+        TemperatureCalc.approachRatePerSecond(
+          CasualtiesBelowConfig.temperature.tauAirMinutes.get(),
+          immersed,
+          CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
+        ),
+        TemperatureCalc.productionPerSecond(
+          context.directTotal,
+          context.dissipativeTotal,
+          armor.effectiveDissipationBlock
+        ),
+        Consts.SecondsPerTick
+      )
+
+      (VitalsMutations.setBodyTemperature(vitals, nextCore), nextCore)
+    }
+
+    // (g) Wetness axis, then store both results.
+    val wetnessChanged =
+      VitalsMutations.setWetness(
+        vitals,
+        TemperatureCalc.nextWetness(
+          vitals.wetness,
+          wetnessDelta(player, apparent, immersed, airDryness, nextCore)
+        )
+      )
+
+    // Throttle like Dirtiness: the approach never exactly converges, so core is always dirty;
+    // contribute to the sync decision only on sync ticks (the state itself updates every tick).
+    (coreChanged || wetnessChanged) && syncTick
+  }
+
+  /** Coverage-weighted material coefficients over the four armor slots, with the wetness collapse
+    * applied to insulation and dissipation block.
+    */
+  private def armorThermalCoefficients(
+      player: ServerPlayer,
+      store: GameplayDataStore,
+      wetness: Double
+  ): ArmorThermal = {
     var insulation = 0.0
     var dissipationBlock = 0.0
     var fireResistance = 0.0
@@ -101,54 +165,29 @@ object Temperature {
         fireResistance += weight * thermal.fireResistance
       }
     }
-
-    // (d) Wetness collapses both armor coefficients together: soaked armor neither insulates
-    // nor stifles. Fire resistance is the fire layer's own coefficient and does not collapse.
-    val wetness = vitals.wetness
     val collapse = CasualtiesBelowConfig.temperature.wetnessCollapseFormula
       .evaluate(wetness)
       .max(0.0)
       .min(1.0)
-    val effectiveInsulation = insulation * collapse
-    val effectiveDissipationBlock = dissipationBlock * collapse
-
-    // (e) Heat contributions. The frame carries this tick's armor/wetness context to the
-    // listeners; dispatch is synchronous on the server thread. A fresh accumulator per dispatch:
-    // partial sums die with the object if a listener throws, no reset to remember.
-    val airDryness = 1.0 - BiomeClimateAccess.downfall(biome).toDouble
-    val frame = BodyHeatContributionCallback.Frame(fireResistance, wetness, airDryness)
-    val context = new BodyHeatContributionCallback.Accumulator
-    BodyHeatContributionCallback.EVENT
-      .invoker()
-      .contribute(player, frame, context)
-
-    // (f) Exponential approach of the armor-weakened equilibrium plus production terms.
-    val effectiveEquilibrium =
-      CasualtiesBelowConfig.temperature.effectiveTemperatureFormula.evaluate(
-        equilibrium,
-        effectiveInsulation
-      )
-    val ratePerSecond = TemperatureCalc.approachRatePerSecond(
-      CasualtiesBelowConfig.temperature.tauAirMinutes.get(),
-      immersed,
-      CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
+    ArmorThermal(
+      insulation * collapse,
+      dissipationBlock * collapse,
+      fireResistance
     )
-    val productionPerSecond = TemperatureCalc.productionPerSecond(
-      context.directTotal,
-      context.dissipativeTotal,
-      effectiveDissipationBlock
-    )
-    val nextCore = TemperatureCalc.nextCoreTemperature(
-      vitals.bodyTemperature,
-      effectiveEquilibrium,
-      ratePerSecond,
-      productionPerSecond,
-      Consts.SecondsPerTick
-    )
-    val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
+  }
 
-    // (g) Wetness axis: fast accrual while immersed, slow in rain, otherwise drying — with sweat
-    // added on top of the non-immersion branches while the core runs hot.
+  /** Per-tick wetness change: fast accrual while immersed, slow in rain, otherwise drying — with
+    * sweat added on top of the non-immersion branches while the new core temperature runs hot.
+    */
+  private def wetnessDelta(
+      player: ServerPlayer,
+      apparent: Double,
+      immersed: Boolean,
+      airDryness: Double,
+      nextCore: Double
+  ): Double = {
+    val level = player.level()
+    val pos = player.blockPosition()
     val exertionPerSecond =
       if (!immersed) ExertionTracker.exhaustionPerSecond(player.getUUID) else 0.0
     val sweatPerSecond =
@@ -165,24 +204,26 @@ object Temperature {
       } else {
         0.0
       }
-    val deltaWetness =
-      if (immersed) {
-        CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * Consts.SecondsPerTick
-      } else if (level.isRainingAt(pos)) {
-        CasualtiesBelowConfig.temperature.rainWetnessPerSecond
-          .get() * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
-      } else {
-        val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
-        -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(apparent + dryingBonus) *
-          airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
-      }
-    val nextWetness = TemperatureCalc.nextWetness(wetness, deltaWetness)
-    val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
-
-    // Throttle like Dirtiness: the approach never exactly converges, so core is always dirty;
-    // contribute to the sync decision only on sync ticks (the state itself updates every tick).
-    (coreChanged || wetnessChanged) && syncTick
+    if (immersed) {
+      CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * Consts.SecondsPerTick
+    } else if (level.isRainingAt(pos)) {
+      CasualtiesBelowConfig.temperature.rainWetnessPerSecond
+        .get() * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
+    } else {
+      val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
+      -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(apparent + dryingBonus) *
+        airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
+    }
   }
+
+  /** The three armor coefficients one tick pass consumes; insulation and dissipation block are
+    * post-collapse (effective), fire resistance never collapses.
+    */
+  private final case class ArmorThermal(
+      effectiveInsulation: Double,
+      effectiveDissipationBlock: Double,
+      fireResistance: Double
+  )
 
   /** Drops this player's exertion tracking state when progression is skipped (death,
     * creative/spectator).

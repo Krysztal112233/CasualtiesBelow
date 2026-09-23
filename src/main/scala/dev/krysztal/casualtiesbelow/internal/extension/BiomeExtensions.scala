@@ -11,6 +11,11 @@ private[casualtiesbelow] object BiomeExtensions {
 
   extension (biome: Biome) {
 
+    /** The biome's air dryness (1 - downfall): how much headroom the air has left for evaporation.
+      * A jungle reads ~0 (sweat is useless), a desert ~1.
+      */
+    def airDryness: Double = 1.0 - biome.climateSettings.downfall.toDouble
+
     /** The biome's vanilla temperature at `pos` (coordinate-adjusted, sea-level compensated, as
       * vanilla precipitation uses it) passed through `temperature.biomeMappingFormula` — the value
       * this mod's apparent-temperature math starts from.

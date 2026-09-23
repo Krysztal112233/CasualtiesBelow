@@ -56,6 +56,8 @@ base {
 }
 
 loom {
+    accessWidenerPath.set(file("src/main/resources/casualtiesbelow.classtweaker"))
+
     runs.configureEach {
         // CI/runtime smokes can isolate all mutable game state from the developer's `run/` tree.
         runDirectory.set(

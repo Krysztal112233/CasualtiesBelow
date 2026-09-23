@@ -1,0 +1,5 @@
+accessWidener	v2	official
+# Biome's climate record: class and field widened so the type is nameable and the
+# downfall component accessor (already public on the record) is reachable as typed code.
+accessible	class	net/minecraft/world/level/biome/Biome$ClimateSettings
+accessible	field	net/minecraft/world/level/biome/Biome	climateSettings	Lnet/minecraft/world/level/biome/Biome$ClimateSettings;

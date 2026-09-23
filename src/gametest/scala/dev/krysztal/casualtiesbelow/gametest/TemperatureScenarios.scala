@@ -15,7 +15,6 @@ import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.internal.BiomeClimateAccess
 import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -247,12 +246,10 @@ object TemperatureScenarios {
     helper.succeed()
   }
 
-  /** The MethodHandle-based downfall read resolves and returns a sane humidity value (this handle
-    * previously had no execution path).
-    */
+  /** The access-widened downfall read returns a sane humidity value. */
   def biomeDownfallIsReadable(helper: GameTestHelper): Unit = {
     val biome = helper.getLevel.getBiome(helper.absolutePos(new BlockPos(1, 1, 1))).value()
-    val downfall = BiomeClimateAccess.downfall(biome)
+    val downfall = biome.climateSettings.downfall
     helper.assertTrue(
       !downfall.isNaN && downfall >= 0.0f && downfall <= 1.0f,
       s"biome downfall must read within [0, 1], got $downfall"
