@@ -92,6 +92,42 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
         unconsciousnessAmplifierFromVitals
       )
     )
+  private[casualtiesbelow] val PainShock: Holder[MobEffect] =
+    register(
+      "pain_shock",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x762838,
+        painShockAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Alertness: Holder[MobEffect] =
+    register(
+      "alertness",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.BENEFICIAL,
+        0xe4c44b,
+        alertnessAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Wetness: Holder[MobEffect] =
+    register(
+      "wetness",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x3a8fa8,
+        wetnessAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Dirtiness: Holder[MobEffect] =
+    register(
+      "dirtiness",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x785638,
+        dirtinessAmplifierFromVitals
+      )
+    )
 
   def register(): Unit = {
     ServerTickEvents.START_SERVER_TICK.register { server =>

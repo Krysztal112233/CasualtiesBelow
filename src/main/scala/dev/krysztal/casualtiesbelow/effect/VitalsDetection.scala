@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.effect
 
 import net.minecraft.server.level.ServerPlayer
 
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
@@ -20,6 +21,21 @@ private[effect] val opioidDependenceAmplifierFromVitals: MobEffectAmplifierResol
     player.vitals.opioidDependence,
     VitalsComponent.MaxOpioidDependence,
     tierCount = 3
+  )
+
+private[effect] val painShockAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  painShockAmplifierFromStage(player.vitals.shock.stage)
+
+private[effect] val alertnessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  amplifierAboveThreshold(player.vitals.adrenaline, 0.0)
+
+private[effect] val wetnessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  amplifierAboveThreshold(player.vitals.wetness, 0.0)
+
+private[effect] val dirtinessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  amplifierAtOrAboveThreshold(
+    player.vitals.dirtiness,
+    CasualtiesBelowConfig.dirtiness.bandGrimy.get()
   )
 
 private[effect] val hypoxiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
@@ -54,6 +70,9 @@ private[effect] val hyperthermiaAmplifierFromVitals: MobEffectAmplifierResolver 
 private[effect] val unconsciousnessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierWhen(player.vitals.consciousness.unconscious)
 
+private[effect] def painShockAmplifierFromStage(stage: PainShockStage): Option[Int] =
+  amplifierWhen(stage != PainShockStage.Stable)
+
 private[effect] def amplifierWhen(active: Boolean): Option[Int] = {
   if (active) Some(0) else None
 }
@@ -66,6 +85,11 @@ private[effect] def amplifierBelowThreshold(value: Double, threshold: Double): O
 private[effect] def amplifierAboveThreshold(value: Double, threshold: Double): Option[Int] = {
   if (!value.isFinite || !threshold.isFinite) None
   else amplifierWhen(value > threshold)
+}
+
+private[effect] def amplifierAtOrAboveThreshold(value: Double, threshold: Double): Option[Int] = {
+  if (!value.isFinite || !threshold.isFinite) None
+  else amplifierWhen(value >= threshold)
 }
 
 private[effect] def bloodLossAmplifier(

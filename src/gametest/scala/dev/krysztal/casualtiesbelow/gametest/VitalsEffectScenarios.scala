@@ -3,11 +3,14 @@ package dev.krysztal.casualtiesbelow.gametest
 import net.minecraft.gametest.framework.GameTestHelper
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
+import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 
 object VitalsEffectScenarios {
 
@@ -19,6 +22,7 @@ object VitalsEffectScenarios {
     val hypoxiaThreshold = CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
     val coldThreshold = CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
     val hotThreshold = CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
+    val grimeThreshold = CasualtiesBelowConfig.dirtiness.bandGrimy.get()
 
     VitalsMutations.setOpioidLevel(vitals, 40.0)
     VitalsMutations.setOpioidDependence(vitals, 40.0)
@@ -30,6 +34,10 @@ object VitalsEffectScenarios {
       vitals,
       ConsciousnessSnapshot(0.0, unconscious = true)
     )
+    VitalsMutations.applyShockState(vitals, ShockSnapshot(50.0, PainShockStage.Collapsed))
+    VitalsMutations.applyAdrenalineState(vitals, AdrenalineState(1.0, 20))
+    VitalsMutations.setWetness(vitals, 0.01)
+    VitalsMutations.setDirtiness(vitals, grimeThreshold)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
 
     val analgesia = Option(player.getEffect(CasualtiesBelowEffects.OpioidAnalgesia))
@@ -68,6 +76,22 @@ object VitalsEffectScenarios {
       ),
       "the unconscious latch should produce an unconsciousness cue"
     )
+    helper.assertTrue(
+      Option(player.getEffect(CasualtiesBelowEffects.PainShock)).exists(_.getAmplifier == 0),
+      "an active shock episode should produce a shock cue"
+    )
+    helper.assertTrue(
+      Option(player.getEffect(CasualtiesBelowEffects.Alertness)).exists(_.getAmplifier == 0),
+      "positive adrenaline should produce an alertness cue"
+    )
+    helper.assertTrue(
+      Option(player.getEffect(CasualtiesBelowEffects.Wetness)).exists(_.getAmplifier == 0),
+      "positive wetness should produce a wetness cue"
+    )
+    helper.assertTrue(
+      Option(player.getEffect(CasualtiesBelowEffects.Dirtiness)).exists(_.getAmplifier == 0),
+      "dirtiness at the grimy band should produce a dirtiness cue"
+    )
 
     VitalsMutations.setBodyTemperature(vitals, hotThreshold + 0.1)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
@@ -87,6 +111,10 @@ object VitalsEffectScenarios {
       vitals,
       ConsciousnessSnapshot(VitalsComponent.MaxValue, unconscious = false)
     )
+    VitalsMutations.applyShockState(vitals, ShockSnapshot(0.0, PainShockStage.Stable))
+    VitalsMutations.applyAdrenalineState(vitals, AdrenalineState.Empty)
+    VitalsMutations.setWetness(vitals, 0.0)
+    VitalsMutations.setDirtiness(vitals, 0.0)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
     helper.assertTrue(
       List(
@@ -97,7 +125,11 @@ object VitalsEffectScenarios {
         CasualtiesBelowEffects.Sepsis,
         CasualtiesBelowEffects.Hypothermia,
         CasualtiesBelowEffects.Hyperthermia,
-        CasualtiesBelowEffects.Unconsciousness
+        CasualtiesBelowEffects.Unconsciousness,
+        CasualtiesBelowEffects.PainShock,
+        CasualtiesBelowEffects.Alertness,
+        CasualtiesBelowEffects.Wetness,
+        CasualtiesBelowEffects.Dirtiness
       ).forall(holder => Option(player.getEffect(holder)).isEmpty),
       "derived effects should be removed when their source vitals recover"
     )

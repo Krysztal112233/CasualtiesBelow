@@ -1,5 +1,7 @@
 package dev.krysztal.casualtiesbelow.effect
 
+import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -53,5 +55,28 @@ final class VitalsDetectionTest {
     assertEquals(None, bloodLossAmplifier(5000.0, 5000.0, 0.9))
     assertEquals(None, bloodLossAmplifier(4000.0, 0.0, 0.9))
     assertEquals(None, bloodLossAmplifier(Double.NaN, 5000.0, 0.9))
+  }
+
+  @Test
+  def shockCueFollowsTheActiveEpisodeStages(): Unit = {
+    assertEquals(None, painShockAmplifierFromStage(PainShockStage.Stable))
+    assertEquals(Some(0), painShockAmplifierFromStage(PainShockStage.Deferred))
+    assertEquals(Some(0), painShockAmplifierFromStage(PainShockStage.Collapsed))
+    assertEquals(Some(0), painShockAmplifierFromStage(PainShockStage.Recovering))
+  }
+
+  @Test
+  def alertnessAndWetnessCuesRequirePositiveValues(): Unit = {
+    assertEquals(None, amplifierAboveThreshold(0.0, 0.0))
+    assertEquals(Some(0), amplifierAboveThreshold(0.01, 0.0))
+  }
+
+  @Test
+  def dirtinessCueStartsAtTheGrimyBand(): Unit = {
+    assertEquals(None, amplifierAtOrAboveThreshold(29.9, 30.0))
+    assertEquals(Some(0), amplifierAtOrAboveThreshold(30.0, 30.0))
+    assertEquals(Some(0), amplifierAtOrAboveThreshold(30.1, 30.0))
+    assertEquals(None, amplifierAtOrAboveThreshold(Double.NaN, 30.0))
+    assertEquals(None, amplifierAtOrAboveThreshold(30.0, Double.PositiveInfinity))
   }
 }
