@@ -1,19 +1,15 @@
 package dev.krysztal.casualtiesbelow.physiology.temperature
 
-import java.lang.{Boolean => JBoolean}
 import java.util.UUID
 
 import scala.collection.mutable
 
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.entity.EquipmentSlot
-import net.minecraft.world.level.block.state.properties.BlockStateProperties
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 
-import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
-import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.api.event.DryingBonusCallback
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
@@ -59,9 +55,7 @@ object Temperature {
     * [[InjuryProgression.tickPlayer]], so no tick event is registered here.
     */
   def register(): Unit = {
-    BodyHeatContributionCallback.EVENT.register(ExerciseHeat)
-    BodyHeatContributionCallback.EVENT.register(FireContactHeat)
-    BodyHeatContributionCallback.EVENT.register(EvaporativeCooling)
+    HeatContributions.register()
     DryingBonusCallback.EVENT.register(FireDryingBonus)
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
       ExertionTracker.discard(handler.player.getUUID);
@@ -201,127 +195,6 @@ object Temperature {
     * exercise heat and sweating.
     */
   private val SprintExhaustionPerSecond = 0.56
-
-  /** Shared exertion signal: vanilla's exhaustion bookkeeping already prices each activity, so its
-    * per-tick delta is the signal. The periodic 4.0 hunger-billing drain shows up as a negative
-    * delta and is truncated (an accounting artifact, not negative exercise). The delta is smoothed
-    * with an exponential moving average over roughly five seconds so single actions (a jump, an
-    * attack) register as brief exertion instead of one-tick spikes. Used by the exercise-heat and
-    * sweating listeners; [[discard]] clears a player's state.
-    */
-  private object ExertionTracker {
-
-    /** Smoothed exhaustion rate in units per second; 0 before any exertion is observed. */
-    def exhaustionPerSecond(id: UUID): Double =
-      tracked.get(id).fold(0.0)(_.smoothedPerTick * Consts.TicksPerSecond)
-
-    def observe(player: ServerPlayer): Double = {
-      val exhaustion = player.getFoodData
-        .asInstanceOf[FoodDataAccessor]
-        .casualtiesbelow$getExhaustionLevel()
-      val track = tracked.getOrElseUpdate(player.getUUID, new Track(exhaustion))
-      val delta = (exhaustion - track.lastExhaustion).toDouble.max(0.0)
-      track.lastExhaustion = exhaustion
-      track.smoothedPerTick += (delta - track.smoothedPerTick) * SmoothingAlpha
-      track.smoothedPerTick * Consts.TicksPerSecond
-    }
-
-    def discard(id: UUID): Unit = tracked.remove(id)
-
-    private final class Track(var lastExhaustion: Float) {
-      var smoothedPerTick: Double = 0.0
-    }
-
-    private val tracked = mutable.Map.empty[UUID, Track]
-
-    /** EMA weight for a ~5 second (100 tick) window. */
-    private val SmoothingAlpha = 2.0 / (100.0 + 1.0)
-  }
-
-  /** Exercise heat: the shared exertion signal converts to direct-channel heat at the configured
-    * rate per exhaustion unit.
-    */
-  private object ExerciseHeat extends BodyHeatContributionCallback {
-
-    override def contribute(
-        player: ServerPlayer,
-        frame: BodyHeatContributionCallback.Frame,
-        context: BodyHeatContributionContext
-    ): Unit = {
-      val exhaustionPerSecond = ExertionTracker.observe(player)
-      if (exhaustionPerSecond > 0.0) {
-        context.addDirect(
-          exhaustionPerSecond * CasualtiesBelowConfig.temperature.exerciseHeatPerExhaustionPerSecond
-            .get()
-        )
-      }
-    }
-  }
-
-  /** Fire/lava contact heat: direct contact transfers heat regardless of insulation (convection
-    * clothing cannot stop conduction), so it goes to the direct channel in three tiers — lava
-    * contact, being on fire, standing on a heat-source block — highest tier wins, tiers never stack
-    * (vanilla also suppresses the on-fire damage-over-time while in lava). The armor's
-    * fire-resistance coefficient (netherite's "doesn't burn" extension) reduces the tier here, at
-    * the source, as the event contract requires.
-    */
-  private object FireContactHeat extends BodyHeatContributionCallback {
-
-    override def contribute(
-        player: ServerPlayer,
-        frame: BodyHeatContributionCallback.Frame,
-        context: BodyHeatContributionContext
-    ): Unit = {
-      val tier: Double =
-        if (player.isInLava) {
-          CasualtiesBelowConfig.temperature.lavaContactHeatPerMinute.get().doubleValue
-        } else if (player.isOnFire) {
-          CasualtiesBelowConfig.temperature.onFireHeatPerMinute.get().doubleValue
-        } else if (standingOnHeatSource(player)) {
-          CasualtiesBelowConfig.temperature.heatSourceBlockHeatPerMinute.get().doubleValue
-        } else {
-          0.0
-        }
-      if (tier > 0.0) {
-        val resistance = frame.fireResistance
-        context.addDirect(tier * (1.0 - resistance))
-      }
-    }
-
-    /** The block at the feet and the one below; tag members with a LIT property (campfires) only
-      * count while lit.
-      */
-    private def standingOnHeatSource(player: ServerPlayer): Boolean = {
-      val level = player.level()
-      val feet = player.blockPosition()
-      List(feet, feet.below()).exists { pos =>
-        val state = level.getBlockState(pos)
-        state.is(CasualtiesBelowTags.HeatSourceBlocks) &&
-        (!state.hasProperty(BlockStateProperties.LIT) ||
-          state.getValue[JBoolean](BlockStateProperties.LIT).booleanValue())
-      }
-    }
-  }
-
-  /** Evaporative cooling: wet skin sheds heat in proportion to wetness and air dryness (a jungle
-    * defeats sweat, a desert exploits it). This is an active dissipation term, so it travels on the
-    * dissipative channel and pays the armor's surviving dissipation block.
-    */
-  private object EvaporativeCooling extends BodyHeatContributionCallback {
-
-    override def contribute(
-        player: ServerPlayer,
-        frame: BodyHeatContributionCallback.Frame,
-        context: BodyHeatContributionContext
-    ): Unit = {
-      if (frame.wetness > 0.0) {
-        context.addDissipative(
-          frame.wetness * frame.airDryness * CasualtiesBelowConfig.temperature.evaporationCoolingPerMinute
-            .get()
-        )
-      }
-    }
-  }
 
   /** Being on fire flash-dries: a large apparent-temperature bonus for the drying curve only. */
   private object FireDryingBonus extends DryingBonusCallback {
