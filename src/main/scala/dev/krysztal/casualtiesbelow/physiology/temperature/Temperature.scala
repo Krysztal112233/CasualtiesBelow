@@ -21,32 +21,15 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
-/** Body temperature progression: the environment pulls the core temperature towards an equilibrium
-  * while internal heat production acts on it directly.
+/** Advances body temperature and skin wetness once per player tick
+  * ([[InjuryProgression.tickPlayer]]).
   *
-  * Every tick, per player (driven from [[InjuryProgression.tickPlayer]]):
+  * Core temperature approaches an environment- and armor-adjusted equilibrium, with direct heat and
+  * armor-scaled dissipation contributions. Wetness rises in water or rain and otherwise changes
+  * through sweat and temperature- and air-dryness-driven drying. The fire-drying bonus affects
+  * wetness only.
   *
-  *   - the vanilla height-adjusted biome temperature maps to an apparent temperature (°C); while
-  *     immersed, the water takes over with a 0°C floor for liquid water
-  *   - the comfort band maps the apparent temperature to an equilibrium core temperature: inside
-  *     the band the equilibrium is normal body temperature (no drift), outside it deviates by the
-  *     configured slope
-  *   - armor weakens the equilibrium's pull: each worn piece contributes its material's insulation
-  *     and dissipation-block coefficients (data-driven, keyed by equipment asset id) weighted by
-  *     body coverage; wetness collapses both coefficients together, so soaked armor neither keeps
-  *     you warm nor keeps you stifled
-  *   - heat contributions arrive through [[BodyHeatContributionCallback]]: `addDirect` bypasses
-  *     armor (exercise heat, fire/lava contact heat), `addDissipative` is scaled by the armor's
-  *     surviving dissipation block (evaporative cooling)
-  *   - the core temperature approaches the armor-weakened equilibrium exponentially with the
-  *     configured time constant (faster while immersed), plus the production terms
-  *
-  * The wetness axis (0..1) accrues while immersed or in rain and dries along a temperature-driven
-  * curve scaled by air dryness (`1 - downfall`); [[DryingBonusCallback]] feeds extra drying
-  * temperature (being on fire) into that curve only — it never enters the core-temperature formula.
-  *
-  * Units: the recurrence runs in seconds (Δt = 1/20 s, rates per second); contribution events and
-  * their config values speak °C per minute and are divided by 60 at the point of application.
+  * The recurrence uses seconds; contribution and config rates use °C/min.
   */
 object Temperature {
 
@@ -71,80 +54,93 @@ object Temperature {
       vitals: VitalsComponentImpl,
       syncTick: Boolean
   ): Boolean = {
+    val environment = sampleEnvironment(player)
+    val store = GameplayDataStores.server(player.level().getServer)
+    val armor = armorThermalCoefficients(player, store, vitals.wetness)
+    val frame = BodyHeatContributionCallback.Frame(
+      armor.fireResistance,
+      vitals.wetness,
+      environment.airDryness
+    )
+    val heatContributions = collectHeatContributions(player, frame)
+
+    val nextCore = calculateNextCoreTemperature(
+      vitals.bodyTemperature,
+      environment,
+      armor,
+      heatContributions
+    )
+    val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
+    val nextWetness = TemperatureCalc.nextWetness(
+      vitals.wetness,
+      wetnessDelta(player, environment, nextCore)
+    )
+    val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
+
+    (coreChanged || wetnessChanged) && syncTick
+  }
+
+  private def sampleEnvironment(player: ServerPlayer): TemperatureEnvironment = {
     val level = player.level()
     val pos = player.blockPosition()
     val biome = level.getBiome(pos).value()
     val immersed = player.isInWater
 
-    // (a) Apparent temperature: biome-mapped; while immersed the water takes over and liquid
-    // water never goes below freezing. Air dryness (1 - downfall) drives evaporation later.
-    val apparent = TemperatureCalc.apparentTemperature(
-      biome.mappedTemperature(pos, level.getSeaLevel),
-      immersed
+    TemperatureEnvironment(
+      apparentTemperature = TemperatureCalc.apparentTemperature(
+        biome.mappedTemperature(pos, level.getSeaLevel),
+        immersed
+      ),
+      airDryness = biome.airDryness,
+      immersed = immersed,
+      raining = !immersed && level.isRainingAt(pos)
     )
-    val airDryness = biome.airDryness
+  }
 
-    // (c)(d) Armor scan with wetness collapse folded in: soaked armor neither insulates nor
-    // stifles. Fire resistance is the fire layer's own coefficient and does not collapse.
-    val armor =
-      armorThermalCoefficients(player, GameplayDataStores.server(level.getServer), vitals.wetness)
-
-    // (e) Heat contributions. The frame carries this tick's armor/wetness context to the
-    // listeners; dispatch is synchronous on the server thread. A fresh accumulator per dispatch:
-    // partial sums die with the object if a listener throws, no reset to remember.
-    val frame =
-      BodyHeatContributionCallback.Frame(armor.fireResistance, vitals.wetness, airDryness)
+  private def collectHeatContributions(
+      player: ServerPlayer,
+      frame: BodyHeatContributionCallback.Frame
+  ): BodyHeatContributionCallback.Accumulator = {
     val context = new BodyHeatContributionCallback.Accumulator
     BodyHeatContributionCallback.EVENT
       .invoker()
       .contribute(player, frame, context)
+    context
+  }
 
-    // (b)(f) Equilibrium from the comfort band, then the armor-weakened exponential approach
-    // plus the production terms.
-    val (coreChanged, nextCore) = {
-      val equilibrium = CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
-        apparent,
-        CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
-        CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
-        CasualtiesBelowConfig.temperature.comfortSlope.get()
-      )
-      val effectiveEquilibrium =
-        CasualtiesBelowConfig.temperature.effectiveTemperatureFormula.evaluate(
-          equilibrium,
-          armor.effectiveInsulation
-        )
-      val nextCore = TemperatureCalc.nextCoreTemperature(
-        vitals.bodyTemperature,
-        effectiveEquilibrium,
-        TemperatureCalc.approachRatePerSecond(
-          CasualtiesBelowConfig.temperature.tauAirMinutes.get(),
-          immersed,
-          CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
-        ),
-        TemperatureCalc.productionPerSecond(
-          context.directTotal,
-          context.dissipativeTotal,
-          armor.effectiveDissipationBlock
-        ),
-        Consts.SecondsPerTick
+  private def calculateNextCoreTemperature(
+      coreTemperature: Double,
+      environment: TemperatureEnvironment,
+      armor: ArmorThermal,
+      heatContributions: BodyHeatContributionCallback.Accumulator
+  ): Double = {
+    val equilibrium = CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
+      environment.apparentTemperature,
+      CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
+      CasualtiesBelowConfig.temperature.comfortSlope.get()
+    )
+    val effectiveEquilibrium =
+      CasualtiesBelowConfig.temperature.effectiveTemperatureFormula.evaluate(
+        equilibrium,
+        armor.effectiveInsulation
       )
 
-      (VitalsMutations.setBodyTemperature(vitals, nextCore), nextCore)
-    }
-
-    // (g) Wetness axis, then store both results.
-    val wetnessChanged =
-      VitalsMutations.setWetness(
-        vitals,
-        TemperatureCalc.nextWetness(
-          vitals.wetness,
-          wetnessDelta(player, apparent, immersed, airDryness, nextCore)
-        )
-      )
-
-    // Throttle like Dirtiness: the approach never exactly converges, so core is always dirty;
-    // contribute to the sync decision only on sync ticks (the state itself updates every tick).
-    (coreChanged || wetnessChanged) && syncTick
+    TemperatureCalc.nextCoreTemperature(
+      coreTemperature,
+      effectiveEquilibrium,
+      TemperatureCalc.approachRatePerSecond(
+        CasualtiesBelowConfig.temperature.tauAirMinutes.get(),
+        environment.immersed,
+        CasualtiesBelowConfig.temperature.immersionRateMultiplier.get()
+      ),
+      TemperatureCalc.productionPerSecond(
+        heatContributions.directTotal,
+        heatContributions.dissipativeTotal,
+        armor.effectiveDissipationBlock
+      ),
+      Consts.SecondsPerTick
+    )
   }
 
   /** Coverage-weighted material coefficients over the four armor slots, with the wetness collapse
@@ -178,20 +174,14 @@ object Temperature {
     )
   }
 
-  /** Per-tick wetness change: fast accrual while immersed, slow in rain, otherwise drying — with
-    * sweat added on top of the non-immersion branches while the new core temperature runs hot.
-    */
+  /** Wetness change from immersion, rain, sweat, and environmental drying. */
   private def wetnessDelta(
       player: ServerPlayer,
-      apparent: Double,
-      immersed: Boolean,
-      airDryness: Double,
+      environment: TemperatureEnvironment,
       nextCore: Double
   ): Double = {
-    val level = player.level()
-    val pos = player.blockPosition()
     val exertionPerSecond =
-      if (!immersed) ExertionTracker.exhaustionPerSecond(player.getUUID) else 0.0
+      if (!environment.immersed) ExertionTracker.exhaustionPerSecond(player.getUUID) else 0.0
     val sweatPerSecond =
       if (
         exertionPerSecond > 0.0 &&
@@ -206,17 +196,25 @@ object Temperature {
       } else {
         0.0
       }
-    if (immersed) {
+    if (environment.immersed) {
       CasualtiesBelowConfig.temperature.immersionWetnessPerSecond.get() * Consts.SecondsPerTick
-    } else if (level.isRainingAt(pos)) {
+    } else if (environment.raining) {
       CasualtiesBelowConfig.temperature.rainWetnessPerSecond
         .get() * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
     } else {
       val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
-      -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(apparent + dryingBonus) *
-        airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
+      -CasualtiesBelowConfig.temperature.dryingCurveFormula.evaluate(
+        environment.apparentTemperature + dryingBonus
+      ) * environment.airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
     }
   }
+
+  private final case class TemperatureEnvironment(
+      apparentTemperature: Double,
+      airDryness: Double,
+      immersed: Boolean,
+      raining: Boolean
+  )
 
   /** The three armor coefficients one tick pass consumes; insulation and dissipation block are
     * post-collapse (effective), fire resistance never collapses.
