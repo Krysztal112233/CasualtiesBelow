@@ -33,4 +33,25 @@ final class VitalsDetectionTest {
     assertEquals(None, amplifierForValue(Double.NaN, 200.0, 5))
     assertEquals(None, amplifierForValue(Double.PositiveInfinity, 200.0, 5))
   }
+
+  @Test
+  def physiologyCuesUseStrictThresholdBoundaries(): Unit = {
+    assertEquals(None, amplifierBelowThreshold(50.0, 50.0))
+    assertEquals(Some(0), amplifierBelowThreshold(49.9, 50.0))
+    assertEquals(None, amplifierAboveThreshold(39.5, 39.5))
+    assertEquals(Some(0), amplifierAboveThreshold(39.6, 39.5))
+    assertEquals(None, amplifierAboveThreshold(0.0, 0.0))
+    assertEquals(Some(0), amplifierAboveThreshold(0.01, 0.0))
+    assertEquals(None, amplifierWhen(false))
+    assertEquals(Some(0), amplifierWhen(true))
+  }
+
+  @Test
+  def bloodLossCueUsesFractionOfHealthyMaximum(): Unit = {
+    assertEquals(None, bloodLossAmplifier(4500.0, 5000.0, 0.9))
+    assertEquals(Some(0), bloodLossAmplifier(4499.0, 5000.0, 0.9))
+    assertEquals(None, bloodLossAmplifier(5000.0, 5000.0, 0.9))
+    assertEquals(None, bloodLossAmplifier(4000.0, 0.0, 0.9))
+    assertEquals(None, bloodLossAmplifier(Double.NaN, 5000.0, 0.9))
+  }
 }

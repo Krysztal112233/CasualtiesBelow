@@ -4,11 +4,11 @@ import net.minecraft.gametest.framework.GameTestHelper
 
 import net.fabricmc.fabric.api.gametest.v1.GameTest
 
-/** Runtime checks for status effects derived from opioid vitals. */
-final class OpioidEffectGameTests {
+/** Runtime checks for status effects derived from physiology vitals. */
+final class VitalsEffectGameTests {
 
   @GameTest(maxTicks = 20)
   def mirrorsVitalsToStatusEffects(helper: GameTestHelper): Unit = {
-    OpioidEffectScenarios.mirrorsVitalsToStatusEffects(helper)
+    VitalsEffectScenarios.mirrorsVitalsToStatusEffects(helper)
   }
 }
