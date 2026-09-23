@@ -54,10 +54,9 @@ final class DamageTypeTagProvider(
     // localized prick/pierce rules. This semantic tag starts with exact fall impact only.
     builder(CasualtiesBelowTags.FallImpacts).add(DamageTypes.FALL)
 
-    // Direct-contact heat tiers for the temperature system: each tier maps to one config rate,
-    // and datapacks extend a tier by adding damage types to its tag. `#minecraft:is_fire`
-    // members like fireballs are deliberately absent — transient impacts are not contact heat.
-    builder(CasualtiesBelowTags.HeatExtreme).add(DamageTypes.LAVA)
+    // Damage-type heat tiers map to config rates and are datapack-extensible. Fireball impacts are
+    // omitted as transient hits; lightning is explicitly classified as extreme heat.
+    builder(CasualtiesBelowTags.HeatExtreme).add(DamageTypes.LAVA).add(DamageTypes.LIGHTNING_BOLT)
     builder(CasualtiesBelowTags.HeatStrong).add(DamageTypes.IN_FIRE, DamageTypes.ON_FIRE)
     builder(CasualtiesBelowTags.HeatNormal)
       .add(DamageTypes.HOT_FLOOR, DamageTypes.CAMPFIRE)
