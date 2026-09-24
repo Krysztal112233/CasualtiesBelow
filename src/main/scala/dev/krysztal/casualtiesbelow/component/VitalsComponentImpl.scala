@@ -228,10 +228,10 @@ final class VitalsComponentImpl(val player: Player)
     val reporter = new ProblemReporter.ScopedCollector(CasualtiesBelow.Logger)
     try {
       val out = TagValueOutput.createWithContext(reporter, buf.registryAccess())
-      // Vitals sync recipients are owner-only (see [[shouldSyncWith]]), and client-side analgesia
-      // display (the medical panel's felt-pain suffix) needs the acute level, so hidden values
-      // ship to the owner too. The flag stays meaningful for future third-party inspection sync
-      // (e.g. a medic reading someone else's vitals), where hiding the level is realistic.
+      // Vitals sync recipients are owner-only (see [[shouldSyncWith]]): the owner is entitled to
+      // their own acute level (dependence was always synced). The flag stays meaningful for a
+      // future third-party inspection sync (e.g. a medic reading someone else's vitals), where
+      // hiding the level is realistic.
       writeData(out, includeHidden = true)
       buf.writeNbt(out.buildResult())
     } finally {

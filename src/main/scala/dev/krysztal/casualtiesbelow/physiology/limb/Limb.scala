@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
+import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 
 /** One evolution pass over the body's limbs: fractures count down, wounds clot, infections onset,
@@ -47,6 +48,8 @@ private[casualtiesbelow] object Limb {
 
     val walking = isWalking(player)
     val withdrawalPainMultiplier = OpioidWithdrawal.painGrantMultiplier(vitals)
+    val opioidPainDrain =
+      OpioidEffects.painDrainPerTick(vitals.opioidLevel, vitals.opioidDependence)
     val regenerationMultiplier =
       Option(player.getEffect(MobEffects.REGENERATION)).fold(0.0)(_.getAmplifier + 1.0)
     var totalBleeding = 0.0
@@ -64,6 +67,7 @@ private[casualtiesbelow] object Limb {
         updated,
         walkingStrainRate(part, current, walking),
         withdrawalPainMultiplier,
+        opioidPainDrain,
         vitals.infection.immuneHealth,
         vitals.dirtiness,
         fightShare,
@@ -98,6 +102,7 @@ private[casualtiesbelow] object Limb {
       stats: MutableLimbState,
       strainPainRate: Double,
       painGrantMultiplier: Double,
+      opioidPainDrain: Double,
       immuneHealth: Double,
       dirtiness: Double,
       fightShare: Double,
@@ -116,7 +121,7 @@ private[casualtiesbelow] object Limb {
     val regenerationTransition =
       tickRegenerationSkin(regenerationMultiplier)
     tickMuscleRegen()
-    tickPainDecay()
+    tickPainDecay(opioidPainDrain)
     tickWalkingStrain(strainPainRate * painGrantMultiplier)
 
     fractureHealed || bleedingStopped || regenerationTransition || infectionTransition
@@ -323,11 +328,15 @@ private[casualtiesbelow] object Limb {
     stats.muscleHealth = (stats.muscleHealth + MuscleRegenPerTick).min(MutableLimbState.MaxValue)
   }
 
-  /** Pain decays linearly at the configured rate. */
-  private def tickPainDecay()(using stats: MutableLimbState): Unit = {
+  /** Pain decays linearly at the configured rate, accelerated by effective opioid exposure: the
+    * drain consumes stored pain, so relief persists after the drug itself fades.
+    */
+  private def tickPainDecay(opioidPainDrain: Double)(using stats: MutableLimbState): Unit = {
     if (stats.pain <= 0.0) return
 
-    stats.pain = (stats.pain - CasualtiesBelowConfig.pain.painDecayPerTick.get()).max(0.0)
+    stats.pain = (stats.pain
+      - CasualtiesBelowConfig.pain.painDecayPerTick.get()
+      - opioidPainDrain).max(0.0)
   }
 
   /** Walking strain: pain scaled by the leg's tissue damage (muscle and skin), at the configured

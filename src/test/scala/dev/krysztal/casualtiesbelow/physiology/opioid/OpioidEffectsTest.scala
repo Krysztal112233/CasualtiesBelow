@@ -8,12 +8,13 @@ import org.junit.jupiter.api.Test
 final class OpioidEffectsTest {
 
   @Test
-  def analgesiaMasksFeltPainWithoutExceedingItsCap(): Unit = {
-    assertEquals(1.0 / 3.0, OpioidEffects.analgesiaFraction(50.0, 0.0), 1.0e-9)
-    assertEquals(2.0 / 3.0, OpioidEffects.analgesiaFraction(100.0, 0.0), 1.0e-9)
-    assertEquals(1.0 / 3.0, OpioidEffects.analgesiaFraction(100.0, 100.0), 1.0e-9)
-    assertEquals(0.85, OpioidEffects.analgesiaFraction(200.0, 0.0), 1.0e-9)
-    assertEquals(33.3333333333, OpioidEffects.feltPain(100.0, 100.0, 0.0), 1.0e-8)
+  def effectiveLevelDampsByDependenceAndDrainScalesWithIt(): Unit = {
+    assertEquals(100.0, OpioidEffects.effectiveLevel(100.0, 0.0), 1.0e-9)
+    assertEquals(50.0, OpioidEffects.effectiveLevel(100.0, 100.0), 1.0e-9)
+    assertEquals(0.0, OpioidEffects.painDrainPerTick(0.0, 0.0, 0.0005), 1.0e-12)
+    // Default coefficient 0.0005: effective 100 drains 0.05 pain/tick, dependence halves it.
+    assertEquals(0.05, OpioidEffects.painDrainPerTick(100.0, 0.0, 0.0005), 1.0e-12)
+    assertEquals(0.025, OpioidEffects.painDrainPerTick(100.0, 100.0, 0.0005), 1.0e-12)
   }
 
   @Test

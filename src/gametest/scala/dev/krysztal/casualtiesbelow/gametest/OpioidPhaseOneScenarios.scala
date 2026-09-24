@@ -10,43 +10,39 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.damage.LimbInjuryService
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
-import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 
 /** Scala scenario implementations invoked by the Java GameTest discovery bridge. */
 object OpioidPhaseOneScenarios {
 
-  def analgesiaShockSuppression(helper: GameTestHelper): Unit = {
+  def opioidAcceleratesPainDecay(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
     val vitals = player.vitals
     BodyMutations.mutate(player, BodyPart.Torso) { limb => limb.pain = 100.0 }
 
     helper
       .startSequence()
-      .thenExecuteFor(20, () => InjuryProgression.tickForGameTest(player))
-      .thenExecute(() =>
-        helper.assertTrue(
-          CasualtiesBelowComponents.vitals(player).shock.load > 0.0,
-          "Control pain did not accumulate shock load"
-        )
-      )
+      // Control: with no opioid, only natural decay applies (0.025/tick by default), so 100 ticks
+      // leave the torso at ~97.5.
+      .thenExecuteFor(100, () => InjuryProgression.tickForGameTest(player))
       .thenExecute(() => {
-        PainShock.applyAuthoritativeEdit(player, vitals, 0.0)
+        val naturalOnly = CasualtiesBelowComponents.body(player).stats(BodyPart.Torso).pain
+        helper.assertTrue(
+          naturalOnly > 97.0 && naturalOnly < 98.0,
+          s"Control pain did not follow natural decay alone: $naturalOnly"
+        )
+        // Effective opioid = 100 / (1 + 0 / 100) = 100, adding a 0.05/tick drain on top of the
+        // natural 0.025: after 100 more ticks the torso sits at ~90.0.
         VitalsMutations.setOpioidLevel(vitals, 100.0)
       })
-      .thenExecuteFor(
-        200,
-        () => {
-          InjuryProgression.tickForGameTest(player)
-          val observedVitals = CasualtiesBelowComponents.vitals(player)
-          val rawPain = CasualtiesBelowComponents.body(player).stats(BodyPart.Torso).pain
-          helper.assertTrue(rawPain > 90.0, "Raw limb pain did not remain severe")
-          helper.assertTrue(
-            observedVitals.shock.load <= 1.0e-9,
-            "Opioid analgesia allowed shock load to accumulate"
-          )
-        }
-      )
+      .thenExecuteFor(100, () => InjuryProgression.tickForGameTest(player))
+      .thenExecute(() => {
+        val drained = CasualtiesBelowComponents.body(player).stats(BodyPart.Torso).pain
+        helper.assertTrue(
+          drained > 89.0 && drained < 91.0,
+          s"Opioid drain did not accelerate limb pain decay as configured: $drained"
+        )
+      })
       .thenSucceed()
   }
 

@@ -8,8 +8,8 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest
 final class PhysiologyGameTests {
 
   @GameTest(maxTicks = 400)
-  def analgesiaShockSuppression(helper: GameTestHelper): Unit = {
-    OpioidPhaseOneScenarios.analgesiaShockSuppression(helper)
+  def opioidAcceleratesPainDecay(helper: GameTestHelper): Unit = {
+    OpioidPhaseOneScenarios.opioidAcceleratesPainDecay(helper)
   }
 
   @GameTest(maxTicks = 1000)

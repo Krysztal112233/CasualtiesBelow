@@ -42,7 +42,7 @@ object PainShock {
   ): Boolean = {
     val previousLoad = normalizeLoad(vitals.shock.load)
     val previousStage = vitals.shock.stage
-    val nextLoad = nextLoadFromPain(previousLoad, PainCalc.feltTotal(body, vitals))
+    val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
     applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression) ||
     (isWarningStage(previousStage) && crossedInteger(previousLoad, nextLoad))
   }

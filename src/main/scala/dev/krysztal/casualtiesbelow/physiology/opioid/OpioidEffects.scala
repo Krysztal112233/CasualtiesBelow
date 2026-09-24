@@ -8,16 +8,30 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
   */
 object OpioidEffects {
 
-  def feltPain(rawPain: Double, vitals: VitalsComponent): Double = {
-    feltPain(rawPain, vitals.opioidLevel, vitals.opioidDependence)
+  /** Effective acute opioid exposure after tolerance: the raw level damped linearly by dependence
+    * (0 dependence = full level, 100 dependence = half level).
+    */
+  def effectiveLevel(level: Double, dependence: Double): Double = {
+    level.max(0.0) / (1.0 + dependence.max(0.0) / 100.0)
   }
 
-  private[opioid] def feltPain(rawPain: Double, level: Double, dependence: Double): Double = {
-    rawPain * (1.0 - analgesiaFraction(level, dependence))
+  /** Limb pain drained per tick by effective opioid exposure, on top of natural pain decay. The
+    * drain consumes stored pain, so the relief outlasts the drug itself.
+    */
+  def painDrainPerTick(level: Double, dependence: Double): Double = {
+    painDrainPerTick(
+      level,
+      dependence,
+      CasualtiesBelowConfig.opioid.opioidPainDrainPerLevelPerTick.get()
+    )
   }
 
-  def analgesiaFraction(level: Double, dependence: Double): Double = {
-    boundedFraction(CasualtiesBelowConfig.opioid.opioidAnalgesiaFormula.evaluate(level, dependence))
+  private[opioid] def painDrainPerTick(
+      level: Double,
+      dependence: Double,
+      drainPerLevelPerTick: Double
+  ): Double = {
+    effectiveLevel(level, dependence) * drainPerLevelPerTick
   }
 
   def consciousnessCeiling(level: Double): Double = {

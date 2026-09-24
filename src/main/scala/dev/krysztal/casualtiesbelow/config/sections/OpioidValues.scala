@@ -11,7 +11,7 @@ private[config] final case class OpioidValues(
     levelDecayPerTick: ConfigValue[Double],
     dependenceExposurePerLevelPerTick: ConfigValue[Double],
     dependenceDecayPerTick: ConfigValue[Double],
-    opioidAnalgesiaFormula: FormulaConfigValue,
+    opioidPainDrainPerLevelPerTick: ConfigValue[Double],
     opioidSedationCeilingFormula: FormulaConfigValue,
     opioidRespiratoryEfficiencyFormula: FormulaConfigValue,
     respiratoryFailureEfficiencyThreshold: ConfigValue[Double],
@@ -50,17 +50,13 @@ private[config] object OpioidValues {
           "The default is 3 points per Minecraft day (24000 ticks)."
         )
         .defineInRange("dependenceDecayPerTick", 0.000125, 0.0, 100.0, classOf[Double]),
-      opioidAnalgesiaFormula = new FormulaConfigValue(
-        b,
-        "analgesiaFormula",
-        "min(0.85, level / 150) / (1 + dependence / 100)",
-        List("level", "dependence"),
-        comment = Seq(
-          "Fraction of aggregated pain masked before pain-shock progression.",
-          "Available variables: level (0-200), dependence (0-100). Limb pain storage and medical",
-          "display values remain unchanged. Invalid formulas fall back to the default."
+      opioidPainDrainPerLevelPerTick = b
+        .comment(
+          "Limb pain drained per tick per point of effective opioid, on top of painDecayPerTick,",
+          "on every limb. Effective opioid = level / (1 + dependence / 100), so 200 level at 0",
+          "dependence drains 0.1 pain/tick (2 pain/s); dependence 100 halves the drain."
         )
-      ),
+        .defineInRange("opioidPainDrainPerLevelPerTick", 0.0005, 0.0, 10.0, classOf[Double]),
       opioidSedationCeilingFormula = new FormulaConfigValue(
         b,
         "sedationCeilingFormula",
