@@ -11,9 +11,9 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
@@ -29,9 +29,8 @@ import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
   * already punishes poison-bearing food through the Poison effect's continuous drain, so such food
   * carries no instant drain by default.
   *
-  * The dose floats (gaussian around the entry mean, see
-  * [[CasualtiesBelowConfig.randomness.doseSpreadFraction]]) with the mean's sign preserved: jitter
-  * never turns a nourishing food harmful or vice versa.
+  * The dose floats (gaussian around the entry mean, see [[Consts.Randomness.DoseSpreadFraction]])
+  * with the mean's sign preserved: jitter never turns a nourishing food harmful or vice versa.
   */
 object FoodImmunity {
 
@@ -46,12 +45,12 @@ object FoodImmunity {
         val amount =
           sample(
             mean,
-            CasualtiesBelowConfig.randomness.doseSpreadFraction.get(),
+            Consts.Randomness.DoseSpreadFraction,
             player.getRandom
           )
         val next = (vitals.infection.immuneHealth + amount)
           .max(0.0)
-          .min(CasualtiesBelowConfig.vitals.maxImmuneHealth.get())
+          .min(Consts.Vitals.MaxImmuneHealth)
         if (next != vitals.infection.immuneHealth) {
           VitalsMutations.setImmuneHealth(vitals, next)
           VitalsMutations.syncNow(player)

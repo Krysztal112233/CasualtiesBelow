@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 
@@ -17,16 +17,14 @@ import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
   */
 private[casualtiesbelow] object TotemHemostasis {
 
-  /** Applies the user-configured rescue and immediately syncs the restored blood volume. Vanilla
-    * has already consumed the protection item and applied its normal effects before this runs.
+  /** Applies the fixed-balance rescue and immediately syncs the restored blood volume. Vanilla has
+    * already consumed the protection item and applied its normal effects before this runs.
     */
   def activate(player: ServerPlayer): Unit = {
     val vitals = player.vitals
     val effectiveMaxBlood = BloodVolume.effectiveMaximum(vitals)
     val restoreFraction =
-      CasualtiesBelowConfig.bleeding.totemBloodRestoreFraction
-        .get()
-        .doubleValue
+      Consts.Bleeding.TotemBloodRestoreFraction
         .max(MinimumRestoreFraction)
         .min(1.0)
     val restoredBlood = effectiveMaxBlood * restoreFraction
@@ -44,9 +42,7 @@ private[casualtiesbelow] object TotemHemostasis {
     if (duration <= 0 || remaining <= 0) return 1.0
 
     val initialReduction =
-      CasualtiesBelowConfig.bleeding.totemHemostasisInitialReduction
-        .get()
-        .doubleValue
+      Consts.Bleeding.TotemHemostasisInitialReduction
         .max(0.0)
         .min(1.0)
     1.0 - initialReduction * remaining.toDouble / duration.toDouble
@@ -67,7 +63,7 @@ private[casualtiesbelow] object TotemHemostasis {
   }
 
   private def configuredDurationTicks: Int = {
-    CasualtiesBelowConfig.bleeding.totemHemostasisDurationTicks.get().intValue.max(0)
+    Consts.Bleeding.TotemHemostasisDurationTicks.max(0)
   }
 
   private val MinimumRestoreFraction = 0.000001

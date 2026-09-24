@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
 
 /** Single access point for the circulation vital: blood volume, blood oxygen, terminal hypoxia
@@ -40,12 +40,10 @@ private[casualtiesbelow] object Circulation {
 
     val maxBlood = BloodVolume.effectiveMaximum(vitals)
     changed = BloodVolume.clamp(vitals, maxBlood) || changed
-    if (
-      player.getFoodData.getFoodLevel >= CasualtiesBelowConfig.immune.fedFoodLevelThreshold.get()
-    ) {
+    if (player.getFoodData.getFoodLevel >= Consts.Immune.FedFoodLevelThreshold) {
       val regenerated = BloodVolume.restore(
         vitals,
-        CasualtiesBelowConfig.vitals.fedBloodRegenPerTick.get(),
+        Consts.Vitals.FedBloodRegenPerTick,
         maxBlood
       )
       changed = regenerated > 0.0 || changed

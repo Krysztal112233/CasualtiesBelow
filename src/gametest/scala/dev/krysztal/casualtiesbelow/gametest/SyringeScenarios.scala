@@ -6,7 +6,7 @@ import net.minecraft.world.item.ItemStack
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.InjectionSettlement
@@ -35,7 +35,7 @@ object SyringeScenarios {
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
     val half = LiquidContents.AmpouleDroplets / 2
-    val discomfortCap = CasualtiesBelowConfig.injection.fullDoseSideEffectDiscomfort.get()
+    val discomfortCap = Consts.Injection.FullDoseSideEffectDiscomfort
 
     InjectionSettlement.applyBatch(
       player,
@@ -153,7 +153,7 @@ object SyringeScenarios {
       1.0
     )
 
-    val painCap = CasualtiesBelowConfig.injection.fullDoseSideEffectPain.get()
+    val painCap = Consts.Injection.FullDoseSideEffectPain
     val leftPain = CasualtiesBelowComponents.Body.get(player).stats(BodyPart.ArmLeft).pain
     val rightPain = CasualtiesBelowComponents.Body.get(player).stats(BodyPart.ArmRight).pain
     helper.assertTrue(
@@ -225,7 +225,7 @@ object SyringeScenarios {
     helper.assertTrue(
       math.abs(
         CasualtiesBelowComponents.vitals(player).discomfort -
-          CasualtiesBelowConfig.injection.fullDoseSideEffectDiscomfort.get() / 2
+          Consts.Injection.FullDoseSideEffectDiscomfort / 2
       ) <= 1.0e-9,
       "Identity-mismatched batches still settled side effects"
     )

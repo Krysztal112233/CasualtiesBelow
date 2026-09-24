@@ -11,8 +11,8 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 
@@ -53,30 +53,28 @@ object ArmorProtection {
     val armor = modifiers.compute(Attributes.ARMOR, 0.0, slot.get)
     val toughness = modifiers.compute(Attributes.ARMOR_TOUGHNESS, 0.0, slot.get)
 
-    val config = CasualtiesBelowConfig
-
-    // A datapack override matches by item identity and replaces the config formula for the factors
+    // A datapack override matches by item identity and replaces the fixed formula for the factors
     // it defines — including for pieces with zero armor value, which the fallback path skips.
     GameplayDataLookup.armorProtection(stack, gameplayData) match {
       case Some(entry) =>
         val skinFactor = entry.skinFactor.toScala
           .flatMap(_.evaluate(armor, toughness))
-          .getOrElse(config.armor.armorSkinFactorFormula.evaluate(armor, toughness))
+          .getOrElse(Consts.Armor.ArmorSkinFactorFormula.evaluate(armor, toughness))
           .max(0.0)
           .min(1.0)
         val muscleFactor = entry.muscleFactor.toScala
           .flatMap(_.evaluate(armor, toughness, skinFactor))
-          .getOrElse(config.armor.armorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
+          .getOrElse(Consts.Armor.ArmorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
           .max(0.0)
           .min(1.0)
         applyFactors(profile, skinFactor, muscleFactor)
       case None =>
         if (armor <= 0.0 && toughness <= 0.0) return profile
-        val skinFactor = config.armor.armorSkinFactorFormula
+        val skinFactor = Consts.Armor.ArmorSkinFactorFormula
           .evaluate(armor, toughness)
           .max(0.0)
           .min(1.0)
-        val muscleFactor = config.armor.armorMuscleFactorFormula
+        val muscleFactor = Consts.Armor.ArmorMuscleFactorFormula
           .evaluate(armor, toughness, skinFactor)
           .max(0.0)
           .min(1.0)

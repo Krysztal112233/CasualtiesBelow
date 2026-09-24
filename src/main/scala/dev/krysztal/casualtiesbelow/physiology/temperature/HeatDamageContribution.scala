@@ -14,7 +14,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Direct-contact heat driven by vanilla damage types — no entity-state scanning, and no heat
   * sustained between events. The damage pipeline is the sole authority for fire contact:
@@ -75,11 +75,11 @@ private[temperature] object HeatDamageContribution extends BodyHeatContributionC
     * adding damage types to its tag.
     */
   private val Tiers = List(
-    (CasualtiesBelowTags.HeatExtreme, CasualtiesBelowConfig.temperature.heatExtremePerMinute),
-    (CasualtiesBelowTags.HeatStrong, CasualtiesBelowConfig.temperature.heatStrongPerMinute),
-    (CasualtiesBelowTags.HeatNormal, CasualtiesBelowConfig.temperature.heatNormalPerMinute)
+    (CasualtiesBelowTags.HeatExtreme, Consts.Temperature.HeatExtremePerMinute),
+    (CasualtiesBelowTags.HeatStrong, Consts.Temperature.HeatStrongPerMinute),
+    (CasualtiesBelowTags.HeatNormal, Consts.Temperature.HeatNormalPerMinute)
   )
 
   private def tierPerMinute(source: DamageSource): Option[Double] =
-    Tiers.collectFirst { case (tag, config) if source.is(tag) => config.get().doubleValue }
+    Tiers.collectFirst { case (tag, rate) if source.is(tag) => rate }
 }

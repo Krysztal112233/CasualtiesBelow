@@ -45,6 +45,13 @@ final class DirtinessSourcesTest {
   }
 
   @Test
+  def dirtSettingScalesEveryPulseBeforeJitter(): Unit = {
+    assertEquals(0.0, DirtinessSources.scaledPulse(3.0, 0.0), 1.0e-12)
+    assertEquals(3.0, DirtinessSources.scaledPulse(3.0, 1.0), 1.0e-12)
+    assertEquals(6.0, DirtinessSources.scaledPulse(3.0, 2.0), 1.0e-12)
+  }
+
+  @Test
   def rolledPulsesStayWithinTheJitterBounds(): Unit = {
     val random = RandomSource.create(42L)
     (1 to 1000).foreach { _ =>

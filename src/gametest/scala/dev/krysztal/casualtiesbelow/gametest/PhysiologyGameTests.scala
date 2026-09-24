@@ -7,6 +7,11 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest
 /** GameTest discovery entrypoint for the opioid, syringe and poppy-fluid scenarios. */
 final class PhysiologyGameTests {
 
+  @GameTest(maxTicks = 20)
+  def opioidPainReliefSettingScalesDrain(helper: GameTestHelper): Unit = {
+    OpioidPhaseOneScenarios.opioidPainReliefSettingScalesDrain(helper)
+  }
+
   @GameTest(maxTicks = 400)
   def opioidAcceleratesPainDecay(helper: GameTestHelper): Unit = {
     OpioidPhaseOneScenarios.opioidAcceleratesPainDecay(helper)

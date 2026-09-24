@@ -12,6 +12,10 @@
       },
       {
         "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.InjuryBalanceGameTests"
+      },
+      {
+        "adapter": "scala",
         "value": "dev.krysztal.casualtiesbelow.gametest.HygieneGameTests"
       },
       {

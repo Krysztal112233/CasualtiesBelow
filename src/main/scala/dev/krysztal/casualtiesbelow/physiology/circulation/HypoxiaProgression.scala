@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 
@@ -86,7 +86,7 @@ private[casualtiesbelow] object HypoxiaProgression {
   }
 
   private def configuredDuration: Int = {
-    CasualtiesBelowConfig.hazards.terminalHypoxiaDurationTicks.get().intValue.max(1)
+    Consts.Hazards.TerminalHypoxiaDurationTicks.max(1)
   }
 
   private def normalizeExposureTicks(ticks: Int, duration: Int): Int = {

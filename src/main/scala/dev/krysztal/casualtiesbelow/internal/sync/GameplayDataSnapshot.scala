@@ -10,6 +10,7 @@ import net.minecraft.server.MinecraftServer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 
@@ -167,31 +168,30 @@ object GameplayDataSnapshot {
   ): GameplayDataSnapshot = {
     val config = CasualtiesBelowConfig
     GameplayDataSnapshot(
-      maxBloodVolume = config.vitals.maxBloodVolume.get(),
-      bloodOxygenHypoxiaThreshold = config.vitals.bloodOxygenHypoxiaThreshold.get(),
+      maxBloodVolume = Consts.Vitals.MaxBloodVolume,
+      bloodOxygenHypoxiaThreshold = Consts.Vitals.BloodOxygenHypoxiaThreshold,
       consciousnessKnockoutThreshold = config.effectiveConsciousnessKnockoutThreshold,
       unconsciousWakeThreshold = config.effectiveConsciousnessWakeThreshold,
-      shockCollapseThreshold = config.pain.shockCollapseThreshold.get(),
-      terminalHypoxiaDurationTicks =
-        config.hazards.terminalHypoxiaDurationTicks.get().intValue.max(1),
-      armorSkinFormula = config.armor.armorSkinFactorFormula.spec.get(),
-      armorMuscleFormula = config.armor.armorMuscleFactorFormula.spec.get(),
-      maxDiscomfort = config.discomfort.maxValue.get(),
+      shockCollapseThreshold = Consts.Pain.ShockCollapseThreshold,
+      terminalHypoxiaDurationTicks = Consts.Hazards.TerminalHypoxiaDurationTicks.max(1),
+      armorSkinFormula = Consts.Armor.ArmorSkinFactorFormula.source,
+      armorMuscleFormula = Consts.Armor.ArmorMuscleFactorFormula.source,
+      maxDiscomfort = Consts.Discomfort.MaxValue,
       discomfortLevelMeans = List(
-        config.discomfort.level1Mean.get(),
-        config.discomfort.level2Mean.get(),
-        config.discomfort.level3Mean.get()
+        Consts.Discomfort.Level1Mean,
+        Consts.Discomfort.Level2Mean,
+        Consts.Discomfort.Level3Mean
       ),
-      nauseaThreshold = config.discomfort.nauseaThreshold.get(),
-      refusalThreshold = config.discomfort.refusalThreshold.get(),
-      vomitChanceThreshold = config.discomfort.vomitChanceThreshold.get(),
-      vomitMinChancePerTick = config.discomfort.vomitMinChancePerTick.get(),
+      nauseaThreshold = Consts.Discomfort.NauseaThreshold,
+      refusalThreshold = config.medicineFood.refusalThreshold.get(),
+      vomitChanceThreshold = Consts.Discomfort.VomitChanceThreshold,
+      vomitMinChancePerTick = Consts.Discomfort.VomitMinChancePerTick,
       vomitMaxChancePerTick = math.max(
-        config.discomfort.vomitMaxChancePerTick.get(),
-        config.discomfort.vomitMinChancePerTick.get()
+        Consts.Discomfort.VomitMaxChancePerTick,
+        Consts.Discomfort.VomitMinChancePerTick
       ),
-      vomitRelief = config.discomfort.vomitRelief.get(),
-      doseSpreadFraction = config.randomness.doseSpreadFraction.get(),
+      vomitRelief = Consts.Discomfort.VomitRelief,
+      doseSpreadFraction = Consts.Randomness.DoseSpreadFraction,
       gameplayData = gameplayData
     )
   }

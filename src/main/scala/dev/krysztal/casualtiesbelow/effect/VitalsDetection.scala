@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
 
@@ -39,26 +39,26 @@ private[effect] val wetnessAmplifierFromVitals: MobEffectAmplifierResolver = pla
 private[effect] val dirtinessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierAtOrAboveThreshold(
     player.vitals.dirtiness,
-    CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get()
+    Consts.Visuals.DirtinessBandGrimy
   )
 
 private[effect] val hypoxiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierBelowThreshold(
     player.vitals.circulation.bloodOxygen,
-    CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
+    Consts.Vitals.BloodOxygenHypoxiaThreshold
   )
 
 private[effect] val hypovolemiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   hypovolemiaAmplifier(
     player.vitals.circulation.bloodVolume,
-    CasualtiesBelowConfig.vitals.maxBloodVolume.get()
+    Consts.Vitals.MaxBloodVolume
   )
 
 private[effect] val bloodLossAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   if (player.isCreative || player.isSpectator) None
   else {
     bloodLossAmplifier(
-      CasualtiesBelowConfig.vitals.maxBloodVolume.get(),
+      Consts.Vitals.MaxBloodVolume,
       currentEffectiveBleedingRate(player)
     )
   }
@@ -77,13 +77,13 @@ private[effect] val sepsisAmplifierFromVitals: MobEffectAmplifierResolver = play
 private[effect] val hypothermiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierBelowThreshold(
     player.vitals.bodyTemperature,
-    CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
+    Consts.Temperature.PenaltyBandLowCelsius
   )
 
 private[effect] val hyperthermiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierAboveThreshold(
     player.vitals.bodyTemperature,
-    CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
+    Consts.Temperature.PenaltyBandHighCelsius
   )
 
 private[effect] val unconsciousnessAmplifierFromVitals: MobEffectAmplifierResolver = player =>

@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
@@ -38,16 +38,16 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
 
 /** Food discomfort: how revolting what you just ate was. Which food is how revolting is content —
   * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Items]] and up) with
-  * per-item `discomfort` datapack entries on top; what a tier *costs* and how the value floats,
-  * decays and escalates is balancing, read from the `[discomfort]` config section.
+  * per-item `discomfort` datapack entries on top. Tier means, sampling and decay are fixed balance
+  * values in [[Consts.Discomfort]]; players can adjust the food-refusal threshold.
   *
-  * The mean is sampled per bite (gaussian or uniform, config-selected) and then modulated by the
-  * player's state instead of leaning on RNG alone: eating while already nauseous, force-feeding on
-  * a full stomach, and eating while septic or barely conscious all multiply the dose, so the system
-  * stays learnable — "don't keep eating while sick" is a rule players can discover.
+  * The mean is sampled with a Gaussian distribution per bite and then modulated by the player's
+  * state instead of leaning on RNG alone: eating while already nauseous, force-feeding on a full
+  * stomach, and eating while septic or barely conscious all multiply the dose, so the system stays
+  * learnable — "don't keep eating while sick" is a rule players can discover.
   *
-  * Consequences are threshold-banded (all config): past the nausea threshold the screen distortion
-  * effect is kept up; past the refusal threshold discomfort-bearing food can no longer be started
+  * Consequences are threshold-banded: past the nausea threshold the screen distortion effect is
+  * kept up; past the refusal threshold discomfort-bearing food can no longer be started
   * ([[allowsEating]], enforced by the `Consumable` mixin); above the vomiting threshold each tick
   * rolls a chance that rises linearly with discomfort, and vomiting removes a fluctuating amount
   * while applying hunger and saturation penalties.
@@ -115,27 +115,26 @@ object Discomfort {
       case Some(mean)              =>
         val vitals = player.vitals
         var amount = sample(mean, player.getRandom)
-        if (vitals.discomfort >= CasualtiesBelowConfig.discomfort.nauseaThreshold.get()) {
-          amount *= CasualtiesBelowConfig.discomfort.alreadyNauseousMultiplier.get()
+        if (vitals.discomfort >= Consts.Discomfort.NauseaThreshold) {
+          amount *= Consts.Discomfort.AlreadyNauseousMultiplier
         }
         if (!player.getFoodData.needsFood()) {
-          amount *= CasualtiesBelowConfig.discomfort.overeatingMultiplier.get()
+          amount *= Consts.Discomfort.OvereatingMultiplier
         }
         if (
           vitals.infection.sepsis > 0.0 ||
-          vitals.consciousness.level < CasualtiesBelowConfig.discomfort.poorConditionConsciousnessThreshold
-            .get()
+          vitals.consciousness.level < Consts.Discomfort.PoorConditionConsciousnessThreshold
         ) {
-          amount *= CasualtiesBelowConfig.discomfort.poorConditionMultiplier.get()
+          amount *= Consts.Discomfort.PoorConditionMultiplier
         }
         amount *= Dirtiness.foodDiscomfortMultiplier(
           vitals.dirtiness,
-          CasualtiesBelowConfig.dirtiness.maxValue.get(),
-          CasualtiesBelowConfig.dirtiness.foodDiscomfortMultiplierAtMax.get()
+          Consts.Dirtiness.MaxValue,
+          Consts.Dirtiness.FoodDiscomfortMultiplierAtMax
         )
         VitalsMutations.setDiscomfort(
           vitals,
-          (vitals.discomfort + amount).min(CasualtiesBelowConfig.discomfort.maxValue.get())
+          (vitals.discomfort + amount).min(Consts.Discomfort.MaxValue)
         )
         AchievementHooks.onFoodDiscomfortSettled(player)
         VitalsMutations.syncNow(player)
@@ -164,9 +163,9 @@ object Discomfort {
       val next = nextAfterOrdinaryDecay(
         vitals.discomfort,
         OpioidWithdrawal.isActive(vitals),
-        CasualtiesBelowConfig.discomfort.nauseaThreshold.get(),
-        CasualtiesBelowConfig.discomfort.decayRateLowPerSecond.get(),
-        CasualtiesBelowConfig.discomfort.decayRateHighPerSecond.get()
+        Consts.Discomfort.NauseaThreshold,
+        Consts.Discomfort.DecayRateLowPerSecond,
+        Consts.Discomfort.DecayRateHighPerSecond
       )
       if (next != vitals.discomfort) {
         VitalsMutations.setDiscomfort(vitals, next)
@@ -174,7 +173,7 @@ object Discomfort {
       }
     }
 
-    if (vitals.discomfort >= CasualtiesBelowConfig.discomfort.nauseaThreshold.get()) {
+    if (vitals.discomfort >= Consts.Discomfort.NauseaThreshold) {
       player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NauseaRefreshTicks, 0))
     }
 
@@ -201,12 +200,10 @@ object Discomfort {
   private def vomit(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val food = player.getFoodData
     food.setFoodLevel(
-      (food.getFoodLevel - CasualtiesBelowConfig.discomfort.vomitHungerPenalty.get()).max(0)
+      (food.getFoodLevel - Consts.Discomfort.VomitHungerPenalty).max(0)
     )
     food.setSaturation(
-      (food.getSaturationLevel - CasualtiesBelowConfig.discomfort.vomitSaturationPenalty
-        .get()
-        .floatValue)
+      (food.getSaturationLevel - Consts.Discomfort.VomitSaturationPenalty.toFloat)
         .max(0.0f)
     )
     VitalsMutations.setDiscomfort(
@@ -221,32 +218,32 @@ object Discomfort {
   }
 
   private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {
-    val threshold = CasualtiesBelowConfig.discomfort.vomitChanceThreshold.get()
+    val threshold = Consts.Discomfort.VomitChanceThreshold
     if (discomfort <= threshold) return false
 
-    val maxDiscomfort = CasualtiesBelowConfig.discomfort.maxValue.get()
+    val maxDiscomfort = Consts.Discomfort.MaxValue
     val progress =
       if (maxDiscomfort <= threshold) 1.0
       else ((discomfort - threshold) / (maxDiscomfort - threshold)).max(0.0).min(1.0)
-    val minChance = CasualtiesBelowConfig.discomfort.vomitMinChancePerTick.get()
+    val minChance = Consts.Discomfort.VomitMinChancePerTick
     val maxChance =
-      math.max(CasualtiesBelowConfig.discomfort.vomitMaxChancePerTick.get(), minChance)
+      math.max(Consts.Discomfort.VomitMaxChancePerTick, minChance)
     random.nextDouble() < minChance + (maxChance - minChance) * progress
   }
 
   private def sampleVomitRelief(random: RandomSource): Double = {
-    val mean = CasualtiesBelowConfig.discomfort.vomitRelief.get()
-    val spread = mean * CasualtiesBelowConfig.randomness.doseSpreadFraction.get()
+    val mean = Consts.Discomfort.VomitRelief
+    val spread = mean * Consts.Randomness.DoseSpreadFraction
     mean + (random.nextDouble() * 2.0 - 1.0) * spread
   }
 
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles
-    * proportionally ([[CasualtiesBelowConfig.randomness.doseSpreadFraction]]).
+    * proportionally ([[Consts.Randomness.DoseSpreadFraction]]).
     */
   private def sample(mean: Double, random: RandomSource): Double = {
-    val spread = mean * CasualtiesBelowConfig.randomness.doseSpreadFraction.get()
+    val spread = mean * Consts.Randomness.DoseSpreadFraction
     val sampled =
-      CasualtiesBelowConfig.discomfort.distribution.get() match {
+      Consts.Discomfort.Distribution match {
         case DiscomfortDistribution.Uniform =>
           mean + (random.nextDouble() * 2.0 - 1.0) * spread
         case DiscomfortDistribution.Gaussian =>

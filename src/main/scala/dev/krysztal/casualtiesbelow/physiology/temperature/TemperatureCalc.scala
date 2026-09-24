@@ -6,48 +6,10 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
   * stage can be unit-tested without a running game: the progression reads config and world state,
   * then delegates the math here.
   *
-  * The default EvalEx sources of the configurable curves also live here (not in the config file) so
-  * unit tests can compile them directly — config values cannot be read without a loaded config
-  * file, and the GameTest world's biome is not controllable, so curve behavior is verified here
-  * rather than in-game.
+  * Fixed EvalEx sources live in [[dev.krysztal.casualtiesbelow.internal.Consts.Temperature]]; tests
+  * compile those sources directly without a loaded config file.
   */
 object TemperatureCalc {
-
-  /** Default source of `CasualtiesBelowConfig.temperature.biomeMappingFormula`: anchors the vanilla
-    * rain/snow line 0.15 to 0°C and desert 2.0 to 40°C.
-    */
-  val BiomeMappingFormulaDefault = "(t - 0.15) * 40 / 1.85"
-
-  /** Default source of `CasualtiesBelowConfig.temperature.comfortBandFormula`: inside the band the
-    * equilibrium is normal body temperature, outside it deviates by the slope.
-    */
-  val ComfortBandFormulaDefault =
-    "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))"
-
-  /** Default source of `CasualtiesBelowConfig.temperature.effectiveTemperatureFormula`: armor
-    * insulation shrinks the equilibrium's deviation from normal body temperature on the cold side
-    * only.
-    */
-  val EffectiveTemperatureFormulaDefault =
-    "37 + (t - 37) * (1 - i * if(t > 37, 0, 1))"
-
-  /** Default source of `CasualtiesBelowConfig.temperature.temperatureConsciousnessCeilingFormula`:
-    * the consciousness ceiling drops by slope per °C of deviation outside the penalty band, cold
-    * and hot sides summed.
-    */
-  val TemperatureConsciousnessCeilingFormulaDefault =
-    "100 - coldDev * coldSlope - hotDev * hotSlope"
-
-  /** Default source of `CasualtiesBelowConfig.temperature.dryingCurveFormula`: wetness lost per
-    * second from the drying temperature (this EvalEx configuration has no exp(), so e's power is
-    * numeric).
-    */
-  val DryingCurveFormulaDefault = "0.0014 * 2.718281828459045^(0.06 * t)"
-
-  /** Default source of `CasualtiesBelowConfig.temperature.wetnessCollapseFormula`: fraction of
-    * armor thermal coefficients surviving at a given wetness.
-    */
-  val WetnessCollapseFormulaDefault = "1 - 0.85 * wetness"
 
   /** Fraction of a full sprint's sweat rate at a given exertion rate (exhaustion per second):
     * scales linearly up to sprint reference exertion and saturates beyond it. The reference 0.56/s

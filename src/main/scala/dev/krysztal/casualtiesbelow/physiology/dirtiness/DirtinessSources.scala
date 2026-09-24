@@ -18,6 +18,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
@@ -26,10 +27,10 @@ import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 /** Dirtiness event pulses: discrete one-shot grime from combat, digging, food and husbandry,
   * complementing the continuous accrual/wash in [[Dirtiness]].
   *
-  * Every pulse rolls with proportional jitter (`randomness.worldPulseJitter`: pulse × (1 ± jitter))
-  * and syncs immediately, following the zombie-hit immune drain precedent. One event settles
-  * exactly once: per-hit listeners read the trauma context, which vanilla emits once per accepted
-  * damage event.
+  * Every pulse rolls with fixed proportional jitter (pulse × (1 ± jitter)), is scaled by the dirt
+  * accumulation setting, and syncs immediately, following the zombie-hit immune drain precedent.
+  * One event settles exactly once: per-hit listeners read the trauma context, which vanilla emits
+  * once per accepted damage event.
   *
   * Incoming hits price contact, not injury: unlike the immune drain, the pulse is not gated on
   * `woundsAllowed` — an armor-absorbed zombie slam still coats the player in grime.
@@ -39,7 +40,7 @@ object DirtinessSources {
   def register(): Unit = {
     TraumaStartedCallback.EVENT.register { context =>
       val attacker = Option(context.source.getEntity)
-      val combat = CasualtiesBelowConfig.dirtiness.combatPulseDirt.get()
+      val combat = Consts.Dirtiness.CombatPulseDirt
       val base = hitDirt(
         zombieFamily = attacker.exists(_.is(EntityTypeTags.ZOMBIES)),
         explosion = context.source.is(DamageTypeTags.IS_EXPLOSION),
@@ -59,7 +60,7 @@ object DirtinessSources {
               .is(DamageTypeTags.IS_PROJECTILE) && !source.is(DamageTypeTags.IS_EXPLOSION) =>
           applyPulse(
             player,
-            CasualtiesBelowConfig.dirtiness.combatPulseDirt.get() * MeleeKillCombatWeight
+            Consts.Dirtiness.CombatPulseDirt * MeleeKillCombatWeight
           )
         case _ => ()
       }
@@ -68,7 +69,7 @@ object DirtinessSources {
     PlayerBlockBreakEvents.AFTER.register { (level, player, _, state, _) =>
       (player, level.isClientSide()) match {
         case (serverPlayer: ServerPlayer, false) if !state.isAir =>
-          val digging = CasualtiesBelowConfig.dirtiness.diggingPulseDirt.get()
+          val digging = Consts.Dirtiness.DiggingPulseDirt
           val base = digPulse(
             dirty = state.is(CasualtiesBelowTags.DirtyDiggableBlocks),
             dustless = state.is(CasualtiesBelowTags.DustlessDiggableBlocks),
@@ -87,7 +88,7 @@ object DirtinessSources {
         case (serverPlayer: ServerPlayer, false)
             if entity.isInstanceOf[Animal] &&
               HusbandryTools.contains(serverPlayer.getItemInHand(hand).getItem) =>
-          applyPulse(serverPlayer, CasualtiesBelowConfig.dirtiness.interactionPulseDirt.get())
+          applyPulse(serverPlayer, Consts.Dirtiness.InteractionPulseDirt)
         case _ => ()
       }
       InteractionResult.PASS
@@ -101,7 +102,7 @@ object DirtinessSources {
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
     val store = GameplayDataStores.server(player.level().getServer)
     Discomfort.meanOf(stack, GameplayDataSnapshot.capture(store), store).foreach { mean =>
-      applyPulse(player, foodDirt(mean, CasualtiesBelowConfig.dirtiness.foodDirtFraction.get()))
+      applyPulse(player, foodDirt(mean, Consts.Dirtiness.FoodDirtFraction))
     }
   }
 
@@ -142,6 +143,10 @@ object DirtinessSources {
   private[dirtiness] def foodDirt(mean: Double, fraction: Double): Double =
     mean.max(0.0) * fraction.max(0.0)
 
+  /** One setting scales every dirt pulse, including combat, digging and contaminated food. */
+  private[dirtiness] def scaledPulse(base: Double, multiplier: Double): Double =
+    base.max(0.0) * multiplier.max(0.0)
+
   /** Rolls one pulse: base × (1 ± jitter), never negative. */
   private[dirtiness] def rollPulse(
       base: Double,
@@ -154,12 +159,16 @@ object DirtinessSources {
 
   private def applyPulse(player: ServerPlayer, base: Double): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
-    val rolled =
-      rollPulse(base, CasualtiesBelowConfig.randomness.worldPulseJitter.get(), player.getRandom)
+    val scaled = scaledPulse(
+      base,
+      CasualtiesBelowConfig.diseaseHygiene.dirtAccumulationMultiplier.get()
+    )
+    if (scaled <= 0.0) return
+    val rolled = rollPulse(scaled, Consts.Randomness.WorldPulseJitter, player.getRandom)
     if (rolled <= 0.0) return
 
     val vitals = player.vitals
-    val next = (vitals.dirtiness + rolled).min(CasualtiesBelowConfig.dirtiness.maxValue.get())
+    val next = (vitals.dirtiness + rolled).min(Consts.Dirtiness.MaxValue)
     VitalsMutations.setDirtiness(vitals, next)
     VitalsMutations.syncNow(player)
   }

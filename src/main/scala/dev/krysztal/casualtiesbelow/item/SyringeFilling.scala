@@ -14,6 +14,7 @@ import net.minecraft.world.item.Items
 import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
@@ -125,9 +126,9 @@ private[casualtiesbelow] object SyringeFilling {
     val baseDose = sampledBaseDose(
       sourceKind,
       gaussianSample,
-      CasualtiesBelowConfig.opioid.refinedSyringeDose.get(),
-      CasualtiesBelowConfig.opioid.crudeSyringeDoseMean.get(),
-      CasualtiesBelowConfig.opioid.crudeSyringeDoseSigma.get()
+      CasualtiesBelowConfig.medicineFood.refinedSyringeDose.get(),
+      CasualtiesBelowConfig.medicineFood.crudeSyringeDoseMean.get(),
+      Consts.Opioid.CrudeSyringeDoseSigma
     )
     val dose = measuredDose(baseDose, syringe.calibrated, jitterUnit)
     val stack = new ItemStack(syringe)
@@ -170,7 +171,7 @@ private[casualtiesbelow] object SyringeFilling {
       baseDose,
       calibrated,
       jitterUnit,
-      CasualtiesBelowConfig.opioid.unmarkedSyringeJitterFraction.get()
+      Consts.Opioid.UnmarkedSyringeJitterFraction
     )
   }
 

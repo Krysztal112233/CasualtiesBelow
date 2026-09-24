@@ -4,6 +4,7 @@ import net.minecraft.SharedConstants
 import net.minecraft.server.Bootstrap
 
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -215,7 +216,7 @@ final class TemperatureCalcTest {
   def defaultCeilingFormulaSubtractsBothSides(): Unit = {
     val ceiling = (coldDev: Double, hotDev: Double) =>
       evaluate(
-        TemperatureCalc.TemperatureConsciousnessCeilingFormulaDefault,
+        Consts.Temperature.TemperatureConsciousnessCeilingFormula.source,
         Seq("coldDev", "hotDev", "coldSlope", "hotSlope"),
         coldDev,
         hotDev,
@@ -249,11 +250,11 @@ final class TemperatureCalcTest {
   // ---- Helpers -----------------------------------------------------------------
 
   private def biomeMapping(t: Double): Double =
-    evaluate(TemperatureCalc.BiomeMappingFormulaDefault, Seq("t"), t)
+    evaluate(Consts.Temperature.BiomeMappingFormula.source, Seq("t"), t)
 
   private def comfortBand(t: Double): Double =
     evaluate(
-      TemperatureCalc.ComfortBandFormulaDefault,
+      Consts.Temperature.ComfortBandFormula.source,
       Seq("t", "low", "high", "slope"),
       t,
       10.0,
@@ -296,10 +297,10 @@ final class TemperatureCalcTest {
   }
 
   private def collapse(wetness: Double): Double =
-    evaluate(TemperatureCalc.WetnessCollapseFormulaDefault, Seq("wetness"), wetness)
+    evaluate(Consts.Temperature.WetnessCollapseFormula.source, Seq("wetness"), wetness)
 
   private def drying(t: Double): Double =
-    evaluate(TemperatureCalc.DryingCurveFormulaDefault, Seq("t"), t)
+    evaluate(Consts.Temperature.DryingCurveFormula.source, Seq("t"), t)
 
   private def evaluate(source: String, variables: Seq[String], values: Double*): Double = {
     val expression = FormulaConfigValue.compile(source, variables)

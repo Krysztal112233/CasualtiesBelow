@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.effect
 
+import scala.compiletime.ops.boolean
 import scala.jdk.CollectionConverters.*
 import scala.util.boundary
 import scala.util.boundary.break
@@ -158,7 +159,8 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
 
   private def register(
       name: String,
-      mobEffect: CasualtiesBelowCustomEffect
+      mobEffect: CasualtiesBelowCustomEffect,
+      forDisplay: Boolean = true
   ): Holder[MobEffect] = {
     val holder: Holder[MobEffect] = Registry.registerForHolder(
       BuiltInRegistries.MOB_EFFECT,
@@ -166,7 +168,9 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
       mobEffect
     )
     mobEffect.bindEffectHolder(holder)
-    vitalsEffectSynchronizers = vitalsEffectSynchronizers :+ mobEffect
+
+    if (forDisplay)
+      vitalsEffectSynchronizers = vitalsEffectSynchronizers :+ mobEffect
 
     holder
   }

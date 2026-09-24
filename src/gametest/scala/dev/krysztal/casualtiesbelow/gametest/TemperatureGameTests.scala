@@ -10,6 +10,11 @@ import net.fabricmc.fabric.api.gametest.v1.GameTest
 final class TemperatureGameTests {
 
   @GameTest(maxTicks = 20)
+  def comfortBoundsRespectConfigAndNormalizeOrder(helper: GameTestHelper): Unit = {
+    TemperatureScenarios.comfortBoundsRespectConfigAndNormalizeOrder(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def coreApproachesEquilibriumFromBothSides(helper: GameTestHelper): Unit = {
     TemperatureScenarios.coreApproachesEquilibriumFromBothSides(helper)
   }

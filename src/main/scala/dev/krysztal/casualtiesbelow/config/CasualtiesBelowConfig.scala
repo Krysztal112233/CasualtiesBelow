@@ -2,155 +2,234 @@ package dev.krysztal.casualtiesbelow.config
 
 import java.lang.Boolean
 import java.lang.Double
-import java.lang.Integer
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.sections.*
-import dev.krysztal.casualtiesbelow.physiology.discomfort.DiscomfortDistribution as Distribution
-import dev.krysztal.casualtiesbelow.physiology.pain.TotalPainStrategy
-import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig
 import net.neoforged.neoforge.common.ModConfigSpec
 import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
 
-/** Common (server-authoritative) configuration, backed by Forge Config API Port. Values are written
-  * to `config/casualtiesbelow-common.toml` and can be edited in-game via the ModMenu integration
-  * provided by Forge Config API Port.
+/** A small set of server-authoritative gameplay choices and presentation controls, written to
+  * `config/casualtiesbelow-common.toml`. Technical balance defaults live in [[Consts]] rather than
+  * appearing in the in-game editor. Previous config keys are intentionally reset on upgrade.
   */
 object CasualtiesBelowConfig {
 
-  private val CurrentPhysiologyBalanceVersion = 1
   private val Builder = new ModConfigSpec.Builder()
 
-  private val PhysiologyBalanceVersion: ConfigValue[Integer] = Builder
-    .comment(
-      "Internal migration marker for physiology balance defaults. Do not edit manually."
-    )
-    .defineInRange(
-      "physiologyBalanceVersion",
-      0,
-      0,
-      CurrentPhysiologyBalanceVersion
-    )
+  private def group[A](name: String)(values: => A): A = {
+    Builder.push(name)
+    val result = values
+    Builder.pop()
+    result
+  }
 
-  // Section definitions, in TOML order. The sequence here is what fixes the layout of
-  // casualtiesbelow-common.toml and the in-game editor; it follows the vitals causal chain
-  // (core axes → threats → wounds/infection → consequences → environment → presentation).
-  val vitals = VitalsValues.define(Builder)
-  val hazards = HazardsValues.define(Builder)
-  val bleeding = BleedingValues.define(Builder)
-  val infection = InfectionValues.define(Builder)
-  val immune = ImmuneValues.define(Builder)
-  val sepsis = SepsisValues.define(Builder)
-  val regeneration = RegenerationValues.define(Builder)
-  val armor = ArmorValues.define(Builder)
-  val fall = FallValues.define(Builder)
-  val movement = MovementValues.define(Builder)
-  val pain = PainValues.define(Builder)
-  val adrenaline = AdrenalineValues.define(Builder)
-  val opioid = OpioidValues.define(Builder)
-  val injection = InjectionValues.define(Builder)
-  val temperature = TemperatureValues.define(Builder)
-  val dirtiness = DirtinessValues.define(Builder)
-  val discomfort = DiscomfortValues.define(Builder)
-  val randomness = RandomnessValues.define(Builder)
-  val visuals = VisualsValues.define(Builder)
+  final case class InjurySurvival(
+      maxExternalBleedingRate: ConfigValue[Double],
+      adrenalineEnabled: ConfigValue[Boolean],
+      fallDamageMultiplier: ConfigValue[Double],
+      clottingSpeedMultiplier: ConfigValue[Double],
+      naturalHealingMultiplier: ConfigValue[Double],
+      legMovementPenaltyMultiplier: ConfigValue[Double]
+  )
+
+  final case class DiseaseHygiene(
+      infectionEnabled: ConfigValue[Boolean],
+      washWaterPerSecond: ConfigValue[Double],
+      woundInfectionRiskMultiplier: ConfigValue[Double],
+      dirtAccumulationMultiplier: ConfigValue[Double]
+  )
+
+  final case class Environment(
+      tauAirMinutes: ConfigValue[Double],
+      comfortLowCelsius: ConfigValue[Double],
+      comfortHighCelsius: ConfigValue[Double]
+  ) {
+    def effectiveComfortBounds: (scala.Double, scala.Double) = {
+      val low = comfortLowCelsius.get().doubleValue
+      val high = comfortHighCelsius.get().doubleValue
+      (low.min(high), low.max(high))
+    }
+  }
+
+  final case class MedicineFood(
+      refinedSyringeDose: ConfigValue[Double],
+      crudeSyringeDoseMean: ConfigValue[Double],
+      refusalThreshold: ConfigValue[Double],
+      opioidPainReliefMultiplier: ConfigValue[Double]
+  )
+
+  final case class Visuals(
+      temperatureOverlayEnabled: ConfigValue[Boolean],
+      consciousnessMaxBlurStrength: ConfigValue[Double],
+      shockVisualMaxStrength: ConfigValue[Double]
+  )
+
+  val injurySurvival: InjurySurvival = group("injurySurvival") {
+    InjurySurvival(
+      maxExternalBleedingRate = Builder
+        .comment(
+          "Maximum external bleeding from one severely wounded limb, in mL per tick.",
+          "Lower this to make blood loss less dangerous; intact skin still cannot bleed."
+        )
+        .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[Double]),
+      adrenalineEnabled = Builder
+        .comment(
+          "Allow new adrenaline bursts from damage. Disabling this does not erase an existing",
+          "adrenaline reserve; it can still decay normally."
+        )
+        .define("adrenalineEnabled", true),
+      fallDamageMultiplier = Builder
+        .comment(
+          "Player fall damage relative to the standard custom fall curve (1 = normal).",
+          "Set to zero to prevent player fall damage; mobs keep vanilla fall damage."
+        )
+        .defineInRange("fallDamageMultiplier", 1.0, 0.0, 3.0, classOf[Double]),
+      clottingSpeedMultiplier = Builder
+        .comment("How quickly an external wound stops bleeding (1 = normal, 0 = no clotting).")
+        .defineInRange("clottingSpeedMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+      naturalHealingMultiplier = Builder
+        .comment(
+          "Natural skin and muscle healing speed (1 = normal, 0 = no natural healing).",
+          "Does not affect the vanilla Regeneration effect or wound clotting."
+        )
+        .defineInRange("naturalHealingMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+      legMovementPenaltyMultiplier = Builder
+        .comment(
+          "How strongly injured legs slow movement and weaken jumps (1 = normal, 0 = none).",
+          "Applies to fractures, dislocations and muscle damage; restart the game to change."
+        )
+        .gameRestart()
+        .defineInRange("legMovementPenaltyMultiplier", 1.0, 0.0, 1.0, classOf[Double])
+    )
+  }
+
+  val diseaseHygiene: DiseaseHygiene = group("diseaseHygiene") {
+    DiseaseHygiene(
+      infectionEnabled = Builder
+        .comment(
+          "Allow new infections from wounds or dirty needles, and spread to nearby limbs.",
+          "Existing infections can still progress and cause sepsis until they recover."
+        )
+        .define("infectionEnabled", true),
+      washWaterPerSecond = Builder
+        .comment("Dirt washed off per second while immersed in clean water.")
+        .defineInRange("washWaterPerSecond", 4.8, 0.0, 100.0, classOf[Double]),
+      woundInfectionRiskMultiplier = Builder
+        .comment(
+          "Chance of a wound becoming infected (1 = normal, 0 = no wound-onset infections).",
+          "Dirty needles and spread from an existing infection are controlled by infectionEnabled."
+        )
+        .defineInRange("woundInfectionRiskMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+      dirtAccumulationMultiplier = Builder
+        .comment(
+          "Dirt gained from activity and surroundings (1 = normal, 0 = no new dirt).",
+          "Does not change the rate at which water or rain washes dirt away."
+        )
+        .defineInRange("dirtAccumulationMultiplier", 1.0, 0.0, 5.0, classOf[Double])
+    )
+  }
+
+  val environment: Environment = group("environment") {
+    Environment(
+      tauAirMinutes = Builder
+        .comment(
+          "Minutes for the body to adjust toward the surrounding temperature in still air:",
+          "about 63% of the gap closes in this time. Lower values warm and cool faster."
+        )
+        .defineInRange("tauAirMinutes", 3.0, 0.1, 60.0, classOf[Double]),
+      comfortLowCelsius = Builder
+        .comment(
+          "Coldest apparent air temperature (°C) that keeps body temperature comfortable.",
+          "If this exceeds the upper bound, the two values are swapped."
+        )
+        .defineInRange(
+          "comfortLowCelsius",
+          Consts.Temperature.ComfortLowCelsius,
+          -50.0,
+          37.0,
+          classOf[Double]
+        ),
+      comfortHighCelsius = Builder
+        .comment(
+          "Warmest apparent air temperature (°C) that keeps body temperature comfortable.",
+          "If this falls below the lower bound, the two values are swapped."
+        )
+        .defineInRange(
+          "comfortHighCelsius",
+          Consts.Temperature.ComfortHighCelsius,
+          -50.0,
+          80.0,
+          classOf[Double]
+        )
+    )
+  }
+
+  val medicineFood: MedicineFood = group("medicineFood") {
+    MedicineFood(
+      refinedSyringeDose = Builder
+        .comment("Base opioid dose from one refined poppy ampoule.")
+        .defineInRange("refinedSyringeDose", 50.0, 0.0, 200.0, classOf[Double]),
+      crudeSyringeDoseMean = Builder
+        .comment(
+          "Average opioid dose drawn directly from crude poppy liquid; actual doses vary."
+        )
+        .defineInRange("crudeSyringeDoseMean", 40.0, 0.0, 200.0, classOf[Double]),
+      refusalThreshold = Builder
+        .comment("Discomfort at which the player refuses to start eating unpleasant food.")
+        .defineInRange("refusalThreshold", 60.0, 0.0, 10000.0, classOf[Double]),
+      opioidPainReliefMultiplier = Builder
+        .comment(
+          "Pain relief from opioid exposure (1 = normal, 0 = no opioid pain relief).",
+          "Sedation, breathing risks and dependence are not affected."
+        )
+        .defineInRange("opioidPainReliefMultiplier", 1.0, 0.0, 5.0, classOf[Double])
+    )
+  }
+
+  val visuals: Visuals = group("visuals") {
+    Visuals(
+      temperatureOverlayEnabled = Builder
+        .comment("Show frost and heat effects on the screen when body temperature is unsafe.")
+        .define("temperatureOverlayEnabled", true),
+      consciousnessMaxBlurStrength = Builder
+        .comment(
+          "Maximum blur and double-vision when consciousness is low (0-1).",
+          "Set to zero to remove blur; unconscious blackout still applies."
+        )
+        .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double]),
+      shockVisualMaxStrength = Builder
+        .comment(
+          "Maximum strength of the peripheral pain-shock warning (0-1).",
+          "Set to zero to hide the warning without changing gameplay."
+        )
+        .defineInRange("shockVisualMaxStrength", 1.0, 0.0, 1.0, classOf[Double])
+    )
+  }
 
   private val Spec = Builder.build()
 
-  /** Immune health at which infection spread and immune fight exactly cancel out for a single
-    * infection: `max × spread / (spread + fight)`. Below it infections spread, above it they
-    * recede. With several infected limbs the fight capacity is split, so the effective break-even
-    * rises with the infection count.
-    */
-  def immuneBreakEven: Double = {
-    val spread = infection.infectionSpreadPerTick.get()
-    val fight = infection.infectionFightPerTick.get()
-    if (spread + fight <= 0.0) {
-      0.0
-    } else {
-      vitals.maxImmuneHealth.get() * spread / (spread + fight)
-    }
+  def immuneBreakEven: scala.Double = {
+    val spread = Consts.Infection.InfectionSpreadPerTick
+    val fight = Consts.Infection.InfectionFightPerTick
+    Consts.Vitals.MaxImmuneHealth * spread / (spread + fight)
   }
 
-  /** The effective blood volume cap: sepsis compresses it linearly, down to zero at full sepsis
-    * (which is fatal). Blood over the cap is lost — recovering requires eating well (see
-    * [[vitals.fedBloodRegenPerTick]]).
-    */
-  def effectiveMaxBloodVolume(sepsis: Double): Double = {
-    vitals.maxBloodVolume
-      .get() * (1.0 - (sepsis / CasualtiesBelowConfig.sepsis.maxSepsis.get()).min(1.0))
+  def effectiveMaxBloodVolume(sepsis: scala.Double): scala.Double = {
+    Consts.Vitals.MaxBloodVolume * (1.0 - (sepsis / Consts.Sepsis.MaxSepsis).min(1.0))
   }
 
-  /** Cross-field consciousness thresholds used by server progression and synchronized displays. */
-  private[casualtiesbelow] def effectiveConsciousnessFloor: Double = {
-    finiteThreshold(vitals.consciousnessFloor.get(), 0.0)
-  }
+  private[casualtiesbelow] def effectiveConsciousnessFloor: scala.Double =
+    Consts.Vitals.ConsciousnessFloor
 
-  private[casualtiesbelow] def effectiveConsciousnessKnockoutThreshold: Double = {
-    finiteThreshold(vitals.consciousnessKnockoutThreshold.get(), effectiveConsciousnessFloor)
-  }
+  private[casualtiesbelow] def effectiveConsciousnessKnockoutThreshold: scala.Double =
+    Consts.Vitals.ConsciousnessKnockoutThreshold
 
-  private[casualtiesbelow] def effectiveConsciousnessWakeThreshold: Double = {
-    val knockout = effectiveConsciousnessKnockoutThreshold
-    val minimumWake =
-      (knockout + VitalsComponent.MinimumWakeThreshold).min(VitalsComponent.MaxValue)
-    finiteThreshold(vitals.consciousnessWakeThreshold.get(), minimumWake)
-  }
+  private[casualtiesbelow] def effectiveConsciousnessWakeThreshold: scala.Double =
+    Consts.Vitals.ConsciousnessWakeThreshold
 
-  private def finiteThreshold(
-      value: scala.Double,
-      minimum: scala.Double
-  ): scala.Double = {
-    if (value == scala.Double.PositiveInfinity) VitalsComponent.MaxValue
-    else if (value.isFinite) value.max(minimum).min(VitalsComponent.MaxValue)
-    else minimum
-  }
-
-  def register(): Unit = {
+  def register(): Unit =
     ConfigRegistry.INSTANCE.register(CasualtiesBelow.ModId, ModConfig.Type.COMMON, Spec)
-    migratePhysiologyBalanceDefaults()
-  }
-
-  /** FCAP preserves every existing valid value when only a spec default changes. Migrate values
-    * that still equal the previous release defaults, while retaining genuinely customized values.
-    * The marker starts at zero so both a pre-marker file and a fresh file take this idempotent
-    * pass; fresh files already contain the new values and therefore only advance the marker.
-    */
-  private def migratePhysiologyBalanceDefaults(): Unit = {
-    if (PhysiologyBalanceVersion.get().intValue >= CurrentPhysiologyBalanceVersion) return
-
-    migratePreviousDefault(vitals.consciousnessImpairmentStartThreshold, 30.0, 50.0)
-    migratePreviousDefault(vitals.bloodOxygenDepletionPerTick, 0.3, 0.4)
-    migratePreviousDefault(vitals.bloodOxygenRecoveryPerTick, 0.5, 0.8)
-    migratePreviousDefault(vitals.consciousnessRecoveryPerTick, 0.08, 0.2)
-    migratePreviousDefault(vitals.consciousnessWakeThreshold, 20.0, 40.0)
-    migratePreviousDefault(hazards.inWallBloodOxygenDepletionPerTick, 0.5, 0.6)
-    if (hazards.terminalHypoxiaDurationTicks.get().intValue == 200) {
-      hazards.terminalHypoxiaDurationTicks.set(160)
-    }
-
-    PhysiologyBalanceVersion.set(CurrentPhysiologyBalanceVersion)
-    Spec.save()
-    CasualtiesBelow.Logger.info(
-      "Migrated physiology balance defaults to version {}",
-      CurrentPhysiologyBalanceVersion
-    )
-  }
-
-  private def migratePreviousDefault(
-      value: ConfigValue[Double],
-      previousDefault: Double,
-      currentDefault: Double
-  ): Unit = {
-    if (
-      java.lang.Double.doubleToLongBits(value.get().doubleValue) ==
-        java.lang.Double.doubleToLongBits(previousDefault)
-    ) {
-      value.set(currentDefault)
-    }
-  }
 }

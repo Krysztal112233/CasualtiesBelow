@@ -120,6 +120,13 @@ final class InjectionSettlementTest {
   }
 
   @Test
+  def disabledInfectionsBlockOnlyNewDirtyNeedleInfections(): Unit = {
+    assertEquals(0.0, InjectionSettlement.allowedInfectionSeed(6.0, false, false), 1.0e-12)
+    assertEquals(6.0, InjectionSettlement.allowedInfectionSeed(6.0, false, true), 1.0e-12)
+    assertEquals(6.0, InjectionSettlement.allowedInfectionSeed(6.0, true, false), 1.0e-12)
+  }
+
+  @Test
   def infectionSeedIsBatchConserving(): Unit = {
     val full = InjectionSettlement.infectionSeedFor(12.0, 80.0, 100.0, 810L, 810L)
     val batched =

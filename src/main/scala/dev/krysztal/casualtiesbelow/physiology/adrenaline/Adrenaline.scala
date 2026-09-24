@@ -15,14 +15,15 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server authority for the temporary adrenaline reserve and its post-stimulus grace window.
   *
   * A fresh stimulus stores one extra grace tick. The same server-tick progression pass consumes
-  * that sentinel without reducing the reserve, so even a configured zero-tick grace lets a hit
-  * protect against pain shock and reduce acute injury pain in the tick in which it landed. Later
-  * ticks consume the configured grace and then decay the reserve linearly.
+  * that sentinel without reducing the reserve, so even a zero-tick grace would let a hit protect
+  * against pain shock and reduce acute injury pain in the tick in which it landed. Later ticks
+  * consume the fixed grace and then decay the reserve linearly.
   */
 object Adrenaline {
 
@@ -36,13 +37,14 @@ object Adrenaline {
     * changed. The reserve change is batched into InjuryProgression's single vitals sync.
     */
   def grant(player: ServerPlayer, amount: Double, cause: Identifier): Boolean = {
+    if (!CasualtiesBelowConfig.injurySurvival.adrenalineEnabled.get()) return false
     val vitals = player.vitals
     val previous = storedState(vitals)
     val next = grantState(
       previous,
       amount,
-      CasualtiesBelowConfig.adrenaline.maxValue.get(),
-      CasualtiesBelowConfig.adrenaline.combatGraceTicks.get()
+      Consts.Adrenaline.MaxValue,
+      Consts.Adrenaline.CombatGraceTicks
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -61,8 +63,8 @@ object Adrenaline {
     val previous = storedState(vitals)
     val next = advanceState(
       previous,
-      CasualtiesBelowConfig.adrenaline.maxValue.get(),
-      CasualtiesBelowConfig.adrenaline.decayPerTick.get()
+      Consts.Adrenaline.MaxValue,
+      Consts.Adrenaline.DecayPerTick
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
@@ -83,12 +85,12 @@ object Adrenaline {
       requestedAmount: Double
   ): Boolean = {
     val previous = storedState(vitals)
-    val amount = normalizeAmount(requestedAmount, CasualtiesBelowConfig.adrenaline.maxValue.get())
+    val amount = normalizeAmount(requestedAmount, Consts.Adrenaline.MaxValue)
     val next =
       if (amount > 0.0) {
         AdrenalineState(
           amount,
-          freshGraceTicks(CasualtiesBelowConfig.adrenaline.combatGraceTicks.get())
+          freshGraceTicks(Consts.Adrenaline.CombatGraceTicks)
         )
       } else AdrenalineState.Empty
     applyState(vitals, next)
@@ -106,9 +108,9 @@ object Adrenaline {
     }
   }
 
-  /** Finite, config-bounded server value used by the pain-shock threshold calculation. */
+  /** Finite, fixed-balance bounded server value used by the pain-shock threshold calculation. */
   def currentAmount(vitals: VitalsComponent): Double =
-    normalizeAmount(vitals.adrenaline, CasualtiesBelowConfig.adrenaline.maxValue.get())
+    normalizeAmount(vitals.adrenaline, Consts.Adrenaline.MaxValue)
 
   /** Server-side save/copy normalization. */
   private[casualtiesbelow] def normalizeStoredState(
@@ -118,8 +120,8 @@ object Adrenaline {
     normalizeStoredState(
       amount,
       graceTicks,
-      CasualtiesBelowConfig.adrenaline.maxValue.get(),
-      CasualtiesBelowConfig.adrenaline.combatGraceTicks.get()
+      Consts.Adrenaline.MaxValue,
+      Consts.Adrenaline.CombatGraceTicks
     )
 
   private[casualtiesbelow] def normalizeStoredState(
@@ -134,8 +136,8 @@ object Adrenaline {
     )
   }
 
-  /** Client-side component transport normalization. The receiving client trusts the server's
-    * configured bound and only rejects intrinsically invalid wire values.
+  /** Client-side component transport normalization. The receiving client trusts the server's fixed
+    * server bound and only rejects intrinsically invalid wire values.
     */
   private[casualtiesbelow] def normalizeSyncedState(
       amount: Double,

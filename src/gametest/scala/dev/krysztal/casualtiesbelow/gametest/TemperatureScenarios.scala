@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.BiomeExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -27,6 +28,59 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
   * preset fails loudly rather than silently testing nothing.
   */
 object TemperatureScenarios {
+
+  /** Reversed comfort bounds are normalized before the body-temperature curve uses them. */
+  def comfortBoundsRespectConfigAndNormalizeOrder(helper: GameTestHelper): Unit = {
+    val lowSetting = CasualtiesBelowConfig.environment.comfortLowCelsius
+    val highSetting = CasualtiesBelowConfig.environment.comfortHighCelsius
+    val previousLow = lowSetting.get()
+    val previousHigh = highSetting.get()
+    try {
+      lowSetting.set(30.0)
+      highSetting.set(10.0)
+      val bounds = CasualtiesBelowConfig.environment.effectiveComfortBounds
+      helper.assertTrue(bounds == (10.0, 30.0), s"reversed comfort bounds: $bounds")
+      val core = Consts.Temperature.ComfortBandFormula.evaluate(
+        20.0,
+        bounds._1,
+        bounds._2,
+        Consts.Temperature.ComfortSlope
+      )
+      helper.assertTrue(core == 37.0, s"20°C must remain inside the normalized comfort band: $core")
+
+      // Drive the real progression under two non-default bands. A direct formula check above
+      // would still pass if Temperature stopped consuming the configured bounds.
+      helper.getLevel.setRainLevel(0.0f)
+      val player = GameTestPlayers.createSurvivalPlayer(helper)
+      val vitals = player.vitals
+      val level = helper.getLevel
+      val pos = player.blockPosition()
+      val apparent = level.getBiome(pos).value().mappedTemperature(pos, level.getSeaLevel)
+      helper.assertTrue(
+        apparent > -45.0 && apparent < 31.0,
+        s"the GameTest biome must allow both comfort bands, got $apparent°C"
+      )
+      lowSetting.set(apparent - 2.0)
+      highSetting.set(apparent + 2.0)
+      VitalsMutations.setBodyTemperature(vitals, 37.0)
+      tick(player, 20)
+      val comfortableCore = vitals.bodyTemperature
+
+      lowSetting.set(apparent + 6.0)
+      highSetting.set(apparent + 4.0) // Reversed: the effective lower bound is apparent + 4.
+      VitalsMutations.setBodyTemperature(vitals, 37.0)
+      tick(player, 20)
+      val coldCore = vitals.bodyTemperature
+      helper.assertTrue(
+        coldCore < comfortableCore - 0.001,
+        s"a colder configured band must cool the body in gameplay: $comfortableCore -> $coldCore"
+      )
+    } finally {
+      lowSetting.set(previousLow)
+      highSetting.set(previousHigh)
+    }
+    helper.succeed()
+  }
 
   /** Probe listener for the channel × armor semantics scenario. Fabric events have no unregister,
     * so the probe is registered once and stays inert unless armed; the scenario must disarm it in
@@ -323,11 +377,12 @@ object TemperatureScenarios {
     val biome = level.getBiome(pos).value()
     val mapped = biome.mappedTemperature(pos, level.getSeaLevel)
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
-    CasualtiesBelowConfig.temperature.comfortBandFormula.evaluate(
+    val (comfortLow, comfortHigh) = CasualtiesBelowConfig.environment.effectiveComfortBounds
+    Consts.Temperature.ComfortBandFormula.evaluate(
       apparent,
-      CasualtiesBelowConfig.temperature.comfortLowCelsius.get(),
-      CasualtiesBelowConfig.temperature.comfortHighCelsius.get(),
-      CasualtiesBelowConfig.temperature.comfortSlope.get()
+      comfortLow,
+      comfortHigh,
+      Consts.Temperature.ComfortSlope
     )
   }
 

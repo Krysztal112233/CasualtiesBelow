@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
@@ -24,18 +25,45 @@ import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 /** In-game validation of dirtiness progression: passive accrual and cauldron washing. */
 object HygieneScenarios {
 
-  /** An idle survival player accumulates dirtiness at exactly the configured base rate. */
+  /** An idle survival player accumulates dirtiness at the configured base-rate multiplier. */
   def passiveAccrualAccumulates(helper: GameTestHelper): Unit = {
     // Pin the weather to clear so rain washing does not mask the base accrual.
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     (1 to 100).foreach(_ => Dirtiness.tickForGameTest(player))
-    val expected = CasualtiesBelowConfig.dirtiness.accrualPerSecond.get() / 20.0 * 100
+    val expected = Consts.Dirtiness.AccrualPerSecond / 20.0 * 100 *
+      CasualtiesBelowConfig.diseaseHygiene.dirtAccumulationMultiplier.get()
     helper.assertTrue(
       math.abs(vitals.dirtiness - expected) < 1.0e-9,
       s"100 ticks of base accrual: expected $expected, got ${vitals.dirtiness}"
     )
+    helper.succeed()
+  }
+
+  /** Zero stops new passive dirt; a doubled setting doubles it. Restore the COMMON setting before
+    * any other scenario can run.
+    */
+  def dirtAccumulationSettingScalesPassiveGain(helper: GameTestHelper): Unit = {
+    helper.getLevel.setRainLevel(0.0f)
+    val player = GameTestPlayers.createSurvivalPlayer(helper)
+    val setting = CasualtiesBelowConfig.diseaseHygiene.dirtAccumulationMultiplier
+    val previous = setting.get()
+    try {
+      setting.set(0.0)
+      (1 to 20).foreach(_ => Dirtiness.tickForGameTest(player))
+      helper.assertTrue(player.vitals.dirtiness == 0.0, "zero dirt gain must block accrual")
+
+      setting.set(2.0)
+      (1 to 20).foreach(_ => Dirtiness.tickForGameTest(player))
+      val expected = Consts.Dirtiness.AccrualPerSecond * 2.0
+      helper.assertTrue(
+        math.abs(player.vitals.dirtiness - expected) < 1.0e-9,
+        s"double dirt gain: expected $expected, got ${player.vitals.dirtiness}"
+      )
+    } finally {
+      setting.set(previous)
+    }
     helper.succeed()
   }
 
@@ -54,8 +82,8 @@ object HygieneScenarios {
     helper.setBlock(relative, full)
     val absolute = helper.absolutePos(relative)
 
-    val perTick = CasualtiesBelowConfig.dirtiness.washWaterPerSecond.get() / 20.0
-    val pointsPerLevel = CasualtiesBelowConfig.dirtiness.cauldronPointsPerLevel.get()
+    val perTick = CasualtiesBelowConfig.diseaseHygiene.washWaterPerSecond.get() / 20.0
+    val pointsPerLevel = Consts.Dirtiness.CauldronPointsPerLevel
     val ticksPerLevel = math.ceil(pointsPerLevel / perTick).toInt
 
     // One tick short of the crossing: the level must be untouched.
@@ -122,7 +150,7 @@ object HygieneScenarios {
     )
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
-    val maxDirtiness = CasualtiesBelowConfig.dirtiness.maxValue.get()
+    val maxDirtiness = Consts.Dirtiness.MaxValue
     VitalsMutations.setDirtiness(player.vitals, maxDirtiness / 2)
     val body = CasualtiesBelowComponents.Body.get(player)
     // A main-hand syringe pricks the opposite arm (right-handed default: the left arm).
@@ -137,13 +165,56 @@ object HygieneScenarios {
       0.0
     )
 
-    val expected = CasualtiesBelowConfig.dirtiness.injectionSeedAtMax.get() * 0.5 * 0.5
+    val expected = Consts.Dirtiness.InjectionSeedAtMax * 0.5 * 0.5
     val progress = body.stats(injected).infectionProgress
     helper.assertTrue(progress.isPresent, "dirty injection must seed an infection")
     helper.assertTrue(
       math.abs(progress.getAsDouble - expected) < 1.0e-9,
       s"seeded progress: expected $expected, got ${progress.getAsDouble}"
     )
+    helper.succeed()
+  }
+
+  /** Disabling infections stops a dirty injection from seeding a healthy limb without interfering
+    * with the syringe dose or an existing infection. Restore the common setting synchronously so
+    * other GameTests cannot observe the temporary value.
+    */
+  def disabledInfectionsBlockDirtyNeedleOnset(helper: GameTestHelper): Unit = {
+    val player = GameTestPlayers.createSurvivalPlayer(helper)
+    val syringe = new ItemStack(CasualtiesBelowItems.CalibratedSyringe)
+    syringe.set(
+      CasualtiesBelowDataComponents.SyringeContentsComponent,
+      SyringeContents(
+        LiquidContents.RefinedPoppyExtract.liquid,
+        LiquidContents.AmpouleDroplets,
+        10.0
+      )
+    )
+    player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
+    VitalsMutations.setDirtiness(player.vitals, Consts.Dirtiness.MaxValue / 2)
+
+    val setting = CasualtiesBelowConfig.diseaseHygiene.infectionEnabled
+    val previous = setting.get()
+    try {
+      setting.set(false)
+      InjectionSettlement.applyBatch(
+        player,
+        InteractionHand.MAIN_HAND,
+        LiquidContents.RefinedPoppyExtract.liquid,
+        LiquidContents.AmpouleDroplets,
+        LiquidContents.AmpouleDroplets / 2,
+        0.0
+      )
+      val injected = BodyPart.ArmLeft
+      val progress = CasualtiesBelowComponents.Body.get(player).stats(injected).infectionProgress
+      helper.assertTrue(
+        progress.isEmpty,
+        "disabled infections must prevent a new dirty-needle infection"
+      )
+      helper.assertTrue(player.vitals.opioidLevel > 0.0, "the syringe must still deliver its dose")
+    } finally {
+      setting.set(previous)
+    }
     helper.succeed()
   }
 }

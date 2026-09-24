@@ -17,7 +17,7 @@ import net.minecraft.world.entity.player.Player
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionBatchPayload
@@ -208,7 +208,7 @@ class InjectionScreen private (
           InjectionLayout.NeedleLength - InjectionLayout.BarrelHeight
         if (barrelTopY >= deepestTop) {
           val gap = (mouseY - plungerPadCenterY).toDouble
-          (gap / CasualtiesBelowConfig.injection.fullSpeedPressDepthPixels.get().toDouble)
+          (gap / Consts.Injection.FullSpeedPressDepthPixels.toDouble)
             .max(0.0)
             .min(1.0)
         } else 0.0
@@ -216,7 +216,7 @@ class InjectionScreen private (
 
     if (speedFraction > 0.0) {
       val droplets = speedFraction *
-        CasualtiesBelowConfig.injection.maxSpeedFractionPerSecond.get() *
+        Consts.Injection.MaxSpeedFractionPerSecond *
         LiquidContents.AmpouleDroplets.toDouble * dtSeconds
       session.advance(speedFraction, droplets)
     }
@@ -236,7 +236,7 @@ class InjectionScreen private (
     val now = Util.getMillis()
     if (
       now - lastFlushMs >=
-        CasualtiesBelowConfig.injection.batchIntervalMilliseconds.get().longValue()
+        Consts.Injection.BatchIntervalMilliseconds.longValue()
     ) {
       flushPending()
     }

@@ -6,7 +6,7 @@ import net.minecraft.world.level.gamerules.GameRules
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
@@ -36,14 +36,12 @@ private[casualtiesbelow] object OxygenProgression {
         player.getMaxAirSupply > 0 && player.getAirSupply <= 0
     val deprivationRate =
       if (inWall && exhaustedAir) {
-        CasualtiesBelowConfig.hazards.inWallBloodOxygenDepletionPerTick
-          .get()
-          .doubleValue
-          .max(CasualtiesBelowConfig.vitals.bloodOxygenDepletionPerTick.get().doubleValue)
+        Consts.Hazards.InWallBloodOxygenDepletionPerTick
+          .max(Consts.Vitals.BloodOxygenDepletionPerTick)
       } else if (inWall) {
-        CasualtiesBelowConfig.hazards.inWallBloodOxygenDepletionPerTick.get().doubleValue
+        Consts.Hazards.InWallBloodOxygenDepletionPerTick
       } else if (exhaustedAir) {
-        CasualtiesBelowConfig.vitals.bloodOxygenDepletionPerTick.get().doubleValue
+        Consts.Vitals.BloodOxygenDepletionPerTick
       } else {
         0.0
       }
@@ -84,11 +82,11 @@ private[casualtiesbelow] object OxygenProgression {
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,
-      CasualtiesBelowConfig.vitals.bloodOxygenRecoveryPerTick.get(),
+      Consts.Vitals.BloodOxygenRecoveryPerTick,
       respiratoryEfficiency,
       opioidRespiratoryFailure,
       if (opioidRespiratoryFailure) {
-        CasualtiesBelowConfig.opioid.respiratoryFailureOxygenDrainPerTick.get()
+        Consts.Opioid.RespiratoryFailureOxygenDrainPerTick
       } else {
         0.0
       }

@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.component
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
@@ -17,9 +17,9 @@ object PhysiologyReset {
     BodyMutations.reset(player)
 
     val vitals = player.vitals
-    VitalsMutations.setImmuneHealth(vitals, CasualtiesBelowConfig.vitals.maxImmuneHealth.get())
+    VitalsMutations.setImmuneHealth(vitals, Consts.Vitals.MaxImmuneHealth)
     VitalsMutations.setBloodOxygen(vitals, VitalsComponent.MaxBloodOxygen)
-    VitalsMutations.setBloodVolume(vitals, CasualtiesBelowConfig.vitals.maxBloodVolume.get())
+    VitalsMutations.setBloodVolume(vitals, Consts.Vitals.MaxBloodVolume)
     HypoxiaProgression.reset(vitals)
     TotemHemostasis.reset(vitals)
     VitalsMutations.setSepsis(vitals, 0.0)

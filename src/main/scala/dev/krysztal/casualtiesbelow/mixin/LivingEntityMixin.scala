@@ -15,8 +15,9 @@ import org.spongepowered.asm.mixin.injection.At
 import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
-/** Replaces vanilla's linear fall damage calculation with the configured power curve and adapts
-  * successful vanilla death-protection returns to the mod's physiology state.
+/** Replaces vanilla's linear fall damage calculation for players with a fixed power curve scaled by
+  * the gameplay setting, and adapts successful vanilla death-protection returns to the mod's
+  * physiology state.
   */
 @Mixin(value = Array(classOf[LivingEntity]), remap = false)
 abstract class LivingEntityMixin {

@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.physiology.opioid
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Pure opioid effect curves. Stored vitals remain unmodified; consumers opt into the relevant
   * derived pressure explicitly.
@@ -22,7 +23,8 @@ object OpioidEffects {
     painDrainPerTick(
       level,
       dependence,
-      CasualtiesBelowConfig.opioid.opioidPainDrainPerLevelPerTick.get()
+      Consts.Opioid.OpioidPainDrainPerLevelPerTick *
+        CasualtiesBelowConfig.medicineFood.opioidPainReliefMultiplier.get()
     )
   }
 
@@ -36,21 +38,21 @@ object OpioidEffects {
 
   def consciousnessCeiling(level: Double): Double = {
     bounded(
-      CasualtiesBelowConfig.opioid.opioidSedationCeilingFormula.evaluate(level),
+      Consts.Opioid.OpioidSedationCeilingFormula.evaluate(level),
       VitalsComponent.MaxValue
     )
   }
 
   def respiratoryEfficiency(level: Double, dependence: Double): Double = {
     boundedFraction(
-      CasualtiesBelowConfig.opioid.opioidRespiratoryEfficiencyFormula.evaluate(level, dependence)
+      Consts.Opioid.OpioidRespiratoryEfficiencyFormula.evaluate(level, dependence)
     )
   }
 
   def causesRespiratoryFailure(efficiency: Double): Boolean = {
     causesRespiratoryFailure(
       efficiency,
-      CasualtiesBelowConfig.opioid.respiratoryFailureEfficiencyThreshold.get()
+      Consts.Opioid.RespiratoryFailureEfficiencyThreshold
     )
   }
 

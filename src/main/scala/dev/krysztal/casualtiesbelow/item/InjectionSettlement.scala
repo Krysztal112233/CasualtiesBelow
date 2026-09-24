@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
@@ -60,13 +61,13 @@ private[casualtiesbelow] object InjectionSettlement {
 
     val doseDelta = doseFor(contents.opioidDose, applied, contents.droplets)
     val discomfort = sideEffect(
-      CasualtiesBelowConfig.injection.fullDoseSideEffectDiscomfort.get(),
+      Consts.Injection.FullDoseSideEffectDiscomfort,
       speed,
       applied,
       LiquidContents.AmpouleDroplets
     )
     val pain = sideEffect(
-      CasualtiesBelowConfig.injection.fullDoseSideEffectPain.get(),
+      Consts.Injection.FullDoseSideEffectPain,
       speed,
       applied,
       LiquidContents.AmpouleDroplets
@@ -75,12 +76,16 @@ private[casualtiesbelow] object InjectionSettlement {
     val vitals = player.vitals
     // Dirty needle: contamination scales with the player's dirtiness and the pushed fraction,
     // never with speed — a careful push through dirty skin still infects.
-    val infectionSeed = infectionSeedFor(
-      CasualtiesBelowConfig.dirtiness.injectionSeedAtMax.get(),
-      vitals.dirtiness,
-      CasualtiesBelowConfig.dirtiness.maxValue.get(),
-      applied,
-      LiquidContents.AmpouleDroplets
+    val infectionSeed = allowedInfectionSeed(
+      infectionSeedFor(
+        Consts.Dirtiness.InjectionSeedAtMax,
+        vitals.dirtiness,
+        Consts.Dirtiness.MaxValue,
+        applied,
+        LiquidContents.AmpouleDroplets
+      ),
+      CasualtiesBelowConfig.diseaseHygiene.infectionEnabled.get(),
+      player.body.stats(injectedPart(player, hand)).infectionProgress.isPresent
     )
     if (doseDelta != 0.0) {
       VitalsMutations.setOpioidLevel(vitals, vitals.opioidLevel + doseDelta)
@@ -109,6 +114,16 @@ private[casualtiesbelow] object InjectionSettlement {
         if (!player.hasInfiniteMaterials()) stack.consume(1, player)
     }
   }
+
+  /** Disabling infections prevents a dirty needle from creating a new infection, but never removes
+    * or freezes contamination of a limb that is already infected.
+    */
+  private[item] def allowedInfectionSeed(
+      seed: Double,
+      infectionEnabled: Boolean,
+      alreadyInfected: Boolean
+  ): Double =
+    if (infectionEnabled || alreadyInfected) seed else 0.0
 
   /** Reported droplets clamped to the amount actually present. */
   private[item] def clampDroplets(requested: Long, remaining: Long): Long =

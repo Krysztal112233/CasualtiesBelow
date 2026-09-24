@@ -11,6 +11,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.pain.PainCalc
@@ -125,7 +126,7 @@ object MedicalPanel {
     // Immune health displays its actual value while the bar fill uses the configured maximum; red
     // below the infection break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the
     // immune system can no longer outpace infections.
-    val maxImmune = CasualtiesBelowConfig.vitals.maxImmuneHealth.get()
+    val maxImmune = Consts.Vitals.MaxImmuneHealth
 
     y = extractStatBar(
       graphics,
@@ -161,8 +162,7 @@ object MedicalPanel {
       y,
       "screen.casualtiesbelow.body_status.stat.sepsis".translatable(),
       Component.literal(
-        (vitals.infection.sepsis / CasualtiesBelowConfig.sepsis.maxSepsis
-          .get() * 100.0).toInt.toString
+        (vitals.infection.sepsis / Consts.Sepsis.MaxSepsis * 100.0).toInt.toString
       ),
       vitals.infection.sepsis > 0.0
     )

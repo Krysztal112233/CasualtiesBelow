@@ -4,12 +4,9 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
-/** How per-limb pains are aggregated into whole-body pain. Explicitly extends [[java.lang.Enum]]
-  * (Scala 3 enums otherwise only extend `scala.reflect.Enum`) so it works with Java's F-bounded
-  * enum APIs — e.g. NeoForge's `ModConfigSpec.Builder.defineEnum`.
-  */
+/** Strategies for aggregating per-limb pains; normal gameplay uses the fixed geometric strategy. */
 enum TotalPainStrategy extends Enum[TotalPainStrategy] {
 
   /** The worst single pain; additional injuries don't add up. */
@@ -18,8 +15,8 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   /** Plain sum of all limb pains (clamped to [[LimbSnapshot.MaxValue]] like every strategy). */
   case Sum
 
-  /** Geometric-decay sum over descending-sorted pains; see [[PainCalc.total]]. Honors the
-    * configured decay factor and filter threshold.
+  /** Geometric-decay sum over descending-sorted pains; see [[PainCalc.total]]. Honors the fixed
+    * decay factor and filter threshold.
     */
   case Geometric
 }
@@ -40,7 +37,7 @@ enum TotalPainStrategy extends Enum[TotalPainStrategy] {
   *     server-side, client-side results are presentation-only.
   *
   * Wound grants come from the classified profile; callers supply fixed condition grants from the
-  * applicable gameplay rules. Aggregation strategy remains global config-driven math.
+  * applicable gameplay rules. Aggregation uses fixed balance defaults.
   */
 object PainCalc {
 
@@ -60,10 +57,10 @@ object PainCalc {
   def total(body: BodyComponent): Double =
     total(BodyPart.values.map(part => body.stats(part).pain))
 
-  /** Whole-body pain from a collection of limb pain values, using the configured strategy. */
+  /** Whole-body pain from a collection of limb pain values, using the fixed strategy. */
   def total(pains: Iterable[Double]): Double = {
     val values = pains.toSeq
-    val result = CasualtiesBelowConfig.pain.totalPainStrategy.get() match {
+    val result = Consts.Pain.TotalPainStrategy match {
       case TotalPainStrategy.Max       => values.maxOption.getOrElse(0.0)
       case TotalPainStrategy.Sum       => values.sum
       case TotalPainStrategy.Geometric => geometric(values)
@@ -75,8 +72,8 @@ object PainCalc {
     * out, falls back to `max`.
     */
   private def geometric(pains: Seq[Double]): Double = {
-    val decay = CasualtiesBelowConfig.pain.totalPainDecay.get()
-    val filterThreshold = CasualtiesBelowConfig.pain.totalPainFilterThreshold.get()
+    val decay = Consts.Pain.TotalPainDecay
+    val filterThreshold = Consts.Pain.TotalPainFilterThreshold
 
     val sorted = pains.filter(_ >= filterThreshold).sortBy(-_)
     // When every pain is below the filter threshold, the worst single pain still counts.

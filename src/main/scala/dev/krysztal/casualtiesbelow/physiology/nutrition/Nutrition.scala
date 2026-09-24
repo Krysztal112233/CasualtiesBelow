@@ -11,7 +11,7 @@ import net.minecraft.world.damagesource.DamageTypes
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 
 /** Translates accepted vanilla starvation pulses into bounded blood loss.
@@ -72,9 +72,7 @@ private[casualtiesbelow] object Nutrition {
     }
 
     val fraction =
-      CasualtiesBelowConfig.hazards.starvationBloodLossFractionPerDamage
-        .get()
-        .doubleValue
+      Consts.Hazards.StarvationBloodLossFractionPerDamage
         .max(0.0)
         .min(1.0)
     val requestedLoss = BloodVolume.healthyMaximum * fraction * damage
@@ -100,15 +98,11 @@ private[casualtiesbelow] object Nutrition {
     */
   private def bloodFloor(player: ServerPlayer, maximum: Double): Double = {
     val easyFraction =
-      CasualtiesBelowConfig.hazards.easyStarvationBloodFloorFraction
-        .get()
-        .doubleValue
+      Consts.Hazards.EasyStarvationBloodFloorFraction
         .max(0.0)
         .min(1.0)
     val normalFraction =
-      CasualtiesBelowConfig.hazards.normalStarvationBloodFloorFraction
-        .get()
-        .doubleValue
+      Consts.Hazards.NormalStarvationBloodFloorFraction
         .max(0.0)
         .min(easyFraction)
 

@@ -15,8 +15,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
-import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.data.schema.ConditionStepData
 import dev.krysztal.casualtiesbelow.data.schema.FixedTargetData
 import dev.krysztal.casualtiesbelow.data.schema.HitLocationTargetData
@@ -28,6 +26,7 @@ import dev.krysztal.casualtiesbelow.data.schema.WeightedTargetData
 import dev.krysztal.casualtiesbelow.data.schema.WoundApplicationData
 import dev.krysztal.casualtiesbelow.data.schema.WoundSeverityPolicy
 import dev.krysztal.casualtiesbelow.data.schema.WoundTargetData
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.ClassifiedWoundRule
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
@@ -320,7 +319,7 @@ object WoundApplications {
       damage * enchantmentRatio * (1.0 - slotFormulaFactor(
         player,
         EquipmentSlot.FEET,
-        CasualtiesBelowConfig.fall.bootsCushionFormula
+        Consts.Fall.BootsCushionFormula
       ))
   }
 
@@ -334,7 +333,7 @@ object WoundApplications {
       severity * (1.0 - slotFormulaFactor(
         player,
         EquipmentSlot.LEGS,
-        CasualtiesBelowConfig.fall.leggingsConditionProtectionFormula
+        Consts.Fall.LeggingsConditionProtectionFormula
       ))
   }
 
@@ -386,7 +385,7 @@ object WoundApplications {
   private def slotFormulaFactor(
       player: Player,
       slot: EquipmentSlot,
-      formula: FormulaConfigValue
+      formula: Consts.FixedFormula
   ): Double = {
     val stack = player.getItemBySlot(slot)
     if (stack.isEmpty) return 0.0

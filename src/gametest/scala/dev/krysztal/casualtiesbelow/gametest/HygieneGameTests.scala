@@ -13,6 +13,11 @@ final class HygieneGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def dirtAccumulationSettingScalesPassiveGain(helper: GameTestHelper): Unit = {
+    HygieneScenarios.dirtAccumulationSettingScalesPassiveGain(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def cauldronSoakWashesAndConsumesLevels(helper: GameTestHelper): Unit = {
     HygieneScenarios.cauldronSoakWashesAndConsumesLevels(helper)
   }
@@ -25,5 +30,10 @@ final class HygieneGameTests {
   @GameTest(maxTicks = 20)
   def dirtyInjectionSeedsInfection(helper: GameTestHelper): Unit = {
     HygieneScenarios.dirtyInjectionSeedsInfection(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def disabledInfectionsBlockDirtyNeedleOnset(helper: GameTestHelper): Unit = {
+    HygieneScenarios.disabledInfectionsBlockDirtyNeedleOnset(helper)
   }
 }

@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** The built-in contributors of the heat balance: exercise heat on the direct channel and
   * evaporative cooling on the dissipative channel. Direct contact heat is damage-type driven and
@@ -31,8 +31,7 @@ private[temperature] object HeatContributions {
       val exhaustionPerSecond = ExertionTracker.observe(player)
       if (exhaustionPerSecond > 0.0) {
         context.addDirect(
-          exhaustionPerSecond * CasualtiesBelowConfig.temperature.exerciseHeatPerExhaustionPerSecond
-            .get()
+          exhaustionPerSecond * Consts.Temperature.ExerciseHeatPerExhaustionPerSecond
         )
       }
     }
@@ -51,8 +50,7 @@ private[temperature] object HeatContributions {
     ): Unit = {
       if (frame.wetness > 0.0) {
         context.addDissipative(
-          frame.wetness * frame.airDryness * CasualtiesBelowConfig.temperature.evaporationCoolingPerMinute
-            .get()
+          frame.wetness * frame.airDryness * Consts.Temperature.EvaporationCoolingPerMinute
         )
       }
     }

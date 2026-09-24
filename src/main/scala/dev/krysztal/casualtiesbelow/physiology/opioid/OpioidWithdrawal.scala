@@ -1,7 +1,7 @@
 package dev.krysztal.casualtiesbelow.physiology.opioid
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Derived withdrawal state and its cross-system multipliers. No withdrawal flag is persisted. */
 object OpioidWithdrawal {
@@ -14,8 +14,8 @@ object OpioidWithdrawal {
     isActive(
       level,
       dependence,
-      CasualtiesBelowConfig.opioid.withdrawalDependenceThreshold.get(),
-      CasualtiesBelowConfig.opioid.withdrawalLevelPerDependence.get()
+      Consts.Opioid.WithdrawalDependenceThreshold,
+      Consts.Opioid.WithdrawalLevelPerDependence
     )
   }
 
@@ -29,6 +29,6 @@ object OpioidWithdrawal {
   }
 
   def painGrantMultiplier(vitals: VitalsComponent): Double = {
-    if (isActive(vitals)) CasualtiesBelowConfig.opioid.withdrawalPainMultiplier.get() else 1.0
+    if (isActive(vitals)) Consts.Opioid.WithdrawalPainMultiplier else 1.0
   }
 }

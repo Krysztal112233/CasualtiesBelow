@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
@@ -39,7 +40,7 @@ private[casualtiesbelow] object Consciousness {
           vitals.consciousness.level,
           vitals.consciousness.unconscious,
           currentPressures(vitals),
-          CasualtiesBelowConfig.vitals.consciousnessRecoveryPerTick.get(),
+          Consts.Vitals.ConsciousnessRecoveryPerTick,
           configuredWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
@@ -152,8 +153,8 @@ private[casualtiesbelow] object Consciousness {
     List(
       hypoxiaPressure(
         vitals.circulation.bloodOxygen,
-        CasualtiesBelowConfig.vitals.consciousnessRecoveryOxygenThreshold.get(),
-        CasualtiesBelowConfig.vitals.consciousnessOxygenCapMultiplier.get()
+        Consts.Vitals.ConsciousnessRecoveryOxygenThreshold,
+        Consts.Vitals.ConsciousnessOxygenCapMultiplier
       ),
       ConsciousnessPressure(ceiling = OpioidEffects.consciousnessCeiling(vitals.opioidLevel)),
       temperaturePressure(vitals.bodyTemperature)
@@ -171,18 +172,18 @@ private[casualtiesbelow] object Consciousness {
   ): ConsciousnessPressure = {
     val coldDev = TemperatureCalc.coldDeviation(
       bodyTemperature,
-      CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
+      Consts.Temperature.PenaltyBandLowCelsius
     )
     val hotDev = TemperatureCalc.hotDeviation(
       bodyTemperature,
-      CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
+      Consts.Temperature.PenaltyBandHighCelsius
     )
     val ceiling = finiteInRange(
-      CasualtiesBelowConfig.temperature.temperatureConsciousnessCeilingFormula.evaluate(
+      Consts.Temperature.TemperatureConsciousnessCeilingFormula.evaluate(
         coldDev,
         hotDev,
-        CasualtiesBelowConfig.temperature.coldConsciousnessSlopePerDegree.get(),
-        CasualtiesBelowConfig.temperature.hotConsciousnessSlopePerDegree.get()
+        Consts.Temperature.ColdConsciousnessSlopePerDegree,
+        Consts.Temperature.HotConsciousnessSlopePerDegree
       ),
       0.0,
       VitalsComponent.MaxValue,

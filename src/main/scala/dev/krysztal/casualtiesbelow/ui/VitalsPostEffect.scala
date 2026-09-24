@@ -19,6 +19,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 
@@ -147,8 +148,9 @@ object VitalsPostEffect {
     val painShock = painShockVisual(player, vitals, gameplayData, deltaTracker)
     // Smooth the 1 Hz-synced body temperature once per frame and share it between the frost and
     // heat ramps — calling the smoother twice would double-advance the interpolation.
+    val temperatureOverlaysEnabled = CasualtiesBelowConfig.visuals.temperatureOverlayEnabled.get()
     val smoothedTemperature =
-      if (CasualtiesBelowConfig.visuals.temperatureOverlayEnabled.get()) {
+      if (temperatureOverlaysEnabled) {
         smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
       } else {
         snapBodyTemperature(player, vitals.bodyTemperature)
@@ -163,8 +165,8 @@ object VitalsPostEffect {
       shockNoise = painShock.noise,
       shockTime = painShock.time,
       grimeVignette = grimeVisual(vitals),
-      frost = frostVisual(smoothedTemperature),
-      heat = heatVisual(smoothedTemperature),
+      frost = if (temperatureOverlaysEnabled) frostVisual(smoothedTemperature) else 0.0f,
+      heat = if (temperatureOverlaysEnabled) heatVisual(smoothedTemperature) else 0.0f,
       heatTime = (player.tickCount % ShockTimePeriodTicks) +
         deltaTracker.getGameTimeDeltaPartialTick(true)
     )
@@ -177,9 +179,9 @@ object VitalsPostEffect {
     TemperatureVisuals
       .frostStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.visuals.frostOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.visuals.frostOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.visuals.frostOverlayMaxStrength.get()
+        Consts.Visuals.FrostOverlayStartCelsius,
+        Consts.Visuals.FrostOverlayFullSpanCelsius,
+        Consts.Visuals.FrostOverlayMaxStrength
       )
       .toFloat
   }
@@ -191,24 +193,24 @@ object VitalsPostEffect {
     TemperatureVisuals
       .heatStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.visuals.heatOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.visuals.heatOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.visuals.heatOverlayMaxStrength.get()
+        Consts.Visuals.HeatOverlayStartCelsius,
+        Consts.Visuals.HeatOverlayFullSpanCelsius,
+        Consts.Visuals.HeatOverlayMaxStrength
       )
       .toFloat
   }
 
   /** Grime vignette: the dirtiness display bands gate presentation only — the ramp starts at the
-    * grimy band and reaches the configured opacity at maximum dirtiness. Brown-toned, distinct from
-    * the nausea darkening.
+    * grimy band and reaches its fixed maximum opacity at maximum dirtiness. Brown-toned, distinct
+    * from the nausea darkening.
     */
   private def grimeVisual(vitals: VitalsComponent): Float = {
     val progress = progressAbove(
       vitals.dirtiness,
-      CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get(),
-      CasualtiesBelowConfig.dirtiness.maxValue.get()
+      Consts.Visuals.DirtinessBandGrimy,
+      Consts.Dirtiness.MaxValue
     )
-    CasualtiesBelowConfig.visuals.grimeVignetteMaxOpacity.get().toFloat * progress
+    Consts.Visuals.GrimeVignetteMaxOpacity.toFloat * progress
   }
 
   private def consciousnessVisual(
@@ -216,7 +218,7 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       deltaTracker: DeltaTracker
   ): ConsciousnessVisual = {
-    val dimThreshold = CasualtiesBelowConfig.vitals.consciousnessImpairmentStartThreshold.get()
+    val dimThreshold = Consts.Vitals.ConsciousnessImpairmentStartThreshold
     val progress = Mth.clamp(
       ((dimThreshold - vitals.consciousness.level) / math.max(dimThreshold, 1.0e-6)).toFloat,
       0.0f,
@@ -229,7 +231,7 @@ object VitalsPostEffect {
       } else {
         1.0f
       }
-    val maxDimming = CasualtiesBelowConfig.visuals.consciousnessMaxDimOpacity.get().toFloat
+    val maxDimming = Consts.Visuals.ConsciousnessMaxDimOpacity.toFloat
     val dimming = maxDimming * progress * pulse
     val incapacitation =
       maxDimming * Unconsciousness.severityOf(vitals.consciousness.level).toFloat
@@ -256,7 +258,7 @@ object VitalsPostEffect {
       gameplayData.maxDiscomfort
     )
     DiscomfortVisual(
-      vignette = CasualtiesBelowConfig.visuals.nauseaVignetteMaxOpacity.get().toFloat * progress
+      vignette = Consts.Visuals.NauseaVignetteMaxOpacity.toFloat * progress
     )
   }
 
@@ -264,9 +266,9 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       gameplayData: GameplayDataSnapshot
   ): BloodLossVisual = {
-    val desaturationStart = CasualtiesBelowConfig.visuals.bloodDesaturationStartFraction.get()
+    val desaturationStart = Consts.Visuals.BloodDesaturationStartFraction
     val fullDesaturation =
-      math.min(CasualtiesBelowConfig.visuals.bloodFullDesaturationFraction.get(), desaturationStart)
+      math.min(Consts.Visuals.BloodFullDesaturationFraction, desaturationStart)
     val bloodFraction = vitals.circulation.bloodVolume / gameplayData.maxBloodVolume
     BloodLossVisual(
       desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
@@ -281,7 +283,7 @@ object VitalsPostEffect {
   ): PainShockVisual = {
     PainShockVisual(
       strength = shockVisualStrength(player, vitals, gameplayData, deltaTracker),
-      noise = CasualtiesBelowConfig.visuals.shockVisualNoiseStrength.get().toFloat,
+      noise = Consts.Visuals.ShockVisualNoiseStrength.toFloat,
       time = (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
         deltaTracker.getGameTimeDeltaPartialTick(true)
     )
@@ -293,7 +295,7 @@ object VitalsPostEffect {
       gameplayData: GameplayDataSnapshot,
       deltaTracker: DeltaTracker
   ): Float = {
-    val visualStart = CasualtiesBelowConfig.visuals.shockVisualStartLoad.get().toFloat
+    val visualStart = Consts.Visuals.ShockVisualStartLoad.toFloat
     val actualLoad = Mth.clamp(vitals.shock.load.toFloat, 0.0f, 100.0f)
     val warningStage =
       vitals.shock.stage == PainShockStage.Stable ||
@@ -311,7 +313,7 @@ object VitalsPostEffect {
     val pulseProgress = progressAbove(load, pulseStart, collapseThreshold)
     val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
     val pulseWave = 0.5f + 0.5f * Mth.sin(time * ShockPulseSpeed)
-    val pulseDepth = CasualtiesBelowConfig.visuals.shockVisualPulseStrength.get().toFloat
+    val pulseDepth = Consts.Visuals.ShockVisualPulseStrength.toFloat
     val modulation = Mth.clamp(
       1.0f - pulseDepth * pulseProgress * pulseWave,
       ShockPulseMinimumModulation,

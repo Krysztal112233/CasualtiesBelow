@@ -9,8 +9,8 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 
@@ -19,11 +19,11 @@ object VitalsEffectScenarios {
   def mirrorsVitalsToStatusEffects(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    val maxBloodVolume = CasualtiesBelowConfig.vitals.maxBloodVolume.get()
-    val hypoxiaThreshold = CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
-    val coldThreshold = CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
-    val hotThreshold = CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
-    val grimeThreshold = CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get()
+    val maxBloodVolume = Consts.Vitals.MaxBloodVolume
+    val hypoxiaThreshold = Consts.Vitals.BloodOxygenHypoxiaThreshold
+    val coldThreshold = Consts.Temperature.PenaltyBandLowCelsius
+    val hotThreshold = Consts.Temperature.PenaltyBandHighCelsius
+    val grimeThreshold = Consts.Visuals.DirtinessBandGrimy
 
     VitalsMutations.setOpioidLevel(vitals, 40.0)
     VitalsMutations.setOpioidDependence(vitals, 40.0)

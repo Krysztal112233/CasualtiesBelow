@@ -28,10 +28,10 @@ import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
   *
   * Per server tick and per player (skipped in creative/spectator, like the rest of physiology):
   *
-  *   - passive accrual runs at the configured per-second rate with situational multipliers stacked
-  *     multiplicatively: sprinting, a full armor set (heat buildup), Nether biomes (ash,
-  *     compounding vanilla's no-water rule) and sweating while the core runs hot (marked each tick
-  *     by the temperature progression)
+  *   - passive accrual runs at a fixed per-second base rate, scaled by the configured dirt gain
+  *     multiplier and situational multipliers: sprinting, a full armor set (heat buildup), Nether
+  *     biomes (ash, compounding vanilla's no-water rule) and sweating while the core runs hot
+  *     (marked each tick by the temperature progression)
   *   - immersion in water washes at the configured rate, dampened in murky water (biome tag
   *     `casualtiesbelow:dirty_water`); rain is a slower free wash. Immersion wins over rain when
   *     both apply. Washing always far outruns accrual, so hygiene is a plannable resource rather
@@ -82,12 +82,12 @@ object Dirtiness {
     val biome = level.getBiome(player.blockPosition())
 
     val accrual = accrualPerTick(
-      CasualtiesBelowConfig.dirtiness.accrualPerSecond.get(),
-      CasualtiesBelowConfig.dirtiness.sprintMultiplier.get(),
-      CasualtiesBelowConfig.dirtiness.armoredMultiplier.get(),
-      CasualtiesBelowConfig.dirtiness.netherMultiplier.get(),
+      Consts.Dirtiness.AccrualPerSecond,
+      Consts.Dirtiness.SprintMultiplier,
+      Consts.Dirtiness.ArmoredMultiplier,
+      Consts.Dirtiness.NetherMultiplier,
       if (sweatingNow.contains(player.getUUID)) {
-        CasualtiesBelowConfig.temperature.sweatDirtinessMultiplier.get()
+        Consts.Temperature.SweatDirtinessMultiplier
       } else {
         1.0
       },
@@ -95,18 +95,19 @@ object Dirtiness {
       fullyArmored = isFullyArmored(player),
       inNether = biome.is(BiomeTags.IS_NETHER)
     )
+    val dirtGain = accrual * CasualtiesBelowConfig.diseaseHygiene.dirtAccumulationMultiplier.get()
     val wash = washPerTick(
-      CasualtiesBelowConfig.dirtiness.washWaterPerSecond.get(),
-      CasualtiesBelowConfig.dirtiness.washRainPerSecond.get(),
-      CasualtiesBelowConfig.dirtiness.dirtyWaterWashMultiplier.get(),
+      CasualtiesBelowConfig.diseaseHygiene.washWaterPerSecond.get(),
+      Consts.Dirtiness.WashRainPerSecond,
+      Consts.Dirtiness.DirtyWaterWashMultiplier,
       inWater = player.isInWater,
       inRain = level.isRainingAt(player.blockPosition()),
       murkyWater = biome.is(CasualtiesBelowTags.DirtyWaterBiomes)
     )
     val next =
-      (vitals.dirtiness + accrual - wash)
+      (vitals.dirtiness + dirtGain - wash)
         .max(0.0)
-        .min(CasualtiesBelowConfig.dirtiness.maxValue.get())
+        .min(Consts.Dirtiness.MaxValue)
     if (next != vitals.dirtiness) {
       VitalsMutations.setDirtiness(vitals, next)
       if (syncTick) VitalsMutations.syncNow(player)
@@ -182,7 +183,7 @@ object Dirtiness {
     }
 
     val washed =
-      (CasualtiesBelowConfig.dirtiness.washWaterPerSecond
+      (CasualtiesBelowConfig.diseaseHygiene.washWaterPerSecond
         .get()
         .doubleValue
         .max(0.0) / Consts.TicksPerSecond)
@@ -190,8 +191,8 @@ object Dirtiness {
     if (washed <= 0.0) return
     VitalsMutations.setDirtiness(vitals, current - washed)
 
-    val pointsPerLevel = CasualtiesBelowConfig.dirtiness.cauldronPointsPerLevel.get()
-    if (pointsPerLevel <= 0.0) return // configured as free washing: no level consumption
+    val pointsPerLevel = Consts.Dirtiness.CauldronPointsPerLevel
+    if (pointsPerLevel <= 0.0) return // Guard against an invalid fixed balance constant.
     val id = player.getUUID
     val progress = cauldronProgress.getOrElse(id, 0.0) + washed
     if (progress >= pointsPerLevel) {

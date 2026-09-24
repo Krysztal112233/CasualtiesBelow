@@ -1,7 +1,7 @@
 package dev.krysztal.casualtiesbelow.physiology.adrenaline
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
+import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Acute-pain multiplier derived from the authoritative adrenaline reserve.
   *
@@ -13,8 +13,8 @@ object AdrenalinePain {
   def currentMultiplier(vitals: VitalsComponent): Double =
     multiplier(
       Adrenaline.currentAmount(vitals),
-      CasualtiesBelowConfig.adrenaline.painReductionPerPoint.get(),
-      CasualtiesBelowConfig.adrenaline.maxPainReductionFraction.get()
+      Consts.Adrenaline.PainReductionPerPoint,
+      Consts.Adrenaline.MaxPainReductionFraction
     )
 
   private[casualtiesbelow] def multiplier(

@@ -60,8 +60,8 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
   * immediately. Registration order keeps this pipeline ahead of the body's end-of-tick dirty flush,
   * so its mutations ship in the same tick.
   *
-  * The remaining numeric constants are balancing placeholders; expect them to become config values
-  * once playtesting starts.
+  * Technical balance constants live in [[dev.krysztal.casualtiesbelow.internal.Consts]]; only a few
+  * player-facing gameplay choices remain configurable.
   */
 object InjuryProgression {
 

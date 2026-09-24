@@ -10,6 +10,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbInjuryService
+import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -17,12 +18,37 @@ import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 /** Scala scenario implementations invoked by the Java GameTest discovery bridge. */
 object OpioidPhaseOneScenarios {
 
+  /** The analgesia multiplier affects pain drain but not opioid exposure or its other effects. */
+  def opioidPainReliefSettingScalesDrain(helper: GameTestHelper): Unit = {
+    val setting = CasualtiesBelowConfig.medicineFood.opioidPainReliefMultiplier
+    val previous = setting.get()
+    try {
+      setting.set(1.0)
+      val baseline = OpioidEffects.painDrainPerTick(100.0, 0.0)
+      helper.assertTrue(baseline > 0.0, "default analgesia must drain pain")
+
+      setting.set(0.0)
+      helper.assertTrue(
+        OpioidEffects.painDrainPerTick(100.0, 0.0) == 0.0,
+        "zero analgesia must not drain pain"
+      )
+      setting.set(2.0)
+      helper.assertTrue(
+        math.abs(OpioidEffects.painDrainPerTick(100.0, 0.0) - 2.0 * baseline) < 1.0e-12,
+        "double analgesia must double the drain"
+      )
+    } finally {
+      setting.set(previous)
+    }
+    helper.succeed()
+  }
+
   def opioidAcceleratesPainDecay(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
     val vitals = player.vitals
     BodyMutations.mutate(player, BodyPart.Torso) { limb => limb.pain = 100.0 }
 
-    val naturalDecay = CasualtiesBelowConfig.pain.painDecayPerTick.get()
+    val naturalDecay = Consts.Pain.PainDecayPerTick
     val drainPerTick = OpioidEffects.painDrainPerTick(100.0, 0.0)
 
     helper
