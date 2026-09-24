@@ -12,8 +12,6 @@ private[config] final case class OpioidValues(
     dependenceExposurePerLevelPerTick: ConfigValue[Double],
     dependenceDecayPerTick: ConfigValue[Double],
     opioidAnalgesiaFormula: FormulaConfigValue,
-    excitementStartLevel: ConfigValue[Double],
-    excitementEndLevel: ConfigValue[Double],
     opioidSedationCeilingFormula: FormulaConfigValue,
     opioidRespiratoryEfficiencyFormula: FormulaConfigValue,
     respiratoryFailureEfficiencyThreshold: ConfigValue[Double],
@@ -65,16 +63,6 @@ private[config] object OpioidValues {
           "display values remain unchanged. Invalid formulas fall back to the default."
         )
       ),
-      excitementStartLevel = b
-        .comment(
-          "Reserved excitement-band lower bound. Phase 1 assigns no mechanical effect to it."
-        )
-        .defineInRange("excitementStartLevel", 50.0, 0.0, 200.0, classOf[Double]),
-      excitementEndLevel = b
-        .comment(
-          "Reserved excitement-band upper bound. Phase 1 assigns no mechanical effect to it."
-        )
-        .defineInRange("excitementEndLevel", 120.0, 0.0, 200.0, classOf[Double]),
       opioidSedationCeilingFormula = new FormulaConfigValue(
         b,
         "sedationCeilingFormula",

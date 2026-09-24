@@ -40,7 +40,6 @@ object CasualtiesBelowConfig {
   // casualtiesbelow-common.toml; do not reorder casually.
   val vitals = VitalsValues.define(Builder)
   val hazards = HazardsValues.define(Builder)
-  val limbs = LimbsValues.define(Builder)
   val bleeding = BleedingValues.define(Builder)
   val infection = InfectionValues.define(Builder)
   val sepsis = SepsisValues.define(Builder)

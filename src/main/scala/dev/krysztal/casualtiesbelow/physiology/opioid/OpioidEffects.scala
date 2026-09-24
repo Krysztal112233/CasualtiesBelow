@@ -44,19 +44,6 @@ object OpioidEffects {
     efficiency < threshold
   }
 
-  /** Reserved classification only. Phase 1 deliberately assigns no mechanical effect to it. */
-  def isInExcitementBand(level: Double): Boolean = {
-    isInExcitementBand(
-      level,
-      CasualtiesBelowConfig.opioid.excitementStartLevel.get(),
-      CasualtiesBelowConfig.opioid.excitementEndLevel.get()
-    )
-  }
-
-  private[opioid] def isInExcitementBand(level: Double, start: Double, end: Double): Boolean = {
-    level >= start && level <= end
-  }
-
   private def boundedFraction(value: Double): Double = bounded(value, 1.0)
 
   private def bounded(value: Double, maximum: Double): Double = {

@@ -32,16 +32,4 @@ final class OpioidEffectsTest {
     assertTrue(OpioidEffects.causesRespiratoryFailure(0.2999, 0.3))
     assertFalse(OpioidEffects.causesRespiratoryFailure(0.3, 0.3))
   }
-
-  @Test
-  def excitementBandIsClassificationOnly(): Unit = {
-    assertFalse(OpioidEffects.isInExcitementBand(49.999, 50.0, 120.0))
-    assertTrue(OpioidEffects.isInExcitementBand(50.0, 50.0, 120.0))
-    assertTrue(OpioidEffects.isInExcitementBand(120.0, 50.0, 120.0))
-    assertFalse(OpioidEffects.isInExcitementBand(120.001, 50.0, 120.0))
-
-    val atBandStart = Opioid.nextState(50.0, 0.0, 0.0083, 0.0000125, 0.000125)
-    assertEquals(49.9917, atBandStart.level, 1.0e-9)
-    assertEquals(0.0005, atBandStart.dependence, 1.0e-12)
-  }
 }
