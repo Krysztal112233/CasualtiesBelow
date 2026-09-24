@@ -58,6 +58,11 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def totemGrantsRecoveryBurst(helper: GameTestHelper): Unit = {
+    TotemRecoveryScenarios.totemGrantsRecoveryBurst(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def syringeInjectsStoredOpioidDose(helper: GameTestHelper): Unit = {
     SyringeScenarios.injectsStoredOpioidDose(helper)
   }

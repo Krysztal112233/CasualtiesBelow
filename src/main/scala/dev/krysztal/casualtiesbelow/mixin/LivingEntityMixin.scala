@@ -6,6 +6,7 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
+import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
 import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
 import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
 
@@ -56,12 +57,16 @@ abstract class LivingEntityMixin {
     if (!ci.getReturnValue) return
 
     this.asInstanceOf[LivingEntity] match {
-      case player: ServerPlayer
-          if killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss) ||
-            killingDamage.is(CasualtiesBelowDamageTypes.Starvation) =>
-        TotemHemostasis.activate(player)
-      case player: ServerPlayer if killingDamage.is(CasualtiesBelowDamageTypes.Hypoxia) =>
-        HypoxiaProgression.onDeathProtection(player)
+      case player: ServerPlayer =>
+        CasualtiesBelowPotionEffects.grantTotemRecovery(player)
+        if (
+          killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss) ||
+          killingDamage.is(CasualtiesBelowDamageTypes.Starvation)
+        ) {
+          TotemHemostasis.activate(player)
+        } else if (killingDamage.is(CasualtiesBelowDamageTypes.Hypoxia)) {
+          HypoxiaProgression.onDeathProtection(player)
+        }
       case _ =>
     }
   }

@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.effect
 import net.minecraft.core.Holder
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
 import net.minecraft.world.item.Items
@@ -76,4 +77,13 @@ private[casualtiesbelow] object CasualtiesBelowPotionEffects {
     * the effect, its potion, and the brewing recipe in one go.
     */
   def register(): Unit = {}
+
+  /** Grants a level-III skin/muscle recovery burst for 20 seconds after a totem of undying rescues
+    * the player; vanilla has already applied its own totem effects when this runs. The values are
+    * fixed in place, mirroring vanilla's hardcoded totem grants.
+    */
+  def grantTotemRecovery(player: ServerPlayer): Unit = {
+    player.addEffect(new MobEffectInstance(SkinRegeneration, 400, 2))
+    player.addEffect(new MobEffectInstance(MuscleRecovery, 400, 2))
+  }
 }
