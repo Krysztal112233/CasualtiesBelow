@@ -19,7 +19,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.InfectionSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
@@ -97,8 +96,8 @@ final class VitalsComponentImpl(val player: Player)
         Consciousness.normalizeStoredState(
           source.consciousness.level,
           Some(source.consciousness.unconscious),
-          CasualtiesBelowConfig.effectiveConsciousnessFloor,
-          CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold,
+          Consts.Vitals.ConsciousnessFloor,
+          Consts.Vitals.ConsciousnessKnockoutThreshold,
           normalizedShock.stage
         )
       }
@@ -316,8 +315,8 @@ final class VitalsComponentImpl(val player: Player)
         Consciousness.normalizeStoredState(
           savedConsciousness,
           savedUnconscious,
-          CasualtiesBelowConfig.effectiveConsciousnessFloor,
-          CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold,
+          Consts.Vitals.ConsciousnessFloor,
+          Consts.Vitals.ConsciousnessKnockoutThreshold,
           normalizedShock.stage
         )
       }

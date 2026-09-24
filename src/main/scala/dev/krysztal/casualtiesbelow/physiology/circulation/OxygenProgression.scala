@@ -82,14 +82,14 @@ private[casualtiesbelow] object OxygenProgression {
       BloodVolume.oxygenCarryingCapacity(vitals),
       breathingBlocked,
       deprivationRate,
-      Consts.Vitals.BloodOxygenRecoveryPerTick,
-      respiratoryEfficiency,
-      opioidRespiratoryFailure,
-      if (opioidRespiratoryFailure) {
-        Consts.Opioid.RespiratoryFailureOxygenDrainPerTick
-      } else {
-        0.0
-      }
+      respiratoryEfficiency = respiratoryEfficiency,
+      respirationFailed = opioidRespiratoryFailure,
+      respiratoryFailureDrain =
+        if (opioidRespiratoryFailure) {
+          Consts.Opioid.RespiratoryFailureOxygenDrainPerTick
+        } else {
+          0.0
+        }
     )
   }
 
@@ -98,29 +98,10 @@ private[casualtiesbelow] object OxygenProgression {
       carryingCapacity: Double,
       breathingBlocked: Boolean,
       deprivationRate: Double,
-      recoveryRate: Double
-  ): Double = {
-    nextBloodOxygen(
-      bloodOxygen,
-      carryingCapacity,
-      breathingBlocked,
-      deprivationRate,
-      recoveryRate,
-      respiratoryEfficiency = 1.0,
-      respirationFailed = false,
-      respiratoryFailureDrain = 0.0
-    )
-  }
-
-  private[casualtiesbelow] def nextBloodOxygen(
-      bloodOxygen: Double,
-      carryingCapacity: Double,
-      breathingBlocked: Boolean,
-      deprivationRate: Double,
-      recoveryRate: Double,
-      respiratoryEfficiency: Double,
-      respirationFailed: Boolean,
-      respiratoryFailureDrain: Double
+      recoveryRate: Double = Consts.Vitals.BloodOxygenRecoveryPerTick,
+      respiratoryEfficiency: Double = 1.0,
+      respirationFailed: Boolean = false,
+      respiratoryFailureDrain: Double = 0.0
   ): Double = {
     val capacity = normalizedOxygen(carryingCapacity, VitalsComponent.MaxBloodOxygen)
     val current = normalizedOxygen(bloodOxygen, capacity)

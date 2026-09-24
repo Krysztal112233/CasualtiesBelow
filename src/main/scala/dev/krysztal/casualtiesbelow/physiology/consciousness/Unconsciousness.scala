@@ -21,7 +21,6 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Query and enforcement entry points for the server-authored unconscious latch.
@@ -45,7 +44,7 @@ object Unconsciousness {
     * linearly to 1 at the independent knockout threshold.
     */
   def severityOf(consciousness: Double): Double = {
-    val knockout = CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold
+    val knockout = Consts.Vitals.ConsciousnessKnockoutThreshold
     val start = Consts.Vitals.ConsciousnessImpairmentStartThreshold
     if (start <= knockout) {
       if (consciousness <= knockout) 1.0 else 0.0

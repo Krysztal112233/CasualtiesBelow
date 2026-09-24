@@ -165,21 +165,8 @@ private[casualtiesbelow] object SyringeFilling {
   private[item] def measuredDose(
       baseDose: Double,
       calibrated: Boolean,
-      jitterUnit: Double
-  ): Double = {
-    measuredDose(
-      baseDose,
-      calibrated,
-      jitterUnit,
-      Consts.Opioid.UnmarkedSyringeJitterFraction
-    )
-  }
-
-  private[item] def measuredDose(
-      baseDose: Double,
-      calibrated: Boolean,
       jitterUnit: Double,
-      jitterFraction: Double
+      jitterFraction: Double = Consts.Opioid.UnmarkedSyringeJitterFraction
   ): Double = {
     if (calibrated) baseDose.max(0.0)
     else {

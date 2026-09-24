@@ -162,7 +162,7 @@ private[casualtiesbelow] object Limb {
     * fights the infection with its share of the total immune capacity (`fightShare` splits it
     * across all infected limbs) against a spread rate proportional to the immune complement — with
     * the defaults and a single infection, the break-even point is an immune health of 120 out of
-    * 200 (see [[CasualtiesBelowConfig.immuneBreakEven]]). Returns true on the discrete transitions
+    * 200 (see [[Consts.Infection.immuneBreakEven]]). Returns true on the discrete transitions
     * (onset, cleared).
     */
   private def tickInfection(

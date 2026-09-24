@@ -7,7 +7,6 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
@@ -34,8 +33,8 @@ private[casualtiesbelow] object Infection {
     * infection load (the sum of all limbs' infection progress) and recovers at a fixed rate, so
     * below the break-even load it drains away on its own. Its effect is applied where blood is
     * handled: the effective blood volume cap is compressed linearly with sepsis (see
-    * [[CasualtiesBelowConfig.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis.
-    * Returns whether the value changed.
+    * [[Consts.Vitals.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis. Returns
+    * whether the value changed.
     */
   private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
     val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length

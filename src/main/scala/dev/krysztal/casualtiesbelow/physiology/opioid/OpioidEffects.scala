@@ -49,14 +49,10 @@ object OpioidEffects {
     )
   }
 
-  def causesRespiratoryFailure(efficiency: Double): Boolean = {
-    causesRespiratoryFailure(
-      efficiency,
-      Consts.Opioid.RespiratoryFailureEfficiencyThreshold
-    )
-  }
-
-  private[opioid] def causesRespiratoryFailure(efficiency: Double, threshold: Double): Boolean = {
+  def causesRespiratoryFailure(
+      efficiency: Double,
+      threshold: Double = Consts.Opioid.RespiratoryFailureEfficiencyThreshold
+  ): Boolean = {
     efficiency < threshold
   }
 

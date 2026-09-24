@@ -23,11 +23,7 @@ object Opioid {
   private def tickWithdrawalDiscomfort(vitals: VitalsComponentImpl): Boolean = {
     if (!OpioidWithdrawal.isActive(vitals)) return false
 
-    val next = nextWithdrawalDiscomfort(
-      vitals.discomfort,
-      Consts.Opioid.WithdrawalDiscomfortPerTick,
-      Consts.Opioid.WithdrawalDiscomfortTarget
-    )
+    val next = nextWithdrawalDiscomfort(vitals.discomfort)
     if (next == vitals.discomfort) return false
 
     VitalsMutations.setDiscomfort(vitals, next)
@@ -35,30 +31,20 @@ object Opioid {
 
   private[casualtiesbelow] def nextWithdrawalDiscomfort(
       discomfort: Double,
-      gainPerTick: Double,
-      target: Double
+      gainPerTick: Double = Consts.Opioid.WithdrawalDiscomfortPerTick,
+      target: Double = Consts.Opioid.WithdrawalDiscomfortTarget
   ): Double = {
     val boundedTarget = target.max(0.0)
     if (discomfort >= boundedTarget) discomfort
     else (discomfort + gainPerTick.max(0.0)).min(boundedTarget)
   }
 
-  private[opioid] def nextState(level: Double, dependence: Double): OpioidState = {
-    nextState(
-      level,
-      dependence,
-      Consts.Opioid.LevelDecayPerTick,
-      Consts.Opioid.DependenceExposurePerLevelPerTick,
-      Consts.Opioid.DependenceDecayPerTick
-    )
-  }
-
   private[opioid] def nextState(
       level: Double,
       dependence: Double,
-      levelDecayPerTick: Double,
-      exposurePerLevelPerTick: Double,
-      dependenceDecayPerTick: Double
+      levelDecayPerTick: Double = Consts.Opioid.LevelDecayPerTick,
+      exposurePerLevelPerTick: Double = Consts.Opioid.DependenceExposurePerLevelPerTick,
+      dependenceDecayPerTick: Double = Consts.Opioid.DependenceDecayPerTick
   ): OpioidState = {
     val boundedLevel = normalize(level, VitalsComponent.MaxOpioidLevel)
     val boundedDependence = normalize(dependence, VitalsComponent.MaxOpioidDependence)

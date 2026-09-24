@@ -28,8 +28,7 @@ private[casualtiesbelow] object HypoxiaProgression {
     val step = advance(
       VitalsMutations.hypoxiaExposureTicks(vitals),
       vitals.circulation.bloodOxygen,
-      respirationFailed,
-      configuredDuration
+      respirationFailed
     )
     if (step.changed) {
       VitalsMutations.applyHypoxiaExposureTicks(vitals, step.exposureTicks)
@@ -57,15 +56,11 @@ private[casualtiesbelow] object HypoxiaProgression {
     changed
   }
 
-  private[casualtiesbelow] def normalizeExposureTicks(ticks: Int): Int = {
-    normalizeExposureTicks(ticks, configuredDuration)
-  }
-
   private[casualtiesbelow] def advance(
       exposureTicks: Int,
       bloodOxygen: Double,
       respirationFailed: Boolean,
-      durationTicks: Int
+      durationTicks: Int = configuredDuration
   ): HypoxiaStep = {
     val duration = durationTicks.max(1)
     val current = normalizeExposureTicks(exposureTicks, duration)
@@ -89,7 +84,10 @@ private[casualtiesbelow] object HypoxiaProgression {
     Consts.Hazards.TerminalHypoxiaDurationTicks.max(1)
   }
 
-  private def normalizeExposureTicks(ticks: Int, duration: Int): Int = {
+  private[casualtiesbelow] def normalizeExposureTicks(
+      ticks: Int,
+      duration: Int = configuredDuration
+  ): Int = {
     ticks.max(0).min(duration.max(1))
   }
 }

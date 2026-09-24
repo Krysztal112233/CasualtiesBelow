@@ -211,25 +211,6 @@ object CasualtiesBelowConfig {
 
   private val Spec = Builder.build()
 
-  def immuneBreakEven: scala.Double = {
-    val spread = Consts.Infection.InfectionSpreadPerTick
-    val fight = Consts.Infection.InfectionFightPerTick
-    Consts.Vitals.MaxImmuneHealth * spread / (spread + fight)
-  }
-
-  def effectiveMaxBloodVolume(sepsis: scala.Double): scala.Double = {
-    Consts.Vitals.MaxBloodVolume * (1.0 - (sepsis / Consts.Sepsis.MaxSepsis).min(1.0))
-  }
-
-  private[casualtiesbelow] def effectiveConsciousnessFloor: scala.Double =
-    Consts.Vitals.ConsciousnessFloor
-
-  private[casualtiesbelow] def effectiveConsciousnessKnockoutThreshold: scala.Double =
-    Consts.Vitals.ConsciousnessKnockoutThreshold
-
-  private[casualtiesbelow] def effectiveConsciousnessWakeThreshold: scala.Double =
-    Consts.Vitals.ConsciousnessWakeThreshold
-
   def register(): Unit =
     ConfigRegistry.INSTANCE.register(CasualtiesBelow.ModId, ModConfig.Type.COMMON, Spec)
 }

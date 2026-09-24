@@ -115,20 +115,9 @@ object Adrenaline {
   /** Server-side save/copy normalization. */
   private[casualtiesbelow] def normalizeStoredState(
       amount: Double,
-      graceTicks: Int
-  ): AdrenalineState =
-    normalizeStoredState(
-      amount,
-      graceTicks,
-      Consts.Adrenaline.MaxValue,
-      Consts.Adrenaline.CombatGraceTicks
-    )
-
-  private[casualtiesbelow] def normalizeStoredState(
-      amount: Double,
       graceTicks: Int,
-      maximum: Double,
-      combatGraceTicks: Int
+      maximum: Double = Consts.Adrenaline.MaxValue,
+      combatGraceTicks: Int = Consts.Adrenaline.CombatGraceTicks
   ): AdrenalineState = {
     val normalized = normalizeState(amount, graceTicks, maximum)
     normalized.copy(

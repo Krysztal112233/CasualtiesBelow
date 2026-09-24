@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Player
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
@@ -124,7 +123,7 @@ object MedicalPanel {
     )
 
     // Immune health displays its actual value while the bar fill uses the configured maximum; red
-    // below the infection break-even point (see CasualtiesBelowConfig.immuneBreakEven), where the
+    // below the infection break-even point (see Consts.Infection.immuneBreakEven), where the
     // immune system can no longer outpace infections.
     val maxImmune = Consts.Vitals.MaxImmuneHealth
 
@@ -135,13 +134,13 @@ object MedicalPanel {
       y,
       "screen.casualtiesbelow.body_status.stat.immune_health".translatable(),
       vitals.infection.immuneHealth,
-      CasualtiesBelowConfig.immuneBreakEven,
+      Consts.Infection.immuneBreakEven,
       maxImmune
     )
     // Blood volume as a fraction of the effective maximum: sepsis compresses the cap
-    // (see CasualtiesBelowConfig.effectiveMaxBloodVolume), so the bar shows the remaining
+    // (see Consts.Vitals.effectiveMaxBloodVolume), so the bar shows the remaining
     // room, not the configured base maximum.
-    val effectiveMaxBlood = CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.infection.sepsis)
+    val effectiveMaxBlood = Consts.Vitals.effectiveMaxBloodVolume(vitals.infection.sepsis)
 
     y = extractStatBar(
       graphics,

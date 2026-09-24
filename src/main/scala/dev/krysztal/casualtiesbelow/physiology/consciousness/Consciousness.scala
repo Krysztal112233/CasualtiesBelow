@@ -11,7 +11,6 @@ import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
@@ -41,7 +40,7 @@ private[casualtiesbelow] object Consciousness {
           vitals.consciousness.unconscious,
           currentPressures(vitals),
           Consts.Vitals.ConsciousnessRecoveryPerTick,
-          configuredWakeThreshold,
+          Consts.Vitals.ConsciousnessWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
@@ -64,7 +63,7 @@ private[casualtiesbelow] object Consciousness {
           consciousness,
           vitals.consciousness.unconscious,
           currentPressures(vitals),
-          configuredWakeThreshold,
+          Consts.Vitals.ConsciousnessWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
@@ -83,7 +82,7 @@ private[casualtiesbelow] object Consciousness {
           vitals.consciousness.level,
           vitals.consciousness.unconscious,
           currentPressures(vitals),
-          configuredWakeThreshold,
+          Consts.Vitals.ConsciousnessWakeThreshold,
           effectiveKnockoutThreshold(vitals),
           effectiveFloor(vitals)
         )
@@ -111,7 +110,7 @@ private[casualtiesbelow] object Consciousness {
       player: ServerPlayer,
       vitals: VitalsComponentImpl
   ): Boolean = {
-    val wakeThreshold = configuredWakeThreshold
+    val wakeThreshold = Consts.Vitals.ConsciousnessWakeThreshold
     val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
@@ -127,25 +126,17 @@ private[casualtiesbelow] object Consciousness {
     applyStep(player, vitals, step, PhysiologyChangeCause.HypoxiaDeathProtection)
   }
 
-  private def configuredWakeThreshold: Double = {
-    CasualtiesBelowConfig.effectiveConsciousnessWakeThreshold
-  }
-
-  private def configuredKnockoutThreshold: Double = {
-    CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold
-  }
-
   private def effectiveFloor(vitals: VitalsComponentImpl): Double = {
     vitals.shock.stage match {
       case PainShockStage.Recovering => 0.0
-      case _                         => CasualtiesBelowConfig.effectiveConsciousnessFloor
+      case _                         => Consts.Vitals.ConsciousnessFloor
     }
   }
 
   private def effectiveKnockoutThreshold(vitals: VitalsComponentImpl): Double = {
     vitals.shock.stage match {
       case PainShockStage.Recovering => 0.0
-      case _                         => configuredKnockoutThreshold
+      case _                         => Consts.Vitals.ConsciousnessKnockoutThreshold
     }
   }
 

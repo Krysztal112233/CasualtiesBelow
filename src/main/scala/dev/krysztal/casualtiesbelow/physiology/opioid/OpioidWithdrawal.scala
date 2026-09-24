@@ -10,20 +10,11 @@ object OpioidWithdrawal {
     isActive(vitals.opioidLevel, vitals.opioidDependence)
   }
 
-  def isActive(level: Double, dependence: Double): Boolean = {
-    isActive(
-      level,
-      dependence,
-      Consts.Opioid.WithdrawalDependenceThreshold,
-      Consts.Opioid.WithdrawalLevelPerDependence
-    )
-  }
-
   private[opioid] def isActive(
       level: Double,
       dependence: Double,
-      dependenceThreshold: Double,
-      levelPerDependence: Double
+      dependenceThreshold: Double = Consts.Opioid.WithdrawalDependenceThreshold,
+      levelPerDependence: Double = Consts.Opioid.WithdrawalLevelPerDependence
   ): Boolean = {
     dependence > dependenceThreshold && level < dependence * levelPerDependence
   }

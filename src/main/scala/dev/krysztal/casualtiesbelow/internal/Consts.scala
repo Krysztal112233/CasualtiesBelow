@@ -38,6 +38,13 @@ private[casualtiesbelow] object Consts {
     val FullOxygenBloodFraction = 0.6
     val FedBloodRegenPerTick = 0.05
     val MaxImmuneHealth = 200.0
+
+    /** Effective blood capacity after sepsis: linearly scaled down from [[MaxBloodVolume]], to zero
+      * at full sepsis.
+      */
+    def effectiveMaxBloodVolume(sepsis: Double): Double = {
+      MaxBloodVolume * (1.0 - (sepsis / Sepsis.MaxSepsis).min(1.0))
+    }
   }
 
   object Hazards {
@@ -67,6 +74,13 @@ private[casualtiesbelow] object Consts {
     val InfectionContagionStartProgress = 60.0
     val InfectionContagionFullProgress = 80.0
     val InfectionContagionMaxChancePerTick = 0.05
+
+    /** Immune level at which infection spread and immune fight exactly balance out. */
+    def immuneBreakEven: Double = {
+      val spread = InfectionSpreadPerTick
+      val fight = InfectionFightPerTick
+      Vitals.MaxImmuneHealth * spread / (spread + fight)
+    }
   }
 
   object Immune {

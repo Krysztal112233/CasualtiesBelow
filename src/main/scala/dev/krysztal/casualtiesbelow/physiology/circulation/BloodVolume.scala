@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.physiology.circulation
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
-import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** Bounded mutations of the server-authoritative blood volume.
@@ -20,18 +19,14 @@ private[casualtiesbelow] object BloodVolume {
   /** Current effective capacity after sepsis, normalized to the healthy configured capacity. */
   def effectiveMaximum(vitals: VitalsComponent): Double = {
     normalizeBound(
-      CasualtiesBelowConfig.effectiveMaxBloodVolume(vitals.infection.sepsis),
+      Consts.Vitals.effectiveMaxBloodVolume(vitals.infection.sepsis),
       healthyMaximum
     )
   }
 
   /** Blood-oxygen carrying capacity represented by the current bounded blood volume. */
   def oxygenCarryingCapacity(vitals: VitalsComponent): Double = {
-    oxygenCarryingCapacity(
-      vitals.circulation.bloodVolume,
-      healthyMaximum,
-      Consts.Vitals.FullOxygenBloodFraction
-    )
+    oxygenCarryingCapacity(vitals.circulation.bloodVolume)
   }
 
   /** Pure form of the carrying-capacity relationship, exposed to package tests. Blood at or above
@@ -40,8 +35,8 @@ private[casualtiesbelow] object BloodVolume {
     */
   private[circulation] def oxygenCarryingCapacity(
       bloodVolume: Double,
-      healthyMaximum: Double,
-      fullOxygenFraction: Double
+      healthyMaximum: Double = BloodVolume.healthyMaximum,
+      fullOxygenFraction: Double = Consts.Vitals.FullOxygenBloodFraction
   ): Double = {
     val healthy = nonNegative(healthyMaximum)
     val volume = normalizedVolume(bloodVolume, healthy)

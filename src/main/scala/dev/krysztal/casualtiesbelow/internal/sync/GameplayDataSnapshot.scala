@@ -170,8 +170,8 @@ object GameplayDataSnapshot {
     GameplayDataSnapshot(
       maxBloodVolume = Consts.Vitals.MaxBloodVolume,
       bloodOxygenHypoxiaThreshold = Consts.Vitals.BloodOxygenHypoxiaThreshold,
-      consciousnessKnockoutThreshold = config.effectiveConsciousnessKnockoutThreshold,
-      unconsciousWakeThreshold = config.effectiveConsciousnessWakeThreshold,
+      consciousnessKnockoutThreshold = Consts.Vitals.ConsciousnessKnockoutThreshold,
+      unconsciousWakeThreshold = Consts.Vitals.ConsciousnessWakeThreshold,
       shockCollapseThreshold = Consts.Pain.ShockCollapseThreshold,
       terminalHypoxiaDurationTicks = Consts.Hazards.TerminalHypoxiaDurationTicks.max(1),
       armorSkinFormula = Consts.Armor.ArmorSkinFactorFormula.source,
