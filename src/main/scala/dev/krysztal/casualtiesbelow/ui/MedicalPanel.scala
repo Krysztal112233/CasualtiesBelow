@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.ui
 
+import net.minecraft.ChatFormatting
 import net.minecraft.SharedConstants
 import net.minecraft.client.gui.Font
 import net.minecraft.client.gui.GuiGraphicsExtractor
@@ -58,11 +59,14 @@ object MedicalPanel {
   private val MuscleBadThreshold = 10.0
   private val SkinBadThreshold = 10.0
   private val PainBadThreshold = 50.0
+
+  /** Whole-body pain row: once opioid analgesia masks at least this fraction of the displayed pain,
+    * the felt value is appended in yellow parentheses.
+    */
+  private val FeltPainDeltaFraction = 0.10
   private val ConsciousnessBadThreshold = 50.0
   private val BloodBadThreshold = 70.0
 
-  // Visual warning band for the body-temperature row; mirrors the planned penalty band (see the
-  // 下游对接 design doc) until the band itself lands as config and these read from it.
   private val BodyTempLowWarning = 35.0
   private val BodyTempHighWarning = 39.5
 
@@ -208,15 +212,24 @@ object MedicalPanel {
     }
 
     // Whole-body pain is derived from limb pain on the spot (see PainCalc); "higher is worse",
-    // so it is a plain row (red above the threshold) rather than a depletion bar.
+    // so it is a plain row (red above the threshold) rather than a depletion bar. Opioid
+    // analgesia masks pain only at consumption (see PainCalc.feltTotal), so while the felt value
+    // drops meaningfully below the displayed one we append it in yellow parentheses.
     val totalPain = PainCalc.total(body)
+    val feltPain = PainCalc.feltTotal(body, vitals)
+    val painValue = Component.literal(totalPain.toInt.toString)
+    if (totalPain > 0.0 && totalPain - feltPain >= totalPain * FeltPainDeltaFraction) {
+      painValue.append(
+        Component.literal(s" (${feltPain.toInt.toString})").withStyle(ChatFormatting.YELLOW)
+      )
+    }
     y = extractStatRow(
       graphics,
       font,
       contentX,
       y,
       "screen.casualtiesbelow.body_status.stat.pain".translatable(),
-      Component.literal(totalPain.toInt.toString),
+      painValue,
       totalPain > PainBadThreshold
     )
 
