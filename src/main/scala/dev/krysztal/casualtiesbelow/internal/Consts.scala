@@ -114,6 +114,12 @@ private[casualtiesbelow] object Consts {
 
     /** Duration of the brewed Muscle Recovery potion, in ticks. */
     val MuscleRecoveryPotionTicks = 1800
+
+    /** Fracture recovery ticks advanced per tick per amplifier level by the Bone Healing effect. */
+    val BoneHealingEffectPerTick = 2.0
+
+    /** Duration of the brewed Bone Healing potion, in ticks. */
+    val BoneHealingPotionTicks = 1800
   }
 
   object Armor {

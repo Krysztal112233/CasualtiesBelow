@@ -63,6 +63,16 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def boneHealingEffectAdvancesAndCompletesFractureRecovery(helper: GameTestHelper): Unit = {
+    BoneHealingScenarios.effectAdvancesAndCompletesFractureRecovery(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def boneHealingEffectDistributesAcrossFracturedLimbs(helper: GameTestHelper): Unit = {
+    BoneHealingScenarios.effectDistributesAcrossFracturedLimbs(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def syringeInjectsStoredOpioidDose(helper: GameTestHelper): Unit = {
     SyringeScenarios.injectsStoredOpioidDose(helper)
   }

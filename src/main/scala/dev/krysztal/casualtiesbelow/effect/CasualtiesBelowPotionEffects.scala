@@ -42,6 +42,13 @@ private[casualtiesbelow] object CasualtiesBelowPotionEffects {
     Ingredient.of(Items.COOKED_BEEF)
   )
 
+  val (BoneHealing @ _, BoneHealingPotion @ _) = register(
+    "bone_healing",
+    new BoneHealingEffect,
+    Consts.Regeneration.BoneHealingPotionTicks,
+    Ingredient.of(Items.BONE)
+  )
+
   private def register(
       name: String,
       effect: MobEffect,
