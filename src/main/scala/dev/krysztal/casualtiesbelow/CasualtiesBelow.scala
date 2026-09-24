@@ -11,7 +11,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
-import dev.krysztal.casualtiesbelow.effect.SkinRegenerationEffect
+import dev.krysztal.casualtiesbelow.effect.CasualtiesCommonBelowEffects
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLoaders
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSync
@@ -42,7 +42,7 @@ object CasualtiesBelow extends ModInitializer {
 
   override def onInitialize(): Unit = {
     CasualtiesBelowEffects.register()
-    SkinRegenerationEffect.register()
+    CasualtiesCommonBelowEffects.register()
     // Fluids must exist before the fluid blocks (constructor argument) and the buckets.
     PoppyFluids.register()
     CasualtiesBelowDataComponents.register()
