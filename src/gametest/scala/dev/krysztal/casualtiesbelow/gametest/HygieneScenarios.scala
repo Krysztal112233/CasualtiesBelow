@@ -14,7 +14,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowDataComponents
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.InjectionSettlement

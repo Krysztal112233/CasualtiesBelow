@@ -4,7 +4,7 @@ import net.minecraft.gametest.framework.GameTestHelper
 
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature

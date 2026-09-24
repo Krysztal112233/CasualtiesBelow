@@ -2,7 +2,7 @@ package dev.krysztal.casualtiesbelow.ui
 
 import net.minecraft.util.Mth
 
-import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 /** Pure presentation rules shared by the blood-oxygen reserve and the terminal-hypoxia countdown.
   *

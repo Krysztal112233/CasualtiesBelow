@@ -11,7 +11,7 @@ import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.pain.PainCalc
 

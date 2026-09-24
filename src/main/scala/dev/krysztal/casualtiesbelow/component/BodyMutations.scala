@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 private[casualtiesbelow] final case class BodyMutation(
     before: LimbSnapshot,

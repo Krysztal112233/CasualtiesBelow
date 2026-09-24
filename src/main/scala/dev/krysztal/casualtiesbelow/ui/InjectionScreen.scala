@@ -18,8 +18,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
-import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionBatchPayload
 import dev.krysztal.casualtiesbelow.internal.sync.InjectionSync
 import dev.krysztal.casualtiesbelow.item.InjectionSession

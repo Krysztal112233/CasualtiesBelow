@@ -15,10 +15,7 @@ import net.minecraft.world.level.Level
 
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
-import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
-import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
-import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 /** Server-authoritative drawing of one liquid dose into an empty syringe. Filled refined ampoules
   * take priority over crude bottles; refined bottles are intentionally not eligible.

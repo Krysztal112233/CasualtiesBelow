@@ -14,7 +14,7 @@ import net.minecraft.world.item.TooltipFlag
 import net.minecraft.world.item.component.TooltipDisplay
 import net.minecraft.world.level.Level
 
-import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 /** A single-use syringe. Empty syringes draw one inventory dose; filled syringes open the injection
   * screen (see [[dev.krysztal.casualtiesbelow.ui.InjectionScreen]]), a drag-to-inject minigame

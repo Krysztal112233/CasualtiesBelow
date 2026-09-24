@@ -11,7 +11,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbInjuryService
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 

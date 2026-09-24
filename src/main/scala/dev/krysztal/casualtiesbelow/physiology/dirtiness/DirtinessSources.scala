@@ -20,7 +20,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 

@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 /** Dirtiness: the whole-body hygiene axis. The environment and the player's own actions push it up;
   * only water washes it down. One-way feedback by design: physiological states (infection, pain,

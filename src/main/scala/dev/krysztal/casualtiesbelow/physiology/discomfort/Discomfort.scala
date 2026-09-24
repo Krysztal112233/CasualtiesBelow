@@ -23,8 +23,7 @@ import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal

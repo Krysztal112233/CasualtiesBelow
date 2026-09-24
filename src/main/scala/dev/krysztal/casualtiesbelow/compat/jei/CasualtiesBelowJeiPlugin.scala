@@ -23,7 +23,7 @@ import dev.krysztal.casualtiesbelow.data.schema.ArmorProtectionData
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
-import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 

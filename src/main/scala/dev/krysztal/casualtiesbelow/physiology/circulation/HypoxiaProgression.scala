@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 
 /** Hidden terminal exposure after the blood-oxygen reserve is fully exhausted.

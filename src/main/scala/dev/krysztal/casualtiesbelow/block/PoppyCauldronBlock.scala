@@ -32,7 +32,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox
 import net.minecraft.world.phys.BlockHitResult
 
 import dev.krysztal.casualtiesbelow.block.entity.SoakingPoppyCauldronBlockEntity
-import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.item.PoppyProcessing
 

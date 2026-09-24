@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.api.event.LimbInjuryAppliedContext
 import dev.krysztal.casualtiesbelow.api.event.LimbInjuryContext
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalinePain
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
 

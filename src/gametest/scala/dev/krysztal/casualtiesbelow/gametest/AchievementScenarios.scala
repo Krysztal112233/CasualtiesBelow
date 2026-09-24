@@ -16,7 +16,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks

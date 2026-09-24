@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.Consumable
 import net.minecraft.world.level.Level
 
-import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.infection.FoodImmunity

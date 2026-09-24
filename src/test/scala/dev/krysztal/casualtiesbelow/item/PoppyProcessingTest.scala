@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 
-import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 import com.google.gson.JsonPrimitive
 import org.junit.jupiter.api.Assertions.assertEquals

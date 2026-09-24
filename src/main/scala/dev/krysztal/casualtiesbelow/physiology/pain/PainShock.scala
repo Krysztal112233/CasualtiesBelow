@@ -13,7 +13,7 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 
 /** Hidden pain-shock load and its discrete collapse/recovery lifecycle.
