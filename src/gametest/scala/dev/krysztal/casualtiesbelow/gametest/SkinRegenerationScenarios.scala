@@ -5,7 +5,7 @@ import net.minecraft.gametest.framework.GameTestHelper
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.effect.CasualtiesCommonBelowEffects
+import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.limb.BleedingCalc
 
@@ -22,7 +22,7 @@ object SkinRegenerationScenarios {
       state.externalBleedingRate = 0.2
     }
 
-    val effect = CasualtiesCommonBelowEffects.SkinRegeneration.value()
+    val effect = CasualtiesBelowPotionEffects.SkinRegeneration.value()
     val level = helper.getLevel
     (1 to 100).foreach { _ =>
       effect.applyEffectTick(level, player, 0)
@@ -54,7 +54,7 @@ object SkinRegenerationScenarios {
       }
     }
 
-    val effect = CasualtiesCommonBelowEffects.SkinRegeneration.value()
+    val effect = CasualtiesBelowPotionEffects.SkinRegeneration.value()
     val level = helper.getLevel
     val ticks = 100
     (1 to ticks).foreach { _ =>

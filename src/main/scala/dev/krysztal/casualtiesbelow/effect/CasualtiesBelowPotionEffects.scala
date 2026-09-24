@@ -25,7 +25,7 @@ import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
   * starting with an uppercase letter are stable-identifier matches, not bindings, so no members
   * would be generated. Bind a lowercase intermediate and project its components instead.
   */
-private[casualtiesbelow] object CasualtiesCommonBelowEffects {
+private[casualtiesbelow] object CasualtiesBelowPotionEffects {
 
   val (SkinRegeneration @ _, SkinRegenerationPotion @ _) = register(
     "skin_regeneration",

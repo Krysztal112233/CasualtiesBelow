@@ -5,7 +5,7 @@ import net.minecraft.gametest.framework.GameTestHelper
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.effect.CasualtiesCommonBelowEffects
+import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
 import dev.krysztal.casualtiesbelow.internal.Consts
 
 /** In-game validation of the standalone Muscle Recovery effect: direct per-tick application repairs
@@ -20,7 +20,7 @@ object MuscleRecoveryScenarios {
       state.muscleHealth = 40.0
     }
 
-    val effect = CasualtiesCommonBelowEffects.MuscleRecovery.value()
+    val effect = CasualtiesBelowPotionEffects.MuscleRecovery.value()
     val level = helper.getLevel
     (1 to 100).foreach { _ =>
       effect.applyEffectTick(level, player, 0)
@@ -47,7 +47,7 @@ object MuscleRecoveryScenarios {
       }
     }
 
-    val effect = CasualtiesCommonBelowEffects.MuscleRecovery.value()
+    val effect = CasualtiesBelowPotionEffects.MuscleRecovery.value()
     val level = helper.getLevel
     val ticks = 100
     (1 to ticks).foreach { _ =>
