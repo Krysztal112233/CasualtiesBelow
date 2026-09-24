@@ -2,6 +2,7 @@ package dev.krysztal.casualtiesbelow.physiology.adrenaline
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 
 /** Acute-pain multiplier derived from the authoritative adrenaline reserve.
   *
@@ -22,9 +23,9 @@ object AdrenalinePain {
       reductionPerPoint: Double,
       maxReductionFraction: Double
   ): Double = {
-    val reserve = nonNegative(adrenaline)
-    val perPoint = nonNegative(reductionPerPoint)
-    val maximumReduction = nonNegative(maxReductionFraction).min(1.0)
+    val reserve = adrenaline.nonNegative
+    val perPoint = reductionPerPoint.nonNegative
+    val maximumReduction = maxReductionFraction.nonNegative.min(1.0)
     val rawReduction = reserve * perPoint
     val reduction =
       if (rawReduction.isFinite) rawReduction.min(maximumReduction)
@@ -42,9 +43,4 @@ object AdrenalinePain {
     if (normalizedMultiplier <= 0.0) 0.0 else value * normalizedMultiplier
   }
 
-  private def nonNegative(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
-  }
 }

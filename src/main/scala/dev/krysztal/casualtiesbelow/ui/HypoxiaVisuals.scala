@@ -2,6 +2,8 @@ package dev.krysztal.casualtiesbelow.ui
 
 import net.minecraft.util.Mth
 
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
+
 /** Pure presentation rules shared by the blood-oxygen reserve and the terminal-hypoxia countdown.
   *
   * Every rule here is continuous: colors sweep through smoothstep gradients, bubbles fill
@@ -42,19 +44,19 @@ private[casualtiesbelow] object HypoxiaVisuals {
 
   /** Continuous reserve color: cyan when full, amber at half, red at a quarter, crimson at zero. */
   def oxygenColor(fraction: Double): Int = {
-    anchorGradient(normalizedFraction(fraction), OxygenColorAnchors)
+    anchorGradient(fraction.boundedFraction, OxygenColorAnchors)
   }
 
   /** Continuous countdown color: cyan with time to spare, warming through amber to red at zero. */
   def terminalColor(remainingFraction: Double): Int = {
-    anchorGradient(normalizedFraction(remainingFraction), TerminalColorAnchors)
+    anchorGradient(remainingFraction.boundedFraction, TerminalColorAnchors)
   }
 
   /** Fractional fill per bubble, rightmost (index 0) filling first; entries sum to
     * `fraction × OxygenSegmentCount` and are non-increasing along the row.
     */
   def bubbleFills(fraction: Double): Vector[Double] = {
-    val total = normalizedFraction(fraction) * OxygenSegmentCount.toDouble
+    val total = fraction.boundedFraction * OxygenSegmentCount.toDouble
     Vector.tabulate(OxygenSegmentCount)(index => Mth.clamp(total - index.toDouble, 0.0, 1.0))
   }
 
@@ -65,7 +67,7 @@ private[casualtiesbelow] object HypoxiaVisuals {
 
   /** Urgency pulse rate in hertz: silent at or above half reserve, ramping to 2.25 Hz at empty. */
   def oxygenPulseFrequency(fraction: Double): Double = {
-    val oxygen = normalizedFraction(fraction)
+    val oxygen = fraction.boundedFraction
     if (oxygen >= 0.5) 0.0
     else if (oxygen >= 0.25) Mth.lerp(smooth01((0.5 - oxygen) / 0.25), 0.0, 1.5)
     else Mth.lerp(smooth01((0.25 - oxygen) / 0.25), 1.5, 2.25)
@@ -73,7 +75,7 @@ private[casualtiesbelow] object HypoxiaVisuals {
 
   /** Pulse opacity floor: no dip above half reserve, deepening to 0.5 when empty. */
   def oxygenPulseFloor(fraction: Double): Double = {
-    val oxygen = normalizedFraction(fraction)
+    val oxygen = fraction.boundedFraction
     if (oxygen >= 0.5) 1.0
     else if (oxygen >= 0.25) Mth.lerp(smooth01((0.5 - oxygen) / 0.25), 1.0, 0.72)
     else Mth.lerp(smooth01((0.25 - oxygen) / 0.25), 0.72, 0.5)
@@ -81,14 +83,14 @@ private[casualtiesbelow] object HypoxiaVisuals {
 
   /** Countdown pulse rate in hertz: silent at or above a quarter remaining, 2.5 Hz at zero. */
   def terminalPulseFrequency(remainingFraction: Double): Double = {
-    val remaining = normalizedFraction(remainingFraction)
+    val remaining = remainingFraction.boundedFraction
     if (remaining >= 0.25) 0.0
     else Mth.lerp(smooth01((0.25 - remaining) / 0.25), 0.0, 2.5)
   }
 
   /** Countdown pulse opacity floor: no dip above a quarter remaining, deepening to 0.46 at zero. */
   def terminalPulseFloor(remainingFraction: Double): Double = {
-    val remaining = normalizedFraction(remainingFraction)
+    val remaining = remainingFraction.boundedFraction
     if (remaining >= 0.25) 1.0
     else Mth.lerp(smooth01((0.25 - remaining) / 0.25), 1.0, 0.46)
   }
@@ -133,12 +135,6 @@ private[casualtiesbelow] object HypoxiaVisuals {
 
   private def smooth01(value: Double): Double = {
     Mth.smoothstep(Mth.clamp(value, 0.0, 1.0))
-  }
-
-  private def normalizedFraction(value: Double): Double = {
-    if (value == Double.PositiveInfinity) 1.0
-    else if (value.isFinite) value.max(0.0).min(1.0)
-    else 0.0
   }
 
   private def positiveModulo(value: Double, modulus: Double): Double = {

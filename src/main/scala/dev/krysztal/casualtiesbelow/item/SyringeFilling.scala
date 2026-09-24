@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.ComponentExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.ItemStackExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.LevelExtensions.*
 
@@ -158,7 +159,7 @@ private[casualtiesbelow] object SyringeFilling {
       mean: Double,
       sigma: Double
   ): Double = {
-    val sample = mean.max(0.0) + finiteOrZero(gaussianSample) * sigma.max(0.0)
+    val sample = mean.max(0.0) + gaussianSample.finiteOrZero * sigma.max(0.0)
     sample.max(CrudeDoseMinimum).min(CrudeDoseMaximum)
   }
 
@@ -170,7 +171,7 @@ private[casualtiesbelow] object SyringeFilling {
   ): Double = {
     if (calibrated) baseDose.max(0.0)
     else {
-      val boundedJitter = finiteOrZero(jitterUnit).max(-1.0).min(1.0)
+      val boundedJitter = jitterUnit.finiteOrZero.max(-1.0).min(1.0)
       baseDose.max(0.0) * (1.0 + boundedJitter * jitterFraction.max(0.0).min(1.0))
     }
   }
@@ -195,8 +196,6 @@ private[casualtiesbelow] object SyringeFilling {
       updated
     }
   }
-
-  private def finiteOrZero(value: Double): Double = if (value.isFinite) value else 0.0
 
   // Fixed plausible range of one crude-poppy syringe dose (see crudeBaseDose).
   private val CrudeDoseMinimum = 20.0

@@ -13,6 +13,7 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 
 /** Hidden pain-shock load and its discrete collapse/recovery lifecycle.
@@ -40,7 +41,7 @@ object PainShock {
       body: BodyComponent,
       vitals: VitalsComponentImpl
   ): Boolean = {
-    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousLoad = vitals.shock.load.bounded(MaxLoad)
     val previousStage = vitals.shock.stage
     val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
     applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression) ||
@@ -58,8 +59,8 @@ object PainShock {
 
     val wakeLoadCap =
       Consts.Pain.ShockWakeLoadCap.max(0.0).min(MaxLoad)
-    val retainedLoad = normalizeLoad(vitals.shock.load).min(wakeLoadCap)
-    val previousLoad = normalizeLoad(vitals.shock.load)
+    val retainedLoad = vitals.shock.load.bounded(MaxLoad).min(wakeLoadCap)
+    val previousLoad = vitals.shock.load.bounded(MaxLoad)
     val previousStage = vitals.shock.stage
     VitalsMutations.applyShockState(
       vitals,
@@ -84,12 +85,12 @@ object PainShock {
       vitals: VitalsComponentImpl,
       requestedLoad: Double
   ): Boolean = {
-    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousLoad = vitals.shock.load.bounded(MaxLoad)
     applyLoad(
       player,
       vitals,
       previousLoad,
-      normalizeLoad(requestedLoad),
+      requestedLoad.bounded(MaxLoad),
       PhysiologyChangeCause.AdminEdit
     )
   }
@@ -101,12 +102,12 @@ object PainShock {
       player: ServerPlayer,
       vitals: VitalsComponentImpl
   ): Boolean = {
-    val load = normalizeLoad(vitals.shock.load)
+    val load = vitals.shock.load.bounded(MaxLoad)
     applyLoad(player, vitals, load, load, PhysiologyChangeCause.AdrenalineEdit)
   }
 
   def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
-    val previousLoad = normalizeLoad(vitals.shock.load)
+    val previousLoad = vitals.shock.load.bounded(MaxLoad)
     val previousStage = vitals.shock.stage
     VitalsMutations.applyShockState(vitals, ShockSnapshot(0.0, PainShockStage.Stable))
     if (previousStage != PainShockStage.Stable) {
@@ -128,7 +129,7 @@ object PainShock {
       savedUnconscious: Option[Boolean],
       adrenaline: Double
   ): ShockSnapshot = {
-    val load = normalizeLoad(savedLoad)
+    val load = savedLoad.bounded(MaxLoad)
     val threshold = collapseThreshold
     val effectiveThreshold = effectiveCollapseThreshold(
       threshold,
@@ -168,7 +169,7 @@ object PainShock {
   private[casualtiesbelow] def normalizeSyncedState(
       savedLoad: Double,
       savedStage: PainShockStage
-  ): ShockSnapshot = ShockSnapshot(normalizeLoad(savedLoad), savedStage)
+  ): ShockSnapshot = ShockSnapshot(savedLoad.bounded(MaxLoad), savedStage)
 
   private def applyLoad(
       player: ServerPlayer,
@@ -246,14 +247,14 @@ object PainShock {
       adrenaline: Double,
       protectionPerPoint: Double
   ): Double = {
-    val base = finite(baseThreshold).max(0.0).min(MaxLoad)
-    val reserve = finite(adrenaline).max(0.0)
-    val protection = finite(protectionPerPoint).max(0.0)
+    val base = baseThreshold.finiteOrZero.max(0.0).min(MaxLoad)
+    val reserve = adrenaline.finiteOrZero.max(0.0)
+    val protection = protectionPerPoint.finiteOrZero.max(0.0)
     base + reserve * protection
   }
 
   private def nextLoadFromPain(currentLoad: Double, totalPain: Double): Double = {
-    val pain = finite(totalPain).max(0.0).min(100.0)
+    val pain = totalPain.finiteOrZero.max(0.0).min(100.0)
     val startPain = Consts.Pain.ShockAccumulationStartPain
     val fullRatePain =
       Consts.Pain.ShockMaximumRatePain.max(startPain)
@@ -282,12 +283,4 @@ object PainShock {
     stage == PainShockStage.Stable || stage == PainShockStage.Deferred
   }
 
-  private def normalizeLoad(load: Double): Double = {
-    if (load == Double.PositiveInfinity) MaxLoad
-    else finite(load).max(0.0).min(MaxLoad)
-  }
-
-  private def finite(value: Double): Double = {
-    if (value.isFinite) value else 0.0
-  }
 }

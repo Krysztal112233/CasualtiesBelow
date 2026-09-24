@@ -4,6 +4,7 @@ import java.util.OptionalDouble
 import java.util.OptionalInt
 
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 
 /** Mutable storage model used only while the server applies or advances physiology. */
 private[casualtiesbelow] final case class MutableLimbState(
@@ -45,24 +46,12 @@ private[casualtiesbelow] object MutableLimbState {
   )
 
   def normalize(state: MutableLimbState): MutableLimbState = MutableLimbState(
-    muscleHealth = bounded(state.muscleHealth, LimbSnapshot.MaxValue),
-    skinIntegrity = bounded(state.skinIntegrity, LimbSnapshot.MaxValue),
+    muscleHealth = state.muscleHealth.bounded(LimbSnapshot.MaxValue),
+    skinIntegrity = state.skinIntegrity.bounded(LimbSnapshot.MaxValue),
     fractureRecoveryTicks = state.fractureRecoveryTicks.map(_.max(0)),
-    infectionProgress = state.infectionProgress.map(value => bounded(value, LimbSnapshot.MaxValue)),
+    infectionProgress = state.infectionProgress.map(_.bounded(LimbSnapshot.MaxValue)),
     dislocated = state.dislocated,
-    externalBleedingRate = nonNegative(state.externalBleedingRate),
-    pain = bounded(state.pain, LimbSnapshot.MaxValue)
+    externalBleedingRate = state.externalBleedingRate.nonNegative,
+    pain = state.pain.bounded(LimbSnapshot.MaxValue)
   )
-
-  private def bounded(value: Double, maximum: Double): Double = {
-    if (value == Double.PositiveInfinity) maximum
-    else if (value.isFinite) value.max(0.0).min(maximum)
-    else 0.0
-  }
-
-  private def nonNegative(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
-  }
 }

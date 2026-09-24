@@ -16,6 +16,7 @@ import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.*
 
 /** Server authority for the temporary adrenaline reserve and its post-stimulus grace window.
@@ -85,7 +86,7 @@ object Adrenaline {
       requestedAmount: Double
   ): Boolean = {
     val previous = storedState(vitals)
-    val amount = normalizeAmount(requestedAmount, Consts.Adrenaline.MaxValue)
+    val amount = requestedAmount.bounded(Consts.Adrenaline.MaxValue)
     val next =
       if (amount > 0.0) {
         AdrenalineState(
@@ -110,7 +111,7 @@ object Adrenaline {
 
   /** Finite, fixed-balance bounded server value used by the pain-shock threshold calculation. */
   def currentAmount(vitals: VitalsComponent): Double =
-    normalizeAmount(vitals.adrenaline, Consts.Adrenaline.MaxValue)
+    vitals.adrenaline.bounded(Consts.Adrenaline.MaxValue)
 
   /** Server-side save/copy normalization. */
   private[casualtiesbelow] def normalizeStoredState(
@@ -147,7 +148,7 @@ object Adrenaline {
       graceTicks: Int,
       maximum: Double
   ): AdrenalineState = {
-    val normalizedAmount = normalizeAmount(amount, maximum)
+    val normalizedAmount = amount.bounded(maximum)
     if (normalizedAmount > 0.0) {
       AdrenalineState(normalizedAmount, normalizeGraceTicks(graceTicks))
     } else AdrenalineState.Empty
@@ -163,7 +164,7 @@ object Adrenaline {
     val normalizedGrant =
       if (grant.isFinite) grant.max(0.0)
       else 0.0
-    val limit = normalizeMaximum(maximum)
+    val limit = maximum.nonNegative
     if (normalizedGrant <= 0.0 || limit <= 0.0) return current
 
     val sum = current.amount + normalizedGrant
@@ -209,19 +210,6 @@ object Adrenaline {
       .onAdrenalineChanged(
         new AdrenalineChangedContext(player, previousAmount, amount, cause)
       )
-  }
-
-  private def normalizeAmount(amount: Double, maximum: Double): Double = {
-    val limit = normalizeMaximum(maximum)
-    if (amount == Double.PositiveInfinity) limit
-    else if (amount.isFinite) amount.max(0.0).min(limit)
-    else 0.0
-  }
-
-  private def normalizeMaximum(maximum: Double): Double = {
-    if (maximum.isFinite) maximum.max(0.0)
-    else if (maximum == Double.PositiveInfinity) Double.MaxValue
-    else 0.0
   }
 
   private def normalizeGraceTicks(ticks: Int): Int = ticks.max(0)

@@ -4,6 +4,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 
 /** Bounded mutations of the server-authoritative blood volume.
   *
@@ -14,14 +15,11 @@ import dev.krysztal.casualtiesbelow.internal.Consts
 private[casualtiesbelow] object BloodVolume {
 
   /** Healthy configured blood capacity, normalized to a finite non-negative value. */
-  def healthyMaximum: Double = nonNegative(Consts.Vitals.MaxBloodVolume)
+  def healthyMaximum: Double = Consts.Vitals.MaxBloodVolume.nonNegative
 
   /** Current effective capacity after sepsis, normalized to the healthy configured capacity. */
   def effectiveMaximum(vitals: VitalsComponent): Double = {
-    normalizeBound(
-      Consts.Vitals.effectiveMaxBloodVolume(vitals.infection.sepsis),
-      healthyMaximum
-    )
+    Consts.Vitals.effectiveMaxBloodVolume(vitals.infection.sepsis).bounded(healthyMaximum)
   }
 
   /** Blood-oxygen carrying capacity represented by the current bounded blood volume. */
@@ -38,11 +36,11 @@ private[casualtiesbelow] object BloodVolume {
       healthyMaximum: Double = BloodVolume.healthyMaximum,
       fullOxygenFraction: Double = Consts.Vitals.FullOxygenBloodFraction
   ): Double = {
-    val healthy = nonNegative(healthyMaximum)
-    val volume = normalizedVolume(bloodVolume, healthy)
+    val healthy = healthyMaximum.nonNegative
+    val volume = bloodVolume.bounded(healthy)
     if (healthy <= 0.0 || volume <= 0.0) return 0.0
 
-    val fraction = normalizedFraction(fullOxygenFraction)
+    val fraction = fullOxygenFraction.boundedFraction
     if (fraction <= 0.0) return VitalsComponent.MaxBloodOxygen
 
     val fullCapacityVolume = healthy * fraction
@@ -52,9 +50,9 @@ private[casualtiesbelow] object BloodVolume {
 
   /** Reconciles blood into `[0, maximum]`; returns whether the stored value changed. */
   def clamp(vitals: VitalsComponentImpl, maximum: Double): Boolean = {
-    val boundedMaximum = nonNegative(maximum)
-    val next = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
-    if (same(vitals.circulation.bloodVolume, next)) return false
+    val boundedMaximum = maximum.nonNegative
+    val next = vitals.circulation.bloodVolume.bounded(boundedMaximum)
+    if (vitals.circulation.bloodVolume.sameBits(next)) return false
 
     VitalsMutations.setBloodVolume(vitals, next)
     true
@@ -62,9 +60,9 @@ private[casualtiesbelow] object BloodVolume {
 
   /** Restores a finite non-negative amount without exceeding `maximum`; returns the actual gain. */
   def restore(vitals: VitalsComponentImpl, amount: Double, maximum: Double): Double = {
-    val boundedMaximum = nonNegative(maximum)
-    val current = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
-    val next = (current + mutationAmount(amount)).min(boundedMaximum)
+    val boundedMaximum = maximum.nonNegative
+    val current = vitals.circulation.bloodVolume.bounded(boundedMaximum)
+    val next = (current + amount.nonNegative).min(boundedMaximum)
     VitalsMutations.setBloodVolume(vitals, next)
     next - current
   }
@@ -78,49 +76,17 @@ private[casualtiesbelow] object BloodVolume {
       maximum: Double,
       floor: Double = 0.0
   ): Double = {
-    val boundedMaximum = nonNegative(maximum)
-    val boundedFloor = normalizeBound(floor, boundedMaximum)
-    val current = normalizedVolume(vitals.circulation.bloodVolume, boundedMaximum)
+    val boundedMaximum = maximum.nonNegative
+    val boundedFloor = floor.bounded(boundedMaximum)
+    val current = vitals.circulation.bloodVolume.bounded(boundedMaximum)
     val effectiveFloor = boundedFloor.min(current)
-    val next = (current - mutationAmount(amount)).max(effectiveFloor)
+    val next = (current - amount.nonNegative).max(effectiveFloor)
     VitalsMutations.setBloodVolume(vitals, next)
     current - next
   }
 
   /** Normalizes a blood value for read-only comparisons without mutating the component. */
   def normalizedVolume(value: Double, maximum: Double): Double = {
-    val boundedMaximum = nonNegative(maximum)
-    if (value == Double.PositiveInfinity) boundedMaximum
-    else if (value.isFinite) value.max(0.0).min(boundedMaximum)
-    else 0.0
-  }
-
-  private def normalizeBound(value: Double, maximum: Double): Double = {
-    val boundedMaximum = nonNegative(maximum)
-    if (value == Double.PositiveInfinity) boundedMaximum
-    else if (value.isFinite) value.max(0.0).min(boundedMaximum)
-    else 0.0
-  }
-
-  private def nonNegative(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
-  }
-
-  private def normalizedFraction(value: Double): Double = {
-    if (value == Double.PositiveInfinity) 1.0
-    else if (value.isFinite) value.max(0.0).min(1.0)
-    else 0.0
-  }
-
-  private def mutationAmount(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
-  }
-
-  private def same(left: Double, right: Double): Boolean = {
-    java.lang.Double.doubleToLongBits(left) == java.lang.Double.doubleToLongBits(right)
+    value.bounded(maximum)
   }
 }

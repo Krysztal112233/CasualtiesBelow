@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
@@ -226,14 +227,14 @@ private[casualtiesbelow] object Consciousness {
     val ceiling = pressureCeiling(pressures).max(minimum)
     val bounded = normalizedConsciousness(current, minimum, ceiling)
     val currentAllowsRecovery = current.isFinite || current == Double.PositiveInfinity
-    val totalLoss = pressures.map(pressure => finiteNonNegative(pressure.lossPerTick)).sum
+    val totalLoss = pressures.map(pressure => pressure.lossPerTick.nonNegative).sum
     val next =
       if (totalLoss > 0.0) {
         (bounded - totalLoss).max(minimum)
       } else if (pressures.exists(_.recoveryBlocked) || !currentAllowsRecovery) {
         bounded
       } else {
-        (bounded + finiteNonNegative(recoveryPerTick)).min(ceiling)
+        (bounded + recoveryPerTick.nonNegative).min(ceiling)
       }
     reconcile(next, unconscious, pressures, wakeThreshold, knockoutThreshold, minimum)
   }
@@ -308,7 +309,7 @@ private[casualtiesbelow] object Consciousness {
       VitalsComponent.MaxBloodOxygen,
       VitalsComponent.MaxBloodOxygen
     )
-    val multiplier = finiteNonNegative(oxygenCapMultiplier)
+    val multiplier = oxygenCapMultiplier.nonNegative
     val ceiling = finiteInRange(
       oxygen * multiplier,
       0.0,
@@ -320,12 +321,6 @@ private[casualtiesbelow] object Consciousness {
       wakeBlocked = oxygen < recovery,
       ceiling = ceiling
     )
-  }
-
-  private def finiteNonNegative(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
   }
 
   private def finiteInRange(

@@ -20,6 +20,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.AdrenalineState
 import dev.krysztal.casualtiesbelow.physiology.circulation.CirculationState
@@ -123,7 +124,7 @@ final class VitalsComponentImpl(val player: Player)
 
   private[casualtiesbelow] def setImmuneHealth(value: Double): Unit = {
     infectionState = infectionState.copy(
-      immuneHealth = bounded(value, Consts.Vitals.MaxImmuneHealth)
+      immuneHealth = value.bounded(Consts.Vitals.MaxImmuneHealth)
     )
   }
 
@@ -165,41 +166,41 @@ final class VitalsComponentImpl(val player: Player)
 
   private[casualtiesbelow] def setBloodOxygen(value: Double): Unit = {
     circulationState =
-      circulationState.copy(bloodOxygen = bounded(value, VitalsComponent.MaxBloodOxygen))
+      circulationState.copy(bloodOxygen = value.bounded(VitalsComponent.MaxBloodOxygen))
   }
 
   private[casualtiesbelow] def setBloodVolume(value: Double): Unit = {
     circulationState = circulationState.copy(
-      bloodVolume = bounded(value, Consts.Vitals.MaxBloodVolume)
+      bloodVolume = value.bounded(Consts.Vitals.MaxBloodVolume)
     )
   }
 
   private[casualtiesbelow] def setSepsis(value: Double): Unit = {
-    infectionState = infectionState.copy(sepsis = bounded(value, Consts.Sepsis.MaxSepsis))
+    infectionState = infectionState.copy(sepsis = value.bounded(Consts.Sepsis.MaxSepsis))
   }
 
   override def discomfort: Double = discomfortState
 
   private[casualtiesbelow] def setDiscomfort(value: Double): Unit = {
-    discomfortState = bounded(value, Consts.Discomfort.MaxValue)
+    discomfortState = value.bounded(Consts.Discomfort.MaxValue)
   }
 
   override def dirtiness: Double = dirtinessState
 
   private[casualtiesbelow] def setDirtiness(value: Double): Unit = {
-    dirtinessState = bounded(value, Consts.Dirtiness.MaxValue)
+    dirtinessState = value.bounded(Consts.Dirtiness.MaxValue)
   }
 
   override def opioidLevel: Double = opioidState.level
 
   private[casualtiesbelow] def setOpioidLevel(value: Double): Unit = {
-    opioidState = opioidState.copy(level = bounded(value, VitalsComponent.MaxOpioidLevel))
+    opioidState = opioidState.copy(level = value.bounded(VitalsComponent.MaxOpioidLevel))
   }
 
   override def opioidDependence: Double = opioidState.dependence
 
   private[casualtiesbelow] def setOpioidDependence(value: Double): Unit = {
-    opioidState = opioidState.copy(dependence = bounded(value, VitalsComponent.MaxOpioidDependence))
+    opioidState = opioidState.copy(dependence = value.bounded(VitalsComponent.MaxOpioidDependence))
   }
 
   private[casualtiesbelow] def applyOpioidState(state: OpioidState): Unit = {
@@ -210,13 +211,13 @@ final class VitalsComponentImpl(val player: Player)
   override def bodyTemperature: Double = bodyTemperatureState
 
   private[casualtiesbelow] def setBodyTemperature(value: Double): Unit = {
-    bodyTemperatureState = bounded(value, VitalsComponent.MaxBodyTemperature)
+    bodyTemperatureState = value.bounded(VitalsComponent.MaxBodyTemperature)
   }
 
   override def wetness: Double = wetnessState
 
   private[casualtiesbelow] def setWetness(value: Double): Unit = {
-    wetnessState = bounded(value, VitalsComponent.MaxWetness)
+    wetnessState = value.bounded(VitalsComponent.MaxWetness)
   }
 
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
@@ -357,12 +358,6 @@ final class VitalsComponentImpl(val player: Player)
     setWetness(in.getDoubleOr(VitalsComponentImpl.WetnessKey, 0.0))
   }
 
-  private def bounded(value: Double, maximum: Double): Double = {
-    val limit = if (maximum.isFinite) maximum.max(0.0) else Double.MaxValue
-    if (value == Double.PositiveInfinity) limit
-    else if (value.isFinite) value.max(0.0).min(limit)
-    else 0.0
-  }
 }
 
 object VitalsComponentImpl {

@@ -7,6 +7,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 
@@ -47,7 +48,7 @@ private[casualtiesbelow] object OxygenProgression {
       }
 
     val breathingBlocked = inWall || exhaustedAir
-    val boundedDeprivationRate = finiteNonNegative(deprivationRate)
+    val boundedDeprivationRate = deprivationRate.nonNegative
     val respiratoryEfficiency =
       OpioidEffects.respiratoryEfficiency(vitals.opioidLevel, vitals.opioidDependence)
     val opioidRespiratoryFailure = OpioidEffects.causesRespiratoryFailure(respiratoryEfficiency)
@@ -63,7 +64,7 @@ private[casualtiesbelow] object OxygenProgression {
       )
     )
     OxygenProgressionResult(
-      changed = !same(previousOxygen, vitals.circulation.bloodOxygen),
+      changed = !previousOxygen.sameBits(vitals.circulation.bloodOxygen),
       breathingBlocked = breathingBlocked,
       respirationFailed = breathingBlocked || opioidRespiratoryFailure,
       deprivationRate = boundedDeprivationRate
@@ -103,37 +104,22 @@ private[casualtiesbelow] object OxygenProgression {
       respirationFailed: Boolean = false,
       respiratoryFailureDrain: Double = 0.0
   ): Double = {
-    val capacity = normalizedOxygen(carryingCapacity, VitalsComponent.MaxBloodOxygen)
-    val current = normalizedOxygen(bloodOxygen, capacity)
+    val capacity = carryingCapacity.bounded(VitalsComponent.MaxBloodOxygen)
+    val current = bloodOxygen.bounded(capacity)
 
     // Oxygen above a newly reduced blood-volume capacity is lost immediately. Vanilla breathing
     // blocks retain their deprivation semantics; otherwise respiratory efficiency scales recovery,
     // with severe opioid failure replacing recovery with a fixed net drain.
     if (breathingBlocked) {
-      (current - finiteNonNegative(deprivationRate)).max(0.0)
+      (current - deprivationRate.nonNegative).max(0.0)
     } else if (respirationFailed) {
-      (current - finiteNonNegative(respiratoryFailureDrain)).max(0.0)
+      (current - respiratoryFailureDrain.nonNegative).max(0.0)
     } else {
-      val efficiency = finiteNonNegative(respiratoryEfficiency).min(1.0)
-      (current + finiteNonNegative(recoveryRate) * efficiency).min(capacity)
+      val efficiency = respiratoryEfficiency.nonNegative.min(1.0)
+      (current + recoveryRate.nonNegative * efficiency).min(capacity)
     }
   }
 
-  private def normalizedOxygen(value: Double, capacity: Double): Double = {
-    if (value == Double.PositiveInfinity) capacity
-    else if (value.isFinite) value.max(0.0).min(capacity)
-    else 0.0
-  }
-
-  private def finiteNonNegative(value: Double): Double = {
-    if (value == Double.PositiveInfinity) Double.MaxValue
-    else if (value.isFinite) value.max(0.0)
-    else 0.0
-  }
-
-  private def same(left: Double, right: Double): Boolean = {
-    java.lang.Double.doubleToLongBits(left) == java.lang.Double.doubleToLongBits(right)
-  }
 }
 
 private[casualtiesbelow] final case class OxygenProgressionResult(

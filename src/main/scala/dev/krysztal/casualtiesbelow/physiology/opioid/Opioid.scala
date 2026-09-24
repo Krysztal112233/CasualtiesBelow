@@ -4,6 +4,7 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extension.DoubleExtensions.*
 
 /** Server-tick evolution of the hidden acute opioid level and synced long-term dependence. */
 object Opioid {
@@ -46,8 +47,8 @@ object Opioid {
       exposurePerLevelPerTick: Double = Consts.Opioid.DependenceExposurePerLevelPerTick,
       dependenceDecayPerTick: Double = Consts.Opioid.DependenceDecayPerTick
   ): OpioidState = {
-    val boundedLevel = normalize(level, VitalsComponent.MaxOpioidLevel)
-    val boundedDependence = normalize(dependence, VitalsComponent.MaxOpioidDependence)
+    val boundedLevel = level.bounded(VitalsComponent.MaxOpioidLevel)
+    val boundedDependence = dependence.bounded(VitalsComponent.MaxOpioidDependence)
     val exposure = boundedLevel * exposurePerLevelPerTick.max(0.0)
     val dependenceDelta = exposure - dependenceDecayPerTick.max(0.0)
 
@@ -57,9 +58,4 @@ object Opioid {
     )
   }
 
-  private def normalize(value: Double, maximum: Double): Double = {
-    if (value == Double.PositiveInfinity) maximum
-    else if (value.isFinite) value.max(0.0).min(maximum)
-    else 0.0
-  }
 }
