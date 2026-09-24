@@ -36,7 +36,7 @@ object GrimeParticles {
   private def spawnForPlayer(level: ClientLevel, player: Player): Unit = {
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     spawnWashOff(level, player, vitals.dirtiness)
-    if (vitals.dirtiness < CasualtiesBelowConfig.dirtiness.bandSqualid.get()) return
+    if (vitals.dirtiness < CasualtiesBelowConfig.visuals.dirtinessBandSqualid.get()) return
     if (player.getRandom.nextFloat() >= SpawnChancePerTick) return
 
     val random = player.getRandom

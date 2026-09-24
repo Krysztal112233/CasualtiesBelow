@@ -23,7 +23,7 @@ object VitalsEffectScenarios {
     val hypoxiaThreshold = CasualtiesBelowConfig.vitals.bloodOxygenHypoxiaThreshold.get()
     val coldThreshold = CasualtiesBelowConfig.temperature.penaltyBandLowCelsius.get()
     val hotThreshold = CasualtiesBelowConfig.temperature.penaltyBandHighCelsius.get()
-    val grimeThreshold = CasualtiesBelowConfig.dirtiness.bandGrimy.get()
+    val grimeThreshold = CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get()
 
     VitalsMutations.setOpioidLevel(vitals, 40.0)
     VitalsMutations.setOpioidDependence(vitals, 40.0)

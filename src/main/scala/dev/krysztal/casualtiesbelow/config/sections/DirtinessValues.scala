@@ -30,11 +30,7 @@ private[config] final case class DirtinessValues(
     skinRegenMinMultiplier: ConfigValue[Double],
     foodDiscomfortMultiplierAtMax: ConfigValue[Double],
     immuneDrainStartDirtiness: ConfigValue[Double],
-    immuneDrainMaxPerTick: ConfigValue[Double],
-    bandGrimy: ConfigValue[Double],
-    bandFilthy: ConfigValue[Double],
-    bandSqualid: ConfigValue[Double],
-    grimeVignetteMaxOpacity: ConfigValue[Double]
+    immuneDrainMaxPerTick: ConfigValue[Double]
 )
 
 private[config] object DirtinessValues {
@@ -46,8 +42,8 @@ private[config] object DirtinessValues {
         .comment(
           "Maximum dirtiness value. Dirtiness is a whole-body hygiene axis (0 = clean): the",
           "environment and the player's own actions push it up, only water washes it down.",
-          "Display bands (grimy/filthy/squalid) only drive the screen presentation; every",
-          "mechanic computes from the raw value."
+          "The display bands (visuals.dirtinessBand*) only drive the screen presentation;",
+          "every mechanic computes from the raw value."
         )
         .defineInRange("maxValue", 100.0, 1.0, 10000.0, classOf[Double]),
       accrualPerSecond = b
@@ -179,25 +175,7 @@ private[config] object DirtinessValues {
           "in ~16.7 minutes, and at 75 dirtiness the drain exactly offsets",
           "fedImmuneRegenPerTick."
         )
-        .defineInRange("immuneDrainMaxPerTick", 0.01, 0.0, 10.0, classOf[Double]),
-      bandGrimy = b
-        .comment(
-          "Dirtiness of the grimy display band: the grime vignette starts appearing here.",
-          "Display only; no mechanic reads the bands."
-        )
-        .defineInRange("bandGrimy", 30.0, 0.0, 10000.0, classOf[Double]),
-      bandFilthy = b
-        .comment("Dirtiness of the filthy display band. Display only.")
-        .defineInRange("bandFilthy", 60.0, 0.0, 10000.0, classOf[Double]),
-      bandSqualid = b
-        .comment("Dirtiness of the squalid display band. Display only.")
-        .defineInRange("bandSqualid", 85.0, 0.0, 10000.0, classOf[Double]),
-      grimeVignetteMaxOpacity = b
-        .comment(
-          "Strongest grime vignette opacity (0.0-1.0), ramping from bandGrimy to maxValue;",
-          "brown-toned, distinct from the nausea green. 0 disables it."
-        )
-        .defineInRange("grimeVignetteMaxOpacity", 0.55, 0.0, 1.0, classOf[Double])
+        .defineInRange("immuneDrainMaxPerTick", 0.01, 0.0, 10.0, classOf[Double])
     )
     b.pop()
     s

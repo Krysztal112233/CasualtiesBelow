@@ -39,7 +39,7 @@ private[effect] val wetnessAmplifierFromVitals: MobEffectAmplifierResolver = pla
 private[effect] val dirtinessAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierAtOrAboveThreshold(
     player.vitals.dirtiness,
-    CasualtiesBelowConfig.dirtiness.bandGrimy.get()
+    CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get()
   )
 
 private[effect] val hypoxiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>

@@ -56,6 +56,7 @@ object CasualtiesBelowConfig {
   val fall = FallValues.define(Builder)
   val temperature = TemperatureValues.define(Builder)
   val progression = ProgressionValues.define(Builder)
+  val visuals = VisualsValues.define(Builder)
 
   private val Spec = Builder.build()
 

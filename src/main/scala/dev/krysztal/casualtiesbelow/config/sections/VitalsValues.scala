@@ -14,8 +14,6 @@ private[config] final case class VitalsValues(
     consciousnessFloor: ConfigValue[Double],
     consciousnessKnockoutThreshold: ConfigValue[Double],
     consciousnessIncapacitationStartThreshold: ConfigValue[Double],
-    consciousnessMaxDimOpacity: ConfigValue[Double],
-    consciousnessMaxBlurStrength: ConfigValue[Double],
     bloodOxygenDepletionPerTick: ConfigValue[Double],
     bloodOxygenRecoveryPerTick: ConfigValue[Double],
     bloodOxygenHypoxiaThreshold: ConfigValue[Double],
@@ -25,8 +23,6 @@ private[config] final case class VitalsValues(
     consciousnessWakeThreshold: ConfigValue[Double],
     maxBloodVolume: ConfigValue[Double],
     fullOxygenBloodFraction: ConfigValue[Double],
-    bloodDesaturationStartFraction: ConfigValue[Double],
-    bloodFullDesaturationFraction: ConfigValue[Double],
     fedBloodRegenPerTick: ConfigValue[Double],
     maxImmuneHealth: ConfigValue[Double]
 )
@@ -76,19 +72,6 @@ private[config] object VitalsValues {
           100.0,
           classOf[Double]
         ),
-      consciousnessMaxDimOpacity = b
-        .comment(
-          "Strongest awake dimming opacity (0.0-1.0), approached near the consciousness floor.",
-          "Edge darkening is applied in addition to the full-screen haze; 0 disables awake dimming.",
-          "Unconscious blackout remains fully opaque. Dimming and blur gently pulse while active."
-        )
-        .defineInRange("consciousnessMaxDimOpacity", 0.55, 0.0, 1.0, classOf[Double]),
-      consciousnessMaxBlurStrength = b
-        .comment(
-          "Strongest zoom blur and double-vision strength (0.0-1.0), reached at zero consciousness.",
-          "The effect shares the dimming ramp below consciousnessDimThreshold; 0 disables it."
-        )
-        .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double]),
       bloodOxygenDepletionPerTick = b
         .comment(
           "Blood oxygen lost per tick only after the vanilla air supply is fully exhausted.",
@@ -153,18 +136,6 @@ private[config] object VitalsValues {
           "3000 mL and above retain full capacity, while 1500 mL can carry at most 50 oxygen."
         )
         .defineInRange("fullOxygenBloodFraction", 0.6, 0.000001, 1.0, classOf[Double]),
-      bloodDesaturationStartFraction = b
-        .comment(
-          "Fraction of healthy maximum blood volume below which the world starts losing color.",
-          "The effect is client-side presentation only."
-        )
-        .defineInRange("bloodDesaturationStartFraction", 0.9, 0.0, 1.0, classOf[Double]),
-      bloodFullDesaturationFraction = b
-        .comment(
-          "Fraction of healthy maximum blood volume at or below which the world is fully grayscale.",
-          "Keep this below bloodDesaturationStartFraction for a gradual transition."
-        )
-        .defineInRange("bloodFullDesaturationFraction", 0.3, 0.0, 1.0, classOf[Double]),
       fedBloodRegenPerTick = b
         .comment(
           "Blood volume regenerated per tick while well-fed (same food threshold as immune",

@@ -148,7 +148,7 @@ object VitalsPostEffect {
     // Smooth the 1 Hz-synced body temperature once per frame and share it between the frost and
     // heat ramps — calling the smoother twice would double-advance the interpolation.
     val smoothedTemperature =
-      if (CasualtiesBelowConfig.temperature.temperatureOverlayEnabled.get()) {
+      if (CasualtiesBelowConfig.visuals.temperatureOverlayEnabled.get()) {
         smoothedBodyTemperature(player, vitals.bodyTemperature, deltaTracker)
       } else {
         snapBodyTemperature(player, vitals.bodyTemperature)
@@ -177,9 +177,9 @@ object VitalsPostEffect {
     TemperatureVisuals
       .frostStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.temperature.frostOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.temperature.frostOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.temperature.frostOverlayMaxStrength.get()
+        CasualtiesBelowConfig.visuals.frostOverlayStartCelsius.get(),
+        CasualtiesBelowConfig.visuals.frostOverlayFullSpanCelsius.get(),
+        CasualtiesBelowConfig.visuals.frostOverlayMaxStrength.get()
       )
       .toFloat
   }
@@ -191,9 +191,9 @@ object VitalsPostEffect {
     TemperatureVisuals
       .heatStrength(
         smoothedTemperature,
-        CasualtiesBelowConfig.temperature.heatOverlayStartCelsius.get(),
-        CasualtiesBelowConfig.temperature.heatOverlayFullSpanCelsius.get(),
-        CasualtiesBelowConfig.temperature.heatOverlayMaxStrength.get()
+        CasualtiesBelowConfig.visuals.heatOverlayStartCelsius.get(),
+        CasualtiesBelowConfig.visuals.heatOverlayFullSpanCelsius.get(),
+        CasualtiesBelowConfig.visuals.heatOverlayMaxStrength.get()
       )
       .toFloat
   }
@@ -205,10 +205,10 @@ object VitalsPostEffect {
   private def grimeVisual(vitals: VitalsComponent): Float = {
     val progress = progressAbove(
       vitals.dirtiness,
-      CasualtiesBelowConfig.dirtiness.bandGrimy.get(),
+      CasualtiesBelowConfig.visuals.dirtinessBandGrimy.get(),
       CasualtiesBelowConfig.dirtiness.maxValue.get()
     )
-    CasualtiesBelowConfig.dirtiness.grimeVignetteMaxOpacity.get().toFloat * progress
+    CasualtiesBelowConfig.visuals.grimeVignetteMaxOpacity.get().toFloat * progress
   }
 
   private def consciousnessVisual(
@@ -229,7 +229,7 @@ object VitalsPostEffect {
       } else {
         1.0f
       }
-    val maxDimming = CasualtiesBelowConfig.vitals.consciousnessMaxDimOpacity.get().toFloat
+    val maxDimming = CasualtiesBelowConfig.visuals.consciousnessMaxDimOpacity.get().toFloat
     val dimming = maxDimming * progress * pulse
     val incapacitation =
       maxDimming * Unconsciousness.severityOf(vitals.consciousness.level).toFloat
@@ -237,7 +237,7 @@ object VitalsPostEffect {
     // Perceptual compensation: the shader's zoom-ghost and double-vision offsets scale linearly
     // with strength, so mid-range strengths read as invisible. Ease the blur curve toward the
     // low end so low-but-conscious levels stay readable.
-    val maxBlur = CasualtiesBelowConfig.vitals.consciousnessMaxBlurStrength.get().toFloat
+    val maxBlur = CasualtiesBelowConfig.visuals.consciousnessMaxBlurStrength.get().toFloat
     val blurStrength = math.pow(progress.toDouble, BlurPerceptionExponent).toFloat
 
     ConsciousnessVisual(
@@ -256,7 +256,7 @@ object VitalsPostEffect {
       gameplayData.maxDiscomfort
     )
     DiscomfortVisual(
-      vignette = CasualtiesBelowConfig.discomfort.maxVignetteOpacity.get().toFloat * progress
+      vignette = CasualtiesBelowConfig.visuals.nauseaVignetteMaxOpacity.get().toFloat * progress
     )
   }
 
@@ -264,9 +264,9 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       gameplayData: GameplayDataSnapshot
   ): BloodLossVisual = {
-    val desaturationStart = CasualtiesBelowConfig.vitals.bloodDesaturationStartFraction.get()
+    val desaturationStart = CasualtiesBelowConfig.visuals.bloodDesaturationStartFraction.get()
     val fullDesaturation =
-      math.min(CasualtiesBelowConfig.vitals.bloodFullDesaturationFraction.get(), desaturationStart)
+      math.min(CasualtiesBelowConfig.visuals.bloodFullDesaturationFraction.get(), desaturationStart)
     val bloodFraction = vitals.circulation.bloodVolume / gameplayData.maxBloodVolume
     BloodLossVisual(
       desaturation = progressBelow(bloodFraction, desaturationStart, fullDesaturation)
@@ -281,7 +281,7 @@ object VitalsPostEffect {
   ): PainShockVisual = {
     PainShockVisual(
       strength = shockVisualStrength(player, vitals, gameplayData, deltaTracker),
-      noise = CasualtiesBelowConfig.pain.shockVisualNoiseStrength.get().toFloat,
+      noise = CasualtiesBelowConfig.visuals.shockVisualNoiseStrength.get().toFloat,
       time = (player.tickCount % VitalsPostEffect.ShockTimePeriodTicks) +
         deltaTracker.getGameTimeDeltaPartialTick(true)
     )
@@ -293,7 +293,7 @@ object VitalsPostEffect {
       gameplayData: GameplayDataSnapshot,
       deltaTracker: DeltaTracker
   ): Float = {
-    val visualStart = CasualtiesBelowConfig.pain.shockVisualStartLoad.get().toFloat
+    val visualStart = CasualtiesBelowConfig.visuals.shockVisualStartLoad.get().toFloat
     val actualLoad = Mth.clamp(vitals.shock.load.toFloat, 0.0f, 100.0f)
     val warningStage =
       vitals.shock.stage == PainShockStage.Stable ||
@@ -311,14 +311,14 @@ object VitalsPostEffect {
     val pulseProgress = progressAbove(load, pulseStart, collapseThreshold)
     val time = player.tickCount + deltaTracker.getGameTimeDeltaPartialTick(true)
     val pulseWave = 0.5f + 0.5f * Mth.sin(time * ShockPulseSpeed)
-    val pulseDepth = CasualtiesBelowConfig.pain.shockVisualPulseStrength.get().toFloat
+    val pulseDepth = CasualtiesBelowConfig.visuals.shockVisualPulseStrength.get().toFloat
     val modulation = Mth.clamp(
       1.0f - pulseDepth * pulseProgress * pulseWave,
       ShockPulseMinimumModulation,
       1.0f
     )
     Mth.clamp(
-      CasualtiesBelowConfig.pain.shockVisualMaxStrength.get().toFloat * progress * modulation,
+      CasualtiesBelowConfig.visuals.shockVisualMaxStrength.get().toFloat * progress * modulation,
       0.0f,
       1.0f
     )

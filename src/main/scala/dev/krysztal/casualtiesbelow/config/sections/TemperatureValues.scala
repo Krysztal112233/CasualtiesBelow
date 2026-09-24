@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.config.sections
 
-import java.lang.Boolean
 import java.lang.Double
 
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
@@ -39,16 +38,7 @@ private[config] final case class TemperatureValues(
     effectiveTemperatureFormula: FormulaConfigValue,
     temperatureConsciousnessCeilingFormula: FormulaConfigValue,
     dryingCurveFormula: FormulaConfigValue,
-    wetnessCollapseFormula: FormulaConfigValue,
-    temperatureOverlayEnabled: ConfigValue[Boolean],
-
-    frostOverlayStartCelsius: ConfigValue[Double],
-    frostOverlayFullSpanCelsius: ConfigValue[Double],
-    frostOverlayMaxStrength: ConfigValue[Double],
-
-    heatOverlayStartCelsius: ConfigValue[Double],
-    heatOverlayFullSpanCelsius: ConfigValue[Double],
-    heatOverlayMaxStrength: ConfigValue[Double]
+    wetnessCollapseFormula: FormulaConfigValue
 )
 
 private[config] object TemperatureValues {
@@ -267,52 +257,7 @@ private[config] object TemperatureValues {
           "stops insulating and stops trapping sweat. Initial placeholder, pending calibration.",
           "Invalid formulas are rejected and corrected to the default. Hot-reloaded on file change."
         )
-      ),
-      temperatureOverlayEnabled = b
-        .comment(
-          "Temperature screen effects: a vitals post-shader axis. Cold side grows a frost overlay",
-          "inward from the screen edges (vanilla's powder-snow texture with a spatial mask); hot side",
-          "adds heat-haze wobble and a warm edge tint. Client-side presentation only; no gameplay",
-          "effect."
-        )
-        .define("temperatureOverlayEnabled", true),
-      frostOverlayStartCelsius = b
-        .comment(
-          "Core body temperature (°C) at which the frost overlay starts.",
-          "Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("frostOverlayStartCelsius", 35.0, 20.0, 37.0, classOf[Double]),
-      frostOverlayFullSpanCelsius = b
-        .comment(
-          "Degrees below frostOverlayStartCelsius at which the frost overlay reaches its maximum",
-          "strength. Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("frostOverlayFullSpanCelsius", 6.0, 1.0, 20.0, classOf[Double]),
-      frostOverlayMaxStrength = b
-        .comment(
-          "Maximum frost overlay strength (0..1) reached at the full span below the onset.",
-          "Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("frostOverlayMaxStrength", 0.85, 0.0, 1.0, classOf[Double]),
-      heatOverlayStartCelsius = b
-        .comment(
-          "Core body temperature (°C) at which the heat overlay (haze + warm tint) starts.",
-          "Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("heatOverlayStartCelsius", 39.5, 37.0, 45.0, classOf[Double]),
-      heatOverlayFullSpanCelsius = b
-        .comment(
-          "Degrees above heatOverlayStartCelsius at which the heat overlay reaches its maximum",
-          "strength — anchored so the maximum lands on the terminal-band edge (heatstroke).",
-          "Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("heatOverlayFullSpanCelsius", 2.5, 0.5, 10.0, classOf[Double]),
-      heatOverlayMaxStrength = b
-        .comment(
-          "Maximum heat overlay strength (0..1) reached at the full span above the onset.",
-          "Initial placeholder, pending calibration. Client-side presentation only."
-        )
-        .defineInRange("heatOverlayMaxStrength", 0.85, 0.0, 1.0, classOf[Double])
+      )
     )
     b.pop()
     s

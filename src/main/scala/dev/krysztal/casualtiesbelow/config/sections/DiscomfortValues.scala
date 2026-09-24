@@ -16,7 +16,6 @@ private[config] final case class DiscomfortValues(
     level2Mean: ConfigValue[Double],
     level3Mean: ConfigValue[Double],
     nauseaThreshold: ConfigValue[Double],
-    maxVignetteOpacity: ConfigValue[Double],
     refusalThreshold: ConfigValue[Double],
     vomitChanceThreshold: ConfigValue[Double],
     vomitMinChancePerTick: ConfigValue[Double],
@@ -75,12 +74,6 @@ private[config] object DiscomfortValues {
       nauseaThreshold = b
         .comment("Discomfort at or above which the nausea screen effect is kept up.")
         .defineInRange("nauseaThreshold", 30.0, 0.0, 10000.0, classOf[Double]),
-      maxVignetteOpacity = b
-        .comment(
-          "Strongest nausea edge-darkening strength (0.0-1.0), reached at maximum discomfort.",
-          "This effect does not add low-consciousness blur or pulsing; 0 disables it."
-        )
-        .defineInRange("maxVignetteOpacity", 0.35, 0.0, 1.0, classOf[Double]),
       refusalThreshold = b
         .comment(
           "Discomfort at or above which discomfort-bearing food can no longer be started —",
