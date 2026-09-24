@@ -11,10 +11,11 @@ final class OpioidEffectsTest {
   def effectiveLevelDampsByDependenceAndDrainScalesWithIt(): Unit = {
     assertEquals(100.0, OpioidEffects.effectiveLevel(100.0, 0.0), 1.0e-9)
     assertEquals(50.0, OpioidEffects.effectiveLevel(100.0, 100.0), 1.0e-9)
-    assertEquals(0.0, OpioidEffects.painDrainPerTick(0.0, 0.0, 0.001), 1.0e-12)
-    // Default coefficient 0.001: effective 100 drains 0.1 pain/tick, dependence halves it.
-    assertEquals(0.1, OpioidEffects.painDrainPerTick(100.0, 0.0, 0.001), 1.0e-12)
-    assertEquals(0.05, OpioidEffects.painDrainPerTick(100.0, 100.0, 0.001), 1.0e-12)
+    assertEquals(0.0, OpioidEffects.painDrainPerTick(0.0, 0.0, 0.0025), 1.0e-12)
+    // Default coefficient 0.0025: at full effective level 200 the drain is 0.5 pain/tick,
+    // i.e. 20x the natural decay rate; dependence halves the effective level.
+    assertEquals(0.25, OpioidEffects.painDrainPerTick(100.0, 0.0, 0.0025), 1.0e-12)
+    assertEquals(0.125, OpioidEffects.painDrainPerTick(100.0, 100.0, 0.0025), 1.0e-12)
   }
 
   @Test
