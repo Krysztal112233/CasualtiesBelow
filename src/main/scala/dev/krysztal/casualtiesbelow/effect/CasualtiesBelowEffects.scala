@@ -14,6 +14,7 @@ import net.minecraft.world.effect.MobEffectCategory
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.internal.`extension`.MinecraftServerExtensions.*
 
 /** Registers and synchronizes the mod's status effects. */
 private[casualtiesbelow] object CasualtiesBelowEffects {
@@ -145,10 +146,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
         if (tick < 20) break(())
 
         tick = 0
-        server
-          .getPlayerList()
-          .getPlayers()
-          .asScala
+        server.getPlayers
           .foreach(player => synchronizeFromVitals(player))
       }
     }
