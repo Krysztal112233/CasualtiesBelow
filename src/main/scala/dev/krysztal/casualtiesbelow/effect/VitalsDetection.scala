@@ -3,6 +3,7 @@ package dev.krysztal.casualtiesbelow.effect
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.internal.Consts
@@ -73,6 +74,23 @@ private[effect] def currentEffectiveBleedingRate(player: ServerPlayer): Double =
 
 private[effect] val sepsisAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierAboveThreshold(player.vitals.infection.sepsis, 0.0)
+
+private[effect] val fractureAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  if (player.isCreative || player.isSpectator) None
+  else amplifierForLimbCount(player, _.fractureRecoveryTicks.isPresent)
+
+private[effect] val dislocationAmplifierFromVitals: MobEffectAmplifierResolver = player =>
+  if (player.isCreative || player.isSpectator) None
+  else amplifierForLimbCount(player, _.dislocated)
+
+/** Maps the number of limbs matching `injured` to amplifiers I through IV (one limb per tier). */
+private[effect] def amplifierForLimbCount(
+    player: ServerPlayer,
+    injured: LimbSnapshot => Boolean
+): Option[Int] = {
+  val count = BodyPart.values.count(part => injured(player.body.stats(part)))
+  if (count == 0) None else Some((count - 1).min(3))
+}
 
 private[effect] val hypothermiaAmplifierFromVitals: MobEffectAmplifierResolver = player =>
   amplifierBelowThreshold(

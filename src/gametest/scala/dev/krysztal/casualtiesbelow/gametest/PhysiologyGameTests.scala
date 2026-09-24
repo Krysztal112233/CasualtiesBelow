@@ -48,6 +48,16 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def fractureMirrorFollowsLimbState(helper: GameTestHelper): Unit = {
+    FractureDislocationScenarios.fractureMirrorFollowsLimbState(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def dislocationMirrorFollowsLimbState(helper: GameTestHelper): Unit = {
+    FractureDislocationScenarios.dislocationMirrorFollowsLimbState(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def syringeInjectsStoredOpioidDose(helper: GameTestHelper): Unit = {
     SyringeScenarios.injectsStoredOpioidDose(helper)
   }

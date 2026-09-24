@@ -26,6 +26,8 @@
 	"effect.casualtiesbelow.alertness": "Alertness",
 	"effect.casualtiesbelow.wetness": "Wetness",
 	"effect.casualtiesbelow.dirtiness": "Dirtiness",
+	"effect.casualtiesbelow.fracture": "Fracture",
+	"effect.casualtiesbelow.dislocation": "Dislocation",
 	"effect.casualtiesbelow.skin_regeneration": "Skin Regeneration",
 	"item.minecraft.potion.effect.skin_regeneration": "Potion of Skin Regeneration",
 	"item.minecraft.splash_potion.effect.skin_regeneration": "Splash Potion of Skin Regeneration",

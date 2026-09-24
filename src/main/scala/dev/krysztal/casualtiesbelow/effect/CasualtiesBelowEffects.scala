@@ -139,6 +139,24 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
         dirtinessAmplifierFromVitals
       )
     )
+  private[casualtiesbelow] val Fracture: Holder[MobEffect] =
+    register(
+      "fracture",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0xd6d2c4,
+        fractureAmplifierFromVitals
+      )
+    )
+  private[casualtiesbelow] val Dislocation: Holder[MobEffect] =
+    register(
+      "dislocation",
+      CasualtiesBelowCustomEffect(
+        MobEffectCategory.HARMFUL,
+        0x8a7fb8,
+        dislocationAmplifierFromVitals
+      )
+    )
 
   def register(): Unit = {
     ServerTickEvents.START_SERVER_TICK.register { server =>
