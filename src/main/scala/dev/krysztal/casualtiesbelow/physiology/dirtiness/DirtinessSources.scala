@@ -26,9 +26,10 @@ import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 /** Dirtiness event pulses: discrete one-shot grime from combat, digging, food and husbandry,
   * complementing the continuous accrual/wash in [[Dirtiness]].
   *
-  * Every pulse rolls with proportional jitter (`pulseJitter`: pulse × (1 ± jitter)) and syncs
-  * immediately, following the zombie-hit immune drain precedent. One event settles exactly once:
-  * per-hit listeners read the trauma context, which vanilla emits once per accepted damage event.
+  * Every pulse rolls with proportional jitter (`randomness.worldPulseJitter`: pulse × (1 ± jitter))
+  * and syncs immediately, following the zombie-hit immune drain precedent. One event settles
+  * exactly once: per-hit listeners read the trauma context, which vanilla emits once per accepted
+  * damage event.
   *
   * Incoming hits price contact, not injury: unlike the immune drain, the pulse is not gated on
   * `woundsAllowed` — an armor-absorbed zombie slam still coats the player in grime.
@@ -38,13 +39,14 @@ object DirtinessSources {
   def register(): Unit = {
     TraumaStartedCallback.EVENT.register { context =>
       val attacker = Option(context.source.getEntity)
+      val combat = CasualtiesBelowConfig.dirtiness.combatPulseDirt.get()
       val base = hitDirt(
         zombieFamily = attacker.exists(_.is(EntityTypeTags.ZOMBIES)),
         explosion = context.source.is(DamageTypeTags.IS_EXPLOSION),
         monster = attacker.exists(_.getType.getCategory == MobCategory.MONSTER),
-        zombiePulse = CasualtiesBelowConfig.dirtiness.zombieHitDirt.get(),
-        explosionPulse = CasualtiesBelowConfig.dirtiness.explosionDirt.get(),
-        mobPulse = CasualtiesBelowConfig.dirtiness.mobHitDirt.get()
+        zombiePulse = combat,
+        explosionPulse = combat * ExplosionCombatWeight,
+        mobPulse = combat * MobHitCombatWeight
       )
       applyPulse(context.player, base)
     }
@@ -55,7 +57,10 @@ object DirtinessSources {
         case player: ServerPlayer
             if !source
               .is(DamageTypeTags.IS_PROJECTILE) && !source.is(DamageTypeTags.IS_EXPLOSION) =>
-          applyPulse(player, CasualtiesBelowConfig.dirtiness.meleeKillDirt.get())
+          applyPulse(
+            player,
+            CasualtiesBelowConfig.dirtiness.combatPulseDirt.get() * MeleeKillCombatWeight
+          )
         case _ => ()
       }
     }
@@ -63,12 +68,13 @@ object DirtinessSources {
     PlayerBlockBreakEvents.AFTER.register { (level, player, _, state, _) =>
       (player, level.isClientSide()) match {
         case (serverPlayer: ServerPlayer, false) if !state.isAir =>
+          val digging = CasualtiesBelowConfig.dirtiness.diggingPulseDirt.get()
           val base = digPulse(
             dirty = state.is(CasualtiesBelowTags.DirtyDiggableBlocks),
             dustless = state.is(CasualtiesBelowTags.DustlessDiggableBlocks),
-            dirtyPulse = CasualtiesBelowConfig.dirtiness.digDirtyBlockDirt.get(),
-            dustlessPulse = CasualtiesBelowConfig.dirtiness.digDustlessBlockDirt.get(),
-            basicPulse = CasualtiesBelowConfig.dirtiness.digBasicBlockDirt.get()
+            dirtyPulse = digging * DirtyDiggingWeight,
+            dustlessPulse = 0.0,
+            basicPulse = digging
           )
           // A dustless break raises nothing at all: skip the jitter roll entirely.
           if (base > 0.0) applyPulse(serverPlayer, base)
@@ -81,7 +87,7 @@ object DirtinessSources {
         case (serverPlayer: ServerPlayer, false)
             if entity.isInstanceOf[Animal] &&
               HusbandryTools.contains(serverPlayer.getItemInHand(hand).getItem) =>
-          applyPulse(serverPlayer, CasualtiesBelowConfig.dirtiness.husbandryDirt.get())
+          applyPulse(serverPlayer, CasualtiesBelowConfig.dirtiness.interactionPulseDirt.get())
         case _ => ()
       }
       InteractionResult.PASS
@@ -149,7 +155,7 @@ object DirtinessSources {
   private def applyPulse(player: ServerPlayer, base: Double): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
     val rolled =
-      rollPulse(base, CasualtiesBelowConfig.dirtiness.pulseJitter.get(), player.getRandom)
+      rollPulse(base, CasualtiesBelowConfig.randomness.worldPulseJitter.get(), player.getRandom)
     if (rolled <= 0.0) return
 
     val vitals = player.vitals
@@ -159,4 +165,16 @@ object DirtinessSources {
   }
 
   private val HusbandryTools = Set(Items.SHEARS, Items.BUCKET, Items.BOWL)
+
+  /** Relative pulse weights within the combat tier (base = one zombie-family hit), preserving the
+    * pre-tier defaults: explosions coat 5/3, generic monster hits 1/3, melee kills 0.8/3.
+    */
+  private val ExplosionCombatWeight = 5.0 / 3.0
+  private val MobHitCombatWeight = 1.0 / 3.0
+  private val MeleeKillCombatWeight = 0.8 / 3.0
+
+  /** Relative pulse weight of loose (dirty) blocks within the digging tier (base = one ordinary
+    * block), preserving the pre-tier 2:1 ratio; dustless blocks raise nothing at all.
+    */
+  private val DirtyDiggingWeight = 2.0
 }

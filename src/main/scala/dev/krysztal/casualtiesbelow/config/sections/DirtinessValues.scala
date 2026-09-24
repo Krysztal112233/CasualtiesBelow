@@ -15,16 +15,10 @@ private[config] final case class DirtinessValues(
     washRainPerSecond: ConfigValue[Double],
     cauldronPointsPerLevel: ConfigValue[Double],
     dirtyWaterWashMultiplier: ConfigValue[Double],
-    zombieHitDirt: ConfigValue[Double],
-    mobHitDirt: ConfigValue[Double],
-    explosionDirt: ConfigValue[Double],
-    meleeKillDirt: ConfigValue[Double],
-    digDirtyBlockDirt: ConfigValue[Double],
-    digBasicBlockDirt: ConfigValue[Double],
-    digDustlessBlockDirt: ConfigValue[Double],
+    combatPulseDirt: ConfigValue[Double],
+    diggingPulseDirt: ConfigValue[Double],
+    interactionPulseDirt: ConfigValue[Double],
     foodDirtFraction: ConfigValue[Double],
-    husbandryDirt: ConfigValue[Double],
-    pulseJitter: ConfigValue[Double],
     infectionChanceMultiplierAtMax: ConfigValue[Double],
     injectionSeedAtMax: ConfigValue[Double],
     foodDiscomfortMultiplierAtMax: ConfigValue[Double],
@@ -85,55 +79,32 @@ private[config] object DirtinessValues {
           "swamps): 0.5 = half as effective. 1.0 disables the distinction."
         )
         .defineInRange("dirtyWaterWashMultiplier", 0.5, 0.0, 1.0, classOf[Double]),
-      zombieHitDirt = b
+      combatPulseDirt = b
         .comment(
-          "Dirtiness pulse per zombie-family hit received, rolled with pulseJitter. Same",
-          "contact-grime theme as zombieHitImmuneDrain."
+          "Dirtiness pulse of one zombie-family hit received; every combat event scales from it",
+          "with fixed relative weights: explosions ×5/3, generic monster hits ×1/3, melee kills",
+          "×0.8/3. Rolled with randomness.worldPulseJitter."
         )
-        .defineInRange("zombieHitDirt", 3.0, 0.0, 1000.0, classOf[Double]),
-      mobHitDirt = b
-        .comment("Dirtiness pulse per other monster hit received, rolled with pulseJitter.")
-        .defineInRange("mobHitDirt", 1.0, 0.0, 1000.0, classOf[Double]),
-      explosionDirt = b
-        .comment("Dirtiness pulse when caught in an explosion: soot and debris.")
-        .defineInRange("explosionDirt", 5.0, 0.0, 1000.0, classOf[Double]),
-      meleeKillDirt = b
-        .comment("Dirtiness pulse per melee kill: blood and spatter.")
-        .defineInRange("meleeKillDirt", 0.8, 0.0, 1000.0, classOf[Double]),
-      digDirtyBlockDirt = b
+        .defineInRange("combatPulseDirt", 3.0, 0.0, 1000.0, classOf[Double]),
+      diggingPulseDirt = b
         .comment(
-          "Dirtiness pulse per broken loose block (block tag casualtiesbelow:dirty_diggable:",
-          "dirt, sand, gravel and the like)."
+          "Dirtiness pulse per broken ordinary block (stone, ore and the like); loose blocks",
+          "(block tag casualtiesbelow:dirty_diggable: dirt, sand, gravel) coat double, dustless",
+          "blocks (casualtiesbelow:dustless_diggable: leaves, wool, wood, glass) raise nothing."
         )
-        .defineInRange("digDirtyBlockDirt", 0.04, 0.0, 1000.0, classOf[Double]),
-      digBasicBlockDirt = b
+        .defineInRange("diggingPulseDirt", 0.02, 0.0, 1000.0, classOf[Double]),
+      interactionPulseDirt = b
         .comment(
-          "Dirtiness pulse per broken block in neither diggability tag (stone, ore and the",
-          "like): the default digging tier, half of loose."
+          "Dirtiness pulse per animal-husbandry interaction (shearing, milking), rolled with",
+          "randomness.worldPulseJitter."
         )
-        .defineInRange("digBasicBlockDirt", 0.02, 0.0, 1000.0, classOf[Double]),
-      digDustlessBlockDirt = b
-        .comment(
-          "Dirtiness pulse per broken dustless block (block tag",
-          "casualtiesbelow:dustless_diggable: leaves, wool, wood, glass): 0 skips the pulse",
-          "entirely, no jitter roll."
-        )
-        .defineInRange("digDustlessBlockDirt", 0.0, 0.0, 1000.0, classOf[Double]),
+        .defineInRange("interactionPulseDirt", 0.5, 0.0, 1000.0, classOf[Double]),
       foodDirtFraction = b
         .comment(
           "Dirtiness pulse of a eaten food as a fraction of its discomfort tier mean (0.1 =",
           "rotten flesh adds 3, raw meat 1.5): the hygiene risk of contaminated food."
         )
         .defineInRange("foodDirtFraction", 0.1, 0.0, 10.0, classOf[Double]),
-      husbandryDirt = b
-        .comment("Dirtiness pulse per animal-husbandry interaction (shearing, milking).")
-        .defineInRange("husbandryDirt", 0.5, 0.0, 1000.0, classOf[Double]),
-      pulseJitter = b
-        .comment(
-          "Random fluctuation of every dirtiness pulse, as a fraction of the pulse (0.3 =",
-          "rolled as pulse × (1 ± 30%)); proportional, so a larger pulse fluctuates more."
-        )
-        .defineInRange("pulseJitter", 0.3, 0.0, 1.0, classOf[Double]),
       infectionChanceMultiplierAtMax = b
         .comment(
           "Additional wound-infection chance multiplier at maximum dirtiness: the per-tick",

@@ -9,7 +9,6 @@ import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
 private[config] final case class BleedingValues(
     clottingRatePerTick: ConfigValue[Double],
     maxExternalBleedingRate: ConfigValue[Double],
-    bleedingRateJitter: ConfigValue[Double],
     totemBloodRestoreFraction: ConfigValue[Double],
     totemHemostasisInitialReduction: ConfigValue[Double],
     totemHemostasisDurationTicks: ConfigValue[Integer],
@@ -35,13 +34,6 @@ private[config] object BleedingValues {
           "bleeds at most half this rate."
         )
         .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[Double]),
-      bleedingRateJitter = b
-        .comment(
-          "Random fluctuation of the bleeding rate granted by each wound, as a fraction of the rate",
-          "(0.3 = rolled as rate × (1 ± 30%)); proportional, so larger wounds fluctuate more.",
-          "0 disables fluctuation."
-        )
-        .defineInRange("bleedingRateJitter", 0.3, 0.0, 1.0, classOf[Double]),
       totemBloodRestoreFraction = b
         .comment(
           "Fraction of the effective maximum blood volume restored when death protection saves",

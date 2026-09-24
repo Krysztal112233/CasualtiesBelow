@@ -42,7 +42,7 @@ final case class GameplayDataSnapshot(
     vomitMinChancePerTick: Double,
     vomitMaxChancePerTick: Double,
     vomitRelief: Double,
-    vomitReliefSpreadFraction: Double,
+    doseSpreadFraction: Double,
     gameplayData: GameplayDataStore
 ) {
 
@@ -77,7 +77,7 @@ final case class GameplayDataSnapshot(
           "vomitMinChancePerTick" -> Some(JsonPrimitive(vomitMinChancePerTick)),
           "vomitMaxChancePerTick" -> Some(JsonPrimitive(vomitMaxChancePerTick)),
           "vomitRelief" -> Some(JsonPrimitive(vomitRelief)),
-          "vomitReliefSpreadFraction" -> Some(JsonPrimitive(vomitReliefSpreadFraction))
+          "doseSpreadFraction" -> Some(JsonPrimitive(doseSpreadFraction))
         )
       ),
       "data" -> Some(GameplayDataStores.encode(gameplayData, lookup))
@@ -103,7 +103,7 @@ final case class GameplayDataSnapshot(
 
 object GameplayDataSnapshot {
 
-  private val CurrentSchemaVersion = 6
+  private val CurrentSchemaVersion = 7
 
   private final case class ClientState(
       rawJson: Option[String],
@@ -191,7 +191,7 @@ object GameplayDataSnapshot {
         config.discomfort.vomitMinChancePerTick.get()
       ),
       vomitRelief = config.discomfort.vomitRelief.get(),
-      vomitReliefSpreadFraction = config.discomfort.vomitReliefSpreadFraction.get(),
+      doseSpreadFraction = config.randomness.doseSpreadFraction.get(),
       gameplayData = gameplayData
     )
   }
@@ -268,7 +268,7 @@ object GameplayDataSnapshot {
       vomitMinChancePerTick = requiredDouble(discomfort, "vomitMinChancePerTick"),
       vomitMaxChancePerTick = requiredDouble(discomfort, "vomitMaxChancePerTick"),
       vomitRelief = requiredDouble(discomfort, "vomitRelief"),
-      vomitReliefSpreadFraction = requiredDouble(discomfort, "vomitReliefSpreadFraction"),
+      doseSpreadFraction = requiredDouble(discomfort, "doseSpreadFraction"),
       gameplayData = gameplayData
     )
   }

@@ -33,7 +33,7 @@ object ZombieAttackImmuneDrain {
   private def drain(player: ServerPlayer): Unit = {
     val vitals = player.vitals
     val base = CasualtiesBelowConfig.immune.zombieHitImmuneDrain.get()
-    val jitter = CasualtiesBelowConfig.immune.zombieHitImmuneDrainJitter.get()
+    val jitter = CasualtiesBelowConfig.randomness.worldPulseJitter.get()
     val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter
     val next = (vitals.infection.immuneHealth - base * roll).max(0.0)
     if (next == vitals.infection.immuneHealth) return

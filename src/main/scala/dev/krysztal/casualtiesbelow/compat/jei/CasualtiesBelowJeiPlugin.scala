@@ -91,7 +91,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
           fmt(data.vomitMinChancePerTick * 100.0),
           fmt(data.vomitMaxChancePerTick * 100.0),
           fmt(data.vomitRelief),
-          fmt(data.vomitReliefSpreadFraction * 100.0)
+          fmt(data.doseSpreadFraction * 100.0)
         )
       )
     }
@@ -109,7 +109,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
           fmt(data.vomitMinChancePerTick * 100.0),
           fmt(data.vomitMaxChancePerTick * 100.0),
           fmt(data.vomitRelief),
-          fmt(data.vomitReliefSpreadFraction * 100.0)
+          fmt(data.doseSpreadFraction * 100.0)
         )
       )
     }

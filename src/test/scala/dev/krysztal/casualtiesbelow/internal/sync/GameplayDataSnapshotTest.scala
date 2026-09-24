@@ -34,13 +34,13 @@ final class GameplayDataSnapshotTest {
       vomitMinChancePerTick = 0.001,
       vomitMaxChancePerTick = 0.01,
       vomitRelief = 15.0,
-      vomitReliefSpreadFraction = 0.2,
+      doseSpreadFraction = 0.2,
       gameplayData = GameplayDataStore.Empty
     )
     val json = original.toJson(RegistryAccess.EMPTY)
     val root = JsonParser.parseString(json).getAsJsonObject
 
-    assertEquals(6, root.get("schemaVersion").getAsInt)
+    assertEquals(7, root.get("schemaVersion").getAsInt)
     assertEquals(
       original.terminalHypoxiaDurationTicks,
       root.getAsJsonObject("vitals").get("terminalHypoxiaDurationTicks").getAsInt

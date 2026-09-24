@@ -127,9 +127,7 @@ private[casualtiesbelow] object SyringeFilling {
       gaussianSample,
       CasualtiesBelowConfig.opioid.refinedSyringeDose.get(),
       CasualtiesBelowConfig.opioid.crudeSyringeDoseMean.get(),
-      CasualtiesBelowConfig.opioid.crudeSyringeDoseSigma.get(),
-      CasualtiesBelowConfig.opioid.crudeSyringeDoseMinimum.get(),
-      CasualtiesBelowConfig.opioid.crudeSyringeDoseMaximum.get()
+      CasualtiesBelowConfig.opioid.crudeSyringeDoseSigma.get()
     )
     val dose = measuredDose(baseDose, syringe.calibrated, jitterUnit)
     val stack = new ItemStack(syringe)
@@ -143,26 +141,24 @@ private[casualtiesbelow] object SyringeFilling {
       gaussianSample: Double,
       refinedDose: Double,
       crudeMean: Double,
-      crudeSigma: Double,
-      crudeMinimum: Double,
-      crudeMaximum: Double
+      crudeSigma: Double
   ): Double = sourceKind match {
     case SourceKind.RefinedAmpoule => refinedDose.max(0.0)
     case SourceKind.CrudeBottle    =>
-      crudeBaseDose(gaussianSample, crudeMean, crudeSigma, crudeMinimum, crudeMaximum)
+      crudeBaseDose(gaussianSample, crudeMean, crudeSigma)
   }
 
+  /** Crude-poppy base dose: a normal sample clamped to the fixed plausible range. The clamp bounds
+    * are recipe constants, not tuning knobs — a 3σ-outlier bottle is a drawing hazard, not a
+    * balance axis.
+    */
   private[item] def crudeBaseDose(
       gaussianSample: Double,
       mean: Double,
-      sigma: Double,
-      minimum: Double,
-      maximum: Double
+      sigma: Double
   ): Double = {
-    val lower = minimum.max(0.0).min(maximum.max(0.0))
-    val upper = minimum.max(0.0).max(maximum.max(0.0))
     val sample = mean.max(0.0) + finiteOrZero(gaussianSample) * sigma.max(0.0)
-    sample.max(lower).min(upper)
+    sample.max(CrudeDoseMinimum).min(CrudeDoseMaximum)
   }
 
   private[item] def measuredDose(
@@ -213,4 +209,8 @@ private[casualtiesbelow] object SyringeFilling {
   }
 
   private def finiteOrZero(value: Double): Double = if (value.isFinite) value else 0.0
+
+  // Fixed plausible range of one crude-poppy syringe dose (see crudeBaseDose).
+  private val CrudeDoseMinimum = 20.0
+  private val CrudeDoseMaximum = 60.0
 }

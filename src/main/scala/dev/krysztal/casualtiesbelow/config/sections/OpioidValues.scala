@@ -24,8 +24,6 @@ private[config] final case class OpioidValues(
     refinedSyringeDose: ConfigValue[Double],
     crudeSyringeDoseMean: ConfigValue[Double],
     crudeSyringeDoseSigma: ConfigValue[Double],
-    crudeSyringeDoseMinimum: ConfigValue[Double],
-    crudeSyringeDoseMaximum: ConfigValue[Double],
     unmarkedSyringeJitterFraction: ConfigValue[Double]
 )
 
@@ -112,17 +110,17 @@ private[config] object OpioidValues {
         .comment("Base opioid dose drawn from one refined poppy ampoule.")
         .defineInRange("refinedSyringeDose", 50.0, 0.0, 200.0, classOf[Double]),
       crudeSyringeDoseMean = b
-        .comment("Mean opioid dose sampled when drawing directly from crude poppy liquid.")
+        .comment(
+          "Mean opioid dose sampled when drawing directly from crude poppy liquid.",
+          "The normal sample is clamped to 20-60 in code."
+        )
         .defineInRange("crudeSyringeDoseMean", 40.0, 0.0, 200.0, classOf[Double]),
       crudeSyringeDoseSigma = b
-        .comment("Standard deviation of the normal crude-poppy dose sample.")
+        .comment(
+          "Standard deviation of the normal crude-poppy dose sample.",
+          "The sample is clamped to 20-60 in code."
+        )
         .defineInRange("crudeSyringeDoseSigma", 13.0, 0.0, 200.0, classOf[Double]),
-      crudeSyringeDoseMinimum = b
-        .comment("Minimum crude-poppy base dose after normal sampling.")
-        .defineInRange("crudeSyringeDoseMinimum", 20.0, 0.0, 200.0, classOf[Double]),
-      crudeSyringeDoseMaximum = b
-        .comment("Maximum crude-poppy base dose after normal sampling.")
-        .defineInRange("crudeSyringeDoseMaximum", 60.0, 0.0, 200.0, classOf[Double]),
       unmarkedSyringeJitterFraction = b
         .comment("Maximum uniform measurement error fraction applied by an unmarked syringe.")
         .defineInRange("unmarkedSyringeJitterFraction", 0.15, 0.0, 1.0, classOf[Double])

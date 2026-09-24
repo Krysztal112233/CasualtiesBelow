@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 object BleedingCalc {
 
   /** Applies one external wound: reduce skin integrity, then add the source's bleeding rate capped
-    * by the updated skin state. The granted rate is rolled as `rate × (1 ± bleedingRateJitter)` —
+    * by the updated skin state. The granted rate is rolled as `rate × (1 ± worldPulseJitter)` —
     * proportional fluctuation, so larger wounds fluctuate more in absolute terms. Non-positive skin
     * damage is not a wound and does nothing.
     */
@@ -27,7 +27,7 @@ object BleedingCalc {
   ): Unit = {
     if (skinDamage <= 0.0) return
 
-    val jitter = CasualtiesBelowConfig.bleeding.bleedingRateJitter.get()
+    val jitter = CasualtiesBelowConfig.randomness.worldPulseJitter.get()
     val rolledRate =
       bleedingRate * (1.0 + (random.nextDouble() * 2.0 - 1.0) * jitter)
     stats.skinIntegrity = (stats.skinIntegrity - skinDamage).max(0.0)

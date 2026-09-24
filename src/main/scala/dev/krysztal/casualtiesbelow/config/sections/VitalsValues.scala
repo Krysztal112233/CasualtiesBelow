@@ -10,10 +10,9 @@ import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
 private[config] final case class VitalsValues(
     startingHealth: ConfigValue[Double],
     startingConsciousness: ConfigValue[Double],
-    consciousnessDimThreshold: ConfigValue[Double],
+    consciousnessImpairmentStartThreshold: ConfigValue[Double],
     consciousnessFloor: ConfigValue[Double],
     consciousnessKnockoutThreshold: ConfigValue[Double],
-    consciousnessIncapacitationStartThreshold: ConfigValue[Double],
     bloodOxygenDepletionPerTick: ConfigValue[Double],
     bloodOxygenRecoveryPerTick: ConfigValue[Double],
     bloodOxygenHypoxiaThreshold: ConfigValue[Double],
@@ -40,11 +39,20 @@ private[config] object VitalsValues {
         .comment("Consciousness a player starts with.")
         .gameRestart()
         .defineInRange("startingConsciousness", 100.0, 0.0, 100.0, classOf[Double]),
-      consciousnessDimThreshold = b
+      consciousnessImpairmentStartThreshold = b
         .comment(
-          "Consciousness below which the view starts to dim (client-side display effect only)."
+          "Consciousness below which impairment ramps in linearly (view dimming, blackout and",
+          "movement slowdown), reaching full effect at consciousnessKnockoutThreshold. Merges the",
+          "former separate dim and incapacitation start thresholds so visuals and mechanics never",
+          "drift apart. Must exceed the knockout threshold."
         )
-        .defineInRange("consciousnessDimThreshold", 50.0, 0.0, 100.0, classOf[Double]),
+        .defineInRange(
+          "consciousnessImpairmentStartThreshold",
+          50.0,
+          0.0,
+          100.0,
+          classOf[Double]
+        ),
       consciousnessFloor = b
         .comment(
           "Ordinary minimum consciousness value. Knockout is controlled independently by",
@@ -60,18 +68,6 @@ private[config] object VitalsValues {
           "this value to preserve hysteresis."
         )
         .defineInRange("consciousnessKnockoutThreshold", 30.0, 0.0, 100.0, classOf[Double]),
-      consciousnessIncapacitationStartThreshold = b
-        .comment(
-          "Consciousness below which blackout and movement slowdown ramp in linearly,",
-          "reaching full effect at consciousnessKnockoutThreshold. Must exceed that threshold."
-        )
-        .defineInRange(
-          "consciousnessIncapacitationStartThreshold",
-          50.0,
-          0.0,
-          100.0,
-          classOf[Double]
-        ),
       bloodOxygenDepletionPerTick = b
         .comment(
           "Blood oxygen lost per tick only after the vanilla air supply is fully exhausted.",

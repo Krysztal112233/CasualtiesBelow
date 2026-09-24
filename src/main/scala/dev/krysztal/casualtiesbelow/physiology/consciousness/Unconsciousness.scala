@@ -45,7 +45,7 @@ object Unconsciousness {
     */
   def severityOf(consciousness: Double): Double = {
     val knockout = CasualtiesBelowConfig.effectiveConsciousnessKnockoutThreshold
-    val start = CasualtiesBelowConfig.vitals.consciousnessIncapacitationStartThreshold.get()
+    val start = CasualtiesBelowConfig.vitals.consciousnessImpairmentStartThreshold.get()
     if (start <= knockout) {
       if (consciousness <= knockout) 1.0 else 0.0
     } else {

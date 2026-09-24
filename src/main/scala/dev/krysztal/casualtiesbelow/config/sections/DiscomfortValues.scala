@@ -11,25 +11,23 @@ import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue
 private[config] final case class DiscomfortValues(
     maxValue: ConfigValue[Double],
     distribution: ModConfigSpec.EnumValue[Distribution],
-    spreadFraction: ConfigValue[Double],
     level1Mean: ConfigValue[Double],
     level2Mean: ConfigValue[Double],
     level3Mean: ConfigValue[Double],
     nauseaThreshold: ConfigValue[Double],
     refusalThreshold: ConfigValue[Double],
-    vomitChanceThreshold: ConfigValue[Double],
-    vomitMinChancePerTick: ConfigValue[Double],
-    vomitMaxChancePerTick: ConfigValue[Double],
     decayRateLowPerSecond: ConfigValue[Double],
     decayRateHighPerSecond: ConfigValue[Double],
     alreadyNauseousMultiplier: ConfigValue[Double],
     overeatingMultiplier: ConfigValue[Double],
     poorConditionMultiplier: ConfigValue[Double],
     poorConditionConsciousnessThreshold: ConfigValue[Double],
-    vomitHungerPenalty: ConfigValue[Integer],
-    vomitSaturationPenalty: ConfigValue[Double],
+    vomitChanceThreshold: ConfigValue[Double],
+    vomitMinChancePerTick: ConfigValue[Double],
+    vomitMaxChancePerTick: ConfigValue[Double],
     vomitRelief: ConfigValue[Double],
-    vomitReliefSpreadFraction: ConfigValue[Double]
+    vomitHungerPenalty: ConfigValue[Integer],
+    vomitSaturationPenalty: ConfigValue[Double]
 )
 
 private[config] object DiscomfortValues {
@@ -42,17 +40,11 @@ private[config] object DiscomfortValues {
         .defineInRange("maxValue", 100.0, 1.0, 10000.0, classOf[Double]),
       distribution = b
         .comment(
-          "Sampling distribution for each bite.",
+          "Sampling distribution for each bite (spread: randomness.doseSpreadFraction).",
           "Gaussian: normal distribution with possible tails.",
           "Uniform: even distribution across the configured interval."
         )
         .defineEnum("distribution", Distribution.Gaussian),
-      spreadFraction = b
-        .comment(
-          "Spread of one dose as a fraction of its tier mean (gaussian standard deviation or",
-          "uniform half-width), so every tier wobbles proportionally."
-        )
-        .defineInRange("spreadFraction", 0.25, 0.0, 1.0, classOf[Double]),
       level1Mean = b
         .comment(
           "Mean discomfort of tier-1 food (the casualtiesbelow:discomfort_1 tag: raw fish, honey",
@@ -80,18 +72,6 @@ private[config] object DiscomfortValues {
           "the character cannot bring themselves to swallow it."
         )
         .defineInRange("refusalThreshold", 60.0, 0.0, 10000.0, classOf[Double]),
-      vomitChanceThreshold = b
-        .comment(
-          "Discomfort above which each server tick can trigger vomiting; the chance rises",
-          "linearly from vomitMinChancePerTick here to vomitMaxChancePerTick at maxValue."
-        )
-        .defineInRange("vomitChanceThreshold", 30.0, 0.0, 10000.0, classOf[Double]),
-      vomitMinChancePerTick = b
-        .comment("Vomiting chance per tick immediately above vomitChanceThreshold (0.01 = 1%).")
-        .defineInRange("vomitMinChancePerTick", 0.01, 0.0, 1.0, classOf[Double]),
-      vomitMaxChancePerTick = b
-        .comment("Vomiting chance per tick at maxValue (0.05 = 5%).")
-        .defineInRange("vomitMaxChancePerTick", 0.05, 0.0, 1.0, classOf[Double]),
       decayRateLowPerSecond = b
         .comment(
           "Discomfort decay per second while below the nausea threshold: mild queasiness is",
@@ -119,21 +99,31 @@ private[config] object DiscomfortValues {
       poorConditionConsciousnessThreshold = b
         .comment("Consciousness below which the poor-condition dose multiplier applies.")
         .defineInRange("poorConditionConsciousnessThreshold", 50.0, 0.0, 100.0, classOf[Double]),
+      // Vomiting: the chance ramps from vomitMinChancePerTick above vomitChanceThreshold to
+      // vomitMaxChancePerTick at maxValue; one vomit relieves and costs hunger.
+      vomitChanceThreshold = b
+        .comment(
+          "Discomfort above which each server tick can trigger vomiting; the chance rises",
+          "linearly from vomitMinChancePerTick here to vomitMaxChancePerTick at maxValue."
+        )
+        .defineInRange("vomitChanceThreshold", 30.0, 0.0, 10000.0, classOf[Double]),
+      vomitMinChancePerTick = b
+        .comment("Vomiting chance per tick immediately above vomitChanceThreshold (0.01 = 1%).")
+        .defineInRange("vomitMinChancePerTick", 0.01, 0.0, 1.0, classOf[Double]),
+      vomitMaxChancePerTick = b
+        .comment("Vomiting chance per tick at maxValue (0.05 = 5%).")
+        .defineInRange("vomitMaxChancePerTick", 0.05, 0.0, 1.0, classOf[Double]),
+      vomitRelief = b
+        .comment(
+          "Mean discomfort removed by vomiting (spread: randomness.doseSpreadFraction)."
+        )
+        .defineInRange("vomitRelief", 30.0, 0.0, 10000.0, classOf[Double]),
       vomitHungerPenalty = b
         .comment("Food level (0-20) lost when vomiting.")
         .defineInRange("vomitHungerPenalty", 6, 0, 20, classOf[Integer]),
       vomitSaturationPenalty = b
         .comment("Saturation lost when vomiting.")
-        .defineInRange("vomitSaturationPenalty", 8.0, 0.0, 100.0, classOf[Double]),
-      vomitRelief = b
-        .comment("Mean discomfort removed by vomiting.")
-        .defineInRange("vomitRelief", 30.0, 0.0, 10000.0, classOf[Double]),
-      vomitReliefSpreadFraction = b
-        .comment(
-          "Uniform random spread around vomitRelief as a fraction of that value",
-          "(0.05 = each vomit removes between 95% and 105% of the configured relief)."
-        )
-        .defineInRange("vomitReliefSpreadFraction", 0.05, 0.0, 1.0, classOf[Double])
+        .defineInRange("vomitSaturationPenalty", 8.0, 0.0, 100.0, classOf[Double])
     )
     b.pop()
     s

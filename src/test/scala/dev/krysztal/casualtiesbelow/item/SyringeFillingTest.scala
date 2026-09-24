@@ -60,10 +60,10 @@ final class SyringeFillingTest {
   }
 
   @Test
-  def crudeNormalSampleIsClampedToConfiguredRange(): Unit = {
-    assertEquals(20.0, SyringeFilling.crudeBaseDose(-100.0, 40.0, 13.0, 20.0, 60.0), 1.0e-9)
-    assertEquals(40.0, SyringeFilling.crudeBaseDose(0.0, 40.0, 13.0, 20.0, 60.0), 1.0e-9)
-    assertEquals(60.0, SyringeFilling.crudeBaseDose(100.0, 40.0, 13.0, 20.0, 60.0), 1.0e-9)
+  def crudeNormalSampleIsClampedToFixedRange(): Unit = {
+    assertEquals(20.0, SyringeFilling.crudeBaseDose(-100.0, 40.0, 13.0), 1.0e-9)
+    assertEquals(40.0, SyringeFilling.crudeBaseDose(0.0, 40.0, 13.0), 1.0e-9)
+    assertEquals(60.0, SyringeFilling.crudeBaseDose(100.0, 40.0, 13.0), 1.0e-9)
   }
 
   @Test
@@ -81,9 +81,7 @@ final class SyringeFillingTest {
       gaussianSample = 100.0,
       refinedDose = 50.0,
       crudeMean = 40.0,
-      crudeSigma = 13.0,
-      crudeMinimum = 20.0,
-      crudeMaximum = 60.0
+      crudeSigma = 13.0
     )
 
     assertEquals(50.0, refinedBase, 1.0e-9)

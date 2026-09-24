@@ -56,6 +56,7 @@ object CasualtiesBelowConfig {
   val temperature = TemperatureValues.define(Builder)
   val dirtiness = DirtinessValues.define(Builder)
   val discomfort = DiscomfortValues.define(Builder)
+  val randomness = RandomnessValues.define(Builder)
   val visuals = VisualsValues.define(Builder)
 
   private val Spec = Builder.build()
@@ -122,7 +123,7 @@ object CasualtiesBelowConfig {
   private def migratePhysiologyBalanceDefaults(): Unit = {
     if (PhysiologyBalanceVersion.get().intValue >= CurrentPhysiologyBalanceVersion) return
 
-    migratePreviousDefault(vitals.consciousnessIncapacitationStartThreshold, 30.0, 50.0)
+    migratePreviousDefault(vitals.consciousnessImpairmentStartThreshold, 30.0, 50.0)
     migratePreviousDefault(vitals.bloodOxygenDepletionPerTick, 0.3, 0.4)
     migratePreviousDefault(vitals.bloodOxygenRecoveryPerTick, 0.5, 0.8)
     migratePreviousDefault(vitals.consciousnessRecoveryPerTick, 0.08, 0.2)

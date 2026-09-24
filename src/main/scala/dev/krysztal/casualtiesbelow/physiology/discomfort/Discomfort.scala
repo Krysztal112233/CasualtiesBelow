@@ -236,15 +236,15 @@ object Discomfort {
 
   private def sampleVomitRelief(random: RandomSource): Double = {
     val mean = CasualtiesBelowConfig.discomfort.vomitRelief.get()
-    val spread = mean * CasualtiesBelowConfig.discomfort.vomitReliefSpreadFraction.get()
+    val spread = mean * CasualtiesBelowConfig.randomness.doseSpreadFraction.get()
     mean + (random.nextDouble() * 2.0 - 1.0) * spread
   }
 
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles
-    * proportionally ([[CasualtiesBelowConfig.discomfort.spreadFraction]]).
+    * proportionally ([[CasualtiesBelowConfig.randomness.doseSpreadFraction]]).
     */
   private def sample(mean: Double, random: RandomSource): Double = {
-    val spread = mean * CasualtiesBelowConfig.discomfort.spreadFraction.get()
+    val spread = mean * CasualtiesBelowConfig.randomness.doseSpreadFraction.get()
     val sampled =
       CasualtiesBelowConfig.discomfort.distribution.get() match {
         case DiscomfortDistribution.Uniform =>

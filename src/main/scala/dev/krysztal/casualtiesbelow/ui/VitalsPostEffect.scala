@@ -216,7 +216,7 @@ object VitalsPostEffect {
       vitals: VitalsComponent,
       deltaTracker: DeltaTracker
   ): ConsciousnessVisual = {
-    val dimThreshold = CasualtiesBelowConfig.vitals.consciousnessDimThreshold.get()
+    val dimThreshold = CasualtiesBelowConfig.vitals.consciousnessImpairmentStartThreshold.get()
     val progress = Mth.clamp(
       ((dimThreshold - vitals.consciousness.level) / math.max(dimThreshold, 1.0e-6)).toFloat,
       0.0f,
