@@ -37,25 +37,25 @@ object CasualtiesBelowConfig {
     )
 
   // Section definitions, in TOML order. The sequence here is what fixes the layout of
-  // casualtiesbelow-common.toml; do not reorder casually.
+  // casualtiesbelow-common.toml and the in-game editor; it follows the vitals causal chain
+  // (core axes → threats → wounds/infection → consequences → environment → presentation).
   val vitals = VitalsValues.define(Builder)
   val hazards = HazardsValues.define(Builder)
   val bleeding = BleedingValues.define(Builder)
   val infection = InfectionValues.define(Builder)
-  val sepsis = SepsisValues.define(Builder)
-  val armor = ArmorValues.define(Builder)
-  val discomfort = DiscomfortValues.define(Builder)
   val immune = ImmuneValues.define(Builder)
-  val dirtiness = DirtinessValues.define(Builder)
+  val sepsis = SepsisValues.define(Builder)
   val regeneration = RegenerationValues.define(Builder)
+  val armor = ArmorValues.define(Builder)
+  val fall = FallValues.define(Builder)
   val movement = MovementValues.define(Builder)
   val pain = PainValues.define(Builder)
   val adrenaline = AdrenalineValues.define(Builder)
   val opioid = OpioidValues.define(Builder)
   val injection = InjectionValues.define(Builder)
-  val fall = FallValues.define(Builder)
   val temperature = TemperatureValues.define(Builder)
-  val progression = ProgressionValues.define(Builder)
+  val dirtiness = DirtinessValues.define(Builder)
+  val discomfort = DiscomfortValues.define(Builder)
   val visuals = VisualsValues.define(Builder)
 
   private val Spec = Builder.build()

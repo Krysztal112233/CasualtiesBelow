@@ -147,7 +147,7 @@ object AchievementScenarios {
   def hemostasisAfterNearMaxBleedingGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val nearMaxRate = CasualtiesBelowConfig.bleeding.maxExternalBleedingRate.get() *
-      CasualtiesBelowConfig.progression.notTodayNearMaxBleedingFraction.get()
+      CasualtiesBelowConfig.bleeding.notTodayNearMaxBleedingFraction.get()
     setBleeding(player, BodyPart.Head, nearMaxRate)
     AchievementHooks.tickForGameTest(player)
     assertNotDone(helper, player, "hemostasis")
@@ -161,7 +161,7 @@ object AchievementScenarios {
   def bleedingBelowThresholdDoesNotGrantHemostasis(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val nearMaxRate = CasualtiesBelowConfig.bleeding.maxExternalBleedingRate.get() *
-      CasualtiesBelowConfig.progression.notTodayNearMaxBleedingFraction.get()
+      CasualtiesBelowConfig.bleeding.notTodayNearMaxBleedingFraction.get()
     setBleeding(player, BodyPart.Head, nearMaxRate * 0.5)
     AchievementHooks.tickForGameTest(player)
     setBleeding(player, BodyPart.Head, 0.0)

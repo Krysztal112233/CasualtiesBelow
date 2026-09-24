@@ -9,7 +9,6 @@ private[config] final case class InfectionValues(
     infectionChancePerTick: ConfigValue[Double],
     infectionSpreadPerTick: ConfigValue[Double],
     infectionFightPerTick: ConfigValue[Double],
-    skinRegenMinImmuneMultiplier: ConfigValue[Double],
     infectionEffectStartProgress: ConfigValue[Double],
     infectionEffectFullProgress: ConfigValue[Double],
     infectionPainPerTick: ConfigValue[Double],
@@ -47,13 +46,6 @@ private[config] object InfectionValues {
           "below it they spread."
         )
         .defineInRange("infectionFightPerTick", 0.02, 0.0, 10.0, classOf[Double]),
-      skinRegenMinImmuneMultiplier = b
-        .comment(
-          "Skin regrowth multiplier at zero immune health, as a fraction of the base rate (0.25 =",
-          "quarter speed); at full immune health skin regrows at the base rate. Never zero, so a",
-          "dying player is not soft-locked out of healing."
-        )
-        .defineInRange("skinRegenMinImmuneMultiplier", 0.25, 0.0, 1.0, classOf[Double]),
       infectionEffectStartProgress = b
         .comment(
           "Infection progress at which local consequences (pain, muscle decay) begin; below this",

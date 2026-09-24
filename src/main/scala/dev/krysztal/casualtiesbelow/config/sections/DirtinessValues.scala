@@ -27,7 +27,6 @@ private[config] final case class DirtinessValues(
     pulseJitter: ConfigValue[Double],
     infectionChanceMultiplierAtMax: ConfigValue[Double],
     injectionSeedAtMax: ConfigValue[Double],
-    skinRegenMinMultiplier: ConfigValue[Double],
     foodDiscomfortMultiplierAtMax: ConfigValue[Double],
     immuneDrainStartDirtiness: ConfigValue[Double],
     immuneDrainMaxPerTick: ConfigValue[Double]
@@ -150,12 +149,6 @@ private[config] object DirtinessValues {
           "a dirty needle alone cannot cause symptomatic infection."
         )
         .defineInRange("injectionSeedAtMax", 12.0, 0.0, 100.0, classOf[Double]),
-      skinRegenMinMultiplier = b
-        .comment(
-          "Skin-regrowth multiplier at maximum dirtiness, ramping linearly from 1 when",
-          "clean. Never zero, and stacks with the immune multiplier."
-        )
-        .defineInRange("skinRegenMinMultiplier", 0.75, 0.0, 1.0, classOf[Double]),
       foodDiscomfortMultiplierAtMax = b
         .comment(
           "Additional food-discomfort dose fraction at maximum dirtiness (eating with dirty",

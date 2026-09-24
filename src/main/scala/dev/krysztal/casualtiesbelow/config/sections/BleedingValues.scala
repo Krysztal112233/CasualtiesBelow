@@ -12,7 +12,8 @@ private[config] final case class BleedingValues(
     bleedingRateJitter: ConfigValue[Double],
     totemBloodRestoreFraction: ConfigValue[Double],
     totemHemostasisInitialReduction: ConfigValue[Double],
-    totemHemostasisDurationTicks: ConfigValue[Integer]
+    totemHemostasisDurationTicks: ConfigValue[Integer],
+    notTodayNearMaxBleedingFraction: ConfigValue[Double]
 )
 
 private[config] object BleedingValues {
@@ -59,7 +60,15 @@ private[config] object BleedingValues {
           "Duration of the post-totem hemostasis window in ticks (20 ticks = 1 second).",
           "The hidden timer freezes with the rest of physiology in creative and spectator modes."
         )
-        .defineInRange("totemHemostasisDurationTicks", 600, 0, 72000)
+        .defineInRange("totemHemostasisDurationTicks", 600, 0, 72000),
+      notTodayNearMaxBleedingFraction = b
+        .comment(
+          "Near-maximum hemorrhage threshold of the \"Not Today\" advancement, as a fraction of a",
+          "limb's maximum external bleeding rate (maxExternalBleedingRate). An episode arms once the",
+          "player's total external bleeding rate reaches this threshold, and completes when external",
+          "bleeding is fully stopped while the player lives to see it."
+        )
+        .defineInRange("notTodayNearMaxBleedingFraction", 0.75, 0.0, 1.0, classOf[Double])
     )
     b.pop()
     s

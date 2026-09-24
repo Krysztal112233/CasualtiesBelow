@@ -279,7 +279,7 @@ private[casualtiesbelow] object Limb {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= MutableLimbState.MaxValue) return
 
-    val minMultiplier = CasualtiesBelowConfig.infection.skinRegenMinImmuneMultiplier.get()
+    val minMultiplier = CasualtiesBelowConfig.regeneration.skinRegenMinImmuneMultiplier.get()
     val immuneMultiplier =
       minMultiplier +
         (1.0 - minMultiplier) * immuneHealth / CasualtiesBelowConfig.vitals.maxImmuneHealth.get()
@@ -287,7 +287,7 @@ private[casualtiesbelow] object Limb {
       immuneMultiplier * Dirtiness.skinRegenMultiplier(
         dirtiness,
         CasualtiesBelowConfig.dirtiness.maxValue.get(),
-        CasualtiesBelowConfig.dirtiness.skinRegenMinMultiplier.get()
+        CasualtiesBelowConfig.regeneration.skinRegenMinDirtinessMultiplier.get()
       )
     stats.skinIntegrity =
       (stats.skinIntegrity + SkinRegenPerTick * multiplier).min(MutableLimbState.MaxValue)

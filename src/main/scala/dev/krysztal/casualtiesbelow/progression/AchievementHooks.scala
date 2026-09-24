@@ -76,7 +76,7 @@ object AchievementHooks {
 
   private def tickHemostasis(player: ServerPlayer, totalBleeding: Double): Unit = {
     val nearMaxRate = CasualtiesBelowConfig.bleeding.maxExternalBleedingRate.get() *
-      CasualtiesBelowConfig.progression.notTodayNearMaxBleedingFraction.get()
+      CasualtiesBelowConfig.bleeding.notTodayNearMaxBleedingFraction.get()
     val previous =
       Option(hemostasisStates.get(player)).getOrElse(HemostasisEpisode.State.Idle)
     val (next, completed) = HemostasisEpisode.next(previous, totalBleeding, nearMaxRate)
