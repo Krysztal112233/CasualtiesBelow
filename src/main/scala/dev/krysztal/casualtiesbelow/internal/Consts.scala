@@ -102,6 +102,12 @@ private[casualtiesbelow] object Consts {
     val SkinRestorePerTick = 0.001
     val SkinRegenMinImmuneMultiplier = 0.25
     val SkinRegenMinDirtinessMultiplier = 0.75
+
+    /** Skin integrity restored per tick per amplifier level by the Skin Regeneration effect. */
+    val SkinRegenerationEffectPerTick = 0.05
+
+    /** Duration of the brewed Skin Regeneration potion, in ticks. */
+    val SkinRegenerationPotionTicks = 1800
   }
 
   object Armor {

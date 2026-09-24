@@ -28,6 +28,16 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def skinRegenerationEffectRestoresSkinAndCapsBleeding(helper: GameTestHelper): Unit = {
+    SkinRegenerationScenarios.effectRestoresSkinAndCapsBleeding(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def skinRegenerationEffectDistributesAcrossDamagedLimbs(helper: GameTestHelper): Unit = {
+    SkinRegenerationScenarios.effectDistributesAcrossDamagedLimbs(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def syringeInjectsStoredOpioidDose(helper: GameTestHelper): Unit = {
     SyringeScenarios.injectsStoredOpioidDose(helper)
   }
