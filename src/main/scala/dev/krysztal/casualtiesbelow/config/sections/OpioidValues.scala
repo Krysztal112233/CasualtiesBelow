@@ -54,9 +54,9 @@ private[config] object OpioidValues {
         .comment(
           "Limb pain drained per tick per point of effective opioid, on top of painDecayPerTick,",
           "on every limb. Effective opioid = level / (1 + dependence / 100), so 200 level at 0",
-          "dependence drains 0.1 pain/tick (2 pain/s); dependence 100 halves the drain."
+          "dependence drains 0.2 pain/tick (4 pain/s); dependence 100 halves the drain."
         )
-        .defineInRange("opioidPainDrainPerLevelPerTick", 0.0005, 0.0, 10.0, classOf[Double]),
+        .defineInRange("opioidPainDrainPerLevelPerTick", 0.001, 0.0, 10.0, classOf[Double]),
       opioidSedationCeilingFormula = new FormulaConfigValue(
         b,
         "sedationCeilingFormula",
