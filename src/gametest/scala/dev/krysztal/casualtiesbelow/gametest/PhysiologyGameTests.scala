@@ -38,6 +38,16 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
+  def muscleRecoveryEffectRestoresMuscle(helper: GameTestHelper): Unit = {
+    MuscleRecoveryScenarios.effectRestoresMuscle(helper)
+  }
+
+  @GameTest(maxTicks = 20)
+  def muscleRecoveryEffectDistributesAcrossDamagedLimbs(helper: GameTestHelper): Unit = {
+    MuscleRecoveryScenarios.effectDistributesAcrossDamagedLimbs(helper)
+  }
+
+  @GameTest(maxTicks = 20)
   def syringeInjectsStoredOpioidDose(helper: GameTestHelper): Unit = {
     SyringeScenarios.injectsStoredOpioidDose(helper)
   }

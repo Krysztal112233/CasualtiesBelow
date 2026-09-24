@@ -5,6 +5,7 @@ import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.world.effect.MobEffect
 import net.minecraft.world.effect.MobEffectInstance
+import net.minecraft.world.item.Items
 import net.minecraft.world.item.alchemy.Potion
 import net.minecraft.world.item.alchemy.Potions
 import net.minecraft.world.item.crafting.Ingredient
@@ -31,6 +32,13 @@ private[casualtiesbelow] object CasualtiesCommonBelowEffects {
     new SkinRegenerationEffect,
     Consts.Regeneration.SkinRegenerationPotionTicks,
     Ingredient.of(CasualtiesBelowItems.BasicBandage)
+  )
+
+  val (MuscleRecovery @ _, MuscleRecoveryPotion @ _) = register(
+    "muscle_recovery",
+    new MuscleRecoveryEffect,
+    Consts.Regeneration.MuscleRecoveryPotionTicks,
+    Ingredient.of(Items.COOKED_BEEF)
   )
 
   private def register(

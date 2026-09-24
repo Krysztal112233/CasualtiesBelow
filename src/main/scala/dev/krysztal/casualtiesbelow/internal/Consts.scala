@@ -108,6 +108,12 @@ private[casualtiesbelow] object Consts {
 
     /** Duration of the brewed Skin Regeneration potion, in ticks. */
     val SkinRegenerationPotionTicks = 1800
+
+    /** Muscle health restored per tick per amplifier level by the Muscle Recovery effect. */
+    val MuscleRecoveryEffectPerTick = 0.05
+
+    /** Duration of the brewed Muscle Recovery potion, in ticks. */
+    val MuscleRecoveryPotionTicks = 1800
   }
 
   object Armor {
