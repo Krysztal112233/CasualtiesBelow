@@ -84,6 +84,13 @@ private[casualtiesbelow] object Consts {
   }
 
   object Immune {
+
+    /** Fresh-player and respawn immune health: deliberately exactly the single-limb infection
+      * break-even ([[Infection.immuneBreakEven]]), so infections demand active management from the
+      * start instead of passively clearing. The ceiling stays [[Vitals.MaxImmuneHealth]].
+      */
+    val DefaultImmuneHealth = 120.0
+
     val FedImmuneRegenPerTick = 0.005
     val HungryImmuneDrainPerTick = 0.01
     val FedFoodLevelThreshold = 18

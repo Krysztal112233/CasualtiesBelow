@@ -38,7 +38,7 @@ final class VitalsComponentImpl(val player: Player)
     with CopyableComponent[VitalsComponent]
     with AutoSyncedComponent {
   private var infectionState: InfectionSnapshot =
-    InfectionSnapshot(Consts.Vitals.MaxImmuneHealth, 0.0)
+    InfectionSnapshot(Consts.Immune.DefaultImmuneHealth, 0.0)
   private var consciousnessState: ConsciousnessSnapshot =
     ConsciousnessSnapshot(VitalsComponent.MaxValue, unconscious = false)
   private var shockState: ShockSnapshot = ShockSnapshot(0.0, PainShockStage.Stable)

@@ -17,7 +17,7 @@ object PhysiologyReset {
     BodyMutations.reset(player)
 
     val vitals = player.vitals
-    VitalsMutations.setImmuneHealth(vitals, Consts.Vitals.MaxImmuneHealth)
+    VitalsMutations.setImmuneHealth(vitals, Consts.Immune.DefaultImmuneHealth)
     VitalsMutations.setBloodOxygen(vitals, VitalsComponent.MaxBloodOxygen)
     VitalsMutations.setBloodVolume(vitals, Consts.Vitals.MaxBloodVolume)
     HypoxiaProgression.reset(vitals)

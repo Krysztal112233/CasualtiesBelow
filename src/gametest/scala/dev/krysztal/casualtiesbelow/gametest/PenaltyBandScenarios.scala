@@ -155,7 +155,7 @@ object PenaltyBandScenarios {
   private def startImmune(
       vitals: dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
   ): Double =
-    Consts.Vitals.MaxImmuneHealth
+    Consts.Immune.DefaultImmuneHealth
 
   /** One manual tick settles consciousness onto the ceiling: recovery stops there (the bounded next
     * value clamps to the ceiling), and a healthy player (unconscious = false) with a positive
