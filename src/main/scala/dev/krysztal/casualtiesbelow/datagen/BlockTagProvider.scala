@@ -29,7 +29,7 @@ final class BlockTagProvider(
     )
     builder(BlockTags.CAULDRONS).add(poppyCauldrons*)
     builder(BlockTags.MINEABLE_WITH_PICKAXE).add(poppyCauldrons*)
-    builder(CasualtiesBelowTags.DirtyDiggableBlocks).add(
+    builder(CasualtiesBelowTags.DiggableDirtyBlocks).add(
       Seq(
         Blocks.DIRT,
         Blocks.GRASS_BLOCK,
@@ -49,7 +49,7 @@ final class BlockTagProvider(
         Blocks.SOUL_SOIL
       ).map(blockKey)*
     )
-    builder(CasualtiesBelowTags.DustlessDiggableBlocks)
+    builder(CasualtiesBelowTags.DiggableDustlessBlocks)
       .addOptionalTag(BlockTags.LEAVES)
       .addOptionalTag(BlockTags.WOOL)
       .addOptionalTag(BlockTags.LOGS)

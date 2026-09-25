@@ -92,12 +92,12 @@ object CasualtiesBelowTags {
   /** Loose blocks whose breaking kicks up grime (dirt, sand, gravel, mud; see
     * `hygiene.DirtinessSources`).
     */
-  val DirtyDiggableBlocks: TagKey[Block] =
-    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dirty_diggable"))
+  val DiggableDirtyBlocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("diggable_dirty"))
 
   /** Blocks whose breaking raises no dust at all (leaves, wool, wood, glass, ice; see
-    * `hygiene.DirtinessSources`). Membership in [[DirtyDiggableBlocks]] wins over this tag.
+    * `hygiene.DirtinessSources`). Membership in [[DiggableDirtyBlocks]] wins over this tag.
     */
-  val DustlessDiggableBlocks: TagKey[Block] =
-    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("dustless_diggable"))
+  val DiggableDustlessBlocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("diggable_dustless"))
 }
