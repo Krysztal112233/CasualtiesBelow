@@ -36,7 +36,7 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
 }
 
 /** Food discomfort: how revolting what you just ate was. Which food is how revolting is content —
-  * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Items]] and up) with
+  * datapack-driven via the three tier tags ([[CasualtiesBelowTags.Discomfort1Food]] and up) with
   * per-item `discomfort` datapack entries on top. Tier means, sampling and decay are fixed balance
   * values in [[Consts.Discomfort]]; players can adjust the food-refusal threshold.
   *
@@ -267,11 +267,11 @@ object Discomfort {
       stack: ItemStack,
       data: GameplayDataSnapshot
   ): Option[(Double, Option[Int])] = {
-    if (stack.is(CasualtiesBelowTags.Discomfort3Items)) {
+    if (stack.is(CasualtiesBelowTags.Discomfort3Food)) {
       Some((tierMean(3, data.discomfortLevelMeans), Some(3)))
-    } else if (stack.is(CasualtiesBelowTags.Discomfort2Items)) {
+    } else if (stack.is(CasualtiesBelowTags.Discomfort2Food)) {
       Some((tierMean(2, data.discomfortLevelMeans), Some(2)))
-    } else if (stack.is(CasualtiesBelowTags.Discomfort1Items)) {
+    } else if (stack.is(CasualtiesBelowTags.Discomfort1Food)) {
       Some((tierMean(1, data.discomfortLevelMeans), Some(1)))
     } else None
   }

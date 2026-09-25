@@ -118,9 +118,9 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   private def collectDiscomfortCandidates(using store: GameplayDataStore): Set[Item] = {
     val items = scala.collection.mutable.LinkedHashSet.empty[Item]
     List(
-      CasualtiesBelowTags.Discomfort1Items,
-      CasualtiesBelowTags.Discomfort2Items,
-      CasualtiesBelowTags.Discomfort3Items
+      CasualtiesBelowTags.Discomfort1Food,
+      CasualtiesBelowTags.Discomfort2Food,
+      CasualtiesBelowTags.Discomfort3Food
     ).foreach { tag =>
       BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(h => items += h.value())
     }

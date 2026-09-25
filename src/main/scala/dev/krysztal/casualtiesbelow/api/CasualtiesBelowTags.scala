@@ -66,15 +66,15 @@ object CasualtiesBelowTags {
 
   /** Tier-1 discomfort food: edible but raw/starchy/sickly-sweet (raw fish, honey by the bottle).
     */
-  val Discomfort1Items: TagKey[Item] =
+  val Discomfort1Food: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("discomfort_1"))
 
   /** Tier-2 discomfort food: clearly hard to swallow (raw meat, dried kelp, chorus fruit). */
-  val Discomfort2Items: TagKey[Item] =
+  val Discomfort2Food: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("discomfort_2"))
 
   /** Tier-3 discomfort food: rotten, poisonous or not human food (rotten flesh, pufferfish). */
-  val Discomfort3Items: TagKey[Item] =
+  val Discomfort3Food: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("discomfort_3"))
 
   /** Nourishing prepared soups, priced as a group by the matching `food_immune/tag` entry (see

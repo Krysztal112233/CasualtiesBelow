@@ -39,7 +39,7 @@ final class ItemTagProvider(
     }
 
     // Discomfort tier 1: still edible, but raw/starchy/sickly-sweet — a brief queasiness.
-    builder(CasualtiesBelowTags.Discomfort1Items)
+    builder(CasualtiesBelowTags.Discomfort1Food)
       .add(
         itemKey(Items.POTATO),
         itemKey(Items.SALMON),
@@ -48,7 +48,7 @@ final class ItemTagProvider(
       )
 
     // Discomfort tier 2: clearly hard to swallow — raw meat, dried kelp, teleport fruit.
-    builder(CasualtiesBelowTags.Discomfort2Items)
+    builder(CasualtiesBelowTags.Discomfort2Food)
       .add(
         itemKey(Items.DRIED_KELP),
         itemKey(Items.TROPICAL_FISH),
@@ -61,7 +61,7 @@ final class ItemTagProvider(
       )
 
     // Discomfort tier 3: rotten, poisonous or not human food at all.
-    builder(CasualtiesBelowTags.Discomfort3Items)
+    builder(CasualtiesBelowTags.Discomfort3Food)
       .add(
         itemKey(Items.POISONOUS_POTATO),
         itemKey(Items.PUFFERFISH),
