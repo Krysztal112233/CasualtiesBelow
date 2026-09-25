@@ -1,7 +1,7 @@
 {
   "type": "casualtiesbelow:linear",
   "bleed_rate_per_wound": 0.05,
-  "muscle_per_point": 0.0,
+  "muscle_per_point": 4.0,
   "pain_per_point": 1.0,
-  "skin_per_point": 1.5
+  "skin_per_point": 3.0
 }

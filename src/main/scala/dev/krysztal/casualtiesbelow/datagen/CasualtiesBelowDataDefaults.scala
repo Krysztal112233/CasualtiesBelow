@@ -57,14 +57,14 @@ import dev.krysztal.casualtiesbelow.data.schema.WoundSeverityPolicy
 object CasualtiesBelowDataDefaults {
   val WoundProfiles: Map[Identifier, WoundProfile] = List(
     "bite" -> WoundProfile.linear(1.5, 2.0, 0.1, 4.0),
-    "cut" -> WoundProfile.linear(2.0, 3.0, 0.2, 4.0),
-    "blunt" -> WoundProfile.linear(0.0, 3.0, 0.1, 4.0),
+    "cut" -> WoundProfile.linear(3.0, 2.0, 0.2, 4.0),
+    "blunt" -> WoundProfile.linear(2.0, 3.0, 0.5, 4.0),
     "pierce" -> WoundProfile.linear(3.0, 2.0, 0.15, 5.0),
     "burn" -> WoundProfile.linear(4.0, 2.0, 0.0, 2.0),
     "lava_burn" -> WoundProfile.linear(4.0, 3.0, 0.0, 4.0),
-    "prick" -> WoundProfile.linear(1.5, 0.0, 0.05, 1.0),
-    "blast" -> WoundProfile.linear(2.0, 2.0, 0.25, 6.0),
-    "fall" -> WoundProfile.linear(4.0, 4.0, 0.5, 6.0)
+    "prick" -> WoundProfile.linear(3.0, 4.0, 0.05, 1.0),
+    "blast" -> WoundProfile.linear(4.0, 4.0, 0.7, 6.0),
+    "fall" -> WoundProfile.linear(3.0, 3.0, 0.5, 6.0)
   ).map((id, value) => entryId(id) -> value).toMap
 
   def woundRules(registries: HolderLookup.Provider): Map[Identifier, WoundRuleData] = {
@@ -456,7 +456,7 @@ object CasualtiesBelowDataDefaults {
     LocalizedApplicationData(List(wound(profile, hemostasis)), target)
 
   private def scatter(profile: String): WoundApplicationData =
-    ScatterApplicationData(List(wound(profile)), minCount = 2, maxCount = 3)
+    ScatterApplicationData(List(wound(profile)), minCount = 2, maxCount = 6)
 
   private def fallImpact: WoundApplicationData = PairedImpactApplicationData(
     List(wound("fall")),

@@ -2,6 +2,7 @@
   "applications": [
     {
       "type": "casualtiesbelow:scatter",
+      "max_count": 6,
       "wounds": [
         {
           "profile": "casualtiesbelow:blast",
