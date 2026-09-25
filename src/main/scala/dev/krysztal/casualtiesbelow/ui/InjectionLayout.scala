@@ -27,6 +27,6 @@ private[ui] object InjectionLayout {
   private[ui] val RegionHeightFraction = 0.8
 
   private[ui] val HoverGapPixels = 48
-  private[ui] val BarrelHeight = 52
-  private[ui] val NeedleLength = 16
+  private[ui] val BarrelHeight = 48
+  private[ui] val NeedleLength = 24
 }

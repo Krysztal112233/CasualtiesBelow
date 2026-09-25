@@ -586,14 +586,20 @@ object InjectionScreen {
     * render time).
     */
   private val SkinEdgeFeather = 48
-  private val BarrelWidth = 16
+  private val BarrelWidth = 12
   private val BarrelPadding = 3
   private val NeedleWidth = 2
   private val PlungerRodWidth = 3
-  private val PlungerRodLength = 14
-  private val PlungerPadWidth = 12
+  private val PlungerPadWidth = 14
   private val PlungerPadHeight = 4
   private val PlungerTravel = InjectionLayout.BarrelHeight - 2 * BarrelPadding
+
+  /** Rigid plunger, like a real syringe: one rod length always spans pad to seal, so a full syringe
+    * shows the rod standing tall above the barrel and an empty one leaves the pad resting on the
+    * barrel rim. (Not a free constant — derived so the pad lands exactly on the rim when the seal
+    * reaches the bottom.)
+    */
+  private val PlungerRodLength = PlungerTravel + BarrelPadding
   private val PierceDepthPixels = 6
   private val SkinLineThickness = 2
   private val ScaleMarkCount = 10
