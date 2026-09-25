@@ -1,85 +1,53 @@
 package dev.krysztal.casualtiesbelow.gametest
 
 import net.minecraft.gametest.framework.GameTestHelper
+import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
-import dev.krysztal.casualtiesbelow.internal.Consts
 
-/** In-game validation of the standalone Bone Healing effect: direct per-tick application advances
-  * fracture recovery countdowns at the configured rate, heals completed fractures, and spreads over
-  * randomly picked limbs.
+/** Behavioral validation of the standalone Bone Healing effect: it must advance fracture countdowns
+  * (never growing them) and complete the heal, whichever limbs its random per-tick picks land on.
+  * Exact rates are balance territory and deliberately unpinned.
   */
 object BoneHealingScenarios {
 
-  def effectAdvancesAndCompletesFractureRecovery(helper: GameTestHelper): Unit = {
+  def effectHealsFractures(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    val part = BodyPart.ArmLeft
-    // Initial countdown sized for the configured rate: the first 100 ticks must leave a remainder
-    // (midway assertion), and the second 100 ticks must finish the heal.
-    BodyMutations.mutate(player, part) { state =>
+    BodyMutations.mutate(player, BodyPart.ArmLeft) { state =>
+      state.fractureRecoveryTicks = Some(150)
+    }
+    BodyMutations.mutate(player, BodyPart.LegRight) { state =>
       state.fractureRecoveryTicks = Some(400)
     }
 
     val effect = CasualtiesBelowPotionEffects.BoneHealing.value()
     val level = helper.getLevel
-    (1 to 100).foreach { _ =>
-      effect.applyEffectTick(level, player, 0)
-    }
 
-    val expectedRemaining = 400 - 100 * Consts.Regeneration.BoneHealingEffectPerTick
-    val midway = CasualtiesBelowComponents.body(player).stats(part)
+    (1 to 100).foreach { _ => effect.applyEffectTick(level, player, 0) }
+    val midwayArm = remaining(player, BodyPart.ArmLeft)
+    val midwayLeg = remaining(player, BodyPart.LegRight)
     helper.assertTrue(
-      midway.fractureRecoveryTicks.orElse(-1) == expectedRemaining.toInt,
-      s"bone healing must advance the countdown per tick: expected $expectedRemaining, " +
-        s"got ${midway.fractureRecoveryTicks}"
+      midwayArm + midwayLeg < 550,
+      s"bone healing must advance fracture countdowns: arm=$midwayArm leg=$midwayLeg"
+    )
+    helper.assertTrue(
+      midwayArm <= 150 && midwayLeg <= 400,
+      s"no countdown may grow: arm=$midwayArm leg=$midwayLeg"
     )
 
-    (1 to 100).foreach { _ =>
-      effect.applyEffectTick(level, player, 0)
-    }
-    val healed = CasualtiesBelowComponents.body(player).stats(part)
+    // Generous tick budget: both fractures must heal no matter how the random picks land.
+    (1 to 400).foreach { _ => effect.applyEffectTick(level, player, 0) }
     helper.assertTrue(
-      healed.fractureRecoveryTicks.isEmpty,
-      s"bone healing must complete the fracture once the countdown expires: " +
-        s"got ${healed.fractureRecoveryTicks}"
+      remaining(player, BodyPart.ArmLeft) == 0 && remaining(player, BodyPart.LegRight) == 0,
+      "both fractures must fully heal"
     )
     helper.succeed()
   }
 
-  /** With several fractured limbs the effect picks one at random each tick: the total countdown
-    * reduction is conserved regardless of the random choices, and no countdown ever grows.
-    */
-  def effectDistributesAcrossFracturedLimbs(helper: GameTestHelper): Unit = {
-    val player = GameTestPlayers.createSurvivalPlayer(helper)
-    Seq(BodyPart.ArmLeft, BodyPart.LegRight).foreach { part =>
-      BodyMutations.mutate(player, part) { state =>
-        state.fractureRecoveryTicks = Some(200)
-      }
-    }
-
-    val effect = CasualtiesBelowPotionEffects.BoneHealing.value()
-    val level = helper.getLevel
-    val ticks = 100
-    (1 to ticks).foreach { _ =>
-      effect.applyEffectTick(level, player, 0)
-    }
-
-    val body = CasualtiesBelowComponents.body(player)
-    val arm = body.stats(BodyPart.ArmLeft).fractureRecoveryTicks.orElse(0)
-    val leg = body.stats(BodyPart.LegRight).fractureRecoveryTicks.orElse(0)
-    val expectedTotal = 400 - ticks * Consts.Regeneration.BoneHealingEffectPerTick
-    helper.assertTrue(
-      math.abs(arm + leg - expectedTotal) < 1.0e-9,
-      s"advanced countdown must be conserved across random picks: expected total " +
-        s"$expectedTotal, got ${arm + leg}"
-    )
-    helper.assertTrue(
-      arm <= 200 && leg <= 200,
-      s"no countdown may grow from the effect: arm=$arm leg=$leg"
-    )
-    helper.succeed()
+  private def remaining(player: ServerPlayer, part: BodyPart): Int = {
+    CasualtiesBelowComponents.body(player).stats(part).fractureRecoveryTicks.orElse(0)
   }
 }

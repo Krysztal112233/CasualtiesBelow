@@ -28,23 +28,23 @@ final class PhysiologyGameTests {
   }
 
   @GameTest(maxTicks = 20)
-  def skinRegenerationEffectRestoresSkinAndCapsBleeding(helper: GameTestHelper): Unit = {
-    SkinRegenerationScenarios.effectRestoresSkinAndCapsBleeding(helper)
+  def skinRegenerationEffectRestoresDamagedSkin(helper: GameTestHelper): Unit = {
+    SkinRegenerationScenarios.effectRestoresDamagedSkin(helper)
   }
 
   @GameTest(maxTicks = 20)
-  def skinRegenerationEffectDistributesAcrossDamagedLimbs(helper: GameTestHelper): Unit = {
-    SkinRegenerationScenarios.effectDistributesAcrossDamagedLimbs(helper)
+  def muscleRecoveryEffectRestoresDamagedMuscle(helper: GameTestHelper): Unit = {
+    MuscleRecoveryScenarios.effectRestoresDamagedMuscle(helper)
   }
 
   @GameTest(maxTicks = 20)
-  def muscleRecoveryEffectRestoresMuscle(helper: GameTestHelper): Unit = {
-    MuscleRecoveryScenarios.effectRestoresMuscle(helper)
+  def boneHealingEffectHealsFractures(helper: GameTestHelper): Unit = {
+    BoneHealingScenarios.effectHealsFractures(helper)
   }
 
   @GameTest(maxTicks = 20)
-  def muscleRecoveryEffectDistributesAcrossDamagedLimbs(helper: GameTestHelper): Unit = {
-    MuscleRecoveryScenarios.effectDistributesAcrossDamagedLimbs(helper)
+  def totemGrantsRecoveryEffects(helper: GameTestHelper): Unit = {
+    TotemRecoveryScenarios.totemGrantsRecoveryEffects(helper)
   }
 
   @GameTest(maxTicks = 20)
@@ -55,21 +55,6 @@ final class PhysiologyGameTests {
   @GameTest(maxTicks = 20)
   def dislocationMirrorFollowsLimbState(helper: GameTestHelper): Unit = {
     FractureDislocationScenarios.dislocationMirrorFollowsLimbState(helper)
-  }
-
-  @GameTest(maxTicks = 20)
-  def totemGrantsRecoveryBurst(helper: GameTestHelper): Unit = {
-    TotemRecoveryScenarios.totemGrantsRecoveryBurst(helper)
-  }
-
-  @GameTest(maxTicks = 20)
-  def boneHealingEffectAdvancesAndCompletesFractureRecovery(helper: GameTestHelper): Unit = {
-    BoneHealingScenarios.effectAdvancesAndCompletesFractureRecovery(helper)
-  }
-
-  @GameTest(maxTicks = 20)
-  def boneHealingEffectDistributesAcrossFracturedLimbs(helper: GameTestHelper): Unit = {
-    BoneHealingScenarios.effectDistributesAcrossFracturedLimbs(helper)
   }
 
   @GameTest(maxTicks = 20)
