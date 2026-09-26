@@ -19,7 +19,7 @@ import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 

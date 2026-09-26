@@ -5,7 +5,7 @@ import net.minecraft.tags.EntityTypeTags
 
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Zombie-family hits drain immune health, once per hit with no cooldown: getting mobbed is
   * supposed to be deadly for the immune system, and avoiding it is the player's job. One-way

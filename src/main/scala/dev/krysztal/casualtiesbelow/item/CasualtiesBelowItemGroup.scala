@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Owns the mod's creative-mode tab and the display order of its content. */
 object CasualtiesBelowItemGroup {

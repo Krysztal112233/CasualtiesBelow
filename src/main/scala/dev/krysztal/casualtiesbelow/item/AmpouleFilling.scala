@@ -14,7 +14,7 @@ import net.minecraft.world.level.Level
 
 import net.fabricmc.fabric.api.event.player.UseItemCallback
 
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Server-authoritative filling of empty ampoules from refined poppy extract in the inventory. */
 private[casualtiesbelow] object AmpouleFilling {

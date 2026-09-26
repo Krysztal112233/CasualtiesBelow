@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.internal.extension
+package dev.krysztal.casualtiesbelow.internal.extensions
 
 /** Numeric guard/clamp extensions shared by physiology math.
   *

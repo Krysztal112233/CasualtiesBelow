@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.entity.ShelfBlockEntity
 import net.minecraft.world.level.block.state.BlockState
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Server-side drying behavior shared by every vanilla shelf wood variant. */
 private[casualtiesbelow] object ShelfDrying {

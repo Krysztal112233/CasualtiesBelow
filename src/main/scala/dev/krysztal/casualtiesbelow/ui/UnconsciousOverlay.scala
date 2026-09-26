@@ -12,7 +12,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
 
 /** Circular state indicator shown while unconscious or in terminal hypoxia.

@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.internal.extension
+package dev.krysztal.casualtiesbelow.internal.extensions
 
 /** Crate-style prelude: one wildcard import brings every shared extension into scope.
   *

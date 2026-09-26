@@ -15,7 +15,7 @@ import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Food immune settlement: nourishing food grants a one-off immune dose and contaminated food
   * drains it. Values are path-keyed datapack data: `food_immune/item/<ns>/<path>.json` prices item

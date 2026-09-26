@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.physiology.opioid
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Pure opioid effect curves. Stored vitals remain unmodified; consumers opt into the relevant
   * derived pressure explicitly.

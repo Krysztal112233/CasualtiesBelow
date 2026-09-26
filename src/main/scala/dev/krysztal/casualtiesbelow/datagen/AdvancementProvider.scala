@@ -15,7 +15,7 @@ import net.minecraft.world.level.ItemLike
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricAdvancementProvider
 
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.item.CasualtiesBelowItems
 import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 import dev.krysztal.casualtiesbelow.progression.PlayerEventTrigger

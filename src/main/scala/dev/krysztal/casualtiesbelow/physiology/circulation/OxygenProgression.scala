@@ -6,7 +6,7 @@ import net.minecraft.world.level.gamerules.GameRules
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 

@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.physiology.opioid
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Server-tick evolution of the hidden acute opioid level and synced long-term dependence. */
 object Opioid {

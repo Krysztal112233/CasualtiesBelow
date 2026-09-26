@@ -29,7 +29,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants
 
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.fluid.PoppyFluids
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Server-authoritative, no-GUI poppy processing on vanilla-shaped cauldrons. */
 private[casualtiesbelow] object PoppyProcessing {

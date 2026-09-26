@@ -15,7 +15,7 @@ import net.minecraft.world.effect.MobEffectCategory
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
-import dev.krysztal.casualtiesbelow.internal.`extension`.MinecraftServerExtensions.*
+import dev.krysztal.casualtiesbelow.internal.extensions.MinecraftServerExtensions.*
 
 /** Registers and synchronizes the mod's status effects. */
 private[casualtiesbelow] object CasualtiesBelowEffects {

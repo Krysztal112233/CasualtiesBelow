@@ -21,7 +21,7 @@ import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.item.FiberClothDryingInputs
 
 /** Adds stack-component-driven drying tints to the vanilla flat models of the built-in fiber

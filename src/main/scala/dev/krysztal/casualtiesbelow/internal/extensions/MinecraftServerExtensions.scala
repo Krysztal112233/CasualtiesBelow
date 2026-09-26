@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.internal.extension
+package dev.krysztal.casualtiesbelow.internal.extensions
 
 import scala.jdk.CollectionConverters.*
 

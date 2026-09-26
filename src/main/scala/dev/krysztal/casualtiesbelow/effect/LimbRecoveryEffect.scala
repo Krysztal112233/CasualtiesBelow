@@ -10,7 +10,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
-import dev.krysztal.casualtiesbelow.internal.extension.PlayerExtensions.body
+import dev.krysztal.casualtiesbelow.internal.extensions.PlayerExtensions.body
 
 /** Base class for the mod's standalone limb-recovery effects (Skin Regeneration, Muscle Recovery,
   * ...). Each tick the effect picks one limb whose [[healthOf]] is below maximum at random and

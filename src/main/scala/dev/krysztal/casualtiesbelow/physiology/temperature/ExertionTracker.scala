@@ -7,7 +7,7 @@ import scala.collection.mutable
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Turns vanilla exhaustion deltas into a shared exertion signal.
   *

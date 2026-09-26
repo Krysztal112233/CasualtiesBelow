@@ -18,7 +18,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Dirtiness: the whole-body hygiene axis. The environment and the player's own actions push it up;
   * only water washes it down. One-way feedback by design: physiological states (infection, pain,
