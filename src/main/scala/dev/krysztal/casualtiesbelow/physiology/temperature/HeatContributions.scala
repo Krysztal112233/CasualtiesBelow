@@ -1,5 +1,6 @@
 package dev.krysztal.casualtiesbelow.physiology.temperature
 
+import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.TagKey
 import net.minecraft.world.level.block.Block
@@ -10,7 +11,8 @@ import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback.Frame
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
 import dev.krysztal.casualtiesbelow.internal.Consts
-import dev.krysztal.casualtiesbelow.internal.extensions.LevelExtensions.loadedStatesAround
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.*
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** The built-in contributors of the heat balance: exercise heat on the direct channel, evaporative
   * cooling on the dissipative channel, and ambient environment sources split across both. Direct
@@ -66,7 +68,8 @@ private[temperature] object HeatContributions {
   /** Ambient environment sources: blocks around the player radiate heat or cold by tag tier, with
     * lit-gated members (furnaces, candles, campfires) counting only while lit — a block without a
     * `LIT` property is treated as always on. Heat pays the direct channel and cold the dissipative
-    * channel, so a heat source cannot cancel its own warmth.
+    * channel, so a heat source cannot cancel its own warmth. Doses fall off linearly with Manhattan
+    * distance, reaching zero at the scan boundary.
     */
   private object EnvironmentBlock extends BodyHeatContributionCallback {
     import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags.Blocks.*
@@ -84,22 +87,27 @@ private[temperature] object HeatContributions {
       )
     )
 
-    /** Sums the tier doses of `states` matching `mapping`, skipping lit-gated blocks that are
+    /** Sums the tier doses of `states` matching `mapping`, weighted by linear Manhattan falloff
+      * (full dose at `center`, zero at the scan boundary) and skipping lit-gated blocks that are
       * currently unlit.
       */
     private def doseOf(
-        states: LazyList[BlockState],
+        states: LazyList[(pos: BlockPos, state: BlockState)],
+        center: BlockPos,
         mapping: Map[TagKey[Block], Double]
     ): Double = {
-      states
-        .flatMap { state =>
-          mapping.keySet.find { tag =>
-            // Explicit T: Scala 3 infers Nothing for this F-bounded Java generic method.
-            state.is(tag) && state.getValueOrElse[java.lang.Boolean](BlockStateProperties.LIT, true)
+      val radius = Consts.Temperature.BlockTemperatureRadius
+      states.flatMap { it =>
+        mapping.keySet
+          .find { tag =>
+            it.state.is(tag) &&
+            it.state.getValueOrElse[JBoolean](BlockStateProperties.LIT, true)
           }
-        }
-        .flatMap(mapping.get)
-        .sum
+          .map((_, math.max(0, radius + 1 - it.pos.distManhattan(center)) / (radius + 1.0)))
+          .map { (tag, weight) =>
+            mapping(tag) * weight
+          }
+      }.sum
     }
 
     override def contribute(
@@ -107,13 +115,13 @@ private[temperature] object HeatContributions {
         frame: Frame,
         context: BodyHeatContributionContext
     ): Unit = {
+      val center = player.blockPosition()
       val states = player
         .level()
-        .loadedStatesAround(player.blockPosition(), Consts.Temperature.BlockTemperatureRadius)
-        .map(it => it.state)
+        .loadedStatesAround(center, Consts.Temperature.BlockTemperatureRadius)
 
-      val heat = doseOf(states, heatMapping)
-      val cold = doseOf(states, coldMapping)
+      val heat = doseOf(states, center, heatMapping)
+      val cold = doseOf(states, center, coldMapping)
 
       if (heat > 0.0) context.addDirect(heat)
       if (cold > 0.0) context.addDissipative(cold)
