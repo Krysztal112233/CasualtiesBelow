@@ -11,7 +11,6 @@ import net.minecraft.world.level.block.LayeredCauldronBlock
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -73,7 +72,7 @@ object HygieneScenarios {
   def cauldronSoakWashesAndConsumesLevels(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    VitalsMutations.setDirtiness(vitals, 60.0)
+    vitals.setDirtiness(60.0)
 
     val relative = new BlockPos(1, 1, 1)
     val full = Blocks.WATER_CAULDRON
@@ -121,7 +120,7 @@ object HygieneScenarios {
     player.setPos(waterPos.getX + 0.5, waterPos.getY + 0.1, waterPos.getZ + 0.5)
 
     val vitals = player.vitals
-    VitalsMutations.setDirtiness(vitals, 5.0)
+    vitals.setDirtiness(5.0)
     player.baseTick()
     helper.assertTrue(player.isInWater, "fake player should register as in water after baseTick")
     (1 to 20).foreach(_ => Dirtiness.tickForGameTest(player))
@@ -151,7 +150,7 @@ object HygieneScenarios {
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
 
     val maxDirtiness = Consts.Dirtiness.MaxValue
-    VitalsMutations.setDirtiness(player.vitals, maxDirtiness / 2)
+    player.vitals.setDirtiness(maxDirtiness / 2)
     val body = CasualtiesBelowComponents.Body.get(player)
     // A main-hand syringe pricks the opposite arm (right-handed default: the left arm).
     val injected = BodyPart.ArmLeft
@@ -191,7 +190,7 @@ object HygieneScenarios {
       )
     )
     player.setItemInHand(InteractionHand.MAIN_HAND, syringe)
-    VitalsMutations.setDirtiness(player.vitals, Consts.Dirtiness.MaxValue / 2)
+    player.vitals.setDirtiness(Consts.Dirtiness.MaxValue / 2)
 
     val setting = CasualtiesBelowConfig.diseaseHygiene.infectionEnabled
     val previous = setting.get()

@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.Blocks
 
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionContext
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -61,13 +60,13 @@ object TemperatureScenarios {
       )
       lowSetting.set(apparent - 2.0)
       highSetting.set(apparent + 2.0)
-      VitalsMutations.setBodyTemperature(vitals, 37.0)
+      vitals.setBodyTemperature(37.0)
       tick(player, 20)
       val comfortableCore = vitals.bodyTemperature
 
       lowSetting.set(apparent + 6.0)
       highSetting.set(apparent + 4.0) // Reversed: the effective lower bound is apparent + 4.
-      VitalsMutations.setBodyTemperature(vitals, 37.0)
+      vitals.setBodyTemperature(37.0)
       tick(player, 20)
       val coldCore = vitals.bodyTemperature
       helper.assertTrue(
@@ -106,7 +105,7 @@ object TemperatureScenarios {
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
 
-    VitalsMutations.setBodyTemperature(vitals, equilibrium - 2.0)
+    vitals.setBodyTemperature(equilibrium - 2.0)
     tick(player, 400)
     val fromBelow = vitals.bodyTemperature
     helper.assertTrue(
@@ -118,7 +117,7 @@ object TemperatureScenarios {
       s"approach must not overshoot the equilibrium, got $fromBelow vs $equilibrium"
     )
 
-    VitalsMutations.setBodyTemperature(vitals, equilibrium + 2.0)
+    vitals.setBodyTemperature(equilibrium + 2.0)
     tick(player, 400)
     val fromAbove = vitals.bodyTemperature
     helper.assertTrue(
@@ -149,7 +148,7 @@ object TemperatureScenarios {
         s"vs water $waterEquilibrium); curve-level cold-water behavior is unit-tested"
     )
 
-    VitalsMutations.setBodyTemperature(vitals, airEquilibrium + 2.0)
+    vitals.setBodyTemperature(airEquilibrium + 2.0)
     tick(player, 400)
     val airClosed = (airEquilibrium + 2.0) - vitals.bodyTemperature
 
@@ -157,7 +156,7 @@ object TemperatureScenarios {
     helper.setBlock(relative, Blocks.WATER)
     val waterPos = helper.absolutePos(relative)
     player.setPos(waterPos.getX + 0.5, waterPos.getY + 0.1, waterPos.getZ + 0.5)
-    VitalsMutations.setBodyTemperature(vitals, airEquilibrium + 2.0)
+    vitals.setBodyTemperature(airEquilibrium + 2.0)
     // FakePlayer.tick is a no-op, so baseTick is driven once to refresh the water flag.
     player.baseTick()
     helper.assertTrue(player.isInWater, "fake player should register as in water after baseTick")
@@ -186,7 +185,7 @@ object TemperatureScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
-    VitalsMutations.setBodyTemperature(vitals, equilibrium)
+    vitals.setBodyTemperature(equilibrium)
 
     (1 to 400).foreach { _ =>
       player.getFoodData.addExhaustion(0.09f)
@@ -208,8 +207,8 @@ object TemperatureScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
-    VitalsMutations.setBodyTemperature(vitals, equilibrium)
-    VitalsMutations.setWetness(vitals, 0.8)
+    vitals.setBodyTemperature(equilibrium)
+    vitals.setWetness(0.8)
 
     // The manual ticks never drive baseTick, so the burning DOT is emitted by hand at its
     // vanilla rhythm — one on_fire hit every 20 ticks, through the real damage-entry pipeline.
@@ -278,7 +277,7 @@ object TemperatureScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
-    VitalsMutations.setBodyTemperature(vitals, equilibrium)
+    vitals.setBodyTemperature(equilibrium)
 
     val sources = helper.getLevel.damageSources()
     (1 to 10).foreach { _ =>
@@ -396,7 +395,7 @@ object TemperatureScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
-    VitalsMutations.setBodyTemperature(vitals, equilibrium)
+    vitals.setBodyTemperature(equilibrium)
 
     val sources = helper.getLevel.damageSources()
     (1 to 40).foreach { _ =>
@@ -418,5 +417,5 @@ object TemperatureScenarios {
   }
 
   private def resetCore(equilibrium: Double, players: ServerPlayer*): Unit =
-    players.foreach(player => VitalsMutations.setBodyTemperature(player.vitals, equilibrium))
+    players.foreach(player => player.vitals.setBodyTemperature(equilibrium))
 }

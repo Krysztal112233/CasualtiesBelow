@@ -2,7 +2,6 @@ package dev.krysztal.casualtiesbelow.physiology.circulation
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
@@ -54,7 +53,7 @@ private[casualtiesbelow] object BloodVolume {
     val next = vitals.circulation.bloodVolume.bounded(boundedMaximum)
     if (vitals.circulation.bloodVolume.sameBits(next)) return false
 
-    VitalsMutations.setBloodVolume(vitals, next)
+    vitals.setBloodVolume(next)
     true
   }
 
@@ -63,7 +62,7 @@ private[casualtiesbelow] object BloodVolume {
     val boundedMaximum = maximum.nonNegative
     val current = vitals.circulation.bloodVolume.bounded(boundedMaximum)
     val next = (current + amount.nonNegative).min(boundedMaximum)
-    VitalsMutations.setBloodVolume(vitals, next)
+    vitals.setBloodVolume(next)
     next - current
   }
 
@@ -81,7 +80,7 @@ private[casualtiesbelow] object BloodVolume {
     val current = vitals.circulation.bloodVolume.bounded(boundedMaximum)
     val effectiveFloor = boundedFloor.min(current)
     val next = (current - amount.nonNegative).max(effectiveFloor)
-    VitalsMutations.setBloodVolume(vitals, next)
+    vitals.setBloodVolume(next)
     current - next
   }
 

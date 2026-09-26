@@ -10,7 +10,6 @@ import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeCallback
 import dev.krysztal.casualtiesbelow.api.event.ConsciousnessStateChangeContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Unconsciousness
@@ -29,10 +28,8 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
   */
 private[casualtiesbelow] object Consciousness {
 
-  /** Advances consciousness and reconciles its hysteretic state. Returns whether either stored
-    * value changed.
-    */
-  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
+  /** Advances consciousness and reconciles its hysteretic state. */
+  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val step = vitals.shock.stage match {
       case PainShockStage.Collapsed => ConsciousnessSnapshot(0.0, true)
       case _                        =>
@@ -192,7 +189,7 @@ private[casualtiesbelow] object Consciousness {
   ): Boolean = {
     val previousConsciousness = vitals.consciousness.level
     val previousUnconscious = vitals.consciousness.unconscious
-    VitalsMutations.applyConsciousnessState(vitals, step)
+    vitals.applyConsciousnessState(step)
 
     if (step.unconscious != previousUnconscious) {
       if (step.unconscious) Unconsciousness.onEntered(player)

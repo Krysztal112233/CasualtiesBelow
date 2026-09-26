@@ -16,7 +16,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -39,19 +38,14 @@ import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
   *
   * Display bands exist only for client presentation; every mechanic computes from the raw value.
   * Event pulses (combat grime, digging dust, contaminated food) live in [[DirtinessSources]].
-  *
-  * Sync is throttled: the continuously changing value ships to the owner once per
-  * [[SyncIntervalTicks]], the same cadence as discomfort.
   */
 object Dirtiness {
 
   def register(): Unit = {
     ServerTickEvents.END_SERVER_TICK.register { server =>
-      ticks += 1
-      val syncTick = ticks % SyncIntervalTicks == 0
       try {
         server.getPlayerList.getPlayers.forEach { player =>
-          tickPlayer(player, syncTick)
+          tickPlayer(player)
         }
       } finally {
         // Sweat flags are set from the temperature progression while it ticks under
@@ -69,9 +63,9 @@ object Dirtiness {
 
   /** Advances an isolated GameTest player that is not registered in the server player list. */
   private[casualtiesbelow] def tickForGameTest(player: ServerPlayer): Unit =
-    tickPlayer(player, syncTick = false)
+    tickPlayer(player)
 
-  private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
+  private def tickPlayer(player: ServerPlayer): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) {
       cauldronProgress.remove(player.getUUID)
       return
@@ -108,10 +102,7 @@ object Dirtiness {
       (vitals.dirtiness + dirtGain - wash)
         .max(0.0)
         .min(Consts.Dirtiness.MaxValue)
-    if (next != vitals.dirtiness) {
-      VitalsMutations.setDirtiness(vitals, next)
-      if (syncTick) VitalsMutations.syncNow(player)
-    }
+    vitals.setDirtiness(next)
   }
 
   /** Marks the player as sweating this tick so the hygiene accrual picks it up. Called by the
@@ -189,7 +180,7 @@ object Dirtiness {
         .max(0.0) / Consts.TicksPerSecond)
         .min(current)
     if (washed <= 0.0) return
-    VitalsMutations.setDirtiness(vitals, current - washed)
+    vitals.setDirtiness(current - washed)
 
     val pointsPerLevel = Consts.Dirtiness.CauldronPointsPerLevel
     if (pointsPerLevel <= 0.0) return // Guard against an invalid fixed balance constant.
@@ -255,6 +246,4 @@ object Dirtiness {
 
   private val cauldronProgress = mutable.HashMap.empty[UUID, Double]
   private val sweatingNow = mutable.Set.empty[UUID]
-  private var ticks = 0
-  private val SyncIntervalTicks = 20
 }

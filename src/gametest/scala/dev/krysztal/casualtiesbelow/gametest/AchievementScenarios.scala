@@ -13,7 +13,6 @@ import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.vitals.ConsciousnessSnapshot
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -67,7 +66,7 @@ object AchievementScenarios {
   /** Dying of hypoxia while opioids suppress respiration is an overdose death. */
   def opioidOverdoseDeathGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    VitalsMutations.setOpioidLevel(player.vitals, 200.0)
+    player.vitals.setOpioidLevel(200.0)
     player.hurtServer(
       helper.getLevel,
       CasualtiesBelowDamageTypes.hypoxia(helper.getLevel),
@@ -94,10 +93,7 @@ object AchievementScenarios {
   /** A player whose consciousness reaches literal zero earns the achievement on the next poll. */
   def consciousnessMinimumGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    VitalsMutations.applyConsciousnessState(
-      player.vitals,
-      ConsciousnessSnapshot(0.0, true)
-    )
+    player.vitals.applyConsciousnessState(ConsciousnessSnapshot(0.0, true))
     AchievementHooks.tickForGameTest(player)
     assertDone(helper, player, "consciousness_minimum")
     helper.succeed()
@@ -113,10 +109,7 @@ object AchievementScenarios {
   /** Eating revolting food while already at maximum discomfort fires the achievement. */
   def maxDiscomfortFoodGrantsAdvancement(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    VitalsMutations.setDiscomfort(
-      player.vitals,
-      Consts.Discomfort.MaxValue
-    )
+    player.vitals.setDiscomfort(Consts.Discomfort.MaxValue)
     Discomfort.onFoodEaten(player, new ItemStack(Items.ROTTEN_FLESH))
     assertDone(helper, player, "max_discomfort_food")
     helper.succeed()
@@ -125,10 +118,7 @@ object AchievementScenarios {
   /** Food without discomfort data never fires it, no matter how queasy the player is. */
   def ordinaryFoodDoesNotGrantMaxDiscomfort(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
-    VitalsMutations.setDiscomfort(
-      player.vitals,
-      Consts.Discomfort.MaxValue
-    )
+    player.vitals.setDiscomfort(Consts.Discomfort.MaxValue)
     Discomfort.onFoodEaten(player, new ItemStack(Items.APPLE))
     assertNotDone(helper, player, "max_discomfort_food")
     helper.succeed()

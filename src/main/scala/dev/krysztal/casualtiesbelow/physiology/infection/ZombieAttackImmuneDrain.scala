@@ -4,7 +4,6 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.tags.EntityTypeTags
 
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
@@ -36,9 +35,6 @@ object ZombieAttackImmuneDrain {
     val jitter = Consts.Randomness.WorldPulseJitter
     val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter
     val next = (vitals.infection.immuneHealth - base * roll).max(0.0)
-    if (next == vitals.infection.immuneHealth) return
-
-    VitalsMutations.setImmuneHealth(vitals, next)
-    VitalsMutations.syncNow(player)
+    vitals.setImmuneHealth(next)
   }
 }

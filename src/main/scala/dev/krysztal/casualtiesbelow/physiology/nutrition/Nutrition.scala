@@ -78,7 +78,6 @@ private[casualtiesbelow] object Nutrition {
     val requestedLoss = BloodVolume.healthyMaximum * fraction * damage
     val drained = BloodVolume.drain(vitals, requestedLoss, maximum, bloodFloor(player, maximum))
     StarvationResult(
-      changed = drained > 0.0,
       reachedZero = drained > 0.0 && vitals.circulation.bloodVolume <= 0.0
     )
   }
@@ -119,6 +118,5 @@ private[casualtiesbelow] object Nutrition {
 }
 
 private[casualtiesbelow] final case class StarvationResult(
-    changed: Boolean = false,
     reachedZero: Boolean = false
 )

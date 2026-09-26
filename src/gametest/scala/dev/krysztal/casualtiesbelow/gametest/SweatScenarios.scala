@@ -2,7 +2,6 @@ package dev.krysztal.casualtiesbelow.gametest
 
 import net.minecraft.gametest.framework.GameTestHelper
 
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
@@ -24,14 +23,14 @@ object SweatScenarios {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    VitalsMutations.setWetness(vitals, 0.0)
+    vitals.setWetness(0.0)
     // Above the sweat gate but inside the penalty band: no consciousness pressure interferes.
     val pinnedCore = Consts.Temperature.SweatCoreTempThreshold + 0.5
 
     val before = vitals.wetness
     (1 to 200).foreach { _ =>
       player.getFoodData.addExhaustion(0.09f)
-      VitalsMutations.setBodyTemperature(vitals, pinnedCore)
+      vitals.setBodyTemperature(pinnedCore)
       InjuryProgression.tickForGameTest(player)
     }
     // Net wetness rate is the (saturated) sweat rate minus the drying curve; under the default
@@ -50,12 +49,12 @@ object SweatScenarios {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
-    VitalsMutations.setWetness(vitals, 0.0)
+    vitals.setWetness(0.0)
     val pinnedCore = Consts.Temperature.SweatCoreTempThreshold - 1.5
 
     (1 to 200).foreach { _ =>
       player.getFoodData.addExhaustion(0.09f)
-      VitalsMutations.setBodyTemperature(vitals, pinnedCore)
+      vitals.setBodyTemperature(pinnedCore)
       InjuryProgression.tickForGameTest(player)
     }
     helper.assertTrue(

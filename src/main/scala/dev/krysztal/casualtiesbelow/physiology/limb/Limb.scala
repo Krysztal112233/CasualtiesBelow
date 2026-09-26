@@ -247,7 +247,7 @@ private[casualtiesbelow] object Limb {
             BodyTopology.Adjacent(part).filter(p => !body.stats(p).infectionProgress.isPresent)
           if (targets.nonEmpty) {
             val target = targets(player.getRandom.nextInt(targets.size))
-            BodyMutations.mutate(player, target, markDirty = true) { state =>
+            BodyMutations.mutate(player, target) { state =>
               state.infectionProgress = Some(InfectionOnsetSeed)
             }
           }

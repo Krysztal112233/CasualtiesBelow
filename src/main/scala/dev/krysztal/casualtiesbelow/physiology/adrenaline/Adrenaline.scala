@@ -1,19 +1,13 @@
 package dev.krysztal.casualtiesbelow.physiology.adrenaline
 
-import java.lang.Boolean as JBoolean
-import java.util.Collections
-import java.util.WeakHashMap
-
 import net.minecraft.resources.Identifier
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.entity.player.Player
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.AdrenalineChangedContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -27,14 +21,9 @@ import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
   */
 object Adrenaline {
 
-  /** Players whose reserve changed in an AFTER_DAMAGE callback and needs the unified end-tick
-    * vitals sync. Weak identity keys cannot retain disconnected players.
-    */
-  private val DirtyPlayers =
-    Collections.newSetFromMap(new WeakHashMap[Player, JBoolean]())
-
   /** Adds one configured rule amount and refreshes grace. Returns whether either server state value
-    * changed. The reserve change is batched into InjuryProgression's single vitals sync.
+    * changed. The reserve is hidden server-side state: it has no client consumer, so it never
+    * requests a sync of its own.
     */
   def grant(player: ServerPlayer, amount: Double, cause: Identifier): Boolean = {
     if (!CasualtiesBelowConfig.injurySurvival.adrenalineEnabled.get()) return false
@@ -48,18 +37,15 @@ object Adrenaline {
     )
     applyState(vitals, next)
     if (next.amount != previous.amount) {
-      DirtyPlayers.add(player)
       emitAmountChange(player, previous.amount, next.amount, cause)
     }
     next != previous
   }
 
   /** Ages grace/reserve before pain shock evaluates this tick. Fresh grants are protected by the
-    * sentinel described in the class documentation. Returns a throttled client-sync hint: integer
-    * reserve crossings and the final transition to zero, never hidden grace-only changes.
+    * sentinel described in the class documentation.
     */
-  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
-    val rawAmount = vitals.adrenaline
+  def tick(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val previous = storedState(vitals)
     val next = advanceState(
       previous,
@@ -70,14 +56,10 @@ object Adrenaline {
     if (next.amount != previous.amount) {
       emitAmountChange(player, previous.amount, next.amount, PhysiologyChangeCause.AdrenalineDecay)
     }
-
-    rawAmount != previous.amount ||
-    math.floor(previous.amount) != math.floor(next.amount) ||
-    (previous.amount > 0.0 && next.amount == 0.0)
   }
 
   /** Debug/admin edit. A positive value represents a fresh stimulus and receives a full grace
-    * window; zero clears both fields. The caller owns immediate shock reconciliation and sync.
+    * window; zero clears both fields. The caller owns immediate shock reconciliation.
     */
   def applyAuthoritativeEdit(
       player: ServerPlayer,
@@ -138,10 +120,6 @@ object Adrenaline {
     AdrenalineState(normalizedAmount, normalizeGraceTicks(graceTicks))
   }
 
-  private[casualtiesbelow] def consumeDirty(player: Player): Boolean = DirtyPlayers.remove(player)
-
-  private[casualtiesbelow] def discard(player: Player): Unit = DirtyPlayers.remove(player)
-
   private[casualtiesbelow] def normalizeState(
       amount: Double,
       graceTicks: Int,
@@ -190,11 +168,11 @@ object Adrenaline {
   }
 
   private def storedState(vitals: VitalsComponentImpl): AdrenalineState =
-    VitalsMutations.adrenalineReserve(vitals)
+    vitals.adrenalineReserve
 
   private def applyState(vitals: VitalsComponentImpl, state: AdrenalineState): Unit = {
-    if (VitalsMutations.adrenalineReserve(vitals) != state) {
-      VitalsMutations.applyAdrenalineState(vitals, state)
+    if (vitals.adrenalineReserve != state) {
+      vitals.applyAdrenalineState(state)
     }
   }
 

@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.gametest
 import net.minecraft.gametest.framework.GameTestHelper
 import net.minecraft.server.level.ServerPlayer
 
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
@@ -13,9 +12,9 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
   * the band caps consciousness like low blood oxygen and drains immune health, cold side harder
   * than hot side.
   *
-  * Biome effects are irrelevant here: scenarios pin the core temperature directly with
-  * [[VitalsMutations.setBodyTemperature]] and read the pressure/drain computations, so every
-  * expectation below is computed from the live config, not hardcoded.
+  * Biome effects are irrelevant here: scenarios pin the core temperature directly with the
+  * body-temperature setter and read the pressure/drain computations, so every expectation below is
+  * computed from the live config, not hardcoded.
   */
 object PenaltyBandScenarios {
 
@@ -26,7 +25,7 @@ object PenaltyBandScenarios {
     val bandLow = Consts.Temperature.PenaltyBandLowCelsius
     val coldDev = bandLow - 33.0
 
-    VitalsMutations.setBodyTemperature(vitals, 33.0)
+    vitals.setBodyTemperature(33.0)
     InjuryProgression.tickForGameTest(player)
     assertConsciousnessAtCeiling(
       helper,
@@ -44,7 +43,7 @@ object PenaltyBandScenarios {
     val bandLow = Consts.Temperature.PenaltyBandLowCelsius
     val coldDev = bandLow - 30.0
 
-    VitalsMutations.setBodyTemperature(vitals, 30.0)
+    vitals.setBodyTemperature(30.0)
     InjuryProgression.tickForGameTest(player)
     assertConsciousnessAtCeiling(
       helper,
@@ -66,7 +65,7 @@ object PenaltyBandScenarios {
     // erroneous temperature drain cannot hide behind fed regen plus the max clamp.
     player.getFoodData.setFoodLevel(10)
 
-    VitalsMutations.setBodyTemperature(vitals, 36.5)
+    vitals.setBodyTemperature(36.5)
     InjuryProgression.tickForGameTest(player)
     helper.assertTrue(
       vitals.consciousness.level > 99.0 && !vitals.consciousness.unconscious,
@@ -100,7 +99,7 @@ object PenaltyBandScenarios {
     coldPlayer.getFoodData.setSaturation(0.0f)
     val coldTarget = bandLow - deviation
     (1 to 1200).foreach { _ =>
-      VitalsMutations.setBodyTemperature(coldVitals, coldTarget)
+      coldVitals.setBodyTemperature(coldTarget)
       InjuryProgression.tickForGameTest(coldPlayer)
     }
     val coldLoss = startImmune(coldVitals) - coldVitals.infection.immuneHealth
@@ -111,7 +110,7 @@ object PenaltyBandScenarios {
     hotPlayer.getFoodData.setSaturation(0.0f)
     val hotTarget = bandHigh + deviation
     (1 to 1200).foreach { _ =>
-      VitalsMutations.setBodyTemperature(hotVitals, hotTarget)
+      hotVitals.setBodyTemperature(hotTarget)
       InjuryProgression.tickForGameTest(hotPlayer)
     }
     val hotLoss = startImmune(hotVitals) - hotVitals.infection.immuneHealth

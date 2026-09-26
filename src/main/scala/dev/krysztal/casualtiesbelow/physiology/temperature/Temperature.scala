@@ -12,7 +12,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
 import dev.krysztal.casualtiesbelow.api.event.DryingBonusCallback
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
@@ -46,14 +45,11 @@ object Temperature {
     }
   }
 
-  /** Advances the player's body temperature and wetness by one tick. Returns whether the values
-    * changed and this is a sync tick (continuously-changing values sync at 1 Hz, like Dirtiness).
-    */
+  /** Advances the player's body temperature and wetness by one tick. */
   private[casualtiesbelow] def tick(
       player: ServerPlayer,
-      vitals: VitalsComponentImpl,
-      syncTick: Boolean
-  ): Boolean = {
+      vitals: VitalsComponentImpl
+  ): Unit = {
     val environment = sampleEnvironment(player)
     val store = GameplayDataStores.server(player.level().getServer)
     val armor = armorThermalCoefficients(player, store, vitals.wetness)
@@ -70,14 +66,12 @@ object Temperature {
       armor,
       heatContributions
     )
-    val coreChanged = VitalsMutations.setBodyTemperature(vitals, nextCore)
+    vitals.setBodyTemperature(nextCore)
     val nextWetness = TemperatureCalc.nextWetness(
       vitals.wetness,
       wetnessDelta(player, environment, nextCore)
     )
-    val wetnessChanged = VitalsMutations.setWetness(vitals, nextWetness)
-
-    (coreChanged || wetnessChanged) && syncTick
+    vitals.setWetness(nextWetness)
   }
 
   private def sampleEnvironment(player: ServerPlayer): TemperatureEnvironment = {

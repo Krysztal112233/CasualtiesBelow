@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Player
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -87,14 +86,13 @@ private[casualtiesbelow] object InjectionSettlement {
       player.body.stats(injectedPart(player, hand)).infectionProgress.isPresent
     )
     if (doseDelta != 0.0) {
-      VitalsMutations.setOpioidLevel(vitals, vitals.opioidLevel + doseDelta)
+      vitals.setOpioidLevel(vitals.opioidLevel + doseDelta)
     }
     if (discomfort != 0.0) {
-      VitalsMutations.setDiscomfort(vitals, vitals.discomfort + discomfort)
+      vitals.setDiscomfort(vitals.discomfort + discomfort)
     }
-    VitalsMutations.syncNow(player)
     if (pain != 0.0 || infectionSeed > 0.0) {
-      BodyMutations.mutate(player, injectedPart(player, hand), markDirty = true) { state =>
+      BodyMutations.mutate(player, injectedPart(player, hand)) { state =>
         if (pain != 0.0) {
           state.pain = state.pain + pain
         }

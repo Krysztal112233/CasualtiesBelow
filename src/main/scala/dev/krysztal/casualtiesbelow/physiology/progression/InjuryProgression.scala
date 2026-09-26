@@ -9,7 +9,6 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyComponent
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.circulation.Circulation
@@ -54,11 +53,12 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
   * Dislocations never self-heal — they need treatment (not yet implemented).
   *
   * Healing is not an injury: it bypasses [[dev.krysztal.casualtiesbelow.damage.LimbInjuryService]]
-  * (no injury event and no jitter) and uses the internal body mutation authority directly. Sync is
-  * throttled: continuous changes (decay/regen/blood drain) are flushed once per
-  * [[SyncIntervalTicks]], while discrete transitions (fracture healed, bleeding stopped) flush
-  * immediately. Registration order keeps this pipeline ahead of the body's end-of-tick dirty flush,
-  * so its mutations ship in the same tick.
+  * (no injury event and no jitter) and uses the internal body mutation authority directly. Sync
+  * authority lives in the components: any actual vitals change queues the owner for the unified
+  * end-tick sync, while body mutations flow through their own throttled dirty flush (continuous
+  * changes once per [[SyncIntervalTicks]], discrete transitions immediately). Registration order
+  * keeps this pipeline ahead of the components' end-of-tick dirty flushes, so its mutations ship in
+  * the same tick.
   *
   * Technical balance constants live in [[dev.krysztal.casualtiesbelow.internal.Consts]]; only a few
   * player-facing gameplay choices remain configurable.
@@ -92,49 +92,36 @@ object InjuryProgression {
   private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
     if (!player.isAlive) {
       Nutrition.discard(player)
-      Adrenaline.discard(player)
       Temperature.discard(player)
       return
     }
     if (player.isCreative || player.isSpectator) {
       Nutrition.discard(player)
       Temperature.discard(player)
-      // A command or another mod can change modes after an accepted survival hit but before this
-      // END_SERVER_TICK pass. Physiology remains frozen in creative/spectator, while the already
-      // committed public reserve still needs its one owner sync.
-      if (Adrenaline.consumeDirty(player)) {
-        VitalsMutations.syncNow(player)
-      }
+      // Physiology remains frozen in creative/spectator.
       return
     }
 
     val body = CasualtiesBelowComponents.Body.get(player)
     val vitals = player.vitals
-    var vitalsChanged = Opioid.tick(vitals)
+    Opioid.tick(vitals)
     // One limb pass: per-limb evolution (fractures, clotting, infections, regrowth, pain) plus
     // septic seeding of adjacent limbs; its totals drive the circulation and infection stages.
     val limb = Limb.tick(player, body, vitals, syncTick)
 
     // A fresh AFTER_DAMAGE stimulus carries a one-tick sentinel, so aging here preserves its full
     // amount for this tick's shock decision. Later decay can contract the effective threshold and
-    // collapse Deferred in this same pass. All damage grants still ship in this one vitals sync.
-    vitalsChanged = Adrenaline.consumeDirty(player) || vitalsChanged
-    vitalsChanged = Adrenaline.tick(player, vitals) || vitalsChanged
+    // collapse Deferred in this same pass.
+    Adrenaline.tick(player, vitals)
 
-    // Pain shock reads the fully updated per-limb pains and current adrenaline. Awake-load integer
-    // crossings request owner-only warning interpolation syncs; phase transitions sync at once.
-    vitalsChanged = PainShock.tick(player, body, vitals) || vitalsChanged
-    vitalsChanged = Infection.tick(vitals, limb.infectionLoad, player) || vitalsChanged
+    // Pain shock reads the fully updated per-limb pains and current adrenaline.
+    PainShock.tick(player, body, vitals)
+    Infection.tick(vitals, limb.infectionLoad, player)
 
     // One circulation pass: the sepsis-compressed blood cap, fed regeneration, starvation pulses,
     // bleeding drain scaled by totem hemostasis, and the zero-blood fatality check (which applies
     // its own damage and reports back so this pass can stop for the player).
-    val circulation = Circulation.tick(player, vitals, limb.totalBleeding)
-    vitalsChanged = circulation.changed || vitalsChanged
-    if (circulation.zeroBlood) {
-      if (vitalsChanged) {
-        VitalsMutations.syncNow(player)
-      }
+    if (Circulation.tick(player, vitals, limb.totalBleeding)) {
       return
     }
 
@@ -142,39 +129,27 @@ object InjuryProgression {
     // oxygen capacity, while fully exhausted air gates depletion. Consciousness progression then
     // consumes that reserve and owns both the scalar and the recoverable unconscious latch.
     val oxygen = Circulation.tickOxygen(player, vitals)
-    vitalsChanged = oxygen.changed || vitalsChanged
-    vitalsChanged = Consciousness.tick(player, vitals) || vitalsChanged
+    Consciousness.tick(player, vitals)
 
     // Body temperature runs off the same per-player pass; its own module doc lays out the
     // approach/equilibrium recurrence and the heat contribution events.
-    vitalsChanged = Temperature.tick(player, vitals, syncTick) || vitalsChanged
+    Temperature.tick(player, vitals)
 
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this
     // player's progression returns immediately after the fatal call.
     val hypoxia = Circulation.tickHypoxia(vitals, oxygen.respirationFailed)
-    vitalsChanged = hypoxia.syncDue || vitalsChanged
     if (hypoxia.fatal) {
       player.hurtServer(
         player.level(),
         CasualtiesBelowDamageTypes.hypoxia(player.level()),
         Float.MaxValue
       )
-      if (vitalsChanged) {
-        VitalsMutations.syncNow(player)
-      }
       return
     }
 
-    vitalsChanged = PainShock.finishRecovery(player, vitals) || vitalsChanged
+    PainShock.finishRecovery(player, vitals)
     Unconsciousness.tickMovementRestriction(player)
-
-    // Sync on every changing tick, not just SyncIntervalTicks boundaries: clotting or recovery
-    // can stop the drain between two periodic syncs, and a skipped final value would only reach
-    // the client when the vitals change again.
-    if (vitalsChanged) {
-      VitalsMutations.syncNow(player)
-    }
   }
 
   private var ticks = 0

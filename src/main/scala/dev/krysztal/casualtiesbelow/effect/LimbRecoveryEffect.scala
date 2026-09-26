@@ -58,7 +58,9 @@ private[casualtiesbelow] abstract class LimbRecoveryEffect(color: Int)
     }
 
     part.foreach { part =>
-      val mutation = BodyMutations.mutate(player, part) { state =>
+      // Throttled like Limb.tick: continuous regrowth rides the per-second body sync; only the
+      // discrete transitions (a wound closing, a fracture healing) flush immediately.
+      val mutation = BodyMutations.mutate(player, part, markDirty = false) { state =>
         heal(state, restore)
       }
       if (isDiscreteTransition(mutation.before, mutation.after)) {

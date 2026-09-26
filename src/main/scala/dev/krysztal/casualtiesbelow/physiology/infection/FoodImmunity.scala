@@ -10,7 +10,6 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.data.schema.FoodEffectsData
 import dev.krysztal.casualtiesbelow.data.schema.FoodImmuneData
 import dev.krysztal.casualtiesbelow.internal.Consts
@@ -51,10 +50,7 @@ object FoodImmunity {
         val next = (vitals.infection.immuneHealth + amount)
           .max(0.0)
           .min(Consts.Vitals.MaxImmuneHealth)
-        if (next != vitals.infection.immuneHealth) {
-          VitalsMutations.setImmuneHealth(vitals, next)
-          VitalsMutations.syncNow(player)
-        }
+        vitals.setImmuneHealth(next)
       }
     }
   }

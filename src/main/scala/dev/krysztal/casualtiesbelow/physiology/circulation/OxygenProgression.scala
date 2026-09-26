@@ -5,7 +5,6 @@ import net.minecraft.world.level.gamerules.GameRules
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
@@ -52,9 +51,7 @@ private[casualtiesbelow] object OxygenProgression {
     val respiratoryEfficiency =
       OpioidEffects.respiratoryEfficiency(vitals.opioidLevel, vitals.opioidDependence)
     val opioidRespiratoryFailure = OpioidEffects.causesRespiratoryFailure(respiratoryEfficiency)
-    val previousOxygen = vitals.circulation.bloodOxygen
-    VitalsMutations.setBloodOxygen(
-      vitals,
+    vitals.setBloodOxygen(
       nextBloodOxygen(
         vitals,
         breathingBlocked,
@@ -64,7 +61,6 @@ private[casualtiesbelow] object OxygenProgression {
       )
     )
     OxygenProgressionResult(
-      changed = !previousOxygen.sameBits(vitals.circulation.bloodOxygen),
       breathingBlocked = breathingBlocked,
       respirationFailed = breathingBlocked || opioidRespiratoryFailure,
       deprivationRate = boundedDeprivationRate
@@ -123,7 +119,6 @@ private[casualtiesbelow] object OxygenProgression {
 }
 
 private[casualtiesbelow] final case class OxygenProgressionResult(
-    changed: Boolean,
     breathingBlocked: Boolean,
     respirationFailed: Boolean,
     deprivationRate: Double

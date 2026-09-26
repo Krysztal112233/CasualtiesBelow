@@ -18,52 +18,41 @@ import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
   */
 private[casualtiesbelow] object Circulation {
 
-  /** @param changed
-    *   whether any circulation value changed this tick (a sync is due)
-    * @param zeroBlood
-    *   whether the player reached zero blood: the fatal hit has already been applied, and the
-    *   caller must stop this player's progression pass after syncing
-    */
-  final case class Outcome(changed: Boolean, zeroBlood: Boolean)
-
   /** One circulation pass for one player, in domain order: the sepsis-compressed blood cap, then
     * fed regeneration, then starvation pulses, then bleeding drain scaled by totem hemostasis, and
     * finally the zero-blood fatality check. Surviving sepsis leaves the body drained (blood over
     * the cap is lost outright); recovery means eating well.
+    *
+    * Returns whether the player reached zero blood: the fatal hit has already been applied, and the
+    * caller must stop this player's progression pass.
     */
   def tick(
       player: ServerPlayer,
       vitals: VitalsComponentImpl,
       totalBleeding: Double
-  ): Outcome = {
-    var changed = false
-
+  ): Boolean = {
     val maxBlood = BloodVolume.effectiveMaximum(vitals)
-    changed = BloodVolume.clamp(vitals, maxBlood) || changed
+    BloodVolume.clamp(vitals, maxBlood)
     if (player.getFoodData.getFoodLevel >= Consts.Immune.FedFoodLevelThreshold) {
-      val regenerated = BloodVolume.restore(
+      BloodVolume.restore(
         vitals,
         Consts.Vitals.FedBloodRegenPerTick,
         maxBlood
       )
-      changed = regenerated > 0.0 || changed
     }
 
     // Accepted vanilla starvation pulses are translated first. The final blood check below keeps
     // source priority deterministic if bleeding also applies in this tick.
     val starvation = Nutrition.consume(player, vitals, maxBlood)
-    changed = starvation.changed || changed
 
     if (totalBleeding > 0.0) {
       val actualBleeding = totalBleeding * TotemHemostasis.bleedingMultiplier(vitals)
       if (actualBleeding > 0.0) {
-        val drained = BloodVolume.drain(vitals, actualBleeding, maxBlood)
-        changed = drained > 0.0 || changed
+        BloodVolume.drain(vitals, actualBleeding, maxBlood)
       }
     }
-    // The timer is hidden client-side state: advancing it does not force an extra sync. Any blood
-    // change already syncs through the changed flag, while persistence always writes the live
-    // value.
+    // The timer has no client consumer: it never requests a sync of its own and instead rides
+    // along whenever a visible value syncs, while persistence always writes the live value.
     TotemHemostasis.tick(vitals)
 
     // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
@@ -79,10 +68,10 @@ private[casualtiesbelow] object Circulation {
           CasualtiesBelowDamageTypes.bloodLoss(player.level())
         }
       player.hurtServer(player.level(), fatal, Float.MaxValue)
-      return Outcome(changed, zeroBlood = true)
+      return true
     }
 
-    Outcome(changed, zeroBlood = false)
+    false
   }
 
   /** Advances blood oxygen: blood volume sets the carrying capacity while fully exhausted vanilla

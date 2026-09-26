@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.physiology.circulation
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.circulation.BloodVolume
@@ -29,8 +28,7 @@ private[casualtiesbelow] object TotemHemostasis {
         .min(1.0)
     val restoredBlood = effectiveMaxBlood * restoreFraction
     BloodVolume.restore(vitals, restoredBlood, effectiveMaxBlood)
-    VitalsMutations.applyTotemHemostasisTicks(vitals, configuredDurationTicks)
-    VitalsMutations.syncNow(player)
+    vitals.applyTotemHemostasisTicks(configuredDurationTicks)
   }
 
   /** Multiplier applied to this tick's summed external bleeding. At activation it is `1 - initial
@@ -38,7 +36,7 @@ private[casualtiesbelow] object TotemHemostasis {
     */
   def bleedingMultiplier(vitals: VitalsComponentImpl): Double = {
     val duration = configuredDurationTicks
-    val remaining = normalizeRemainingTicks(VitalsMutations.totemHemostasisTicks(vitals))
+    val remaining = normalizeRemainingTicks(vitals.totemHemostasisTicks)
     if (duration <= 0 || remaining <= 0) return 1.0
 
     val initialReduction =
@@ -50,12 +48,12 @@ private[casualtiesbelow] object TotemHemostasis {
 
   /** Advances the hidden countdown without forcing a client sync. */
   def tick(vitals: VitalsComponentImpl): Unit = {
-    val remaining = normalizeRemainingTicks(VitalsMutations.totemHemostasisTicks(vitals))
-    VitalsMutations.applyTotemHemostasisTicks(vitals, (remaining - 1).max(0))
+    val remaining = normalizeRemainingTicks(vitals.totemHemostasisTicks)
+    vitals.applyTotemHemostasisTicks((remaining - 1).max(0))
   }
 
   def reset(vitals: VitalsComponentImpl): Unit = {
-    VitalsMutations.applyTotemHemostasisTicks(vitals, 0)
+    vitals.applyTotemHemostasisTicks(0)
   }
 
   private[casualtiesbelow] def normalizeRemainingTicks(ticks: Int): Int = {

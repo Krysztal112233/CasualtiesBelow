@@ -11,7 +11,6 @@ import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedCallback
 import dev.krysztal.casualtiesbelow.api.event.PainShockStageChangedContext
 import dev.krysztal.casualtiesbelow.api.event.PhysiologyChangeCause
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
@@ -33,28 +32,23 @@ import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 object PainShock {
   val MaxLoad: Double = 100.0
 
-  /** Advances load from current whole-body pain and reconciles the shock phase. Returns whether the
-    * phase changed or stable load crossed an integer boundary and therefore requires a vitals sync.
-    */
+  /** Advances load from current whole-body pain and reconciles the shock phase. */
   def tick(
       player: ServerPlayer,
       body: BodyComponent,
       vitals: VitalsComponentImpl
-  ): Boolean = {
+  ): Unit = {
     val previousLoad = vitals.shock.load.bounded(MaxLoad)
-    val previousStage = vitals.shock.stage
     val nextLoad = nextLoadFromPain(previousLoad, PainCalc.total(body))
-    applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression) ||
-    (isWarningStage(previousStage) && crossedInteger(previousLoad, nextLoad))
+    applyLoad(player, vitals, previousLoad, nextLoad, PhysiologyChangeCause.Progression)
   }
 
   /** Clears the recovery phase after the centralized consciousness authority actually wakes the
-    * player, clamping residual load to the configured post-wake cap. Returns whether the phase
-    * changed.
+    * player, clamping residual load to the configured post-wake cap.
     */
-  def finishRecovery(player: ServerPlayer, vitals: VitalsComponentImpl): Boolean = {
+  def finishRecovery(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     if (vitals.shock.stage != PainShockStage.Recovering || vitals.consciousness.unconscious) {
-      return false
+      return
     }
 
     val wakeLoadCap =
@@ -62,8 +56,7 @@ object PainShock {
     val retainedLoad = vitals.shock.load.bounded(MaxLoad).min(wakeLoadCap)
     val previousLoad = vitals.shock.load.bounded(MaxLoad)
     val previousStage = vitals.shock.stage
-    VitalsMutations.applyShockState(
-      vitals,
+    vitals.applyShockState(
       ShockSnapshot(retainedLoad, PainShockStage.Stable)
     )
     emitStageChange(
@@ -74,7 +67,6 @@ object PainShock {
       retainedLoad,
       PhysiologyChangeCause.Recovery
     )
-    true
   }
 
   /** Authoritative debug edit. The old and new load values preserve the same directional threshold
@@ -109,7 +101,7 @@ object PainShock {
   def resetHealthy(player: ServerPlayer, vitals: VitalsComponentImpl): Unit = {
     val previousLoad = vitals.shock.load.bounded(MaxLoad)
     val previousStage = vitals.shock.stage
-    VitalsMutations.applyShockState(vitals, ShockSnapshot(0.0, PainShockStage.Stable))
+    vitals.applyShockState(ShockSnapshot(0.0, PainShockStage.Stable))
     if (previousStage != PainShockStage.Stable) {
       emitStageChange(
         player,
@@ -188,7 +180,7 @@ object PainShock {
     val nextStage =
       transition(previousStage, previousLoad, nextLoad, baseThreshold, effectiveThreshold)
     if (nextLoad != vitals.shock.load || nextStage != previousStage) {
-      VitalsMutations.applyShockState(vitals, ShockSnapshot(nextLoad, nextStage))
+      vitals.applyShockState(ShockSnapshot(nextLoad, nextStage))
     }
     if (nextStage != previousStage) {
       emitStageChange(player, previousStage, nextStage, previousLoad, nextLoad, cause)
@@ -273,14 +265,6 @@ object PainShock {
 
   private def collapseThreshold: Double = {
     Consts.Pain.ShockCollapseThreshold.max(0.0).min(MaxLoad)
-  }
-
-  private def crossedInteger(previousLoad: Double, nextLoad: Double): Boolean = {
-    math.floor(previousLoad) != math.floor(nextLoad)
-  }
-
-  private def isWarningStage(stage: PainShockStage): Boolean = {
-    stage == PainShockStage.Stable || stage == PainShockStage.Deferred
   }
 
 }

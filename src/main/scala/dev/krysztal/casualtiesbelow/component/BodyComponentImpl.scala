@@ -36,8 +36,11 @@ final class BodyComponentImpl(val player: Player)
 
   private[casualtiesbelow] def mutableCopy(part: BodyPart): MutableLimbState = limbs(part).copy()
 
+  /** Replaces one limb's state; callers pass an already-normalized state (all mutation flows
+    * through [[BodyMutations]], which normalizes before comparing).
+    */
   private[casualtiesbelow] def replace(part: BodyPart, state: MutableLimbState): Unit = {
-    limbs(part) = MutableLimbState.normalize(state)
+    limbs(part) = state
     reconcileMovementModifiers()
   }
 
@@ -45,7 +48,9 @@ final class BodyComponentImpl(val player: Player)
       other: BodyComponent,
       registryLookup: HolderLookup.Provider
   ): Unit = {
-    BodyPart.values.foreach { part => replace(part, MutableLimbState.from(other.stats(part))) }
+    BodyPart.values.foreach { part =>
+      replace(part, MutableLimbState.normalize(MutableLimbState.from(other.stats(part))))
+    }
   }
 
   override def writeData(out: ValueOutput): Unit = {

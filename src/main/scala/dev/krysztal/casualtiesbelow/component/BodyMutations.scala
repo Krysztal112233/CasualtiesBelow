@@ -30,7 +30,7 @@ object BodyMutations {
   private[casualtiesbelow] def mutate(
       player: Player,
       part: BodyPart,
-      markDirty: Boolean = false
+      markDirty: Boolean = true
   )(operation: MutableLimbState => Unit): BodyMutation = {
     val body = player.body
     val current = body.mutableCopy(part)
@@ -50,7 +50,7 @@ object BodyMutations {
       player: Player,
       part: BodyPart,
       state: MutableLimbState,
-      markDirty: Boolean = false
+      markDirty: Boolean = true
   ): BodyMutation = {
     val body = player.body
     val current = body.mutableCopy(part)
@@ -65,14 +65,10 @@ object BodyMutations {
 
   private[casualtiesbelow] def markDirty(player: Player): Unit = DirtyPlayers.add(player)
 
-  private[casualtiesbelow] def syncNow(player: Player): Unit = {
-    DirtyPlayers.remove(player)
-    CasualtiesBelowComponents.Body.sync(player)
-  }
-
   private[casualtiesbelow] def reset(player: Player): Unit = {
     val body = player.body
     BodyPart.values.foreach { part => body.replace(part, MutableLimbState()) }
+    DirtyPlayers.add(player)
   }
 
   private[casualtiesbelow] def reconcileMovementModifiers(player: Player): Unit =

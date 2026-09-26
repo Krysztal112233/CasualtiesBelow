@@ -150,7 +150,7 @@ object LimbInjuryService {
         normalizedPainMultiplier
       ) * withdrawalMultiplier).max(0.0)
 
-    val result = BodyMutations.mutate(player, part, markDirty = true) { stats =>
+    val result = BodyMutations.mutate(player, part) { stats =>
       stats.pain = (stats.pain + grantedPain).min(MutableLimbState.MaxValue)
       mutate(stats, effectiveDamage)
     }

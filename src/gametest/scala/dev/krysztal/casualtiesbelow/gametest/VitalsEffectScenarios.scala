@@ -8,7 +8,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.ShockSnapshot
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
@@ -25,23 +24,20 @@ object VitalsEffectScenarios {
     val hotThreshold = Consts.Temperature.PenaltyBandHighCelsius
     val grimeThreshold = Consts.Visuals.DirtinessBandGrimy
 
-    VitalsMutations.setOpioidLevel(vitals, 40.0)
-    VitalsMutations.setOpioidDependence(vitals, 40.0)
-    VitalsMutations.setBloodOxygen(vitals, hypoxiaThreshold - 0.1)
-    VitalsMutations.setBloodVolume(vitals, maxBloodVolume * 0.9)
+    vitals.setOpioidLevel(40.0)
+    vitals.setOpioidDependence(40.0)
+    vitals.setBloodOxygen(hypoxiaThreshold - 0.1)
+    vitals.setBloodVolume(maxBloodVolume * 0.9)
     BodyMutations.mutate(player, BodyPart.Head, markDirty = false) { state =>
       state.externalBleedingRate = 0.4
     }
-    VitalsMutations.setSepsis(vitals, 1.0)
-    VitalsMutations.setBodyTemperature(vitals, coldThreshold - 0.1)
-    VitalsMutations.applyConsciousnessState(
-      vitals,
-      ConsciousnessSnapshot(0.0, unconscious = true)
-    )
-    VitalsMutations.applyShockState(vitals, ShockSnapshot(50.0, PainShockStage.Collapsed))
-    VitalsMutations.applyAdrenalineState(vitals, AdrenalineState(1.0, 20))
-    VitalsMutations.setWetness(vitals, 0.01)
-    VitalsMutations.setDirtiness(vitals, grimeThreshold)
+    vitals.setSepsis(1.0)
+    vitals.setBodyTemperature(coldThreshold - 0.1)
+    vitals.applyConsciousnessState(ConsciousnessSnapshot(0.0, unconscious = true))
+    vitals.applyShockState(ShockSnapshot(50.0, PainShockStage.Collapsed))
+    vitals.applyAdrenalineState(AdrenalineState(1.0, 20))
+    vitals.setWetness(0.01)
+    vitals.setDirtiness(grimeThreshold)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
 
     val analgesia = Option(player.getEffect(CasualtiesBelowEffects.OpioidAnalgesia))
@@ -101,7 +97,7 @@ object VitalsEffectScenarios {
       "dirtiness at the grimy band should produce a dirtiness cue"
     )
 
-    VitalsMutations.setBodyTemperature(vitals, hotThreshold + 0.1)
+    vitals.setBodyTemperature(hotThreshold + 0.1)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
     helper.assertTrue(
       Option(player.getEffect(CasualtiesBelowEffects.Hypothermia)).isEmpty &&
@@ -109,23 +105,22 @@ object VitalsEffectScenarios {
       "temperature above the penalty band should replace hypothermia with hyperthermia"
     )
 
-    VitalsMutations.setOpioidLevel(vitals, 0.0)
-    VitalsMutations.setOpioidDependence(vitals, 0.0)
-    VitalsMutations.setBloodOxygen(vitals, VitalsComponent.MaxBloodOxygen)
-    VitalsMutations.setBloodVolume(vitals, maxBloodVolume)
+    vitals.setOpioidLevel(0.0)
+    vitals.setOpioidDependence(0.0)
+    vitals.setBloodOxygen(VitalsComponent.MaxBloodOxygen)
+    vitals.setBloodVolume(maxBloodVolume)
     BodyMutations.mutate(player, BodyPart.Head, markDirty = false) { state =>
       state.externalBleedingRate = 0.0
     }
-    VitalsMutations.setSepsis(vitals, 0.0)
-    VitalsMutations.setBodyTemperature(vitals, VitalsComponent.NormalBodyTemperature)
-    VitalsMutations.applyConsciousnessState(
-      vitals,
+    vitals.setSepsis(0.0)
+    vitals.setBodyTemperature(VitalsComponent.NormalBodyTemperature)
+    vitals.applyConsciousnessState(
       ConsciousnessSnapshot(VitalsComponent.MaxValue, unconscious = false)
     )
-    VitalsMutations.applyShockState(vitals, ShockSnapshot(0.0, PainShockStage.Stable))
-    VitalsMutations.applyAdrenalineState(vitals, AdrenalineState.Empty)
-    VitalsMutations.setWetness(vitals, 0.0)
-    VitalsMutations.setDirtiness(vitals, 0.0)
+    vitals.applyShockState(ShockSnapshot(0.0, PainShockStage.Stable))
+    vitals.applyAdrenalineState(AdrenalineState.Empty)
+    vitals.setWetness(0.0)
+    vitals.setDirtiness(0.0)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
     helper.assertTrue(
       List(

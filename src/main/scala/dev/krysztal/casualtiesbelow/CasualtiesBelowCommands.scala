@@ -30,7 +30,6 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.PhysiologyReset
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
@@ -227,7 +226,6 @@ object CasualtiesBelowCommands {
           val value = ctx.getArgument("value", valueClass)
           mutateTargets(ctx) { (player, part) =>
             val result = BodyMutations.mutate(player, part) { state => mutate(state, value) }
-            BodyMutations.syncNow(player)
             ctx.getSource.sendSuccess(
               () =>
                 s"${player.getName.getString} ${part.id}.$name = ${statValue(result.after, name)}".literal,
@@ -250,7 +248,6 @@ object CasualtiesBelowCommands {
       Commands.literal("clear").executes { ctx =>
         mutateTargets(ctx) { (player, part) =>
           BodyMutations.mutate(player, part)(clear)
-          BodyMutations.syncNow(player)
           ctx.getSource.sendSuccess(
             () => s"${player.getName.getString} ${part.id}.$name = none".literal,
             false
@@ -347,7 +344,7 @@ object CasualtiesBelowCommands {
       val vitals = player.vitals
       name match {
         case "immune_health" =>
-          VitalsMutations.setImmuneHealth(vitals, value)
+          vitals.setImmuneHealth(value)
         case "consciousness" =>
           Consciousness.applyAuthoritativeEdit(player, vitals, value)
         case "pain_shock_load" =>
@@ -356,28 +353,27 @@ object CasualtiesBelowCommands {
           Adrenaline.applyAuthoritativeEdit(player, vitals, value)
           PainShock.reconcileAfterAdrenalineEdit(player, vitals)
         case "blood_oxygen" =>
-          VitalsMutations.setBloodOxygen(vitals, value)
+          vitals.setBloodOxygen(value)
         case "blood_volume" =>
-          VitalsMutations.setBloodVolume(vitals, value)
+          vitals.setBloodVolume(value)
         case "sepsis" =>
-          VitalsMutations.setSepsis(vitals, value)
+          vitals.setSepsis(value)
         case "discomfort" =>
-          VitalsMutations.setDiscomfort(vitals, value)
+          vitals.setDiscomfort(value)
         case "dirtiness" =>
-          VitalsMutations.setDirtiness(vitals, value)
+          vitals.setDirtiness(value)
         case "body_temperature" =>
-          VitalsMutations.setBodyTemperature(vitals, value)
+          vitals.setBodyTemperature(value)
         case "wetness" =>
-          VitalsMutations.setWetness(vitals, value)
+          vitals.setWetness(value)
         case "opioid_level" =>
-          VitalsMutations.setOpioidLevel(vitals, value)
+          vitals.setOpioidLevel(value)
         case "opioid_dependence" =>
-          VitalsMutations.setOpioidDependence(vitals, value)
+          vitals.setOpioidDependence(value)
       }
       if (name != "consciousness") {
         Consciousness.reconcileAfterEdit(player, vitals)
       }
-      VitalsMutations.syncNow(player)
       src.sendSuccess(
         () => s"${player.getName.getString} $name = ${vitalsValue(vitals, name)}".literal,
         false
@@ -392,7 +388,7 @@ object CasualtiesBelowCommands {
     case "pain_shock_load"        => f"${vitals.shock.load}%.1f"
     case "pain_shock_stage"       => vitals.shock.stage.id
     case "adrenaline"             => f"${vitals.adrenaline}%.1f"
-    case "adrenaline_grace_ticks" => VitalsMutations.adrenalineGraceTicks(vitals).toString
+    case "adrenaline_grace_ticks" => vitals.adrenalineGraceTicks.toString
     case "blood_oxygen"           => f"${vitals.circulation.bloodOxygen}%.1f"
     case "blood_volume"           => f"${vitals.circulation.bloodVolume}%.1f mL"
     case "sepsis"                 => f"${vitals.infection.sepsis}%.1f"

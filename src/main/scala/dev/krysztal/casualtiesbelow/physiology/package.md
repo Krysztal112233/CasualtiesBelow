@@ -36,15 +36,17 @@ was already a cohesive entry, no forwarding shell was added.
 > [!NOTE]
 >
 > Storage is deliberately not here. Canonical values live in
-> `component/VitalsComponentImpl` and are written through
-> `component/VitalsMutations`; this tree contains only time-evolution logic.
-> That split is why physiology modules are almost all pure and unit-testable.
+> `component/VitalsComponentImpl` and are written through its own
+> change-committing setters (any actual change queues the owner for the
+> tick-end sync held by `component/VitalsMutations`); this tree contains only
+> time-evolution logic. That split is why physiology modules are almost all
+> pure and unit-testable.
 
 `progression/InjuryProgression` is the single tick driver. Each vital is
 stepped once per pass, in an order that follows the physiology itself: blood
 settles before oxygen reads it, oxygen before consciousness, consciousness
 before the hypoxia check. The packages decide their own domain outcomes; the
-driver only holds the sequence and the sync points.
+driver only holds the sequence.
 
 Cross-vital effects (starvation drains blood, opioids raise pain, hypoxia caps
 consciousness) are plain calls between entries, with each dependency documented

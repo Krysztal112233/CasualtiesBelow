@@ -8,6 +8,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
 import dev.krysztal.casualtiesbelow.component.BodyMutations
+import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbDamage
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowEffects
@@ -74,6 +75,7 @@ object CasualtiesBelow extends ModInitializer {
     // Hygiene progression shares discomfort's owner-sync cadence; vitals-only, no body flush.
     Dirtiness.register()
     BodyMutations.register()
+    VitalsMutations.register()
     ZombieAttackImmuneDrain.register()
     DirtinessSources.register()
     // Achievement polling runs after physiology ticks (registration order = event order) so it

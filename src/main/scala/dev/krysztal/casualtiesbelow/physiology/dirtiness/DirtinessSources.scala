@@ -16,7 +16,6 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
@@ -169,8 +168,7 @@ object DirtinessSources {
 
     val vitals = player.vitals
     val next = (vitals.dirtiness + rolled).min(Consts.Dirtiness.MaxValue)
-    VitalsMutations.setDirtiness(vitals, next)
-    VitalsMutations.syncNow(player)
+    vitals.setDirtiness(next)
   }
 
   private val HusbandryTools = Set(Items.SHEARS, Items.BUCKET, Items.BOWL)

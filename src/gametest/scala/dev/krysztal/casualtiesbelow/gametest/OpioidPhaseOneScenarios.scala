@@ -7,7 +7,6 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.BodyMutations
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.damage.LimbInjuryService
 import dev.krysztal.casualtiesbelow.internal.Consts
@@ -62,7 +61,7 @@ object OpioidPhaseOneScenarios {
           s"Control pain did not follow natural decay alone: $naturalOnly"
         )
         // Effective opioid = 100 / (1 + 0 / 100) = 100; its drain stacks on natural decay.
-        VitalsMutations.setOpioidLevel(vitals, 100.0)
+        vitals.setOpioidLevel(100.0)
       })
       .thenExecuteFor(100, () => InjuryProgression.tickForGameTest(player))
       .thenExecute(() => {
@@ -79,7 +78,7 @@ object OpioidPhaseOneScenarios {
 
   def overdoseDeath(helper: GameTestHelper): Unit = {
     val player = survivalPlayer(helper)
-    VitalsMutations.setOpioidLevel(player.vitals, 200.0)
+    player.vitals.setOpioidLevel(200.0)
 
     helper.succeedWhen(() => {
       InjuryProgression.tickForGameTest(player)
@@ -95,16 +94,16 @@ object OpioidPhaseOneScenarios {
     val player = survivalPlayer(helper)
     val vitals = player.vitals
     player.getFoodData.setFoodLevel(20)
-    VitalsMutations.setImmuneHealth(vitals, 100.0)
-    VitalsMutations.setOpioidDependence(vitals, 50.0)
-    VitalsMutations.setOpioidLevel(vitals, 0.0)
+    vitals.setImmuneHealth(100.0)
+    vitals.setOpioidDependence(50.0)
+    vitals.setOpioidLevel(0.0)
 
     // Positive control: equally fed, no dependence — its immune health must regenerate,
     // proving the harness can observe the regeneration that withdrawal cancels.
     val control = survivalPlayer(helper)
     val controlVitals = control.vitals
     control.getFoodData.setFoodLevel(20)
-    VitalsMutations.setImmuneHealth(controlVitals, 100.0)
+    controlVitals.setImmuneHealth(100.0)
 
     val applied = LimbInjuryService.apply(
       player,

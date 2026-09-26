@@ -3,7 +3,6 @@ package dev.krysztal.casualtiesbelow.physiology.circulation
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
@@ -17,22 +16,14 @@ import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
   */
 private[casualtiesbelow] object HypoxiaProgression {
 
-  private val SyncIntervalTicks = 20
-
-  /** Advances terminal exposure and reports both lethality and the sparse synchronization
-    * milestones consumed by the client countdown. The timer is synchronized when it starts, once
-    * per second, when it resets, and at its configured endpoint; it does not turn the whole vitals
-    * component into a per-tick packet stream after oxygen has stabilized at zero.
-    */
+  /** Advances terminal exposure and reports lethality. */
   def tick(vitals: VitalsComponentImpl, respirationFailed: Boolean): HypoxiaStep = {
     val step = advance(
-      VitalsMutations.hypoxiaExposureTicks(vitals),
+      vitals.hypoxiaExposureTicks,
       vitals.circulation.bloodOxygen,
       respirationFailed
     )
-    if (step.changed) {
-      VitalsMutations.applyHypoxiaExposureTicks(vitals, step.exposureTicks)
-    }
+    vitals.applyHypoxiaExposureTicks(step.exposureTicks)
     step
   }
 
@@ -43,17 +34,12 @@ private[casualtiesbelow] object HypoxiaProgression {
   def onDeathProtection(player: ServerPlayer): Unit = {
     val vitals = player.vitals
     reset(vitals)
-    VitalsMutations.setBloodOxygen(vitals, BloodVolume.oxygenCarryingCapacity(vitals))
+    vitals.setBloodOxygen(BloodVolume.oxygenCarryingCapacity(vitals))
     Consciousness.restoreAfterHypoxiaDeathProtection(player, vitals)
-    VitalsMutations.syncNow(player)
   }
 
-  def reset(vitals: VitalsComponentImpl): Boolean = {
-    val changed = VitalsMutations.hypoxiaExposureTicks(vitals) != 0
-    if (changed) {
-      VitalsMutations.applyHypoxiaExposureTicks(vitals, 0)
-    }
-    changed
+  def reset(vitals: VitalsComponentImpl): Unit = {
+    vitals.applyHypoxiaExposureTicks(0)
   }
 
   private[casualtiesbelow] def advance(
@@ -68,14 +54,8 @@ private[casualtiesbelow] object HypoxiaProgression {
       if (!respirationFailed) 0
       else if (bloodOxygen > 0.0) current
       else (current + 1).min(duration)
-    val changed = next != current
-    val syncDue =
-      changed &&
-        (next == 0 || next == 1 || next == duration || next % SyncIntervalTicks == 0)
     HypoxiaStep(
       exposureTicks = next,
-      changed = changed,
-      syncDue = syncDue,
       fatal = next >= duration
     )
   }
@@ -94,7 +74,5 @@ private[casualtiesbelow] object HypoxiaProgression {
 
 private[casualtiesbelow] final case class HypoxiaStep(
     exposureTicks: Int,
-    changed: Boolean,
-    syncDue: Boolean,
     fatal: Boolean
 )

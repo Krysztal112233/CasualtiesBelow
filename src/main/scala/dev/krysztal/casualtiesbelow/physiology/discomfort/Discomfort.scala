@@ -18,7 +18,6 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
@@ -131,26 +130,22 @@ object Discomfort {
           Consts.Dirtiness.MaxValue,
           Consts.Dirtiness.FoodDiscomfortMultiplierAtMax
         )
-        VitalsMutations.setDiscomfort(
-          vitals,
+        vitals.setDiscomfort(
           (vitals.discomfort + amount).min(Consts.Discomfort.MaxValue)
         )
         AchievementHooks.onFoodDiscomfortSettled(player)
-        VitalsMutations.syncNow(player)
     }
   }
 
   def register(): Unit = {
     ServerTickEvents.END_SERVER_TICK.register { server =>
-      ticks += 1
-      val syncTick = ticks % SyncIntervalTicks == 0
       server.getPlayerList.getPlayers.forEach { player =>
-        tickPlayer(player, syncTick)
+        tickPlayer(player)
       }
     }
   }
 
-  private def tickPlayer(player: ServerPlayer, syncTick: Boolean): Unit = {
+  private def tickPlayer(player: ServerPlayer): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
     val vitals = player.vitals
@@ -159,17 +154,15 @@ object Discomfort {
     // discomfort asks for active resolution (or a vomit) instead of being waited out. Withdrawal
     // owns discomfort evolution while active, preventing ordinary decay from cancelling its gain.
     if (vitals.discomfort > 0.0) {
-      val next = nextAfterOrdinaryDecay(
-        vitals.discomfort,
-        OpioidWithdrawal.isActive(vitals),
-        Consts.Discomfort.NauseaThreshold,
-        Consts.Discomfort.DecayRateLowPerSecond,
-        Consts.Discomfort.DecayRateHighPerSecond
+      vitals.setDiscomfort(
+        nextAfterOrdinaryDecay(
+          vitals.discomfort,
+          OpioidWithdrawal.isActive(vitals),
+          Consts.Discomfort.NauseaThreshold,
+          Consts.Discomfort.DecayRateLowPerSecond,
+          Consts.Discomfort.DecayRateHighPerSecond
+        )
       )
-      if (next != vitals.discomfort) {
-        VitalsMutations.setDiscomfort(vitals, next)
-        if (syncTick) VitalsMutations.syncNow(player)
-      }
     }
 
     if (vitals.discomfort >= Consts.Discomfort.NauseaThreshold) {
@@ -205,15 +198,13 @@ object Discomfort {
       (food.getSaturationLevel - Consts.Discomfort.VomitSaturationPenalty.toFloat)
         .max(0.0f)
     )
-    VitalsMutations.setDiscomfort(
-      vitals,
+    vitals.setDiscomfort(
       (vitals.discomfort - sampleVomitRelief(player.getRandom)).max(0.0)
     )
     player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, VomitNauseaTicks, 1))
     player
       .level()
       .playPlayerSound(player, SoundEvents.PLAYER_BURP, pitch = 0.8f)
-    VitalsMutations.syncNow(player)
   }
 
   private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {
@@ -302,8 +293,6 @@ object Discomfort {
     }
   }
 
-  private var ticks = 0
-  private val SyncIntervalTicks = 20
   private val NauseaRefreshTicks = 100
   private val VomitNauseaTicks = 300
 }

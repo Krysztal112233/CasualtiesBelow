@@ -55,6 +55,63 @@ final class VitalsComponentImpl(val player: Player)
   private var bodyTemperatureState: Double = VitalsComponent.NormalBodyTemperature
   private var wetnessState: Double = 0.0
 
+  /** Single commit point for client-visible vitals writes: assigns only on an actual change and
+    * queues the owner for the tick-end sync. The component is the sync authority — producers never
+    * do sync bookkeeping of their own.
+    */
+  private def commit[A](current: A, next: A)(assign: A => Unit): Unit = {
+    if (next != current) {
+      assign(next)
+      VitalsMutations.markDirty(player)
+    }
+  }
+
+  /** Commit without a sync request, for values with no client consumer (adrenaline reserve, the
+    * totem hemostasis timer, both opioid axes): they ride along whenever some visible field syncs,
+    * and persistence always writes the live value regardless.
+    */
+  private def commitSilent[A](current: A, next: A)(assign: A => Unit): Unit = {
+    if (next != current) assign(next)
+  }
+
+  /** The one authority-dependent normalize decision, shared by `copyFrom` (death clone) and
+    * `readData` (disk load / sync receipt): data authored by the authoritative server is trusted
+    * as-is (synced path), data from disk is re-derived against the local config (stored path).
+    */
+  private def clientSide: Boolean = player.level().isClientSide()
+
+  private def normalizeAdrenaline(amount: Double, graceTicks: Int): AdrenalineState = {
+    if (clientSide) Adrenaline.normalizeSyncedState(amount, graceTicks)
+    else Adrenaline.normalizeStoredState(amount, graceTicks)
+  }
+
+  private def normalizeShock(
+      load: Double,
+      stage: PainShockStage,
+      unconscious: Option[Boolean],
+      adrenaline: Double
+  ): ShockSnapshot = {
+    if (clientSide) PainShock.normalizeSyncedState(load, stage)
+    else PainShock.normalizeStoredState(load, stage, unconscious, adrenaline)
+  }
+
+  private def normalizeConsciousness(
+      level: Double,
+      unconscious: Option[Boolean],
+      stage: PainShockStage
+  ): ConsciousnessSnapshot = {
+    if (clientSide) Consciousness.normalizeSyncedState(level, unconscious, stage)
+    else {
+      Consciousness.normalizeStoredState(
+        level,
+        unconscious,
+        Consts.Vitals.ConsciousnessFloor,
+        Consts.Vitals.ConsciousnessKnockoutThreshold,
+        stage
+      )
+    }
+  }
+
   override def copyFrom(
       other: VitalsComponent,
       registryLookup: HolderLookup.Provider
@@ -68,41 +125,22 @@ final class VitalsComponentImpl(val player: Player)
     }
     setImmuneHealth(source.infection.immuneHealth)
     val normalizedAdrenaline =
-      if (player.level().isClientSide()) {
-        Adrenaline.normalizeSyncedState(source.adrenaline, source.adrenalineGraceTicks)
-      } else {
-        Adrenaline.normalizeStoredState(source.adrenaline, source.adrenalineGraceTicks)
-      }
+      normalizeAdrenaline(source.adrenaline, source.adrenalineGraceTicks)
     applyAdrenalineState(normalizedAdrenaline)
-    val normalizedShock =
-      if (player.level().isClientSide()) {
-        PainShock.normalizeSyncedState(other.shock.load, other.shock.stage)
-      } else {
-        PainShock.normalizeStoredState(
-          other.shock.load,
-          other.shock.stage,
-          Some(source.consciousness.unconscious),
-          normalizedAdrenaline.amount
-        )
-      }
+    val normalizedShock = normalizeShock(
+      other.shock.load,
+      other.shock.stage,
+      Some(source.consciousness.unconscious),
+      normalizedAdrenaline.amount
+    )
     applyShockState(normalizedShock)
-    val normalizedConsciousness =
-      if (player.level().isClientSide()) {
-        Consciousness.normalizeSyncedState(
-          source.consciousness.level,
-          Some(source.consciousness.unconscious),
-          normalizedShock.stage
-        )
-      } else {
-        Consciousness.normalizeStoredState(
-          source.consciousness.level,
-          Some(source.consciousness.unconscious),
-          Consts.Vitals.ConsciousnessFloor,
-          Consts.Vitals.ConsciousnessKnockoutThreshold,
-          normalizedShock.stage
-        )
-      }
-    applyConsciousnessState(normalizedConsciousness)
+    applyConsciousnessState(
+      normalizeConsciousness(
+        source.consciousness.level,
+        Some(source.consciousness.unconscious),
+        normalizedShock.stage
+      )
+    )
     setBloodOxygen(source.circulation.bloodOxygen)
     setBloodVolume(source.circulation.bloodVolume)
     applyHypoxiaExposureTicks(
@@ -123,21 +161,22 @@ final class VitalsComponentImpl(val player: Player)
   override def infection: InfectionSnapshot = infectionState
 
   private[casualtiesbelow] def setImmuneHealth(value: Double): Unit = {
-    infectionState = infectionState.copy(
-      immuneHealth = value.bounded(Consts.Vitals.MaxImmuneHealth)
-    )
+    commit(
+      infectionState,
+      infectionState.copy(immuneHealth = value.bounded(Consts.Vitals.MaxImmuneHealth))
+    ) { infectionState = _ }
   }
 
   override def consciousness: ConsciousnessSnapshot = consciousnessState
 
   private[casualtiesbelow] def applyConsciousnessState(state: ConsciousnessSnapshot): Unit = {
-    consciousnessState = state
+    commit(consciousnessState, state) { consciousnessState = _ }
   }
 
   override def shock: ShockSnapshot = shockState
 
   private[casualtiesbelow] def applyShockState(state: ShockSnapshot): Unit = {
-    shockState = state
+    commit(shockState, state) { shockState = _ }
   }
 
   override def adrenaline: Double = adrenalineState.amount
@@ -147,60 +186,75 @@ final class VitalsComponentImpl(val player: Player)
   private[casualtiesbelow] def adrenalineReserve: AdrenalineState = adrenalineState
 
   private[casualtiesbelow] def applyAdrenalineState(state: AdrenalineState): Unit = {
-    adrenalineState = state
+    commitSilent(adrenalineState, state) { adrenalineState = _ }
   }
 
   private[casualtiesbelow] def hypoxiaExposureTicks: Int = circulationState.hypoxiaExposureTicks
 
   private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
-    circulationState = circulationState.copy(hypoxiaExposureTicks = ticks)
+    commit(circulationState, circulationState.copy(hypoxiaExposureTicks = ticks)) {
+      circulationState = _
+    }
   }
 
   private[casualtiesbelow] def totemHemostasisTicks: Int = circulationState.totemHemostasisTicks
 
   private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
-    circulationState = circulationState.copy(totemHemostasisTicks = ticks)
+    commitSilent(circulationState, circulationState.copy(totemHemostasisTicks = ticks)) {
+      circulationState = _
+    }
   }
 
   override def circulation: CirculationSnapshot = circulationState.snapshot
 
   private[casualtiesbelow] def setBloodOxygen(value: Double): Unit = {
-    circulationState =
+    commit(
+      circulationState,
       circulationState.copy(bloodOxygen = value.bounded(VitalsComponent.MaxBloodOxygen))
+    ) { circulationState = _ }
   }
 
   private[casualtiesbelow] def setBloodVolume(value: Double): Unit = {
-    circulationState = circulationState.copy(
-      bloodVolume = value.bounded(Consts.Vitals.MaxBloodVolume)
-    )
+    commit(
+      circulationState,
+      circulationState.copy(bloodVolume = value.bounded(Consts.Vitals.MaxBloodVolume))
+    ) { circulationState = _ }
   }
 
   private[casualtiesbelow] def setSepsis(value: Double): Unit = {
-    infectionState = infectionState.copy(sepsis = value.bounded(Consts.Sepsis.MaxSepsis))
+    commit(infectionState, infectionState.copy(sepsis = value.bounded(Consts.Sepsis.MaxSepsis))) {
+      infectionState = _
+    }
   }
 
   override def discomfort: Double = discomfortState
 
   private[casualtiesbelow] def setDiscomfort(value: Double): Unit = {
-    discomfortState = value.bounded(Consts.Discomfort.MaxValue)
+    commit(discomfortState, value.bounded(Consts.Discomfort.MaxValue)) { discomfortState = _ }
   }
 
   override def dirtiness: Double = dirtinessState
 
   private[casualtiesbelow] def setDirtiness(value: Double): Unit = {
-    dirtinessState = value.bounded(Consts.Dirtiness.MaxValue)
+    commit(dirtinessState, value.bounded(Consts.Dirtiness.MaxValue)) { dirtinessState = _ }
   }
 
   override def opioidLevel: Double = opioidState.level
 
   private[casualtiesbelow] def setOpioidLevel(value: Double): Unit = {
-    opioidState = opioidState.copy(level = value.bounded(VitalsComponent.MaxOpioidLevel))
+    commitSilent(
+      opioidState,
+      opioidState.copy(level = value.bounded(VitalsComponent.MaxOpioidLevel))
+    ) { opioidState = _ }
   }
 
   override def opioidDependence: Double = opioidState.dependence
 
   private[casualtiesbelow] def setOpioidDependence(value: Double): Unit = {
-    opioidState = opioidState.copy(dependence = value.bounded(VitalsComponent.MaxOpioidDependence))
+    commitSilent(
+      opioidState,
+      opioidState.copy(dependence = value.bounded(VitalsComponent.MaxOpioidDependence))
+    ) { opioidState = _ }
   }
 
   private[casualtiesbelow] def applyOpioidState(state: OpioidState): Unit = {
@@ -211,35 +265,31 @@ final class VitalsComponentImpl(val player: Player)
   override def bodyTemperature: Double = bodyTemperatureState
 
   private[casualtiesbelow] def setBodyTemperature(value: Double): Unit = {
-    bodyTemperatureState = value.bounded(VitalsComponent.MaxBodyTemperature)
+    commit(bodyTemperatureState, value.bounded(VitalsComponent.MaxBodyTemperature)) {
+      bodyTemperatureState = _
+    }
   }
 
   override def wetness: Double = wetnessState
 
   private[casualtiesbelow] def setWetness(value: Double): Unit = {
-    wetnessState = value.bounded(VitalsComponent.MaxWetness)
+    commit(wetnessState, value.bounded(VitalsComponent.MaxWetness)) { wetnessState = _ }
   }
 
   override def shouldSyncWith(recipient: ServerPlayer): Boolean = recipient eq player
-
-  override def writeData(out: ValueOutput): Unit = writeData(out, includeHidden = true)
 
   override def writeSyncPacket(buf: RegistryFriendlyByteBuf, recipient: ServerPlayer): Unit = {
     val reporter = new ProblemReporter.ScopedCollector(CasualtiesBelow.Logger)
     try {
       val out = TagValueOutput.createWithContext(reporter, buf.registryAccess())
-      // Vitals sync recipients are owner-only (see [[shouldSyncWith]]): the owner is entitled to
-      // their own acute level (dependence was always synced). The flag stays meaningful for a
-      // future third-party inspection sync (e.g. a medic reading someone else's vitals), where
-      // hiding the level is realistic.
-      writeData(out, includeHidden = true)
+      writeData(out)
       buf.writeNbt(out.buildResult())
     } finally {
       reporter.close()
     }
   }
 
-  private def writeData(out: ValueOutput, includeHidden: Boolean): Unit = {
+  override def writeData(out: ValueOutput): Unit = {
     out.putDouble(VitalsComponentImpl.ImmuneHealthKey, infectionState.immuneHealth)
     out.putDouble(VitalsComponentImpl.ConsciousnessKey, consciousnessState.level)
     out.putBoolean(VitalsComponentImpl.UnconsciousKey, consciousnessState.unconscious)
@@ -254,9 +304,7 @@ final class VitalsComponentImpl(val player: Player)
     out.putDouble(VitalsComponentImpl.SepsisKey, infectionState.sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
     out.putDouble(VitalsComponentImpl.DirtinessKey, dirtiness)
-    if (includeHidden) {
-      out.putDouble(VitalsComponentImpl.OpioidLevelKey, opioidLevel)
-    }
+    out.putDouble(VitalsComponentImpl.OpioidLevelKey, opioidLevel)
     out.putDouble(VitalsComponentImpl.OpioidDependenceKey, opioidDependence)
     out.putDouble(VitalsComponentImpl.BodyTemperatureKey, bodyTemperature)
     out.putDouble(VitalsComponentImpl.WetnessKey, wetness)
@@ -266,62 +314,34 @@ final class VitalsComponentImpl(val player: Player)
     setImmuneHealth(
       in.getDoubleOr(
         VitalsComponentImpl.ImmuneHealthKey,
-        Consts.Vitals.MaxImmuneHealth
+        Consts.Immune.DefaultImmuneHealth
       )
     )
     val savedUnconscious =
       in.read(VitalsComponentImpl.UnconsciousKey, Codec.BOOL).toScala.map(_.booleanValue)
-    val normalizedAdrenaline =
-      if (player.level().isClientSide()) {
-        Adrenaline.normalizeSyncedState(
-          in.getDoubleOr(VitalsComponentImpl.AdrenalineKey, 0.0),
-          in.getIntOr(VitalsComponentImpl.AdrenalineGraceTicksKey, 0)
-        )
-      } else {
-        Adrenaline.normalizeStoredState(
-          in.getDoubleOr(VitalsComponentImpl.AdrenalineKey, 0.0),
-          in.getIntOr(VitalsComponentImpl.AdrenalineGraceTicksKey, 0)
-        )
-      }
+    val normalizedAdrenaline = normalizeAdrenaline(
+      in.getDoubleOr(VitalsComponentImpl.AdrenalineKey, 0.0),
+      in.getIntOr(VitalsComponentImpl.AdrenalineGraceTicksKey, 0)
+    )
     applyAdrenalineState(normalizedAdrenaline)
     val savedShockStage = PainShockStage
       .fromId(in.getStringOr(VitalsComponentImpl.PainShockStageKey, PainShockStage.Stable.id))
       .toScala
       .getOrElse(PainShockStage.Stable)
-    val normalizedShock =
-      if (player.level().isClientSide()) {
-        PainShock.normalizeSyncedState(
-          in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
-          savedShockStage
-        )
-      } else {
-        PainShock.normalizeStoredState(
-          in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
-          savedShockStage,
-          savedUnconscious,
-          normalizedAdrenaline.amount
-        )
-      }
+    val normalizedShock = normalizeShock(
+      in.getDoubleOr(VitalsComponentImpl.PainShockLoadKey, 0.0),
+      savedShockStage,
+      savedUnconscious,
+      normalizedAdrenaline.amount
+    )
     applyShockState(normalizedShock)
-    val savedConsciousness =
-      in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue)
-    val normalizedConsciousness =
-      if (player.level().isClientSide()) {
-        Consciousness.normalizeSyncedState(
-          savedConsciousness,
-          savedUnconscious,
-          normalizedShock.stage
-        )
-      } else {
-        Consciousness.normalizeStoredState(
-          savedConsciousness,
-          savedUnconscious,
-          Consts.Vitals.ConsciousnessFloor,
-          Consts.Vitals.ConsciousnessKnockoutThreshold,
-          normalizedShock.stage
-        )
-      }
-    applyConsciousnessState(normalizedConsciousness)
+    applyConsciousnessState(
+      normalizeConsciousness(
+        in.getDoubleOr(VitalsComponentImpl.ConsciousnessKey, VitalsComponent.MaxValue),
+        savedUnconscious,
+        normalizedShock.stage
+      )
+    )
     setBloodOxygen(
       in.getDoubleOr(
         VitalsComponentImpl.BloodOxygenKey,

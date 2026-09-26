@@ -95,7 +95,7 @@ object BasicBandageItem {
     val body = CasualtiesBelowComponents.body(player)
     selectTarget(body.stats).filter { part =>
       BodyMutations
-        .mutate(player, part, markDirty = true)(applyTreatment)
+        .mutate(player, part)(applyTreatment)
         .changed
     }
   }

@@ -2,32 +2,22 @@ package dev.krysztal.casualtiesbelow.physiology.opioid
 
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extension.Prelude.*
 
 /** Server-tick evolution of the hidden acute opioid level and synced long-term dependence. */
 object Opioid {
 
-  /** Advances both opioid axes and withdrawal discomfort. Returns whether client-visible state
-    * changed; level-only decay deliberately does not request synchronization.
-    */
-  def tick(vitals: VitalsComponentImpl): Boolean = {
-    val previousDependence = vitals.opioidDependence
-    val next = nextState(vitals.opioidLevel, previousDependence)
-    VitalsMutations.applyOpioidState(vitals, next)
-
-    val discomfortChanged = tickWithdrawalDiscomfort(vitals)
-    next.dependence != previousDependence || discomfortChanged
+  /** Advances both opioid axes and withdrawal discomfort. */
+  def tick(vitals: VitalsComponentImpl): Unit = {
+    vitals.applyOpioidState(nextState(vitals.opioidLevel, vitals.opioidDependence))
+    tickWithdrawalDiscomfort(vitals)
   }
 
-  private def tickWithdrawalDiscomfort(vitals: VitalsComponentImpl): Boolean = {
-    if (!OpioidWithdrawal.isActive(vitals)) return false
-
-    val next = nextWithdrawalDiscomfort(vitals.discomfort)
-    if (next == vitals.discomfort) return false
-
-    VitalsMutations.setDiscomfort(vitals, next)
+  private def tickWithdrawalDiscomfort(vitals: VitalsComponentImpl): Unit = {
+    if (OpioidWithdrawal.isActive(vitals)) {
+      vitals.setDiscomfort(nextWithdrawalDiscomfort(vitals.discomfort))
+    }
   }
 
   private[casualtiesbelow] def nextWithdrawalDiscomfort(

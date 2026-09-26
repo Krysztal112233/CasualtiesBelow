@@ -6,7 +6,6 @@ import net.minecraft.world.effect.MobEffects
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
-import dev.krysztal.casualtiesbelow.component.VitalsMutations
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
@@ -21,40 +20,35 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
 private[casualtiesbelow] object Infection {
 
   /** One infection pass for one player: sepsis build/decay from the total infection load, then
-    * immune health. Returns whether any value changed (a sync is due).
+    * immune health.
     */
-  def tick(vitals: VitalsComponentImpl, infectionLoad: Double, player: ServerPlayer): Boolean = {
-    val sepsisChanged = tickSepsis(vitals, infectionLoad)
-    val immuneChanged = tickImmune(vitals, player)
-    sepsisChanged || immuneChanged
+  def tick(vitals: VitalsComponentImpl, infectionLoad: Double, player: ServerPlayer): Unit = {
+    tickSepsis(vitals, infectionLoad)
+    tickImmune(vitals, player)
   }
 
   /** Sepsis is the whole-body consequence of infection: it builds in proportion to the total
     * infection load (the sum of all limbs' infection progress) and recovers at a fixed rate, so
     * below the break-even load it drains away on its own. Its effect is applied where blood is
     * handled: the effective blood volume cap is compressed linearly with sepsis (see
-    * [[Consts.Vitals.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis. Returns
-    * whether the value changed.
+    * [[Consts.Vitals.effectiveMaxBloodVolume]]), down to zero — fatal — at full sepsis.
     */
-  private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Boolean = {
+  private def tickSepsis(vitals: VitalsComponentImpl, infectionLoad: Double): Unit = {
     val maxLoad = MutableLimbState.MaxValue * BodyPart.values.length
     val gain = Consts.Sepsis.SepsisGainPerTick * infectionLoad / maxLoad
     val next =
       (vitals.infection.sepsis + gain - Consts.Sepsis.SepsisDecayPerTick)
         .max(0.0)
         .min(Consts.Sepsis.MaxSepsis)
-    if (next == vitals.infection.sepsis) return false
-
-    VitalsMutations.setSepsis(vitals, next)
-    true
+    vitals.setSepsis(next)
   }
 
   /** Immune health is a lifestyle stat deliberately decoupled from infection load. Being well-fed
     * restores it slowly and hunger drains it (thresholds mirror vanilla's regeneration/sprinting
     * cutoffs). Active vanilla Poison adds a continuous drain scaled linearly by effect level,
-    * independently of whether a poison damage pulse lands. Returns whether the value changed.
+    * independently of whether a poison damage pulse lands.
     */
-  private def tickImmune(vitals: VitalsComponentImpl, player: ServerPlayer): Boolean = {
+  private def tickImmune(vitals: VitalsComponentImpl, player: ServerPlayer): Unit = {
     val food = player.getFoodData.getFoodLevel
     val foodDelta: Double =
       if (
@@ -94,15 +88,6 @@ private[casualtiesbelow] object Infection {
         Consts.Temperature.HotImmuneDrainPerDegreePerMinute
       )
     val delta = foodDelta - poisonDrain - dirtDrain - temperatureDrain
-    if (delta == 0.0) return false
-
-    val next =
-      (vitals.infection.immuneHealth + delta)
-        .max(0.0)
-        .min(Consts.Vitals.MaxImmuneHealth)
-    if (next == vitals.infection.immuneHealth) return false
-
-    VitalsMutations.setImmuneHealth(vitals, next)
-    true
+    vitals.setImmuneHealth(vitals.infection.immuneHealth + delta)
   }
 }
