@@ -37,6 +37,10 @@
       {
         "adapter": "scala",
         "value": "dev.krysztal.casualtiesbelow.gametest.VitalsEffectGameTests"
+      },
+      {
+        "adapter": "scala",
+        "value": "dev.krysztal.casualtiesbelow.gametest.PersistenceGameTests"
       }
     ]
   },
