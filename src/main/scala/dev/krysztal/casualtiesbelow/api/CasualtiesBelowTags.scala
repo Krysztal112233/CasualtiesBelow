@@ -83,6 +83,43 @@ object CasualtiesBelowTags {
   val HealthySoupsItems: TagKey[Item] =
     TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("healthy_soups"))
 
+  /** Carried items that supply the weak ambient heat tier: small open flames and strong heat
+    * thematics (torches, lanterns, blaze powder). Ambient source tiers run 1 = weak, 2 = strong, 3 =
+    * extreme/freezing (see `temperature`). Datapacks may extend the tier.
+    */
+  val HeatSource1Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("heat_source_1"))
+
+  /** Carried items that supply the strong ambient heat tier: reliably-lit campfires, carried magma
+    * and blaze rods. Datapacks may extend the tier.
+    */
+  val HeatSource2Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("heat_source_2"))
+
+  /** Carried items that supply the extreme ambient heat tier (lava buckets). Datapacks may extend
+    * the tier.
+    */
+  val HeatSource3Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("heat_source_3"))
+
+  /** Carried items that supply the weak ambient cold tier: meltable ice, snow and carried water.
+    * Datapacks may extend the tier.
+    */
+  val ColdSource1Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("cold_source_1"))
+
+  /** Carried items that supply the strong ambient cold tier (packed ice). Datapacks may extend the
+    * tier.
+    */
+  val ColdSource2Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("cold_source_2"))
+
+  /** Carried items that supply the freezing ambient cold tier (powder snow buckets, blue ice).
+    * Datapacks may extend the tier.
+    */
+  val ColdSource3Items: TagKey[Item] =
+    TagKey.create(Registries.ITEM, CasualtiesBelowApi.id("cold_source_3"))
+
   /** Biomes whose murky water washes dirtiness at a reduced rate (swamps by default; see
     * `hygiene.Dirtiness`).
     */
@@ -100,4 +137,41 @@ object CasualtiesBelowTags {
     */
   val DiggableDustlessBlocks: TagKey[Block] =
     TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("diggable_dustless"))
+
+  /** Blocks that radiate the weak ambient heat tier: enclosed or small flames (lit furnaces,
+    * torches, lanterns, candles). Membership is block-level, so consumers must check `LIT` for
+    * state-dependent members themselves. Datapacks may extend the tier.
+    */
+  val HeatSource1Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("heat_source_1"))
+
+  /** Blocks that radiate the strong ambient heat tier: open flames and hot floors (lit campfires,
+    * fire, magma blocks). Datapacks may extend the tier.
+    */
+  val HeatSource2Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("heat_source_2"))
+
+  /** Blocks that radiate the extreme ambient heat tier (lava, still or cauldron-contained).
+    * Datapacks may extend the tier.
+    */
+  val HeatSource3Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("heat_source_3"))
+
+  /** Blocks that radiate the weak ambient cold tier: meltable or transient cold (ice, snow layers,
+    * frosted ice). Datapacks may extend the tier.
+    */
+  val ColdSource1Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("cold_source_1"))
+
+  /** Blocks that radiate the strong ambient cold tier: permanent ice and solid snow. Datapacks may
+    * extend the tier.
+    */
+  val ColdSource2Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("cold_source_2"))
+
+  /** Blocks that radiate the freezing ambient cold tier: powder snow, loose or cauldron-contained.
+    * Datapacks may extend the tier.
+    */
+  val ColdSource3Blocks: TagKey[Block] =
+    TagKey.create(Registries.BLOCK, CasualtiesBelowApi.id("cold_source_3"))
 }
