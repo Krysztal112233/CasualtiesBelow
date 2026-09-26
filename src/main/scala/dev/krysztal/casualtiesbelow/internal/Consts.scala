@@ -257,12 +257,19 @@ private[casualtiesbelow] object Consts {
     val WetnessCollapseFormula = FixedFormula("1 - 0.85 * wetness", List("wetness"))
 
     val BlockTemperatureRadius = 4
-    val BlockHeatContribute1PerMinute = 4.0
-    val BlockHeatContribute2PerMinute = 4.0
-    val BlockHeatContribute3PerMinute = 4.0
-    val BlockColdContribute1PerMinute = 4.0
-    val BlockColdContribute2PerMinute = 4.0
-    val BlockColdContribute3PerMinute = 4.0
+    val BlockTemperatureMaxContributors = 4
+    val BlockHeatContribute1PerMinute = 0.5
+    val BlockHeatContribute2PerMinute = 1.2
+    val BlockHeatContribute3PerMinute = 6.0
+    val BlockColdContribute1PerMinute = 0.5
+    val BlockColdContribute2PerMinute = 1.2
+    val BlockColdContribute3PerMinute = 6.0
+    val ItemHeatContribute1PerMinute = 0.3
+    val ItemHeatContribute2PerMinute = 0.8
+    val ItemHeatContribute3PerMinute = 2.0
+    val ItemColdContribute1PerMinute = 0.3
+    val ItemColdContribute2PerMinute = 0.8
+    val ItemColdContribute3PerMinute = 2.0
   }
 
   object Dirtiness {
