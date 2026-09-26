@@ -36,7 +36,7 @@ apply(from = "gradle/sources.gradle.kts")
 
 // `./gradlew scaladoc`: Scala 3 API docs for the main source set → build/docs/scaladoc/index.html.
 // The doc tool type-checks the sources itself; it deliberately does NOT inherit the compile
-// scalacOptions (no-indent / explicit-nulls are compile-time policy, not documentation concerns).
+// scalacOptions (-no-indent is compile-time policy, not a documentation concern).
 val modVersion = property("mod_version") as String
 tasks.scaladoc {
     scalaDocOptions.additionalParameters =
@@ -160,9 +160,6 @@ tasks.withType<ScalaCompile>().configureEach {
     options.release = 25
     // Enforce the project's brace style: reject significant-indentation syntax.
     scalaCompileOptions.additionalParameters.add("-no-indent")
-    // Explicit nulls: Java members annotated @Nullable (JSpecify) become hard T | Null and
-    // must be null-checked before dereference; unannotated Java types stay flexible.
-    scalaCompileOptions.additionalParameters.add("-Yexplicit-nulls")
 }
 
 tasks.test {
