@@ -291,8 +291,8 @@ private[casualtiesbelow] object Consts {
     val PoorConditionMultiplier = 1.5
     val PoorConditionConsciousnessThreshold = 50.0
     val VomitChanceThreshold = 30.0
-    val VomitMinChancePerTick = 0.01
-    val VomitMaxChancePerTick = 0.05
+    val VomitMinChancePerTick = 0.0005
+    val VomitMaxChancePerTick = 0.00256
     val VomitRelief = 30.0
     val VomitHungerPenalty = 6
     val VomitSaturationPenalty = 8.0
