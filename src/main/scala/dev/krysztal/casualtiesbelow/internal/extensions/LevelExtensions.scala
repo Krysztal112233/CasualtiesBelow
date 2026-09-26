@@ -46,7 +46,7 @@ private[casualtiesbelow] object LevelExtensions {
         center: BlockPos,
         radius: Int,
         dy: Int = -1
-    ): LazyList[(BlockPos, BlockState)] = {
+    ): LazyList[(pos: BlockPos, state: BlockState)] = {
       val checkedDy =
         if (dy == -1) radius
         else dy
