@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.component
 
-import java.lang.Boolean as JBoolean
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -9,6 +8,7 @@ import net.minecraft.world.entity.player.Player
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.JBoolean
 
 /** Tick-coalesced owner sync for vitals. Setters on [[VitalsComponentImpl]] queue the player here
   * on any actual change; the flush sends one packet per dirty player per tick at most, no matter

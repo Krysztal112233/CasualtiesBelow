@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.data.schema
 
-import java.lang.Boolean as JBoolean
 import java.lang.Double as JDouble
 import java.util.Optional
 
@@ -31,6 +30,7 @@ import net.minecraft.world.item.Item
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.JBoolean
 
 import com.ezylang.evalex.Expression
 

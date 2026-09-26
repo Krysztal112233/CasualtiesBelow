@@ -9,6 +9,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
 import net.minecraft.util.ExtraCodecs
 
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.JDouble
+
 /** A drawn syringe dose. The source liquid determines its injection side effects, while
   * `opioidDose` stores the true sampled dose even when the item deliberately hides it.
   */

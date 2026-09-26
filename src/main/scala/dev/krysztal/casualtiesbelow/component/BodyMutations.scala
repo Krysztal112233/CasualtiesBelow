@@ -1,6 +1,5 @@
 package dev.krysztal.casualtiesbelow.component
 
-import java.lang.Boolean as JBoolean
 import java.util.Collections
 import java.util.WeakHashMap
 
@@ -11,6 +10,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import dev.krysztal.casualtiesbelow.api.body.CasualtiesBelowComponents
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbSnapshot
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.JBoolean
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 private[casualtiesbelow] final case class BodyMutation(

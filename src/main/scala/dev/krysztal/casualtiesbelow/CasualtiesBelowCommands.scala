@@ -1,9 +1,5 @@
 package dev.krysztal.casualtiesbelow
 
-import java.lang.Boolean
-import java.lang.Double
-import java.lang.Integer
-
 import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
 
@@ -30,6 +26,7 @@ import dev.krysztal.casualtiesbelow.component.BodyMutations
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.PhysiologyReset
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.*
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
@@ -176,14 +173,14 @@ object CasualtiesBelowCommands {
     valueBranch(
       "muscle_health",
       DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
-      classOf[Double]
+      classOf[JDouble]
     ) { (s, v) => s.muscleHealth = v },
     valueBranch(
       "skin_integrity",
       DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
-      classOf[Double]
+      classOf[JDouble]
     ) { (s, v) => s.skinIntegrity = v },
-    valueBranch("dislocated", BoolArgumentType.bool(), classOf[Boolean]) { (s, v) =>
+    valueBranch("dislocated", BoolArgumentType.bool(), classOf[JBoolean]) { (s, v) =>
       s.dislocated = v
     },
     clearableBranch(
@@ -197,7 +194,7 @@ object CasualtiesBelowCommands {
     clearableBranch(
       "infection_progress",
       DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
-      classOf[Double]
+      classOf[JDouble]
     )(
       { (s, v) => s.infectionProgress = Some(v.doubleValue) },
       { s => s.infectionProgress = None }
@@ -205,12 +202,12 @@ object CasualtiesBelowCommands {
     valueBranch(
       "external_bleeding_rate",
       DoubleArgumentType.doubleArg(0.0),
-      classOf[Double]
+      classOf[JDouble]
     ) { (s, v) => s.externalBleedingRate = v },
     valueBranch(
       "pain",
       DoubleArgumentType.doubleArg(0.0, LimbSnapshot.MaxValue),
-      classOf[Double]
+      classOf[JDouble]
     ) { (s, v) => s.pain = v }
   )
 
