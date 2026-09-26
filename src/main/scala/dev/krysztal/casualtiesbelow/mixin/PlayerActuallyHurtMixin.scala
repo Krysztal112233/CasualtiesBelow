@@ -41,7 +41,7 @@ abstract class PlayerActuallyHurtMixin {
       _damage: Float
   ): Unit = {
     val targetHealth =
-      if (source.is(CasualtiesBelowTags.BypassesHealthRedirect)) vanillaHealth
+      if (source.is(CasualtiesBelowTags.DamageTypes.BypassesHealthRedirect)) vanillaHealth
       else player.getHealth
     original.call(player, targetHealth)
   }

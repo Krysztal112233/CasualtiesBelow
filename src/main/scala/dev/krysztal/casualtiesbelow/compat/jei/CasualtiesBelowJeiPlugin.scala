@@ -118,9 +118,9 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
   private def collectDiscomfortCandidates(using store: GameplayDataStore): Set[Item] = {
     val items = scala.collection.mutable.LinkedHashSet.empty[Item]
     List(
-      CasualtiesBelowTags.Discomfort1Food,
-      CasualtiesBelowTags.Discomfort2Food,
-      CasualtiesBelowTags.Discomfort3Food
+      CasualtiesBelowTags.Items.Discomfort1Food,
+      CasualtiesBelowTags.Items.Discomfort2Food,
+      CasualtiesBelowTags.Items.Discomfort3Food
     ).foreach { tag =>
       BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(h => items += h.value())
     }
@@ -268,7 +268,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       .entry(store.woundProfiles, profileId)
       .foreach { profile =>
         val items = BuiltInRegistries.ITEM
-          .getTagOrEmpty(CasualtiesBelowTags.SharpMeleeItems)
+          .getTagOrEmpty(CasualtiesBelowTags.Items.SharpMelee)
           .asScala
           .map(h => new ItemStack(h.value()))
           .toList

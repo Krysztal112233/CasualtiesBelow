@@ -30,18 +30,18 @@ final class ItemTagProvider(
   override protected def addTags(registries: HolderLookup.Provider): Unit = {
     // Sharp melee weapons cut skin open (see WoundProfiles). Nested tags, so any modded sword or
     // axe classifies automatically.
-    builder(CasualtiesBelowTags.SharpMeleeItems)
+    builder(CasualtiesBelowTags.Items.SharpMelee)
       .addOptionalTag(ItemTags.SWORDS)
       .addOptionalTag(ItemTags.AXES)
 
     // Loose plant fibers that vanilla shelves can dry into fiber cloth.
-    val fiberClothInputs = builder(CasualtiesBelowTags.DriesToFiberClothItems)
+    val fiberClothInputs = builder(CasualtiesBelowTags.Items.DriesToFiberCloth)
     FiberClothDryingInputs.BuiltInItems.foreach { item =>
       fiberClothInputs.add(itemKey(item))
     }
 
     // Discomfort tier 1: still edible, but raw/starchy/sickly-sweet — a brief queasiness.
-    builder(CasualtiesBelowTags.Discomfort1Food)
+    builder(CasualtiesBelowTags.Items.Discomfort1Food)
       .add(
         itemKey(Items.POTATO),
         itemKey(Items.SALMON),
@@ -50,7 +50,7 @@ final class ItemTagProvider(
       )
 
     // Discomfort tier 2: clearly hard to swallow — raw meat, dried kelp, teleport fruit.
-    builder(CasualtiesBelowTags.Discomfort2Food)
+    builder(CasualtiesBelowTags.Items.Discomfort2Food)
       .add(
         itemKey(Items.DRIED_KELP),
         itemKey(Items.TROPICAL_FISH),
@@ -63,7 +63,7 @@ final class ItemTagProvider(
       )
 
     // Discomfort tier 3: rotten, poisonous or not human food at all.
-    builder(CasualtiesBelowTags.Discomfort3Food)
+    builder(CasualtiesBelowTags.Items.Discomfort3Food)
       .add(
         itemKey(Items.POISONOUS_POTATO),
         itemKey(Items.PUFFERFISH),
@@ -72,7 +72,7 @@ final class ItemTagProvider(
       )
 
     // Nourishing soups, priced as one group by food_immune/tag/casualtiesbelow/healthy_soups.
-    builder(CasualtiesBelowTags.HealthySoupsItems)
+    builder(CasualtiesBelowTags.Items.HealthySoups)
       .add(
         itemKey(Items.MUSHROOM_STEW),
         itemKey(Items.BEETROOT_SOUP),
@@ -80,10 +80,10 @@ final class ItemTagProvider(
       )
 
     // Ambient heat tier 3 (extreme): portable lava.
-    builder(CasualtiesBelowTags.HeatSource3Items).add(itemKey(Items.LAVA_BUCKET))
+    builder(CasualtiesBelowTags.Items.HeatSource3).add(itemKey(Items.LAVA_BUCKET))
 
     // Ambient heat tier 2 (strong): reliably-lit campfires, carried magma and blaze rods.
-    builder(CasualtiesBelowTags.HeatSource2Items).add(
+    builder(CasualtiesBelowTags.Items.HeatSource2).add(
       itemKey(Items.CAMPFIRE),
       itemKey(Items.SOUL_CAMPFIRE),
       itemKey(Items.MAGMA_BLOCK),
@@ -93,7 +93,7 @@ final class ItemTagProvider(
     // Ambient heat tier 1 (weak): small flames and heat thematics. LIT-dependent blocks (furnaces,
     // candles) are absent on purpose — their item forms are unlit. Vanilla's lanterns item tag
     // covers soul and copper-weathering variants.
-    builder(CasualtiesBelowTags.HeatSource1Items)
+    builder(CasualtiesBelowTags.Items.HeatSource1)
       .addOptionalTag(BlockItemTags.LANTERNS.item())
       .add(
         itemKey(Items.TORCH),
@@ -105,16 +105,16 @@ final class ItemTagProvider(
       )
 
     // Ambient cold tier 3 (freezing): vanilla freeze mechanics in portable form.
-    builder(CasualtiesBelowTags.ColdSource3Items).add(
+    builder(CasualtiesBelowTags.Items.ColdSource3).add(
       itemKey(Items.POWDER_SNOW_BUCKET),
       itemKey(Items.BLUE_ICE)
     )
 
     // Ambient cold tier 2 (strong): permanent ice.
-    builder(CasualtiesBelowTags.ColdSource2Items).add(itemKey(Items.PACKED_ICE))
+    builder(CasualtiesBelowTags.Items.ColdSource2).add(itemKey(Items.PACKED_ICE))
 
     // Ambient cold tier 1 (weak): meltable cold and fire-extinguishing water.
-    builder(CasualtiesBelowTags.ColdSource1Items).add(
+    builder(CasualtiesBelowTags.Items.ColdSource1).add(
       itemKey(Items.ICE),
       itemKey(Items.SNOW_BLOCK),
       itemKey(Items.SNOWBALL),

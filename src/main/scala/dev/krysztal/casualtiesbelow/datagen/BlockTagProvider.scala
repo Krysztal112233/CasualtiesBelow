@@ -33,7 +33,7 @@ final class BlockTagProvider(
     )
     builder(BlockTags.CAULDRONS).add(poppyCauldrons*)
     builder(BlockTags.MINEABLE_WITH_PICKAXE).add(poppyCauldrons*)
-    builder(CasualtiesBelowTags.DiggableDirtyBlocks).add(
+    builder(CasualtiesBelowTags.Blocks.DiggableDirty).add(
       Seq(
         Blocks.DIRT,
         Blocks.GRASS_BLOCK,
@@ -53,7 +53,7 @@ final class BlockTagProvider(
         Blocks.SOUL_SOIL
       ).map(blockKey)*
     )
-    builder(CasualtiesBelowTags.DiggableDustlessBlocks)
+    builder(CasualtiesBelowTags.Blocks.DiggableDustless)
       .addOptionalTag(BlockTags.LEAVES)
       .addOptionalTag(BlockTags.WOOL)
       .addOptionalTag(BlockTags.LOGS)
@@ -79,14 +79,14 @@ final class BlockTagProvider(
       )
 
     // Ambient heat tier 3 (extreme): vanilla burn mechanics — lava, still or cauldron-contained.
-    builder(CasualtiesBelowTags.HeatSource3Blocks).add(
+    builder(CasualtiesBelowTags.Blocks.HeatSource3).add(
       blockKey(Blocks.LAVA),
       blockKey(Blocks.LAVA_CAULDRON)
     )
 
     // Ambient heat tier 2 (strong): open flames and hot floors. Nesting vanilla's tags classifies
     // modded campfires and fires automatically.
-    builder(CasualtiesBelowTags.HeatSource2Blocks)
+    builder(CasualtiesBelowTags.Blocks.HeatSource2)
       .addOptionalTag(BlockTags.CAMPFIRES)
       .addOptionalTag(BlockTags.FIRE)
       .add(blockKey(Blocks.MAGMA_BLOCK))
@@ -94,7 +94,7 @@ final class BlockTagProvider(
     // Ambient heat tier 1 (weak): enclosed or small flames. Furnaces and candles only radiate while
     // lit; the tag is block-level, so consumers check `LIT` themselves. Vanilla's lanterns tag
     // covers soul and copper-weathering variants.
-    builder(CasualtiesBelowTags.HeatSource1Blocks)
+    builder(CasualtiesBelowTags.Blocks.HeatSource1)
       .addOptionalTag(BlockTags.LANTERNS)
       .addOptionalTag(BlockTags.CANDLES)
       .addOptionalTag(BlockTags.CANDLE_CAKES)
@@ -114,21 +114,21 @@ final class BlockTagProvider(
       )
 
     // Ambient cold tier 3 (freezing): vanilla freeze mechanics — powder snow, loose or contained.
-    builder(CasualtiesBelowTags.ColdSource3Blocks).add(
+    builder(CasualtiesBelowTags.Blocks.ColdSource3).add(
       blockKey(Blocks.POWDER_SNOW),
       blockKey(Blocks.POWDER_SNOW_CAULDRON)
     )
 
     // Ambient cold tier 2 (strong): permanent ice and solid snow. Vanilla's #ice and #snow span
     // several tiers, so members are listed per block instead of nested.
-    builder(CasualtiesBelowTags.ColdSource2Blocks).add(
+    builder(CasualtiesBelowTags.Blocks.ColdSource2).add(
       blockKey(Blocks.BLUE_ICE),
       blockKey(Blocks.PACKED_ICE),
       blockKey(Blocks.SNOW_BLOCK)
     )
 
     // Ambient cold tier 1 (weak): meltable or transient cold.
-    builder(CasualtiesBelowTags.ColdSource1Blocks).add(
+    builder(CasualtiesBelowTags.Blocks.ColdSource1).add(
       blockKey(Blocks.ICE),
       blockKey(Blocks.SNOW),
       blockKey(Blocks.FROSTED_ICE)

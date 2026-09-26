@@ -70,8 +70,8 @@ object DirtinessSources {
         case (serverPlayer: ServerPlayer, false) if !state.isAir =>
           val digging = Consts.Dirtiness.DiggingPulseDirt
           val base = digPulse(
-            dirty = state.is(CasualtiesBelowTags.DiggableDirtyBlocks),
-            dustless = state.is(CasualtiesBelowTags.DiggableDustlessBlocks),
+            dirty = state.is(CasualtiesBelowTags.Blocks.DiggableDirty),
+            dustless = state.is(CasualtiesBelowTags.Blocks.DiggableDustless),
             dirtyPulse = digging * DirtyDiggingWeight,
             dustlessPulse = 0.0,
             basicPulse = digging

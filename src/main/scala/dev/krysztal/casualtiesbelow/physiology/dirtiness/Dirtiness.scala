@@ -96,7 +96,7 @@ object Dirtiness {
       Consts.Dirtiness.DirtyWaterWashMultiplier,
       inWater = player.isInWater,
       inRain = level.isRainingAt(player.blockPosition()),
-      murkyWater = biome.is(CasualtiesBelowTags.DirtyWaterBiomes)
+      murkyWater = biome.is(CasualtiesBelowTags.Biomes.DirtyWater)
     )
     val next =
       (vitals.dirtiness + dirtGain - wash)

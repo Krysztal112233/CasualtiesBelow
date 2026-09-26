@@ -21,7 +21,7 @@ final class BluntMeleeTagProvider(
   override protected def addTags(registries: HolderLookup.Provider): Unit = {
     // Unarmed attackers that slam rather than bite/scratch (see WoundProfiles): contact cubes,
     // heavy swingers, and constructs. Bare-handed attackers absent from this tag bite by default.
-    builder(CasualtiesBelowTags.BluntMeleeEntities)
+    builder(CasualtiesBelowTags.Entities.BluntMelee)
       .add(
         EntityTypeIds.SLIME,
         EntityTypeIds.MAGMA_CUBE,

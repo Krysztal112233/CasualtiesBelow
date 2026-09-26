@@ -37,7 +37,7 @@ final class DamageTypeTagProvider(
       .add(bloodLoss, sepsis, hypoxia, starvation)
 
     // Forced vanilla deaths and the mod's physiological fatal sources must reach health zero.
-    builder(CasualtiesBelowTags.BypassesHealthRedirect)
+    builder(CasualtiesBelowTags.DamageTypes.BypassesHealthRedirect)
       .addTag(DamageTypeTags.BYPASSES_INVULNERABILITY)
       .add(DamageTypes.OUTSIDE_BORDER, bloodLoss, sepsis, hypoxia, starvation)
 
@@ -46,19 +46,22 @@ final class DamageTypeTagProvider(
 
     // HolderSet codecs cannot represent a union of one tag and direct entries. Give the blast
     // wound rule one semantic tag that datapacks can extend.
-    builder(CasualtiesBelowTags.BlastSources)
+    builder(CasualtiesBelowTags.DamageTypes.BlastSources)
       .forceAddTag(DamageTypeTags.IS_EXPLOSION)
       .add(DamageTypes.WITHER_SKULL)
 
     // `#minecraft:is_fall` also includes pearl and stalagmite damage, which deliberately use
     // localized prick/pierce rules. This semantic tag starts with exact fall impact only.
-    builder(CasualtiesBelowTags.FallImpacts).add(DamageTypes.FALL)
+    builder(CasualtiesBelowTags.DamageTypes.FallImpacts).add(DamageTypes.FALL)
 
     // Damage-type heat tiers map to config rates and are datapack-extensible. Fireball impacts are
     // omitted as transient hits; lightning is explicitly classified as extreme heat.
-    builder(CasualtiesBelowTags.HeatExtreme).add(DamageTypes.LAVA).add(DamageTypes.LIGHTNING_BOLT)
-    builder(CasualtiesBelowTags.HeatStrong).add(DamageTypes.IN_FIRE, DamageTypes.ON_FIRE)
-    builder(CasualtiesBelowTags.HeatNormal)
+    builder(CasualtiesBelowTags.DamageTypes.HeatExtreme)
+      .add(DamageTypes.LAVA)
+      .add(DamageTypes.LIGHTNING_BOLT)
+    builder(CasualtiesBelowTags.DamageTypes.HeatStrong)
+      .add(DamageTypes.IN_FIRE, DamageTypes.ON_FIRE)
+    builder(CasualtiesBelowTags.DamageTypes.HeatNormal)
       .add(DamageTypes.HOT_FLOOR, DamageTypes.CAMPFIRE)
   }
 }

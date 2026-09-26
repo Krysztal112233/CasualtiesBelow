@@ -36,7 +36,7 @@ private[casualtiesbelow] object ShelfDrying {
   private def advanceSelectedSlot(shelf: ShelfBlockEntity, random: RandomSource): Unit = {
     val slot = random.nextInt(ShelfBlockEntity.MAX_ITEMS)
     val stack = shelf.getItem(slot)
-    if (stack.isEmpty || !stack.is(CasualtiesBelowTags.DriesToFiberClothItems)) return
+    if (stack.isEmpty || !stack.is(CasualtiesBelowTags.Items.DriesToFiberCloth)) return
     if (!shouldAdvance(random.nextFloat())) return
 
     val nextStage = advanceStage(stack.dryingStage)

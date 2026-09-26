@@ -19,6 +19,6 @@ final class BiomeTagProvider(
 ) extends FabricTagsProvider[Biome](output, Registries.BIOME, registries) {
 
   override protected def addTags(registries: HolderLookup.Provider): Unit = {
-    builder(CasualtiesBelowTags.DirtyWaterBiomes).add(Seq(Biomes.SWAMP, Biomes.MANGROVE_SWAMP)*)
+    builder(CasualtiesBelowTags.Biomes.DirtyWater).add(Seq(Biomes.SWAMP, Biomes.MANGROVE_SWAMP)*)
   }
 }

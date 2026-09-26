@@ -98,7 +98,7 @@ object CasualtiesBelowDataDefaults {
     }
 
     val sharpWeapon = ItemPredicate(
-      Optional.of(items.getOrThrow(CasualtiesBelowTags.SharpMeleeItems)),
+      Optional.of(items.getOrThrow(CasualtiesBelowTags.Items.SharpMelee)),
       MinMaxBounds.Ints.ANY,
       DataComponentMatchers.ANY
     )
@@ -124,7 +124,7 @@ object CasualtiesBelowDataDefaults {
       ),
       "explosion" -> rule(
         scatter("blast"),
-        damageTypes = Some(tagged(CasualtiesBelowTags.BlastSources)),
+        damageTypes = Some(tagged(CasualtiesBelowTags.DamageTypes.BlastSources)),
         priority = 90
       ),
       "piercing_projectile" -> rule(
@@ -145,7 +145,7 @@ object CasualtiesBelowDataDefaults {
       ),
       "fall" -> rule(
         fallImpact,
-        damageTypes = Some(tagged(CasualtiesBelowTags.FallImpacts)),
+        damageTypes = Some(tagged(CasualtiesBelowTags.DamageTypes.FallImpacts)),
         victims = Some(PlayerEntities),
         priority = 60
       ),
@@ -183,7 +183,7 @@ object CasualtiesBelowDataDefaults {
       ),
       "melee_slam" -> rule(
         localized("blunt"),
-        predicate = Some(entityTagPredicate(CasualtiesBelowTags.BluntMeleeEntities)),
+        predicate = Some(entityTagPredicate(CasualtiesBelowTags.Entities.BluntMelee)),
         directLiving = Some(true),
         priority = 20
       ),

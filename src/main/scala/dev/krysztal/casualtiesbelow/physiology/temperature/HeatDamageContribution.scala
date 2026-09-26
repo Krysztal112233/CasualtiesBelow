@@ -75,9 +75,9 @@ private[temperature] object HeatDamageContribution extends BodyHeatContributionC
     * adding damage types to its tag.
     */
   private val Tiers = List(
-    (CasualtiesBelowTags.HeatExtreme, Consts.Temperature.HeatExtremePerMinute),
-    (CasualtiesBelowTags.HeatStrong, Consts.Temperature.HeatStrongPerMinute),
-    (CasualtiesBelowTags.HeatNormal, Consts.Temperature.HeatNormalPerMinute)
+    (CasualtiesBelowTags.DamageTypes.HeatExtreme, Consts.Temperature.HeatExtremePerMinute),
+    (CasualtiesBelowTags.DamageTypes.HeatStrong, Consts.Temperature.HeatStrongPerMinute),
+    (CasualtiesBelowTags.DamageTypes.HeatNormal, Consts.Temperature.HeatNormalPerMinute)
   )
 
   private def tierPerMinute(source: DamageSource): Option[Double] =
