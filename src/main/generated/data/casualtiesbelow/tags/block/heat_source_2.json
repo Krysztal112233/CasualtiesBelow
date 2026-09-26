@@ -1,0 +1,13 @@
+{
+  "values": [
+    {
+      "id": "#minecraft:campfires",
+      "required": false
+    },
+    {
+      "id": "#minecraft:fire",
+      "required": false
+    },
+    "minecraft:magma_block"
+  ]
+}

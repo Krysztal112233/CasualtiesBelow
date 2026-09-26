@@ -1,0 +1,14 @@
+{
+  "values": [
+    {
+      "id": "#minecraft:lanterns",
+      "required": false
+    },
+    "minecraft:torch",
+    "minecraft:soul_torch",
+    "minecraft:copper_torch",
+    "minecraft:blaze_powder",
+    "minecraft:magma_cream",
+    "minecraft:fire_charge"
+  ]
+}
