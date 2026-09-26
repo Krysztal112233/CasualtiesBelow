@@ -1,10 +1,8 @@
 package dev.krysztal.casualtiesbelow.config
 
-import java.lang.Boolean
-import java.lang.Double
-
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.*
 
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry
 import net.neoforged.fml.config.ModConfig
@@ -27,27 +25,27 @@ object CasualtiesBelowConfig {
   }
 
   final case class InjurySurvival(
-      maxExternalBleedingRate: ConfigValue[Double],
-      adrenalineEnabled: ConfigValue[Boolean],
-      fallDamageMultiplier: ConfigValue[Double],
-      clottingSpeedMultiplier: ConfigValue[Double],
-      naturalHealingMultiplier: ConfigValue[Double],
-      legMovementPenaltyMultiplier: ConfigValue[Double]
+      maxExternalBleedingRate: ConfigValue[JDouble],
+      adrenalineEnabled: ConfigValue[JBoolean],
+      fallDamageMultiplier: ConfigValue[JDouble],
+      clottingSpeedMultiplier: ConfigValue[JDouble],
+      naturalHealingMultiplier: ConfigValue[JDouble],
+      legMovementPenaltyMultiplier: ConfigValue[JDouble]
   )
 
   final case class DiseaseHygiene(
-      infectionEnabled: ConfigValue[Boolean],
-      washWaterPerSecond: ConfigValue[Double],
-      woundInfectionRiskMultiplier: ConfigValue[Double],
-      dirtAccumulationMultiplier: ConfigValue[Double]
+      infectionEnabled: ConfigValue[JBoolean],
+      washWaterPerSecond: ConfigValue[JDouble],
+      woundInfectionRiskMultiplier: ConfigValue[JDouble],
+      dirtAccumulationMultiplier: ConfigValue[JDouble]
   )
 
   final case class Environment(
-      tauAirMinutes: ConfigValue[Double],
-      comfortLowCelsius: ConfigValue[Double],
-      comfortHighCelsius: ConfigValue[Double]
+      tauAirMinutes: ConfigValue[JDouble],
+      comfortLowCelsius: ConfigValue[JDouble],
+      comfortHighCelsius: ConfigValue[JDouble]
   ) {
-    def effectiveComfortBounds: (scala.Double, scala.Double) = {
+    def effectiveComfortBound = {
       val low = comfortLowCelsius.get().doubleValue
       val high = comfortHighCelsius.get().doubleValue
       (low.min(high), low.max(high))
@@ -55,16 +53,16 @@ object CasualtiesBelowConfig {
   }
 
   final case class MedicineFood(
-      refinedSyringeDose: ConfigValue[Double],
-      crudeSyringeDoseMean: ConfigValue[Double],
-      refusalThreshold: ConfigValue[Double],
-      opioidPainReliefMultiplier: ConfigValue[Double]
+      refinedSyringeDose: ConfigValue[JDouble],
+      crudeSyringeDoseMean: ConfigValue[JDouble],
+      refusalThreshold: ConfigValue[JDouble],
+      opioidPainReliefMultiplier: ConfigValue[JDouble]
   )
 
   final case class Visuals(
-      temperatureOverlayEnabled: ConfigValue[Boolean],
-      consciousnessMaxBlurStrength: ConfigValue[Double],
-      shockVisualMaxStrength: ConfigValue[Double]
+      temperatureOverlayEnabled: ConfigValue[JBoolean],
+      consciousnessMaxBlurStrength: ConfigValue[JDouble],
+      shockVisualMaxStrength: ConfigValue[JDouble]
   )
 
   val injurySurvival: InjurySurvival = group("injurySurvival") {
@@ -74,7 +72,7 @@ object CasualtiesBelowConfig {
           "Maximum external bleeding from one severely wounded limb, in mL per tick.",
           "Lower this to make blood loss less dangerous; intact skin still cannot bleed."
         )
-        .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[Double]),
+        .defineInRange("maxExternalBleedingRate", 1.0, 0.0, 100.0, classOf[JDouble]),
       adrenalineEnabled = Builder
         .comment(
           "Allow new adrenaline bursts from damage. Disabling this does not erase an existing",
@@ -86,23 +84,23 @@ object CasualtiesBelowConfig {
           "Player fall damage relative to the standard custom fall curve (1 = normal).",
           "Set to zero to prevent player fall damage; mobs keep vanilla fall damage."
         )
-        .defineInRange("fallDamageMultiplier", 1.0, 0.0, 3.0, classOf[Double]),
+        .defineInRange("fallDamageMultiplier", 1.0, 0.0, 3.0, classOf[JDouble]),
       clottingSpeedMultiplier = Builder
         .comment("How quickly an external wound stops bleeding (1 = normal, 0 = no clotting).")
-        .defineInRange("clottingSpeedMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+        .defineInRange("clottingSpeedMultiplier", 1.0, 0.0, 5.0, classOf[JDouble]),
       naturalHealingMultiplier = Builder
         .comment(
           "Natural skin and muscle healing speed (1 = normal, 0 = no natural healing).",
           "Does not affect the vanilla Regeneration effect or wound clotting."
         )
-        .defineInRange("naturalHealingMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+        .defineInRange("naturalHealingMultiplier", 1.0, 0.0, 5.0, classOf[JDouble]),
       legMovementPenaltyMultiplier = Builder
         .comment(
           "How strongly injured legs slow movement and weaken jumps (1 = normal, 0 = none).",
           "Applies to fractures, dislocations and muscle damage; restart the game to change."
         )
         .gameRestart()
-        .defineInRange("legMovementPenaltyMultiplier", 1.0, 0.0, 1.0, classOf[Double])
+        .defineInRange("legMovementPenaltyMultiplier", 1.0, 0.0, 1.0, classOf[JDouble])
     )
   }
 
@@ -116,19 +114,19 @@ object CasualtiesBelowConfig {
         .define("infectionEnabled", true),
       washWaterPerSecond = Builder
         .comment("Dirt washed off per second while immersed in clean water.")
-        .defineInRange("washWaterPerSecond", 4.8, 0.0, 100.0, classOf[Double]),
+        .defineInRange("washWaterPerSecond", 4.8, 0.0, 100.0, classOf[JDouble]),
       woundInfectionRiskMultiplier = Builder
         .comment(
           "Chance of a wound becoming infected (1 = normal, 0 = no wound-onset infections).",
           "Dirty needles and spread from an existing infection are controlled by infectionEnabled."
         )
-        .defineInRange("woundInfectionRiskMultiplier", 1.0, 0.0, 5.0, classOf[Double]),
+        .defineInRange("woundInfectionRiskMultiplier", 1.0, 0.0, 5.0, classOf[JDouble]),
       dirtAccumulationMultiplier = Builder
         .comment(
           "Dirt gained from activity and surroundings (1 = normal, 0 = no new dirt).",
           "Does not change the rate at which water or rain washes dirt away."
         )
-        .defineInRange("dirtAccumulationMultiplier", 1.0, 0.0, 5.0, classOf[Double])
+        .defineInRange("dirtAccumulationMultiplier", 1.0, 0.0, 5.0, classOf[JDouble])
     )
   }
 
@@ -139,7 +137,7 @@ object CasualtiesBelowConfig {
           "Minutes for the body to adjust toward the surrounding temperature in still air:",
           "about 63% of the gap closes in this time. Lower values warm and cool faster."
         )
-        .defineInRange("tauAirMinutes", 3.0, 0.1, 60.0, classOf[Double]),
+        .defineInRange("tauAirMinutes", 3.0, 0.1, 60.0, classOf[JDouble]),
       comfortLowCelsius = Builder
         .comment(
           "Coldest apparent air temperature (°C) that keeps body temperature comfortable.",
@@ -150,7 +148,7 @@ object CasualtiesBelowConfig {
           Consts.Temperature.ComfortLowCelsius,
           -50.0,
           37.0,
-          classOf[Double]
+          classOf[JDouble]
         ),
       comfortHighCelsius = Builder
         .comment(
@@ -162,7 +160,7 @@ object CasualtiesBelowConfig {
           Consts.Temperature.ComfortHighCelsius,
           -50.0,
           80.0,
-          classOf[Double]
+          classOf[JDouble]
         )
     )
   }
@@ -171,21 +169,21 @@ object CasualtiesBelowConfig {
     MedicineFood(
       refinedSyringeDose = Builder
         .comment("Base opioid dose from one refined poppy ampoule.")
-        .defineInRange("refinedSyringeDose", 50.0, 0.0, 200.0, classOf[Double]),
+        .defineInRange("refinedSyringeDose", 50.0, 0.0, 200.0, classOf[JDouble]),
       crudeSyringeDoseMean = Builder
         .comment(
           "Average opioid dose drawn directly from crude poppy liquid; actual doses vary."
         )
-        .defineInRange("crudeSyringeDoseMean", 40.0, 0.0, 200.0, classOf[Double]),
+        .defineInRange("crudeSyringeDoseMean", 40.0, 0.0, 200.0, classOf[JDouble]),
       refusalThreshold = Builder
         .comment("Discomfort at which the player refuses to start eating unpleasant food.")
-        .defineInRange("refusalThreshold", 60.0, 0.0, 10000.0, classOf[Double]),
+        .defineInRange("refusalThreshold", 60.0, 0.0, 10000.0, classOf[JDouble]),
       opioidPainReliefMultiplier = Builder
         .comment(
           "Pain relief from opioid exposure (1 = normal, 0 = no opioid pain relief).",
           "Sedation, breathing risks and dependence are not affected."
         )
-        .defineInRange("opioidPainReliefMultiplier", 1.0, 0.0, 5.0, classOf[Double])
+        .defineInRange("opioidPainReliefMultiplier", 1.0, 0.0, 5.0, classOf[JDouble])
     )
   }
 
@@ -199,13 +197,13 @@ object CasualtiesBelowConfig {
           "Maximum blur and double-vision when consciousness is low (0-1).",
           "Set to zero to remove blur; unconscious blackout still applies."
         )
-        .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[Double]),
+        .defineInRange("consciousnessMaxBlurStrength", 0.99, 0.0, 1.0, classOf[JDouble]),
       shockVisualMaxStrength = Builder
         .comment(
           "Maximum strength of the peripheral pain-shock warning (0-1).",
           "Set to zero to hide the warning without changing gameplay."
         )
-        .defineInRange("shockVisualMaxStrength", 1.0, 0.0, 1.0, classOf[Double])
+        .defineInRange("shockVisualMaxStrength", 1.0, 0.0, 1.0, classOf[JDouble])
     )
   }
 

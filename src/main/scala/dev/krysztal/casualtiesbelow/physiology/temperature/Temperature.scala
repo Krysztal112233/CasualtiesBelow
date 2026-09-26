@@ -108,7 +108,7 @@ object Temperature {
       armor: ArmorThermal,
       heatContributions: BodyHeatContributionCallback.Accumulator
   ): Double = {
-    val (comfortLow, comfortHigh) = CasualtiesBelowConfig.environment.effectiveComfortBounds
+    val (comfortLow, comfortHigh) = CasualtiesBelowConfig.environment.effectiveComfortBound
     val equilibrium = Consts.Temperature.ComfortBandFormula.evaluate(
       environment.apparentTemperature,
       comfortLow,

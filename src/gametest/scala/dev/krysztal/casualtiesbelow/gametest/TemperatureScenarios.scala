@@ -36,7 +36,7 @@ object TemperatureScenarios {
     try {
       lowSetting.set(30.0)
       highSetting.set(10.0)
-      val bounds = CasualtiesBelowConfig.environment.effectiveComfortBounds
+      val bounds = CasualtiesBelowConfig.environment.effectiveComfortBound
       helper.assertTrue(bounds == (10.0, 30.0), s"reversed comfort bounds: $bounds")
       val core = Consts.Temperature.ComfortBandFormula.evaluate(
         20.0,
@@ -375,7 +375,7 @@ object TemperatureScenarios {
     val biome = level.getBiome(pos).value()
     val mapped = biome.mappedTemperature(pos, level.getSeaLevel)
     val apparent = TemperatureCalc.apparentTemperature(mapped, immersed)
-    val (comfortLow, comfortHigh) = CasualtiesBelowConfig.environment.effectiveComfortBounds
+    val (comfortLow, comfortHigh) = CasualtiesBelowConfig.environment.effectiveComfortBound
     Consts.Temperature.ComfortBandFormula.evaluate(
       apparent,
       comfortLow,
