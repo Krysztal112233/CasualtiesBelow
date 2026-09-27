@@ -227,8 +227,8 @@ private[casualtiesbelow] object Consts {
     val PenaltyBandHighCelsius = 39.5
     val ColdConsciousnessSlopePerDegree = 5.0
     val HotConsciousnessSlopePerDegree = 5.0
-    val ColdImmuneDrainPerDegreePerMinute = 1.0
-    val HotImmuneDrainPerDegreePerMinute = 0.5
+    val ColdImmuneDrainPerDegreePerMinute = 6
+    val HotImmuneDrainPerDegreePerMinute = 3
     val ExerciseHeatPerExhaustionPerSecond = 5.0
     val HeatStrongPerMinute = 14.0
     val HeatExtremePerMinute = 32.0
