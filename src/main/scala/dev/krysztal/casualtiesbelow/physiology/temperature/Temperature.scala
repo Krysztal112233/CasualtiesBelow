@@ -49,11 +49,7 @@ object Temperature {
     val environment = sampleEnvironment(player)
     val store = GameplayDataStores.server(player.level().getServer)
     val armor = armorThermalCoefficients(player, store)
-    val frame = BodyHeatContributionCallback.Frame(
-      armor.fireResistance,
-      vitals.wetness,
-      environment.airDryness
-    )
+    val frame = BodyHeatContributionCallback.Frame(armor.fireResistance)
     val heatContributions = collectHeatContributions(player, frame)
 
     val nextCore = calculateNextCoreTemperature(
@@ -76,9 +72,7 @@ object Temperature {
         biome.mappedTemperature(pos, level.getSeaLevel),
         immersed
       ),
-      airDryness = biome.airDryness,
-      immersed = immersed,
-      raining = !immersed && level.isRainingAt(pos)
+      immersed = immersed
     )
   }
 
@@ -151,9 +145,7 @@ object Temperature {
 
   private final case class TemperatureEnvironment(
       apparentTemperature: Double,
-      airDryness: Double,
-      immersed: Boolean,
-      raining: Boolean
+      immersed: Boolean
   )
 
   /** The three armor coefficients one tick pass consumes. */

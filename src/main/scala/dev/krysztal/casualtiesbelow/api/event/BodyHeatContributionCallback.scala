@@ -57,21 +57,15 @@ trait BodyHeatContributionCallback {
 object BodyHeatContributionCallback {
 
   /** Per-tick environment handed to listeners alongside the context. Server thread only; do not
-    * retain it beyond the dispatch.
+    * retain it beyond the dispatch. The envelope exists so future environment data can be added
+    * without breaking listener signatures.
     *
     * @param fireResistance
     *   the coverage-weighted armor coefficient against fire contact; heat sources use it to
     *   self-mitigate at the source
-    * @param wetness
-    *   the player's skin wetness (0..1); no built-in listener consumes it, but external mods may
-    *   still key their heat sources off it
-    * @param airDryness
-    *   `1 - biome downfall`, the air's headroom for evaporation: a jungle reads ~0, a desert ~1
     */
   final case class Frame(
-      fireResistance: Double,
-      wetness: Double,
-      airDryness: Double
+      fireResistance: Double
   )
 
   val EVENT: Event[BodyHeatContributionCallback] = EventFactory.createArrayBacked(
