@@ -31,6 +31,7 @@ import dev.krysztal.casualtiesbelow.physiology.dirtiness.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.infection.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
+import dev.krysztal.casualtiesbelow.physiology.temperature.FoodTemperatures
 import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
 import dev.krysztal.casualtiesbelow.physiology.wetness.Wetness
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks
@@ -50,6 +51,7 @@ object CasualtiesBelow extends ModInitializer {
     PoppyFluids.register()
     CasualtiesBelowDataComponents.register()
     FoodTemperature.register()
+    FoodTemperatures.register()
     CasualtiesBelowBlocks.register()
     CasualtiesBelowBlockEntities.register()
     // The brewing carrier potion must be registered before the liquid items bind its holder.
