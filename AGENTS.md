@@ -38,7 +38,12 @@ exploration instead of reading them into the main context yourself.
 after a version bump, regenerate it with `./gradlew sources`: this runs Loom
 `genSources` to decompile and extract Minecraft, resolves the official Fabric API
 sources jars (extracting them per module), and extracts the sources jars of other
-mod dependencies. Takes a few minutes.
+mod dependencies. Takes a few minutes. It also installs the decompiled Minecraft
+`-sources.jar` next to Loom's classpath jar in the loom-cache `minecraftMaven`
+directories — Metals (nvim) needs that adjacent jar for goto-definition into
+`net.minecraft.*`; re-import the build or restart Metals afterwards, and re-run
+`./gradlew sources` if such jumps start failing again (Loom cache cleanup deletes
+the jar).
 The task implementation lives in `gradle/sources.gradle.kts`.
 
 ### Searching

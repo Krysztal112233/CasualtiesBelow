@@ -4,6 +4,9 @@
 //   sources/minecraft/          decompiled Minecraft (Loom genSources / Vineflower)
 //   sources/fabric-api/<module> official Fabric API module sources jars
 //   sources/mods/<mod>          sources jars of other mod dependencies (ModMenu, FCAP, CCA...)
+// It also reinstalls the decompiled Minecraft -sources.jar next to Loom's classpath jar,
+// which Metals (nvim) needs for goto-definition into net.minecraft.* (re-import the build
+// or restart Metals afterwards).
 
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.DocsType
@@ -58,29 +61,60 @@ fun Project.extractSourcesJars(jars: Iterable<File>, outDir: File) {
 // locate it at execution time (after genSources has run).
 fun locateMinecraftSourcesJar(): File {
     val pattern = Regex("minecraft-merged-.+-sources\\.jar")
-    val candidates = sequenceOf(
+    return locateInLoomCaches(pattern).maxByOrNull { it.lastModified() }
+        ?: error("Minecraft sources jar not found; did genSources run?")
+}
+
+// All merged Minecraft jars (the compile-classpath artifacts) for THIS
+// Minecraft version in the Loom caches. The maven layout is
+// `.../<module>/<minecraftVersion>/<jar>`, so the parent directory name is the
+// version; this filter avoids polluting other projects' stale jars (different
+// MC versions) that share the global Loom cache.
+fun locateMinecraftMergedJars(): List<File> {
+    val pattern = Regex("minecraft-merged-.+\\.jar")
+    val minecraftVersion = property("minecraft_version") as String
+    return locateInLoomCaches(pattern).filter {
+        !it.name.endsWith("-sources.jar") && it.parentFile.name == minecraftVersion
+    }
+}
+
+fun locateInLoomCaches(pattern: Regex): List<File> {
+    return sequenceOf(
         rootDir.resolve(".gradle/loom-cache/minecraftMaven"),
-        File(gradle.gradleUserHomeDir, "caches/fabric-loom/minecraftMaven")
+        File(gradle.gradleUserHomeDir, "caches/fabric-loom/minecraftMaven"),
     ).filter { it.isDirectory }.flatMap { root ->
         root.walkTopDown().filter { it.isFile && pattern.matches(it.name) }
     }.toList()
-    return checkNotNull(candidates.maxByOrNull { it.lastModified() }) {
-        "Minecraft sources jar not found; did genSources run?"
+}
+
+// Metals resolves goto-definition into dependency classes from a `<name>-sources.jar`
+// adjacent to the classpath jar (JarSourcesProvider); it never auto-decompiles on jump.
+// Loom cache cleanup can silently delete the genSources jar, so reinstall it next to
+// every merged Minecraft jar on every `sources` run.
+fun installMinecraftSourcesJar(sourcesJar: File) {
+    locateMinecraftMergedJars().forEach { mergedJar ->
+        val target = mergedJar.parentFile.resolve("${mergedJar.nameWithoutExtension}-sources.jar")
+        if (target != sourcesJar && target.lastModified() < sourcesJar.lastModified()) {
+            sourcesJar.copyTo(target, overwrite = true)
+            logger.lifecycle("Installed ${target.name} next to ${mergedJar.name} (IDE goto-definition)")
+        }
     }
 }
 
 val extractMinecraftSources = tasks.register("extractMinecraftSources") {
     group = "fabric"
-    description = "Decompile Minecraft (Loom genSources) and extract into sources/minecraft/."
+    description = "Decompile Minecraft (Loom genSources), extract into sources/minecraft/, and install the sources jar next to Loom's classpath jar for Metals goto-definition."
     dependsOn("genSources")
     doLast {
+        val sourcesJar = locateMinecraftSourcesJar()
         val out = layout.projectDirectory.dir("sources/minecraft").asFile
         out.deleteRecursively()
         out.mkdirs()
         copy {
-            from(zipTree(locateMinecraftSourcesJar()))
+            from(zipTree(sourcesJar))
             into(out)
         }
+        installMinecraftSourcesJar(sourcesJar)
     }
 }
 
