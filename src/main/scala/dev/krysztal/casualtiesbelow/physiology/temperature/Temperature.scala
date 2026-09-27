@@ -52,7 +52,7 @@ object Temperature {
   ): Unit = {
     val environment = sampleEnvironment(player)
     val store = GameplayDataStores.server(player.level().getServer)
-    val armor = armorThermalCoefficients(player, store, vitals.wetness)
+    val armor = armorThermalCoefficients(player, store)
     val frame = BodyHeatContributionCallback.Frame(
       armor.fireResistance,
       vitals.wetness,
@@ -138,13 +138,10 @@ object Temperature {
     )
   }
 
-  /** Coverage-weighted material coefficients over the four armor slots, with the wetness collapse
-    * applied to insulation and dissipation block.
-    */
+  /** Coverage-weighted material coefficients over the four armor slots. */
   private def armorThermalCoefficients(
       player: ServerPlayer,
-      store: GameplayDataStore,
-      wetness: Double
+      store: GameplayDataStore
   ): ArmorThermal = {
     var insulation = 0.0
     var dissipationBlock = 0.0
@@ -158,15 +155,7 @@ object Temperature {
         fireResistance += weight * thermal.fireResistance
       }
     }
-    val collapse = Consts.Temperature.WetnessCollapseFormula
-      .evaluate(wetness)
-      .max(0.0)
-      .min(1.0)
-    ArmorThermal(
-      insulation * collapse,
-      dissipationBlock * collapse,
-      fireResistance
-    )
+    ArmorThermal(insulation, dissipationBlock, fireResistance)
   }
 
   /** Wetness change from immersion, rain, sweat, and environmental drying. */
@@ -209,9 +198,7 @@ object Temperature {
       raining: Boolean
   )
 
-  /** The three armor coefficients one tick pass consumes; insulation and dissipation block are
-    * post-collapse (effective), fire resistance never collapses.
-    */
+  /** The three armor coefficients one tick pass consumes. */
   private final case class ArmorThermal(
       effectiveInsulation: Double,
       effectiveDissipationBlock: Double,

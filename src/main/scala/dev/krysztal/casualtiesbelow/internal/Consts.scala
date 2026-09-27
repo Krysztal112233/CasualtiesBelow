@@ -232,7 +232,6 @@ private[casualtiesbelow] object Consts {
     val SweatCoreTempThreshold = 37.0
     val SweatWetnessPerSecond = 0.15
     val SweatDirtinessMultiplier = 1.5
-    val EvaporationCoolingPerMinute = 0.3
     val ExerciseHeatPerExhaustionPerSecond = 0.9
     val HeatStrongPerMinute = 14.0
     val HeatExtremePerMinute = 32.0
@@ -254,7 +253,6 @@ private[casualtiesbelow] object Consts {
       List("coldDev", "hotDev", "coldSlope", "hotSlope")
     )
     val DryingCurveFormula = FixedFormula("0.0014 * 2.718281828459045^(0.06 * t)", List("t"))
-    val WetnessCollapseFormula = FixedFormula("1 - 0.85 * wetness", List("wetness"))
 
     val BlockTemperatureRadius = 4
     val BlockTemperatureMaxContributors = 4

@@ -60,10 +60,11 @@ object BodyHeatContributionCallback {
     * retain it beyond the dispatch.
     *
     * @param fireResistance
-    *   the coverage-weighted armor coefficient against fire contact, deliberately not collapsed by
-    *   wetness; heat sources use it to self-mitigate at the source
+    *   the coverage-weighted armor coefficient against fire contact; heat sources use it to
+    *   self-mitigate at the source
     * @param wetness
-    *   the player's skin wetness (0..1); the strength of evaporative cooling
+    *   the player's skin wetness (0..1); no built-in listener consumes it, but external mods may
+    *   still key their heat sources off it
     * @param airDryness
     *   `1 - biome downfall`, the air's headroom for evaporation: a jungle reads ~0, a desert ~1
     */

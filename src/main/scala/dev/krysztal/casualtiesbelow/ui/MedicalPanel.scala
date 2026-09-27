@@ -190,8 +190,7 @@ object MedicalPanel {
       f"${vitals.bodyTemperature}%.1f °C".literal,
       vitals.bodyTemperature < BodyTempLowWarning || vitals.bodyTemperature > BodyTempHighWarning
     )
-    // Wetness only has consequences while present (armor collapse, evaporative cooling), so the
-    // row appears only when wet.
+    // Wetness has no consequences of its own, so the row appears only when wet.
     if (vitals.wetness > WetnessEpsilon) {
       y = extractStatRow(
         graphics,

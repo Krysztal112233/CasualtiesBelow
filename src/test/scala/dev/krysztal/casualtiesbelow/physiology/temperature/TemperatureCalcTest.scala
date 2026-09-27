@@ -54,13 +54,6 @@ final class TemperatureCalcTest {
   }
 
   @Test
-  def wetnessCollapseLeavesFifteenPercentWhenSoaked(): Unit = {
-    assertEquals(1.0, collapse(0.0), 1.0e-9, "dry armor keeps full coefficients")
-    assertEquals(0.15, collapse(1.0), 1.0e-9, "soaked armor collapses to 15%")
-    assertEquals(0.09, 0.6 * collapse(1.0), 1.0e-9, "soaked leather insulation: 0.6 -> 0.09")
-  }
-
-  @Test
   def dryingCurveNearlyStopsInSnowAndFlashDriesOnFire(): Unit = {
     val snowyPlains = drying(-3.2)
     assertTrue(snowyPlains < 0.002, s"frozen clothing must barely dry, got $snowyPlains")
@@ -295,9 +288,6 @@ final class TemperatureCalcTest {
       "a negative exertion signal must not sweat"
     )
   }
-
-  private def collapse(wetness: Double): Double =
-    evaluate(Consts.Temperature.WetnessCollapseFormula.source, Seq("wetness"), wetness)
 
   private def drying(t: Double): Double =
     evaluate(Consts.Temperature.DryingCurveFormula.source, Seq("t"), t)

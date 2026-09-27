@@ -16,19 +16,18 @@ import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.TypeAlias.*
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
-/** The built-in contributors of the heat balance: exercise heat on the direct channel, evaporative
-  * cooling on the dissipative channel, and ambient environment sources split across both. Direct
-  * contact heat is damage-type driven and lives in [[HeatDamageContribution]].
+/** The built-in contributors of the heat balance: exercise heat on the direct channel and ambient
+  * environment sources split across both channels. Direct contact heat is damage-type driven and
+  * lives in [[HeatDamageContribution]].
   */
-/** All body-heat contributors, registered once at mod init: exertion, evaporation, ambient blocks,
-  * and held items.
+/** All body-heat contributors, registered once at mod init: exertion, ambient blocks, and held
+  * items.
   */
 private[temperature] object HeatContributions {
 
   /** Registers every built-in contributor on the heat contribution event. */
   def register(): Unit = {
     BodyHeatContributionCallback.EVENT.register(ExerciseHeat)
-    BodyHeatContributionCallback.EVENT.register(EvaporativeCooling)
     BodyHeatContributionCallback.EVENT.register(EnvironmentBlock)
     BodyHeatContributionCallback.EVENT.register(ItemInHand)
   }
@@ -47,25 +46,6 @@ private[temperature] object HeatContributions {
       if (exhaustionPerSecond > 0.0) {
         context.addDirect(
           exhaustionPerSecond * Consts.Temperature.ExerciseHeatPerExhaustionPerSecond
-        )
-      }
-    }
-  }
-
-  /** Evaporative cooling: wet skin sheds heat in proportion to wetness and air dryness (a jungle
-    * defeats sweat, a desert exploits it). This is an active dissipation term, so it travels on the
-    * dissipative channel and pays the armor's surviving dissipation block.
-    */
-  private object EvaporativeCooling extends BodyHeatContributionCallback {
-
-    override def contribute(
-        player: ServerPlayer,
-        frame: BodyHeatContributionCallback.Frame,
-        context: BodyHeatContributionContext
-    ): Unit = {
-      if (frame.wetness > 0.0) {
-        context.addDissipative(
-          frame.wetness * frame.airDryness * Consts.Temperature.EvaporationCoolingPerMinute
         )
       }
     }
