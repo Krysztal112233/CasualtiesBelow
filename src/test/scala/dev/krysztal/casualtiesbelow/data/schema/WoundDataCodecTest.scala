@@ -1,10 +1,11 @@
 package dev.krysztal.casualtiesbelow.data.schema
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.JsonOps
 import net.minecraft.SharedConstants
 import net.minecraft.server.Bootstrap
+
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -144,11 +145,11 @@ final class WoundDataCodecTest {
     )
   }
 
-  private def decode[T](codec: Codec[T], json: String): T = {
+  private def decode[T](codec: MojCodec[T], json: String): T = {
     codec.parse(JsonOps.INSTANCE, JsonParser.parseString(json)).getOrThrow()
   }
 
-  private def assertDecodeFails[T](codec: Codec[T], json: String): Unit = {
+  private def assertDecodeFails[T](codec: MojCodec[T], json: String): Unit = {
     val result: DataResult[T] = codec.parse(JsonOps.INSTANCE, JsonParser.parseString(json))
     assertFalse(result.result().isPresent)
     assertTrue(result.error().isPresent)

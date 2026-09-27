@@ -1,7 +1,8 @@
 package dev.krysztal.casualtiesbelow.data.schema
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** Per-material thermal coefficients for the body-temperature system.
   *
@@ -28,7 +29,7 @@ object MaterialThermalData {
   /** Fallback for materials without an entry: thermally neutral. */
   val Zero: MaterialThermalData = MaterialThermalData(0.0, 0.0, 0.0)
 
-  val Codec: Codec[MaterialThermalData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[MaterialThermalData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         GameplayCodecs.UnitDouble.fieldOf("insulation").forGetter(_.insulation),

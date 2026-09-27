@@ -6,7 +6,6 @@ import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
 
 import com.mojang.datafixers.util.Either
-import com.mojang.serialization.Codec
 import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
@@ -16,6 +15,7 @@ import net.minecraft.util.ExtraCodecs
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** An optional wound side effect that can cauterize existing external bleeding on the same limb.
   * Each accepted wound with positive skin damage rolls once; success removes the configured
@@ -24,7 +24,7 @@ import dev.krysztal.casualtiesbelow.api.body.limb.LimbCondition
 final case class HemostasisData(chance: Double, reductionFraction: Double)
 
 object HemostasisData {
-  val Codec: Codec[HemostasisData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[HemostasisData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         GameplayCodecs.PositiveUnitDouble.fieldOf("chance").forGetter(_.chance),
@@ -46,7 +46,7 @@ final case class WoundContributionData(
 )
 
 object WoundContributionData {
-  val Codec: Codec[WoundContributionData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[WoundContributionData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         Identifier.CODEC.fieldOf("profile").forGetter(_.profile),
@@ -58,7 +58,7 @@ object WoundContributionData {
       .apply(instance, WoundContributionData.apply)
   )
 
-  val NonEmptyListCodec: Codec[List[WoundContributionData]] =
+  val NonEmptyListCodec: MojCodec[List[WoundContributionData]] =
     MCodec
       .list(Codec)
       .xmap(
@@ -87,18 +87,19 @@ object WoundTargetData {
 
   val Default: WoundTargetData = HitLocationTargetData(WoundRuleData.DefaultWeights)
 
-  private val HitLocationCodec: Codec[HitLocationTargetData] = RecordCodecBuilder.create(instance =>
-    instance
-      .group(
-        exactType(HitLocationType).fieldOf("type").forGetter(_ => ()),
-        GameplayCodecs.SparseBodyPartWeights
-          .optionalFieldOf("weights", WoundRuleData.DefaultWeights)
-          .forGetter(_.weights)
-      )
-      .apply(instance, (_, weights) => HitLocationTargetData(weights))
-  )
+  private val HitLocationCodec: MojCodec[HitLocationTargetData] =
+    RecordCodecBuilder.create(instance =>
+      instance
+        .group(
+          exactType(HitLocationType).fieldOf("type").forGetter(_ => ()),
+          GameplayCodecs.SparseBodyPartWeights
+            .optionalFieldOf("weights", WoundRuleData.DefaultWeights)
+            .forGetter(_.weights)
+        )
+        .apply(instance, (_, weights) => HitLocationTargetData(weights))
+    )
 
-  private val FixedCodec: Codec[FixedTargetData] = RecordCodecBuilder.create(instance =>
+  private val FixedCodec: MojCodec[FixedTargetData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         exactType(FixedType).fieldOf("type").forGetter(_ => ()),
@@ -107,7 +108,7 @@ object WoundTargetData {
       .apply(instance, (_, part) => FixedTargetData(part))
   )
 
-  private val WeightedCodec: Codec[WeightedTargetData] = RecordCodecBuilder.create(instance =>
+  private val WeightedCodec: MojCodec[WeightedTargetData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         exactType(WeightedType).fieldOf("type").forGetter(_ => ()),
@@ -116,7 +117,7 @@ object WoundTargetData {
       .apply(instance, (_, weights) => WeightedTargetData(weights))
   )
 
-  val Codec: Codec[WoundTargetData] = MCodec
+  val Codec: MojCodec[WoundTargetData] = MCodec
     .either(
       HitLocationCodec,
       MCodec.either(FixedCodec, WeightedCodec)
@@ -136,7 +137,7 @@ object WoundTargetData {
       }
     )
 
-  private def exactType(expected: Identifier): Codec[Unit] = Identifier.CODEC.comapFlatMap(
+  private def exactType(expected: Identifier): MojCodec[Unit] = Identifier.CODEC.comapFlatMap(
     actual =>
       if (actual == expected) DataResult.success(())
       else DataResult.error(() => s"Expected type '$expected', got '$actual'"),
@@ -152,7 +153,7 @@ enum WoundSeverityPolicy(val id: Identifier) {
 object WoundSeverityPolicy {
   private val ById = WoundSeverityPolicy.values.map(value => value.id -> value).toMap
 
-  val Codec: Codec[WoundSeverityPolicy] = Identifier.CODEC.comapFlatMap(
+  val Codec: MojCodec[WoundSeverityPolicy] = Identifier.CODEC.comapFlatMap(
     id =>
       ById
         .get(id)
@@ -165,7 +166,7 @@ object WoundSeverityPolicy {
 final case class PairedImpactData(fraction: Double)
 
 object PairedImpactData {
-  val Codec: Codec[PairedImpactData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[PairedImpactData] = RecordCodecBuilder.create(instance =>
     instance
       .group(GameplayCodecs.PositiveUnitDouble.fieldOf("fraction").forGetter(_.fraction))
       .apply(instance, PairedImpactData.apply)
@@ -175,7 +176,7 @@ object PairedImpactData {
 final case class SpillImpactData(above: Double, count: Int, fraction: Double)
 
 object SpillImpactData {
-  val Codec: Codec[SpillImpactData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[SpillImpactData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         GameplayCodecs.NonNegativeDouble.fieldOf("above").forGetter(_.above),
@@ -200,7 +201,7 @@ final case class ConditionStepData(
 )
 
 object ConditionStepData {
-  private val ConditionCodec: Codec[LimbCondition] =
+  private val ConditionCodec: MojCodec[LimbCondition] =
     MCodec.STRING.comapFlatMap(
       {
         case "fracture"    => DataResult.success(LimbCondition.Fracture)
@@ -213,7 +214,7 @@ object ConditionStepData {
       }
     )
 
-  private val RawCodec: Codec[ConditionStepData] = RecordCodecBuilder.create(instance =>
+  private val RawCodec: MojCodec[ConditionStepData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         ConditionCodec.fieldOf("condition").forGetter(_.condition),
@@ -226,7 +227,7 @@ object ConditionStepData {
       .apply(instance, ConditionStepData.apply)
   )
 
-  val Codec: Codec[ConditionStepData] = RawCodec.validate {
+  val Codec: MojCodec[ConditionStepData] = RawCodec.validate {
     case step @ ConditionStepData(LimbCondition.Fracture, threshold, _, recovery) =>
       if (threshold <= 0.0) {
         DataResult.error(() => "A fracture threshold must be greater than zero")
@@ -270,7 +271,7 @@ object WoundApplicationData {
   val ScatterType: Identifier = CasualtiesBelow.ofIdentifier("scatter")
   val PairedImpactType: Identifier = CasualtiesBelow.ofIdentifier("paired_impact")
 
-  private val LocalizedCodec: Codec[LocalizedApplicationData] =
+  private val LocalizedCodec: MojCodec[LocalizedApplicationData] =
     RecordCodecBuilder.create(instance =>
       instance
         .group(
@@ -283,27 +284,28 @@ object WoundApplicationData {
         .apply(instance, (_, wounds, target) => LocalizedApplicationData(wounds, target))
     )
 
-  private val ScatterRawCodec: Codec[ScatterApplicationData] = RecordCodecBuilder.create(instance =>
-    instance
-      .group(
-        exactType(ScatterType).fieldOf("type").forGetter(_ => ()),
-        WoundContributionData.NonEmptyListCodec.fieldOf("wounds").forGetter(_.wounds),
-        ExtraCodecs
-          .intRange(1, BodyPart.values.length)
-          .optionalFieldOf("min_count", 2)
-          .forGetter(_.minCount),
-        ExtraCodecs
-          .intRange(1, BodyPart.values.length)
-          .optionalFieldOf("max_count", 3)
-          .forGetter(_.maxCount)
-      )
-      .apply(
-        instance,
-        (_, wounds, minCount, maxCount) => ScatterApplicationData(wounds, minCount, maxCount)
-      )
-  )
+  private val ScatterRawCodec: MojCodec[ScatterApplicationData] =
+    RecordCodecBuilder.create(instance =>
+      instance
+        .group(
+          exactType(ScatterType).fieldOf("type").forGetter(_ => ()),
+          WoundContributionData.NonEmptyListCodec.fieldOf("wounds").forGetter(_.wounds),
+          ExtraCodecs
+            .intRange(1, BodyPart.values.length)
+            .optionalFieldOf("min_count", 2)
+            .forGetter(_.minCount),
+          ExtraCodecs
+            .intRange(1, BodyPart.values.length)
+            .optionalFieldOf("max_count", 3)
+            .forGetter(_.maxCount)
+        )
+        .apply(
+          instance,
+          (_, wounds, minCount, maxCount) => ScatterApplicationData(wounds, minCount, maxCount)
+        )
+    )
 
-  private val ScatterCodec: Codec[ScatterApplicationData] = ScatterRawCodec.validate(data =>
+  private val ScatterCodec: MojCodec[ScatterApplicationData] = ScatterRawCodec.validate(data =>
     if (data.minCount <= data.maxCount) DataResult.success(data)
     else {
       DataResult.error(() =>
@@ -312,13 +314,13 @@ object WoundApplicationData {
     }
   )
 
-  private val ConditionLadderCodec: Codec[List[ConditionStepData]] =
+  private val ConditionLadderCodec: MojCodec[List[ConditionStepData]] =
     MCodec
       .list(ConditionStepData.Codec)
       .xmap(_.asScala.toList, _.asJava)
       .validate(validateConditionLadder)
 
-  private val PairedImpactCodec: Codec[PairedImpactApplicationData] =
+  private val PairedImpactCodec: MojCodec[PairedImpactApplicationData] =
     RecordCodecBuilder.create(instance =>
       instance
         .group(
@@ -348,7 +350,7 @@ object WoundApplicationData {
         )
     )
 
-  val Codec: Codec[WoundApplicationData] = MCodec
+  val Codec: MojCodec[WoundApplicationData] = MCodec
     .either(
       LocalizedCodec,
       MCodec.either(ScatterCodec, PairedImpactCodec)
@@ -369,7 +371,7 @@ object WoundApplicationData {
       }
     )
 
-  val NonEmptyListCodec: Codec[List[WoundApplicationData]] =
+  val NonEmptyListCodec: MojCodec[List[WoundApplicationData]] =
     MCodec
       .list(Codec)
       .xmap(
@@ -400,7 +402,7 @@ object WoundApplicationData {
     } else DataResult.success(steps)
   }
 
-  private def exactType(expected: Identifier): Codec[Unit] = Identifier.CODEC.comapFlatMap(
+  private def exactType(expected: Identifier): MojCodec[Unit] = Identifier.CODEC.comapFlatMap(
     actual =>
       if (actual == expected) DataResult.success(())
       else DataResult.error(() => s"Expected type '$expected', got '$actual'"),

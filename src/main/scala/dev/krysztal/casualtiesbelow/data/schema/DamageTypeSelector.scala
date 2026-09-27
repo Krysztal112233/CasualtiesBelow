@@ -6,7 +6,6 @@ import scala.util.Success
 import scala.util.Try
 
 import com.mojang.datafixers.util.Either
-import com.mojang.serialization.Codec
 import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import net.minecraft.core.registries.Registries
@@ -15,6 +14,8 @@ import net.minecraft.resources.ResourceKey
 import net.minecraft.tags.TagKey
 import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.damagesource.DamageType
+
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** A lazy damage-type selector entry. Unlike a registry-backed HolderSet, the key need not exist
   * while the datapack is decoded; absent optional compatibility mods therefore simply never match.
@@ -35,7 +36,7 @@ final case class TaggedDamageType(tag: TagKey[DamageType]) extends DamageTypeSel
 }
 
 object DamageTypeSelectorEntry {
-  val Codec: Codec[DamageTypeSelectorEntry] = MCodec.STRING.comapFlatMap(
+  val Codec: MojCodec[DamageTypeSelectorEntry] = MCodec.STRING.comapFlatMap(
     parse,
     _.serialized
   )
@@ -63,11 +64,11 @@ final case class DamageTypeSelector(entries: List[DamageTypeSelectorEntry]) {
 }
 
 object DamageTypeSelector {
-  private val ListCodec: Codec[List[DamageTypeSelectorEntry]] = DamageTypeSelectorEntry.Codec
+  private val ListCodec: MojCodec[List[DamageTypeSelectorEntry]] = DamageTypeSelectorEntry.Codec
     .listOf()
     .xmap(_.asScala.toList, _.asJava)
 
-  val Codec: Codec[DamageTypeSelector] = MCodec
+  val Codec: MojCodec[DamageTypeSelector] = MCodec
     .either(DamageTypeSelectorEntry.Codec, ListCodec)
     .xmap(
       _.map(entry => DamageTypeSelector(List(entry)), DamageTypeSelector.apply),

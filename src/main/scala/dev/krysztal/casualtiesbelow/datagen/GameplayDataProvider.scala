@@ -2,7 +2,6 @@ package dev.krysztal.casualtiesbelow.datagen
 
 import java.util.concurrent.CompletableFuture
 
-import com.mojang.serialization.Codec
 import net.minecraft.core.HolderLookup
 import net.minecraft.data.CachedOutput
 import net.minecraft.data.DataProvider
@@ -20,6 +19,7 @@ import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** Writes built-in keyed gameplay data to the same paths consumed by the reload listeners. */
 final class GameplayDataProvider(
@@ -95,7 +95,7 @@ final class GameplayDataProvider(
       cache: CachedOutput,
       registries: HolderLookup.Provider,
       segment: String,
-      codec: Codec[T],
+      codec: MojCodec[T],
       entries: Map[Identifier, T]
   ): List[CompletableFuture[?]] = {
     val paths = output.createPathProvider(

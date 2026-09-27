@@ -31,31 +31,32 @@ import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
 import dev.krysztal.casualtiesbelow.config.FormulaConfigValue
 import dev.krysztal.casualtiesbelow.internal.TypeAlias.JBoolean
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 import com.ezylang.evalex.Expression
 
 /** Shared codec validation for datapack-defined gameplay values. */
 private[casualtiesbelow] object GameplayCodecs {
-  val NonNegativeDouble: Codec[Double] =
+  val NonNegativeDouble: MojCodec[Double] =
     Codec.DOUBLE
       .validate(validateNonNegative)
       .xmap(_.doubleValue(), JDouble.valueOf)
 
-  val UnitDouble: Codec[Double] = Codec.DOUBLE
+  val UnitDouble: MojCodec[Double] = Codec.DOUBLE
     .validate(validateUnit)
     .xmap(_.doubleValue(), JDouble.valueOf)
 
   /** Signed finite double: food immune deltas may be negative. */
-  val FiniteDouble: Codec[Double] = Codec.DOUBLE
+  val FiniteDouble: MojCodec[Double] = Codec.DOUBLE
     .validate(validateFinite)
     .xmap(_.doubleValue(), JDouble.valueOf)
 
-  val PositiveUnitDouble: Codec[Double] =
+  val PositiveUnitDouble: MojCodec[Double] =
     Codec.DOUBLE
       .validate(validatePositiveUnit)
       .xmap(_.doubleValue(), JDouble.valueOf)
 
-  val BodyPartCodec: Codec[BodyPart] = STRING.comapFlatMap(
+  val BodyPartCodec: MojCodec[BodyPart] = STRING.comapFlatMap(
     id =>
       BodyPart
         .fromId(id)
@@ -66,14 +67,14 @@ private[casualtiesbelow] object GameplayCodecs {
   )
 
   /** Decodes an absent field to `defaultValue` while always encoding the field. */
-  def defaultedField[A](codec: Codec[A], name: String, defaultValue: A): MapCodec[A] =
+  def defaultedField[A](codec: MojCodec[A], name: String, defaultValue: A): MapCodec[A] =
     MapCodec.of(codec.fieldOf(name), codec.optionalFieldOf(name, defaultValue))
 
   /** V2 body-part weights are sparse and normalized by consumers. At least one positive weight is
     * required; zero-valued entries remain legal so generated or transformed data can preserve a
     * complete body-part map without changing its meaning.
     */
-  val SparseBodyPartWeights: Codec[Map[BodyPart, Double]] = unboundedMap(
+  val SparseBodyPartWeights: MojCodec[Map[BodyPart, Double]] = unboundedMap(
     BodyPartCodec,
     NonNegativeDouble
   )
@@ -160,7 +161,7 @@ object FormulaSource {
   def apply(source: String, variables: Seq[String]): FormulaSource =
     new FormulaSource(source, variables)
 
-  def codec(variables: Seq[String]): Codec[FormulaSource] = Codec.STRING.comapFlatMap(
+  def codec(variables: Seq[String]): MojCodec[FormulaSource] = Codec.STRING.comapFlatMap(
     source =>
       Try {
         val expression = FormulaConfigValue.compile(source, variables)
@@ -200,7 +201,7 @@ object WoundMatchData {
     Optional.empty()
   )
 
-  val Codec: Codec[WoundMatchData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[WoundMatchData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         DamageTypeSelector.Codec.optionalFieldOf("damage_types").forGetter(_.damageTypes),
@@ -245,7 +246,7 @@ object WoundRuleData {
     BodyPart.LegRight -> 0.5
   )
 
-  val Codec: Codec[WoundRuleData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[WoundRuleData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         WoundMatchData.Codec
@@ -269,7 +270,7 @@ final case class AdrenalineRuleData(
 )
 
 object AdrenalineRuleData {
-  val Codec: Codec[AdrenalineRuleData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[AdrenalineRuleData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         WoundMatchData.Codec.fieldOf("match").forGetter(_.damageMatch),
@@ -289,7 +290,7 @@ final case class ArmorProtectionData(
 )
 
 object ArmorProtectionData {
-  private val RawCodec: Codec[ArmorProtectionData] = RecordCodecBuilder.create(instance =>
+  private val RawCodec: MojCodec[ArmorProtectionData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         RegistryCodecs.homogeneousList(Registries.ITEM).fieldOf("items").forGetter(_.items),
@@ -306,7 +307,7 @@ object ArmorProtectionData {
       .apply(instance, ArmorProtectionData.apply)
   )
 
-  val Codec: Codec[ArmorProtectionData] = RawCodec.validate(data =>
+  val Codec: MojCodec[ArmorProtectionData] = RawCodec.validate(data =>
     if (data.skinFactor.isPresent || data.muscleFactor.isPresent) DataResult.success(data)
     else DataResult.error(() => "At least one of skin_factor or muscle_factor is required")
   )
@@ -319,7 +320,7 @@ object ArmorProtectionData {
 final case class FoodImmuneData(immune: Double)
 
 object FoodImmuneData {
-  val Codec: Codec[FoodImmuneData] = GameplayCodecs.FiniteDouble
+  val Codec: MojCodec[FoodImmuneData] = GameplayCodecs.FiniteDouble
     .fieldOf("immune")
     .xmap(FoodImmuneData.apply, _.immune)
     .codec()
@@ -342,7 +343,7 @@ object FoodEffectsData {
   def immune(value: Double): FoodEffectsData =
     FoodEffectsData(Optional.of(value), Optional.empty(), Optional.empty())
 
-  private val RawCodec: Codec[FoodEffectsData] = RecordCodecBuilder.create(instance =>
+  private val RawCodec: MojCodec[FoodEffectsData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         GameplayCodecs.FiniteDouble.optionalFieldOf("immune").forGetter(_.immune),
@@ -357,7 +358,7 @@ object FoodEffectsData {
       .apply(instance, FoodEffectsData.apply)
   )
 
-  val Codec: Codec[FoodEffectsData] = RawCodec.validate(data =>
+  val Codec: MojCodec[FoodEffectsData] = RawCodec.validate(data =>
     if (data.discomfortTier.isPresent && data.discomfortMean.isPresent) {
       DataResult.error(() => "discomfort_tier and discomfort_mean are mutually exclusive")
     } else if (data.immune.isEmpty && data.discomfortTier.isEmpty && data.discomfortMean.isEmpty) {
@@ -388,7 +389,7 @@ object HitLocationData {
     0
   )
 
-  val Codec: Codec[HitLocationData] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[HitLocationData] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         RegistryCodecs

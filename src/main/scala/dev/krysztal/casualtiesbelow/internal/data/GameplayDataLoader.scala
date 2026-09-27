@@ -7,7 +7,6 @@ import scala.util.Success
 import scala.util.Try
 import scala.util.Using
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
 import net.minecraft.core.HolderLookup
 import net.minecraft.resources.FileToIdConverter
@@ -17,6 +16,7 @@ import net.minecraft.server.packs.resources.ResourceManager
 import net.minecraft.util.StrictJsonParser
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 import com.google.gson.JsonElement
 
@@ -25,7 +25,7 @@ import com.google.gson.JsonElement
   */
 private[internal] final class GameplayDataLoader[T](
     directorySegment: String,
-    codec: Codec[T]
+    codec: MojCodec[T]
 ) {
   private val converter =
     FileToIdConverter.json(s"${CasualtiesBelow.ModId}/$directorySegment")

@@ -4,7 +4,6 @@ import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
 import scala.util.Try
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.JsonOps
 import net.minecraft.core.HolderLookup
 import net.minecraft.resources.Identifier
@@ -21,6 +20,7 @@ import dev.krysztal.casualtiesbelow.data.schema.HitLocationData
 import dev.krysztal.casualtiesbelow.data.schema.MaterialThermalData
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.data.schema.WoundRuleData
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
@@ -130,7 +130,7 @@ object GameplayDataStores {
 
   private def encodeSection[T](
       entries: Map[Identifier, T],
-      codec: Codec[T],
+      codec: MojCodec[T],
       ops: RegistryOps[JsonElement]
   ): JsonObject = {
     val section = new JsonObject
@@ -148,7 +148,7 @@ object GameplayDataStores {
   private def decodeSection[T](
       root: JsonObject,
       name: String,
-      codec: Codec[T],
+      codec: MojCodec[T],
       ops: RegistryOps[JsonElement]
   ): Map[Identifier, T] = {
     Option(root.get(name))

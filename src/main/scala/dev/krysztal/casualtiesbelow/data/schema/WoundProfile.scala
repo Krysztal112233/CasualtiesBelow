@@ -1,11 +1,11 @@
 package dev.krysztal.casualtiesbelow.data.schema
 
-import com.mojang.serialization.Codec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** Datapack schema for one linear wound response. Runtime matching and compiled rules are internal.
   */
@@ -35,7 +35,7 @@ object WoundProfile {
     )
   }
 
-  private val RawCodec: Codec[WoundProfile] = RecordCodecBuilder.create(instance =>
+  private val RawCodec: MojCodec[WoundProfile] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         Identifier.CODEC.fieldOf("type").forGetter(_.profileType),
@@ -53,7 +53,7 @@ object WoundProfile {
       )
   )
 
-  val Codec: Codec[WoundProfile] = RawCodec.validate(profile =>
+  val Codec: MojCodec[WoundProfile] = RawCodec.validate(profile =>
     if (profile.profileType == LinearType) DataResult.success(profile)
     else DataResult.error(() => s"Unknown wound profile type: ${profile.profileType}")
   )

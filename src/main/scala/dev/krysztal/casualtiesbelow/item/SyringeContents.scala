@@ -3,13 +3,14 @@ package dev.krysztal.casualtiesbelow.item
 import java.lang.Double as JDouble
 import java.lang.Long as JLong
 
-import com.mojang.serialization.Codec
+import com.mojang.serialization.Codec as MCodec
 import com.mojang.serialization.DataResult
 import com.mojang.serialization.codecs.RecordCodecBuilder
 import net.minecraft.resources.Identifier
 import net.minecraft.util.ExtraCodecs
 
 import dev.krysztal.casualtiesbelow.internal.TypeAlias.JDouble
+import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
 
 /** A drawn syringe dose. The source liquid determines its injection side effects, while
   * `opioidDose` stores the true sampled dose even when the item deliberately hides it.
@@ -21,13 +22,13 @@ final case class SyringeContents private[casualtiesbelow] (
 )
 
 object SyringeContents {
-  private val NonNegativeFiniteDouble: Codec[JDouble] =
-    com.mojang.serialization.Codec.DOUBLE.validate(value =>
+  private val NonNegativeFiniteDouble: MojCodec[JDouble] =
+    MCodec.DOUBLE.validate(value =>
       if (value.doubleValue().isFinite && value.doubleValue() >= 0.0) DataResult.success(value)
       else DataResult.error(() => s"Value must be a finite non-negative number: $value")
     )
 
-  val Codec: Codec[SyringeContents] = RecordCodecBuilder.create(instance =>
+  val Codec: MojCodec[SyringeContents] = RecordCodecBuilder.create(instance =>
     instance
       .group(
         Identifier.CODEC.fieldOf("liquid").forGetter(_.liquid),
