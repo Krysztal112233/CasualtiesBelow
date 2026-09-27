@@ -14,7 +14,7 @@ import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
   * Hunger-billing drops are ignored; a ~5-second EMA smooths activity for exercise heat and
   * sweating. [[discard]] clears player state.
   */
-private[temperature] object ExertionTracker {
+private[casualtiesbelow] object ExertionTracker {
 
   /** Smoothed exhaustion rate in units per second; 0 before any exertion is observed. */
   def exhaustionPerSecond(id: UUID): Double =

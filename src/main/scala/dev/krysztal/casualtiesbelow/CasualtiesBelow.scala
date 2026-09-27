@@ -31,6 +31,7 @@ import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.infection.ZombieAttackImmuneDrain
 import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
+import dev.krysztal.casualtiesbelow.physiology.wetness.Wetness
 import dev.krysztal.casualtiesbelow.progression.AchievementHooks
 import dev.krysztal.casualtiesbelow.progression.CasualtiesBelowTriggers
 
@@ -65,6 +66,7 @@ object CasualtiesBelow extends ModInitializer {
     // Temperature progression is driven from InjuryProgression's per-player pass; this only
     // registers its built-in heat contribution listeners, so tick ordering is unaffected.
     Temperature.register()
+    Wetness.register()
     Unconsciousness.register()
     // The unconsciousness interaction gate must run before these use handlers.
     PoppyProcessing.register()

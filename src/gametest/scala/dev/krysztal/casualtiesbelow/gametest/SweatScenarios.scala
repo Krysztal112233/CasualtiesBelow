@@ -25,7 +25,7 @@ object SweatScenarios {
     val vitals = player.vitals
     vitals.setWetness(0.0)
     // Above the sweat gate but inside the penalty band: no consciousness pressure interferes.
-    val pinnedCore = Consts.Temperature.SweatCoreTempThreshold + 0.5
+    val pinnedCore = Consts.Wetness.SweatCoreTempThreshold + 0.5
 
     val before = vitals.wetness
     (1 to 200).foreach { _ =>
@@ -50,7 +50,7 @@ object SweatScenarios {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     vitals.setWetness(0.0)
-    val pinnedCore = Consts.Temperature.SweatCoreTempThreshold - 1.5
+    val pinnedCore = Consts.Wetness.SweatCoreTempThreshold - 1.5
 
     (1 to 200).foreach { _ =>
       player.getFoodData.addExhaustion(0.09f)

@@ -10,7 +10,6 @@ import net.minecraft.world.entity.EquipmentSlot
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents
 
 import dev.krysztal.casualtiesbelow.api.event.BodyHeatContributionCallback
-import dev.krysztal.casualtiesbelow.api.event.DryingBonusCallback
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
@@ -18,15 +17,13 @@ import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
-import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 
-/** Advances body temperature and skin wetness once per player tick
-  * ([[InjuryProgression.tickPlayer]]).
+/** Advances body temperature once per player tick ([[InjuryProgression.tickPlayer]]).
   *
   * Core temperature approaches an environment- and armor-adjusted equilibrium, with direct heat and
-  * armor-scaled dissipation contributions. Wetness rises in water or rain and otherwise changes
-  * through sweat and temperature- and air-dryness-driven drying. The fire-drying bonus affects
-  * wetness only.
+  * armor-scaled dissipation contributions. Skin wetness is a separate parameter owned by
+  * [[dev.krysztal.casualtiesbelow.physiology.wetness.Wetness]]: temperature feeds wetness, never
+  * the reverse.
   *
   * The recurrence uses seconds; contribution and config rates use °C/min.
   */
@@ -38,14 +35,13 @@ object Temperature {
   def register(): Unit = {
     HeatContributions.register()
     HeatDamageContribution.register()
-    DryingBonusCallback.EVENT.register(FireDryingBonus)
     ServerPlayConnectionEvents.DISCONNECT.register { (handler, _) =>
       ExertionTracker.discard(handler.player.getUUID);
       HeatDamageContribution.discard(handler.player.getUUID);
     }
   }
 
-  /** Advances the player's body temperature and wetness by one tick. */
+  /** Advances the player's body temperature by one tick. */
   private[casualtiesbelow] def tick(
       player: ServerPlayer,
       vitals: VitalsComponentImpl
@@ -67,11 +63,6 @@ object Temperature {
       heatContributions
     )
     vitals.setBodyTemperature(nextCore)
-    val nextWetness = TemperatureCalc.nextWetness(
-      vitals.wetness,
-      wetnessDelta(player, environment, nextCore)
-    )
-    vitals.setWetness(nextWetness)
   }
 
   private def sampleEnvironment(player: ServerPlayer): TemperatureEnvironment = {
@@ -158,39 +149,6 @@ object Temperature {
     ArmorThermal(insulation, dissipationBlock, fireResistance)
   }
 
-  /** Wetness change from immersion, rain, sweat, and environmental drying. */
-  private def wetnessDelta(
-      player: ServerPlayer,
-      environment: TemperatureEnvironment,
-      nextCore: Double
-  ): Double = {
-    val exertionPerSecond =
-      if (!environment.immersed) ExertionTracker.exhaustionPerSecond(player.getUUID) else 0.0
-    val sweatPerSecond =
-      if (
-        exertionPerSecond > 0.0 &&
-        nextCore > Consts.Temperature.SweatCoreTempThreshold
-      ) {
-        Dirtiness.markSweating(player.getUUID)
-        Consts.Temperature.SweatWetnessPerSecond * TemperatureCalc.sweatRateFraction(
-          exertionPerSecond,
-          SprintExhaustionPerSecond
-        )
-      } else {
-        0.0
-      }
-    if (environment.immersed) {
-      Consts.Temperature.ImmersionWetnessPerSecond * Consts.SecondsPerTick
-    } else if (environment.raining) {
-      Consts.Temperature.RainWetnessPerSecond * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
-    } else {
-      val dryingBonus = DryingBonusCallback.EVENT.invoker().dryingBonus(player)
-      -Consts.Temperature.DryingCurveFormula.evaluate(
-        environment.apparentTemperature + dryingBonus
-      ) * environment.airDryness * Consts.SecondsPerTick + sweatPerSecond * Consts.SecondsPerTick
-    }
-  }
-
   private final case class TemperatureEnvironment(
       apparentTemperature: Double,
       airDryness: Double,
@@ -211,21 +169,6 @@ object Temperature {
   private[casualtiesbelow] def discard(player: ServerPlayer): Unit = {
     ExertionTracker.discard(player.getUUID)
     HeatDamageContribution.discard(player.getUUID)
-  }
-
-  /** Vanilla sprinting accrues exhaustion at ~0.56/s; it anchors the exertion fraction for both
-    * exercise heat and sweating.
-    */
-  private val SprintExhaustionPerSecond = 0.56
-
-  /** Being on fire flash-dries: a large apparent-temperature bonus for the drying curve only. */
-  private object FireDryingBonus extends DryingBonusCallback {
-    override def dryingBonus(player: ServerPlayer): Double =
-      if (player.isOnFire) {
-        Consts.Temperature.FireDryingBonusDegrees
-      } else {
-        0.0
-      }
   }
 
   /** Armor coverage weights by body surface: chest > legs > head ≈ feet. */

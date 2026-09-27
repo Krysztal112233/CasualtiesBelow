@@ -20,6 +20,7 @@ import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
 import dev.krysztal.casualtiesbelow.physiology.opioid.Opioid
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
 import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
+import dev.krysztal.casualtiesbelow.physiology.wetness.Wetness
 
 /** Time evolution of injuries: what heals, what worsens, and what kills when left alone.
   *
@@ -132,8 +133,10 @@ object InjuryProgression {
     Consciousness.tick(player, vitals)
 
     // Body temperature runs off the same per-player pass; its own module doc lays out the
-    // approach/equilibrium recurrence and the heat contribution events.
+    // approach/equilibrium recurrence and the heat contribution events. Wetness ticks after it so
+    // sweat reads this tick's freshly written core temperature.
     Temperature.tick(player, vitals)
+    Wetness.tick(player, vitals)
 
     // Terminal exposure starts only after oxygen and consciousness consumed this tick's breathing
     // state. A successful death-protection hit restores physiology synchronously; either way this

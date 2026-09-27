@@ -11,13 +11,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
   */
 object TemperatureCalc {
 
-  /** Fraction of a full sprint's sweat rate at a given exertion rate (exhaustion per second):
-    * scales linearly up to sprint reference exertion and saturates beyond it. The reference 0.56/s
-    * matches vanilla sprinting and is the same anchor the exercise-heat listener uses.
-    */
-  def sweatRateFraction(exhaustionPerSecond: Double, sprintExhaustionPerSecond: Double): Double =
-    (exhaustionPerSecond / sprintExhaustionPerSecond).max(0.0).min(1.0)
-
   /** Liquid water never goes below freezing: immersion floors the apparent temperature at 0°C. */
   def apparentTemperature(mapped: Double, immersed: Boolean): Double =
     if (immersed) mapped.max(0.0) else mapped
@@ -80,8 +73,4 @@ object TemperatureCalc {
       dtSeconds: Double
   ): Double =
     core + dtSeconds * (ratePerSecond * (effectiveEquilibrium - core) + productionPerSecond)
-
-  /** Wetness accumulator step, clamped to the 0..1 axis. */
-  def nextWetness(wetness: Double, delta: Double): Double =
-    (wetness + delta).max(0.0).min(VitalsComponent.MaxWetness)
 }

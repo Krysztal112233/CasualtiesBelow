@@ -229,16 +229,10 @@ private[casualtiesbelow] object Consts {
     val HotConsciousnessSlopePerDegree = 5.0
     val ColdImmuneDrainPerDegreePerMinute = 1.0
     val HotImmuneDrainPerDegreePerMinute = 0.5
-    val SweatCoreTempThreshold = 37.0
-    val SweatWetnessPerSecond = 0.15
-    val SweatDirtinessMultiplier = 1.5
     val ExerciseHeatPerExhaustionPerSecond = 0.9
     val HeatStrongPerMinute = 14.0
     val HeatExtremePerMinute = 32.0
     val HeatNormalPerMinute = 8.0
-    val FireDryingBonusDegrees = 60.0
-    val ImmersionWetnessPerSecond = 0.5
-    val RainWetnessPerSecond = 0.02
     val BiomeMappingFormula = FixedFormula("(t - 0.15) * 40 / 1.85", List("t"))
     val ComfortBandFormula = FixedFormula(
       "if(t < low, 37 + (t - low) * slope, if(t > high, 37 + (t - high) * slope, 37))",
@@ -252,7 +246,6 @@ private[casualtiesbelow] object Consts {
       "100 - coldDev * coldSlope - hotDev * hotSlope",
       List("coldDev", "hotDev", "coldSlope", "hotSlope")
     )
-    val DryingCurveFormula = FixedFormula("0.0014 * 2.718281828459045^(0.06 * t)", List("t"))
 
     val BlockTemperatureRadius = 4
     val BlockTemperatureMaxContributors = 4
@@ -268,6 +261,16 @@ private[casualtiesbelow] object Consts {
     val ItemColdContribute1PerMinute = 0.3
     val ItemColdContribute2PerMinute = 0.8
     val ItemColdContribute3PerMinute = 2.0
+  }
+
+  object Wetness {
+    val SweatCoreTempThreshold = 37.0
+    val SweatWetnessPerSecond = 0.15
+    val SweatDirtinessMultiplier = 1.5
+    val ImmersionWetnessPerSecond = 0.5
+    val RainWetnessPerSecond = 0.02
+    val FireDryingBonusDegrees = 60.0
+    val DryingCurveFormula = FixedFormula("0.0014 * 2.718281828459045^(0.06 * t)", List("t"))
   }
 
   object Dirtiness {

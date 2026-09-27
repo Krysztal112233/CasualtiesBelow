@@ -53,18 +53,6 @@ final class TemperatureCalcTest {
     assertEquals(comfortBand(28.0 - eps), comfortBand(28.0 + eps), 1.0e-3)
   }
 
-  @Test
-  def dryingCurveNearlyStopsInSnowAndFlashDriesOnFire(): Unit = {
-    val snowyPlains = drying(-3.2)
-    assertTrue(snowyPlains < 0.002, s"frozen clothing must barely dry, got $snowyPlains")
-    val onFire = drying(17.0 + 60.0)
-    assertTrue(onFire > 0.05, s"on fire must dry wetness in seconds, got $onFire")
-    assertTrue(
-      drying(40.0) > drying(17.0) && drying(17.0) > drying(-3.2),
-      "drying rate must grow with temperature"
-    )
-  }
-
   // ---- Pure steps --------------------------------------------------------------
 
   @Test
@@ -180,13 +168,6 @@ final class TemperatureCalcTest {
     assertEquals(0.05 * dt, produced, 1.0e-12, "production applies directly per second")
   }
 
-  @Test
-  def wetnessStepClampsToTheAxis(): Unit = {
-    assertEquals(1.0, TemperatureCalc.nextWetness(0.9, 0.2), 1.0e-9)
-    assertEquals(0.0, TemperatureCalc.nextWetness(0.1, -0.2), 1.0e-9)
-    assertEquals(0.5, TemperatureCalc.nextWetness(0.4, 0.1), 1.0e-9)
-  }
-
   // NOTE: the 35.0/39.5 band and 5.0 slopes mirror CasualtiesBelowConfig defaults; keep in sync
   // when calibrating.
   @Test
@@ -254,43 +235,6 @@ final class TemperatureCalcTest {
       28.0,
       0.3
     )
-
-  @Test
-  def sweatRateFractionScalesToSprintAndSaturates(): Unit = {
-    assertEquals(
-      0.0,
-      TemperatureCalc.sweatRateFraction(0.0, 0.56),
-      1.0e-9,
-      "no exertion, no sweat"
-    )
-    assertEquals(
-      0.5,
-      TemperatureCalc.sweatRateFraction(0.28, 0.56),
-      1.0e-9,
-      "half sprint exertion gives half the sweat rate"
-    )
-    assertEquals(
-      1.0,
-      TemperatureCalc.sweatRateFraction(0.56, 0.56),
-      1.0e-9,
-      "sprint reference exertion gives the full sweat rate"
-    )
-    assertEquals(
-      1.0,
-      TemperatureCalc.sweatRateFraction(5.0, 0.56),
-      1.0e-9,
-      "beyond the sprint reference the sweat rate saturates"
-    )
-    assertEquals(
-      0.0,
-      TemperatureCalc.sweatRateFraction(-1.0, 0.56),
-      1.0e-9,
-      "a negative exertion signal must not sweat"
-    )
-  }
-
-  private def drying(t: Double): Double =
-    evaluate(Consts.Temperature.DryingCurveFormula.source, Seq("t"), t)
 
   private def evaluate(source: String, variables: Seq[String], values: Double*): Double = {
     val expression = FormulaConfigValue.compile(source, variables)

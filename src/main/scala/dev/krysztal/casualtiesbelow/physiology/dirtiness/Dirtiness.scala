@@ -81,7 +81,7 @@ object Dirtiness {
       Consts.Dirtiness.ArmoredMultiplier,
       Consts.Dirtiness.NetherMultiplier,
       if (sweatingNow.contains(player.getUUID)) {
-        Consts.Temperature.SweatDirtinessMultiplier
+        Consts.Wetness.SweatDirtinessMultiplier
       } else {
         1.0
       },
