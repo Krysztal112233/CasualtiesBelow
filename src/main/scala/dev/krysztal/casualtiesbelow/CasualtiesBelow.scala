@@ -5,6 +5,7 @@ import net.minecraft.resources.Identifier
 import net.fabricmc.api.ModInitializer
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowApi
+import dev.krysztal.casualtiesbelow.api.item.datacomponent.FoodTemperature
 import dev.krysztal.casualtiesbelow.block.CasualtiesBelowBlocks
 import dev.krysztal.casualtiesbelow.block.entity.CasualtiesBelowBlockEntities
 import dev.krysztal.casualtiesbelow.component.BodyMutations
@@ -48,6 +49,7 @@ object CasualtiesBelow extends ModInitializer {
     // Fluids must exist before the fluid blocks (constructor argument) and the buckets.
     PoppyFluids.register()
     CasualtiesBelowDataComponents.register()
+    FoodTemperature.register()
     CasualtiesBelowBlocks.register()
     CasualtiesBelowBlockEntities.register()
     // The brewing carrier potion must be registered before the liquid items bind its holder.

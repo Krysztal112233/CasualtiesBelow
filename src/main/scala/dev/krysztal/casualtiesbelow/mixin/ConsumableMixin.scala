@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.DirtinessSources
 import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
 import dev.krysztal.casualtiesbelow.physiology.infection.FoodImmunity
+import dev.krysztal.casualtiesbelow.physiology.temperature.FoodTemperatures
 
 import org.spongepowered.asm.mixin.Mixin
 import org.spongepowered.asm.mixin.injection.At
@@ -19,8 +20,9 @@ import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 /** Wires food consequences into the vanilla consumption flow: refusing to start eating while sick
-  * (`canConsume`, both sides so the prediction matches) and applying the discomfort dose and immune
-  * settlement once consumption completes (`onConsume`, server only).
+  * (`canConsume`, both sides so the prediction matches) and applying the discomfort dose, immune
+  * settlement, dirtiness, and the food-temperature pulse once consumption completes (`onConsume`,
+  * server only).
   */
 @Mixin(value = Array(classOf[Consumable]), remap = false)
 abstract class ConsumableMixin {
@@ -56,6 +58,7 @@ abstract class ConsumableMixin {
         Discomfort.onFoodEaten(player, stack)
         FoodImmunity.onFoodEaten(player, stack)
         DirtinessSources.onFoodEaten(player, stack)
+        FoodTemperatures.onFoodEaten(player, stack)
       case _ => ()
     }
   }
