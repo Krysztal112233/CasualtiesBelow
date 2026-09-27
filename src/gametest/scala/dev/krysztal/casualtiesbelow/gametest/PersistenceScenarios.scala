@@ -39,7 +39,7 @@ object PersistenceScenarios {
     vitals.setDiscomfort(42.0)
     vitals.setDirtiness(66.0)
     vitals.setBodyTemperature(38.5)
-    vitals.setWetness(0.75)
+    vitals.setWetness(75.0)
 
     val saved = write(helper, vitals)
 
@@ -80,7 +80,7 @@ object PersistenceScenarios {
     helper.assertTrue(vitals.discomfort == 42.0, s"discomfort ${vitals.discomfort}")
     helper.assertTrue(vitals.dirtiness == 66.0, s"dirtiness ${vitals.dirtiness}")
     helper.assertTrue(vitals.bodyTemperature == 38.5, s"temperature ${vitals.bodyTemperature}")
-    helper.assertTrue(vitals.wetness == 0.75, s"wetness ${vitals.wetness}")
+    helper.assertTrue(vitals.wetness == 75.0, s"wetness ${vitals.wetness}")
     helper.succeed()
   }
 

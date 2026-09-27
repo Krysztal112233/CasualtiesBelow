@@ -9,42 +9,41 @@ import dev.krysztal.casualtiesbelow.physiology.progression.InjuryProgression
 import dev.krysztal.casualtiesbelow.physiology.temperature.Temperature
 
 /** In-game validation of sweating and its hygiene coupling (see the 下游对接 design doc): a hot core
-  * plus active exertion adds wetness on the sweat axis, and sweat accelerates passive dirtiness
-  * accrual.
+  * adds wetness on the sweat axis, and sweat accelerates passive dirtiness accrual.
   *
   * Core temperature is pinned above the sweat threshold, so the environment plays no part; all
   * expectations are computed from the live config, not hardcoded.
   */
 object SweatScenarios {
 
-  /** A hot core plus sustained exertion produces sweat: wetness climbs without any water source.
-    */
+  /** A hot core produces sweat: wetness climbs without any water source or exertion. */
   def hotExertionProducesSweat(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
     val vitals = player.vitals
     vitals.setWetness(0.0)
-    // Above the sweat gate but inside the penalty band: no consciousness pressure interferes.
-    val pinnedCore = Consts.Wetness.SweatCoreTempThreshold + 0.5
+    // Well above the sweat gate so sweat dominates the drying terms; penalty-band side effects at
+    // 40°C do not touch the wetness axis.
+    val pinnedCore = Consts.Wetness.SweatCoreTempThreshold + 2.0
 
     val before = vitals.wetness
     (1 to 200).foreach { _ =>
-      player.getFoodData.addExhaustion(0.09f)
       vitals.setBodyTemperature(pinnedCore)
       InjuryProgression.tickForGameTest(player)
     }
-    // Net wetness rate is the (saturated) sweat rate minus the drying curve; under the default
-    // config they are an order of magnitude apart, so a fixed small threshold is robust — world
-    // preset changes only move the tiny drying term.
+    // Net wetness rate is the sweat rate (2.0/s at the pinned core) minus the drying terms; under
+    // the default config sweat dominates, so a fixed threshold is robust — world preset changes
+    // only move the drying term.
     helper.assertTrue(
-      vitals.wetness > before + 0.05,
-      s"sustained exertion with a hot core must sweat (wetness rose to ${vitals.wetness} " +
-        s"from $before after 10 s)"
+      vitals.wetness > before + 5.0,
+      s"a hot core must sweat (wetness rose to ${vitals.wetness} from $before after 10 s)"
     )
     helper.succeed()
   }
 
-  /** The same exertion with a cool core produces no sweat. */
+  /** A cool core produces no sweat even under sustained exertion: temperature, not exertion, gates
+    * sweating.
+    */
   def coolCoreSuppressesSweat(helper: GameTestHelper): Unit = {
     helper.getLevel.setRainLevel(0.0f)
     val player = GameTestPlayers.createSurvivalPlayer(helper)
@@ -58,7 +57,7 @@ object SweatScenarios {
       InjuryProgression.tickForGameTest(player)
     }
     helper.assertTrue(
-      vitals.wetness < 0.01,
+      vitals.wetness < 1.0,
       s"a cool core must not sweat despite exertion (wetness ${vitals.wetness})"
     )
     helper.succeed()

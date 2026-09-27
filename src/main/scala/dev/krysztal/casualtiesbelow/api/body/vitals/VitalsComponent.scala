@@ -9,11 +9,11 @@ import org.ladysnake.cca.api.v8.component.CardinalComponent
   * blood volume is in mL up to 5000; discomfort and dirtiness each range from 0 to 100. acute
   * opioid level runs from 0 to 200 and dependence from 0 to 100. Core body temperature runs from 0
   * to [[VitalsComponent.MaxBodyTemperature]] in °C and starts at
-  * [[VitalsComponent.NormalBodyTemperature]]; wetness runs from 0 (dry) to 1 (soaked).
-  * Consciousness has a separate ordinary floor, oxygen- and opioid-derived hard ceilings, knockout
-  * threshold, and higher wake threshold; the `unconscious` latch is therefore not inferred from the
-  * floor. Opioid level is intentionally server-only and reads as zero on clients; dependence is
-  * owner-synchronized.
+  * [[VitalsComponent.NormalBodyTemperature]]; wetness runs from 0 (dry) to
+  * [[VitalsComponent.MaxWetness]] (soaked). Consciousness has a separate ordinary floor, oxygen-
+  * and opioid-derived hard ceilings, knockout threshold, and higher wake threshold; the
+  * `unconscious` latch is therefore not inferred from the floor. Opioid level is intentionally
+  * server-only and reads as zero on clients; dependence is owner-synchronized.
   *
   * `Double` rather than `Float` preserves per-tick accumulation precision.
   */
@@ -39,5 +39,5 @@ object VitalsComponent {
   val MinimumWakeThreshold: Double = 1.0e-6
   val NormalBodyTemperature: Double = 37.0
   val MaxBodyTemperature: Double = 45.0
-  val MaxWetness: Double = 1.0
+  val MaxWetness: Double = 100.0
 }

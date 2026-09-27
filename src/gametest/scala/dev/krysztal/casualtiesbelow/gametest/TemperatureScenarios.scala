@@ -170,7 +170,7 @@ object TemperatureScenarios {
       s"immersion must accelerate the approach: closed $waterClosed in water vs $airClosed in air"
     )
     helper.assertTrue(
-      vitals.wetness > 0.95,
+      vitals.wetness > 95.0,
       s"20 s immersed must soak the player, got wetness ${vitals.wetness}"
     )
     helper.succeed()
@@ -208,7 +208,7 @@ object TemperatureScenarios {
     val vitals = player.vitals
     val equilibrium = equilibriumAt(helper, player)
     vitals.setBodyTemperature(equilibrium)
-    vitals.setWetness(0.8)
+    vitals.setWetness(80.0)
 
     // The manual ticks never drive baseTick, so the burning DOT is emitted by hand at its
     // vanilla rhythm — one on_fire hit every 20 ticks, through the real damage-entry pipeline.
@@ -227,8 +227,8 @@ object TemperatureScenarios {
       s"fire contact heat must warm the core, got ${vitals.bodyTemperature} vs $equilibrium"
     )
     helper.assertTrue(
-      vitals.wetness < 0.5,
-      s"fire must flash-dry wetness within seconds, got ${vitals.wetness} from 0.8 after 15 s"
+      vitals.wetness < 50.0,
+      s"fire must flash-dry wetness within seconds, got ${vitals.wetness} from 80 after 15 s"
     )
     helper.succeed()
   }

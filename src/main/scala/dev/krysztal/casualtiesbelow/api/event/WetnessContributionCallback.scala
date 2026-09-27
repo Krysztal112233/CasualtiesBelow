@@ -10,8 +10,9 @@ import net.fabricmc.fabric.api.event.EventFactory
   */
 trait WetnessContributionContext {
 
-  /** Adds a wetness rate (per second) to this tick's total. Positive wets (immersion, rain, sweat),
-    * negative dries (environmental drying, fire flash-dry).
+  /** Adds a wetness rate (axis points per second) to this tick's total; the axis spans 0 (dry) to
+    * 100 (soaked). Positive wets (immersion, rain, sweat), negative dries (environmental drying,
+    * fire flash-dry).
     */
   def add(ratePerSecond: Double): Unit
 }

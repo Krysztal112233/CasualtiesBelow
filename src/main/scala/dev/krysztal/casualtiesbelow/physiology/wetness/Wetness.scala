@@ -13,9 +13,9 @@ import dev.krysztal.casualtiesbelow.physiology.temperature.TemperatureCalc
   * temperature), never the reverse.
   *
   * The tick samples the environment into a frame, fires [[WetnessContributionCallback]] for the
-  * built-in and external contributors, then applies the summed per-second rate clamped to the 0..1
-  * axis. Must tick after [[dev.krysztal.casualtiesbelow.physiology.temperature.Temperature]] so the
-  * frame carries this tick's freshly written core temperature.
+  * built-in and external contributors, then applies the summed per-second rate clamped to the
+  * 0..100 axis. Must tick after [[dev.krysztal.casualtiesbelow.physiology.temperature.Temperature]]
+  * so the frame carries this tick's freshly written core temperature.
   */
 object Wetness {
 

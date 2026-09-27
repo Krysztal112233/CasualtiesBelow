@@ -65,7 +65,7 @@ object MedicalPanel {
   private val BodyTempHighWarning = 39.5
 
   // Wetness row appears only while actually wet, like the limb condition rows.
-  private val WetnessEpsilon = 0.01
+  private val WetnessEpsilon = 1.0
 
   /** Renders the panel spanning the full screen height at the left edge.
     *
@@ -198,7 +198,7 @@ object MedicalPanel {
         contentX,
         y,
         "screen.casualtiesbelow.body_status.stat.wetness".translatable(),
-        Component.literal((vitals.wetness * 100.0).toInt.toString),
+        Component.literal(vitals.wetness.toInt.toString),
         false
       )
     }

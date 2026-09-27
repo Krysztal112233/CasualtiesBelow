@@ -3,10 +3,10 @@ package dev.krysztal.casualtiesbelow.physiology.wetness
 import net.minecraft.server.level.ServerPlayer
 
 import dev.krysztal.casualtiesbelow.api.event.WetnessContributionCallback
+import dev.krysztal.casualtiesbelow.api.event.WetnessContributionCallback.Frame
 import dev.krysztal.casualtiesbelow.api.event.WetnessContributionContext
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
-import dev.krysztal.casualtiesbelow.physiology.temperature.ExertionTracker
 
 /** The built-in wetness contributors, registered once at mod init: immersion, rain, sweat, and
   * environmental drying. Wetting contributions are positive, drying negative.
@@ -19,6 +19,7 @@ private[wetness] object WetnessContributions {
     WetnessContributionCallback.EVENT.register(RainWetting)
     WetnessContributionCallback.EVENT.register(Sweat)
     WetnessContributionCallback.EVENT.register(EnvironmentalDrying)
+    WetnessContributionCallback.EVENT.register(NaturalDrying)
   }
 
   /** Immersion soaks at a rate that dwarfs every other source. */
@@ -43,15 +44,13 @@ private[wetness] object WetnessContributions {
         frame: WetnessContributionCallback.Frame,
         context: WetnessContributionContext
     ): Unit = {
-      if (frame.raining) {
-        context.add(Consts.Wetness.RainWetnessPerSecond)
-      }
+      if (frame.raining) context.add(Consts.Wetness.RainWetnessPerSecond)
     }
   }
 
-  /** Sweat requires both a hot core and actual exertion, then scales linearly with exertion up to
-    * the vanilla sprint reference. Sweating also flags the player for the dirtiness hygiene
-    * multiplier.
+  /** Sweat requires a hot core and scales linearly with the excess temperature above the threshold;
+    * exertion enters only indirectly, through exercise heat raising the core. Sweating also flags
+    * the player for the dirtiness hygiene multiplier.
     */
   private object Sweat extends WetnessContributionCallback {
 
@@ -61,18 +60,14 @@ private[wetness] object WetnessContributions {
         context: WetnessContributionContext
     ): Unit = {
       if (!frame.immersed && frame.coreTemperature > Consts.Wetness.SweatCoreTempThreshold) {
-        // Read-only access: ExertionTracker.observe has EMA side effects and is called once per
-        // tick by the heat-contribution pass.
-        val exertionPerSecond = ExertionTracker.exhaustionPerSecond(player.getUUID)
-        if (exertionPerSecond > 0.0) {
-          Dirtiness.markSweating(player.getUUID)
-          context.add(
-            Consts.Wetness.SweatWetnessPerSecond * WetnessCalc.sweatRateFraction(
-              exertionPerSecond,
-              Consts.Wetness.SprintExhaustionPerSecond
-            )
+        Dirtiness.markSweating(player.getUUID)
+        context.add(
+          WetnessCalc.sweatRatePerSecond(
+            frame.coreTemperature,
+            Consts.Wetness.SweatCoreTempThreshold,
+            Consts.Wetness.SweatWetnessPerDegreePerSecond
           )
-        }
+        )
       }
     }
   }
@@ -81,6 +76,7 @@ private[wetness] object WetnessContributions {
     * dryness; being on fire flash-dries via a large temperature bonus to the same curve.
     */
   private object EnvironmentalDrying extends WetnessContributionCallback {
+    import Consts.Wetness.DryingCurveFormula
 
     override def contribute(
         player: ServerPlayer,
@@ -89,16 +85,25 @@ private[wetness] object WetnessContributions {
     ): Unit = {
       if (!frame.immersed && !frame.raining) {
         val fireBonus =
-          if (player.isOnFire) {
-            Consts.Wetness.FireDryingBonusDegrees
-          } else {
-            0.0
-          }
+          if (player.isOnFire) Consts.Wetness.FireDryingBonusDegrees
+          else 0.0
+
         context.add(
-          -Consts.Wetness.DryingCurveFormula.evaluate(frame.apparentTemperature + fireBonus) *
-            frame.airDryness
+          -DryingCurveFormula.evaluate(frame.apparentTemperature + fireBonus) * frame.airDryness
         )
       }
     }
   }
+
+  private object NaturalDrying extends WetnessContributionCallback {
+    override def contribute(
+        player: ServerPlayer,
+        frame: Frame,
+        context: WetnessContributionContext
+    ): Unit = {
+      if (!frame.immersed && !frame.raining)
+        context.add(-Consts.Wetness.NaturalDrynessPerSecond)
+    }
+  }
+
 }

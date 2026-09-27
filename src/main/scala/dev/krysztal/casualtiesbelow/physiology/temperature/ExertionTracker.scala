@@ -9,16 +9,12 @@ import net.minecraft.server.level.ServerPlayer
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
-/** Turns vanilla exhaustion deltas into a shared exertion signal.
+/** Turns vanilla exhaustion deltas into the exertion signal for exercise heat.
   *
-  * Hunger-billing drops are ignored; a ~5-second EMA smooths activity for exercise heat and
-  * sweating. [[discard]] clears player state.
+  * Hunger-billing drops are ignored; a ~5-second EMA smooths activity. [[discard]] clears player
+  * state.
   */
-private[casualtiesbelow] object ExertionTracker {
-
-  /** Smoothed exhaustion rate in units per second; 0 before any exertion is observed. */
-  def exhaustionPerSecond(id: UUID): Double =
-    tracked.get(id).fold(0.0)(_.smoothedPerTick * Consts.TicksPerSecond)
+private[temperature] object ExertionTracker {
 
   def observe(player: ServerPlayer): Double = {
     val exhaustion = player.getFoodData.exhaustionLevel

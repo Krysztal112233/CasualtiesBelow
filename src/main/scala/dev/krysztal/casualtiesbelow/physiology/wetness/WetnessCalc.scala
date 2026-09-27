@@ -8,14 +8,18 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
   */
 object WetnessCalc {
 
-  /** Fraction of a full sprint's sweat rate at a given exertion rate (exhaustion per second):
-    * scales linearly up to sprint reference exertion and saturates beyond it. The reference 0.56/s
-    * matches vanilla sprinting and is the same anchor the exercise-heat listener uses.
+  /** Sweat rate (axis points per second) from core temperature: linear at `slopePerDegree` above
+    * the threshold, zero at or below it. Exertion enters only indirectly, through exercise heat
+    * raising the core.
     */
-  def sweatRateFraction(exhaustionPerSecond: Double, sprintExhaustionPerSecond: Double): Double =
-    (exhaustionPerSecond / sprintExhaustionPerSecond).max(0.0).min(1.0)
+  def sweatRatePerSecond(
+      coreTemperature: Double,
+      threshold: Double,
+      slopePerDegree: Double
+  ): Double =
+    ((coreTemperature - threshold) * slopePerDegree).max(0.0)
 
-  /** Wetness accumulator step, clamped to the 0..1 axis. */
+  /** Wetness accumulator step, clamped to the 0..100 axis. */
   def nextWetness(wetness: Double, delta: Double): Double =
     (wetness + delta).max(0.0).min(VitalsComponent.MaxWetness)
 }

@@ -264,14 +264,14 @@ private[casualtiesbelow] object Consts {
   }
 
   object Wetness {
-    val SweatCoreTempThreshold = 37.0
-    val SweatWetnessPerSecond = 0.15
+    val SweatCoreTempThreshold = 38.0
+    val SweatWetnessPerDegreePerSecond = 1.0
     val SweatDirtinessMultiplier = 1.5
-    val SprintExhaustionPerSecond = 0.56
-    val ImmersionWetnessPerSecond = 0.5
-    val RainWetnessPerSecond = 0.02
+    val ImmersionWetnessPerSecond = 30.0
+    val RainWetnessPerSecond = 5.0
+    val NaturalDrynessPerSecond = 0.3
     val FireDryingBonusDegrees = 60.0
-    val DryingCurveFormula = FixedFormula("0.0014 * 2.718281828459045^(0.06 * t)", List("t"))
+    val DryingCurveFormula = FixedFormula("0.14 * 2.718281828459045^(0.06 * t)", List("t"))
   }
 
   object Dirtiness {

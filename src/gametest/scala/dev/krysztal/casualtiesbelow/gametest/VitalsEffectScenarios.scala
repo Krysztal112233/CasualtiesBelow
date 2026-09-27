@@ -36,7 +36,7 @@ object VitalsEffectScenarios {
     vitals.applyConsciousnessState(ConsciousnessSnapshot(0.0, unconscious = true))
     vitals.applyShockState(ShockSnapshot(50.0, PainShockStage.Collapsed))
     vitals.applyAdrenalineState(AdrenalineState(1.0, 20))
-    vitals.setWetness(0.01)
+    vitals.setWetness(1.0)
     vitals.setDirtiness(grimeThreshold)
     CasualtiesBelowEffects.synchronizeFromVitals(player)
 
