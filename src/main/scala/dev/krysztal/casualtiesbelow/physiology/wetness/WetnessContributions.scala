@@ -69,7 +69,7 @@ private[wetness] object WetnessContributions {
           context.add(
             Consts.Wetness.SweatWetnessPerSecond * WetnessCalc.sweatRateFraction(
               exertionPerSecond,
-              SprintExhaustionPerSecond
+              Consts.Wetness.SprintExhaustionPerSecond
             )
           )
         }
@@ -101,7 +101,4 @@ private[wetness] object WetnessContributions {
       }
     }
   }
-
-  /** Vanilla sprinting accrues exhaustion at ~0.56/s; it anchors the sweat exertion fraction. */
-  private val SprintExhaustionPerSecond = 0.56
 }

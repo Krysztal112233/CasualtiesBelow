@@ -267,6 +267,7 @@ private[casualtiesbelow] object Consts {
     val SweatCoreTempThreshold = 37.0
     val SweatWetnessPerSecond = 0.15
     val SweatDirtinessMultiplier = 1.5
+    val SprintExhaustionPerSecond = 0.56
     val ImmersionWetnessPerSecond = 0.5
     val RainWetnessPerSecond = 0.02
     val FireDryingBonusDegrees = 60.0
