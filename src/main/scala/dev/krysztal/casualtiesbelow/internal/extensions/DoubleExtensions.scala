@@ -34,6 +34,18 @@ private[casualtiesbelow] object DoubleExtensions {
     /** Returns the value when finite, else 0.0; no clamping. */
     def finiteOrZero: Double = if (value.isFinite) value else 0.0
 
+    /** Gaussian sample around the value as mean, with a spread proportional to `|mean|`; `gaussian`
+      * is a standard-normal sample. Not floored: clamp at the call site when needed.
+      */
+    def gaussianSample(spreadFraction: Double, gaussian: Double): Double =
+      value + gaussian * math.abs(value) * spreadFraction
+
+    /** Uniform jitter around the value: `value × (1 ± jitterFraction)`; `roll` is a uniform sample
+      * in [0, 1). Not floored: clamp at the call site when needed.
+      */
+    def jittered(jitterFraction: Double, roll: Double): Double =
+      value * (1.0 + (roll * 2.0 - 1.0) * jitterFraction)
+
     /** Bit-level equality, distinguishing `0.0` from `-0.0` and treating NaN as equal to itself. */
     def sameBits(other: Double): Boolean = {
       java.lang.Double.doubleToLongBits(value) == java.lang.Double.doubleToLongBits(other)

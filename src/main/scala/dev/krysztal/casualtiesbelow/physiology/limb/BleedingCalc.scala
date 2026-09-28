@@ -5,6 +5,7 @@ import net.minecraft.util.RandomSource
 import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** External-wound and bleeding calculations shared by damage attribution and injury progression.
   *
@@ -30,7 +31,7 @@ object BleedingCalc {
 
     val jitter = Consts.Randomness.WorldPulseJitter
     val rolledRate =
-      bleedingRate * (1.0 + (random.nextDouble() * 2.0 - 1.0) * jitter)
+      bleedingRate.jittered(jitter, random.nextDouble())
     stats.skinIntegrity = (stats.skinIntegrity - skinDamage).max(0.0)
     stats.externalBleedingRate =
       (stats.externalBleedingRate + rolledRate.max(0.0)).min(cap(stats.skinIntegrity))

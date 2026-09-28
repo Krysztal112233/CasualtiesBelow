@@ -191,8 +191,7 @@ object Discomfort {
     )
     vitals.setDiscomfort(
       (
-        vitals.discomfort - DiscomfortCalc.uniformSample(
-          Consts.Discomfort.VomitRelief,
+        vitals.discomfort - Consts.Discomfort.VomitRelief.jittered(
           Consts.Randomness.DoseSpreadFraction,
           player.getRandom.nextDouble()
         )
@@ -237,9 +236,9 @@ object Discomfort {
     val sampled =
       Consts.Discomfort.Distribution match {
         case DiscomfortDistribution.Uniform =>
-          DiscomfortCalc.uniformSample(mean, fraction, random.nextDouble())
+          mean.jittered(fraction, random.nextDouble())
         case DiscomfortDistribution.Gaussian =>
-          DiscomfortCalc.gaussianSample(mean, fraction, random.nextGaussian())
+          mean.gaussianSample(fraction, random.nextGaussian())
       }
     sampled.max(0.0)
   }

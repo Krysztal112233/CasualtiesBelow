@@ -33,8 +33,9 @@ object ZombieAttackImmuneDrain {
     val vitals = player.vitals
     val base = Consts.Immune.ZombieHitImmuneDrain
     val jitter = Consts.Randomness.WorldPulseJitter
-    val roll = 1.0 + (player.getRandom.nextFloat() * 2.0 - 1.0) * jitter
-    val next = (vitals.infection.immuneHealth - base * roll).max(0.0)
+    val next =
+      (vitals.infection.immuneHealth - base.jittered(jitter, player.getRandom.nextDouble()))
+        .max(0.0)
     vitals.setImmuneHealth(next)
   }
 }

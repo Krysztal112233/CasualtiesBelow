@@ -43,16 +43,4 @@ object DiscomfortCalc {
       minChance + (math.max(maxChance, minChance) - minChance) * progress
     }
   }
-
-  /** Uniform sample around `mean` with a spread proportional to the mean; `roll` is a uniform
-    * sample in [0, 1).
-    */
-  def uniformSample(mean: Double, spreadFraction: Double, roll: Double): Double =
-    mean + (roll * 2.0 - 1.0) * mean * spreadFraction
-
-  /** Gaussian sample around `mean` with a spread proportional to the mean; `gaussian` is a
-    * standard-normal sample.
-    */
-  def gaussianSample(mean: Double, spreadFraction: Double, gaussian: Double): Double =
-    mean + gaussian * mean * spreadFraction
 }

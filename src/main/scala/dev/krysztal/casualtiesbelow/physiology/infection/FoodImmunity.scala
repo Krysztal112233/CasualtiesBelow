@@ -96,7 +96,7 @@ object FoodImmunity {
       spreadFraction: Double,
       random: RandomSource
   ): Double = {
-    val sampled = mean + random.nextGaussian() * math.abs(mean) * spreadFraction
+    val sampled = mean.gaussianSample(spreadFraction, random.nextGaussian())
     if (mean > 0.0) sampled.max(0.0) else sampled.min(0.0)
   }
 }

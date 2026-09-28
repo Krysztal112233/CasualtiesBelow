@@ -156,7 +156,7 @@ object DirtinessSources {
       random: RandomSource
   ): Double = {
     val jitter = jitterFraction.max(0.0).min(1.0)
-    base.max(0.0) * (1.0 + (random.nextDouble() * 2.0 - 1.0) * jitter)
+    base.max(0.0).jittered(jitter, random.nextDouble())
   }
 
   private def applyPulse(player: ServerPlayer, base: Double): Unit = {

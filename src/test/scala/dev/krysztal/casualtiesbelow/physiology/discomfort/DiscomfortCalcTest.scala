@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.physiology.discomfort
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-/** Pure-math coverage for [[DiscomfortCalc]]: decay pacing, the chance ramp, and dose sampling. */
+/** Pure-math coverage for [[DiscomfortCalc]]: decay pacing and the chance ramp. */
 class DiscomfortCalcTest {
 
   // ---- Decay ----
@@ -75,41 +75,6 @@ class DiscomfortCalcTest {
       DiscomfortCalc.chancePerTick(150.0, 30.0, 0.0005, 0.00256, 100.0),
       1.0e-12,
       "progress clamps at 1 beyond the axis"
-    )
-  }
-
-  // ---- Sampling ----
-
-  @Test
-  def uniformSampleHitsMeanAndBounds(): Unit = {
-    assertEquals(30.0, DiscomfortCalc.uniformSample(30.0, 0.2, 0.5), 1.0e-9, "mid roll is the mean")
-    assertEquals(
-      24.0,
-      DiscomfortCalc.uniformSample(30.0, 0.2, 0.0),
-      1.0e-9,
-      "low roll is mean - spread"
-    )
-    assertEquals(
-      36.0,
-      DiscomfortCalc.uniformSample(30.0, 0.2, 1.0),
-      1.0e-9,
-      "high roll is mean + spread"
-    )
-  }
-
-  @Test
-  def gaussianSampleScalesWithSpread(): Unit = {
-    assertEquals(
-      30.0,
-      DiscomfortCalc.gaussianSample(30.0, 0.2, 0.0),
-      1.0e-9,
-      "zero gaussian is the mean"
-    )
-    assertEquals(
-      36.0,
-      DiscomfortCalc.gaussianSample(30.0, 0.2, 1.0),
-      1.0e-9,
-      "one sigma up is mean + spread"
     )
   }
 }
