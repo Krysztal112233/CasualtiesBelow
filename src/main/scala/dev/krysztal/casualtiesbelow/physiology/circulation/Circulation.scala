@@ -6,11 +6,10 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
-import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 /** Single access point for the circulation vital: blood volume, blood oxygen, terminal hypoxia
-  * exposure, and totem-driven hemostasis. Everything outside this package that touches the
-  * circulation state should go through here.
+  * exposure. Everything outside this package that touches the circulation state should go through
+  * here.
   *
   * Cross-vital dependencies, declared: nutrition starvation pulses translate into blood loss inside
   * [[tick]] (running them here keeps the zero-blood damage-source priority deterministic when
@@ -20,9 +19,9 @@ import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 private[casualtiesbelow] object Circulation {
 
   /** One circulation pass for one player, in domain order: the sepsis-compressed blood cap, then
-    * fed regeneration, then starvation pulses, then bleeding drain scaled by totem hemostasis, and
-    * finally the zero-blood fatality check. Surviving sepsis leaves the body drained (blood over
-    * the cap is lost outright); recovery means eating well.
+    * fed regeneration, then starvation pulses, then bleeding drain, and finally the zero-blood
+    * fatality check. Surviving sepsis leaves the body drained (blood over the cap is lost
+    * outright); recovery means eating well.
     *
     * Returns whether the player reached zero blood: the fatal hit has already been applied, and the
     * caller must stop this player's progression pass.
@@ -47,14 +46,8 @@ private[casualtiesbelow] object Circulation {
     val starvation = Nutrition.consume(player, vitals, maxBlood)
 
     if (totalBleeding > 0.0) {
-      val actualBleeding = totalBleeding * Totem.bleedingMultiplier(vitals)
-      if (actualBleeding > 0.0) {
-        BloodVolume.drain(vitals, actualBleeding, maxBlood)
-      }
+      BloodVolume.drain(vitals, totalBleeding, maxBlood)
     }
-    // The timer has no client consumer: it never requests a sync of its own and instead rides
-    // along whenever a visible value syncs, while persistence always writes the live value.
-    Totem.tick(vitals)
 
     // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
     // threshold. Blood-loss death protection restores blood synchronously in the vanilla totem

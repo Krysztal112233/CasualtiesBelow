@@ -32,7 +32,6 @@ object PersistenceScenarios {
     vitals.setBloodOxygen(40.0)
     vitals.setBloodVolume(500.0)
     vitals.applyHypoxiaExposureTicks(120)
-    vitals.applyTotemHemostasisTicks(60)
     vitals.applyAdrenalineState(AdrenalineState(40.0, 0))
     vitals.applyOpioidState(OpioidState(3.0, 7.0))
     vitals.setSepsis(12.5)
@@ -65,10 +64,6 @@ object PersistenceScenarios {
     helper.assertTrue(
       vitals.hypoxiaExposureTicks == 120,
       s"hypoxia ${vitals.hypoxiaExposureTicks}"
-    )
-    helper.assertTrue(
-      vitals.totemHemostasisTicks == 60,
-      s"totem ${vitals.totemHemostasisTicks}"
     )
     helper.assertTrue(vitals.adrenaline == 40.0, s"adrenaline ${vitals.adrenaline}")
     helper.assertTrue(vitals.opioidLevel == 3.0, s"opioid level ${vitals.opioidLevel}")

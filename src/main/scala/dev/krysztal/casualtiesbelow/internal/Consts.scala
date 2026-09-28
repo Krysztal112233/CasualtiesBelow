@@ -58,8 +58,6 @@ private[casualtiesbelow] object Consts {
   object Bleeding {
     val ClottingRatePerTick = 0.00004
     val TotemBloodRestoreFraction = 0.5
-    val TotemHemostasisInitialReduction = 0.8
-    val TotemHemostasisDurationTicks = 600
     val NotTodayNearMaxBleedingFraction = 0.75
   }
 

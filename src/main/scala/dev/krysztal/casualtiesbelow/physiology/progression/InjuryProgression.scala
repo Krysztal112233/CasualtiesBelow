@@ -120,7 +120,7 @@ object InjuryProgression {
     Infection.tick(vitals, limb.infectionLoad, player)
 
     // One circulation pass: the sepsis-compressed blood cap, fed regeneration, starvation pulses,
-    // bleeding drain scaled by totem hemostasis, and the zero-blood fatality check (which applies
+    // bleeding drain, and the zero-blood fatality check (which applies
     // its own damage and reports back so this pass can stop for the player).
     if (Circulation.tick(player, vitals, limb.totalBleeding)) {
       return

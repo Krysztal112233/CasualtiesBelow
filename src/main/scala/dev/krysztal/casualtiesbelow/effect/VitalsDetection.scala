@@ -8,7 +8,6 @@ import dev.krysztal.casualtiesbelow.api.body.vitals.PainShockStage
 import dev.krysztal.casualtiesbelow.api.body.vitals.VitalsComponent
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
-import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 private[effect] trait VitalsEffectSynchronizer {
   def synchronizeFromVitals(player: ServerPlayer): Unit
@@ -64,12 +63,9 @@ private[effect] val bloodLossAmplifierFromVitals: MobEffectAmplifierResolver = p
     )
   }
 
-/** Sums the active limb rates with the same temporary hemostasis modifier used by circulation. */
+/** Sums the active limb bleeding rates. */
 private[effect] def currentEffectiveBleedingRate(player: ServerPlayer): Double = {
-  val externalRate = BodyPart.values.iterator
-    .map(part => player.body.stats(part).externalBleedingRate)
-    .sum
-  externalRate * Totem.bleedingMultiplier(player.vitals)
+  BodyPart.values.iterator.map(part => player.body.stats(part).externalBleedingRate).sum
 }
 
 private[effect] val sepsisAmplifierFromVitals: MobEffectAmplifierResolver = player =>

@@ -28,7 +28,6 @@ import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
@@ -46,8 +45,7 @@ final class VitalsComponentImpl(val player: Player)
   private var circulationState: CirculationState = CirculationState(
     VitalsComponent.MaxBloodOxygen,
     Consts.Vitals.MaxBloodVolume,
-    hypoxiaExposureTicks = 0,
-    totemHemostasisTicks = 0
+    hypoxiaExposureTicks = 0
   )
   private var discomfortState: Double = 0.0
   private var dirtinessState: Double = 0.0
@@ -66,9 +64,9 @@ final class VitalsComponentImpl(val player: Player)
     }
   }
 
-  /** Commit without a sync request, for values with no client consumer (adrenaline reserve, the
-    * totem hemostasis timer, both opioid axes): they ride along whenever some visible field syncs,
-    * and persistence always writes the live value regardless.
+  /** Commit without a sync request, for values with no client consumer (adrenaline reserve, both
+    * opioid axes): they ride along whenever some visible field syncs, and persistence always writes
+    * the live value regardless.
     */
   private def commitSilent[A](current: A, next: A)(assign: A => Unit): Unit = {
     if (next != current) assign(next)
@@ -146,9 +144,6 @@ final class VitalsComponentImpl(val player: Player)
     applyHypoxiaExposureTicks(
       HypoxiaProgression.normalizeExposureTicks(source.hypoxiaExposureTicks)
     )
-    applyTotemHemostasisTicks(
-      Totem.normalizeRemainingTicks(source.totemHemostasisTicks)
-    )
     setSepsis(source.infection.sepsis)
     setDiscomfort(source.discomfort)
     setDirtiness(source.dirtiness)
@@ -193,14 +188,6 @@ final class VitalsComponentImpl(val player: Player)
 
   private[casualtiesbelow] def applyHypoxiaExposureTicks(ticks: Int): Unit = {
     commit(circulationState, circulationState.copy(hypoxiaExposureTicks = ticks)) {
-      circulationState = _
-    }
-  }
-
-  private[casualtiesbelow] def totemHemostasisTicks: Int = circulationState.totemHemostasisTicks
-
-  private[casualtiesbelow] def applyTotemHemostasisTicks(ticks: Int): Unit = {
-    commitSilent(circulationState, circulationState.copy(totemHemostasisTicks = ticks)) {
       circulationState = _
     }
   }
@@ -300,7 +287,6 @@ final class VitalsComponentImpl(val player: Player)
     out.putDouble(VitalsComponentImpl.BloodOxygenKey, circulationState.bloodOxygen)
     out.putDouble(VitalsComponentImpl.BloodVolumeKey, circulationState.bloodVolume)
     out.putInt(VitalsComponentImpl.HypoxiaExposureTicksKey, circulationState.hypoxiaExposureTicks)
-    out.putInt(VitalsComponentImpl.TotemHemostasisTicksKey, circulationState.totemHemostasisTicks)
     out.putDouble(VitalsComponentImpl.SepsisKey, infectionState.sepsis)
     out.putDouble(VitalsComponentImpl.DiscomfortKey, discomfort)
     out.putDouble(VitalsComponentImpl.DirtinessKey, dirtiness)
@@ -359,11 +345,6 @@ final class VitalsComponentImpl(val player: Player)
         in.getIntOr(VitalsComponentImpl.HypoxiaExposureTicksKey, 0)
       )
     )
-    applyTotemHemostasisTicks(
-      Totem.normalizeRemainingTicks(
-        in.getIntOr(VitalsComponentImpl.TotemHemostasisTicksKey, 0)
-      )
-    )
     setSepsis(in.getDoubleOr(VitalsComponentImpl.SepsisKey, 0.0))
     setDiscomfort(in.getDoubleOr(VitalsComponentImpl.DiscomfortKey, 0.0))
     setDirtiness(in.getDoubleOr(VitalsComponentImpl.DirtinessKey, 0.0))
@@ -393,7 +374,6 @@ object VitalsComponentImpl {
   private val BloodOxygenKey = "blood_oxygen"
   private val BloodVolumeKey = "blood_volume"
   private val HypoxiaExposureTicksKey = "hypoxia_exposure_ticks"
-  private val TotemHemostasisTicksKey = "totem_hemostasis_ticks"
   private val SepsisKey = "sepsis"
   private val DiscomfortKey = "discomfort"
   private val DirtinessKey = "dirtiness"
