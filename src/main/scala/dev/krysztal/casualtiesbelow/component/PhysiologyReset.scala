@@ -7,9 +7,9 @@ import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.adrenaline.Adrenaline
 import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
-import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
+import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
 
 /** Atomic administrative reset of body and whole-player physiology. */
 object PhysiologyReset {
@@ -21,7 +21,7 @@ object PhysiologyReset {
     vitals.setBloodOxygen(VitalsComponent.MaxBloodOxygen)
     vitals.setBloodVolume(Consts.Vitals.MaxBloodVolume)
     HypoxiaProgression.reset(vitals)
-    TotemHemostasis.reset(vitals)
+    TotemOfUndying.reset(vitals)
     vitals.setSepsis(0.0)
     vitals.setDiscomfort(0.0)
     vitals.setDirtiness(0.0)

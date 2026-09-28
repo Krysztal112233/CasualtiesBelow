@@ -6,9 +6,7 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
-import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
-import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
-import dev.krysztal.casualtiesbelow.physiology.circulation.TotemHemostasis
+import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue
 import org.spongepowered.asm.mixin.Mixin
@@ -17,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.Inject
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 
 /** Replaces vanilla's linear fall damage calculation for players with a fixed power curve scaled by
-  * the gameplay setting, and adapts successful vanilla death-protection returns to the mod's
-  * physiology state.
+  * the gameplay setting, and forwards successful vanilla death-protection rescues to the tweaks
+  * layer.
   */
 @Mixin(value = Array(classOf[LivingEntity]), remap = false)
 abstract class LivingEntityMixin {
@@ -40,10 +38,8 @@ abstract class LivingEntityMixin {
     }
   }
 
-  /** Vanilla has already consumed the death-protection item and applied its effects at RETURN.
-    * Blood-loss and starvation rescues use the bounded blood/hemostasis adapter; terminal-hypoxia
-    * rescues reset exposure and restore bounded oxygen/consciousness. Sepsis and forced vanilla
-    * deaths bypass this method before an item can be consumed.
+  /** Vanilla has already consumed the death-protection item and applied its effects at RETURN; the
+    * physiological side of the rescue lives in [[TotemOfUndying]].
     */
   @Inject(
     method = Array("checkTotemDeathProtection"),
@@ -58,15 +54,7 @@ abstract class LivingEntityMixin {
 
     this.asInstanceOf[LivingEntity] match {
       case player: ServerPlayer =>
-        CasualtiesBelowPotionEffects.grantTotemRecovery(player)
-        if (
-          killingDamage.is(CasualtiesBelowDamageTypes.BloodLoss) ||
-          killingDamage.is(CasualtiesBelowDamageTypes.Starvation)
-        ) {
-          TotemHemostasis.activate(player)
-        } else if (killingDamage.is(CasualtiesBelowDamageTypes.Hypoxia)) {
-          HypoxiaProgression.onDeathProtection(player)
-        }
+        TotemOfUndying.onDeathProtection(player, killingDamage)
       case _ =>
     }
   }

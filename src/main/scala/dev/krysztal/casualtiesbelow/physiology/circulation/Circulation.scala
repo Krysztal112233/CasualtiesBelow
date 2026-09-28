@@ -6,6 +6,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.physiology.nutrition.Nutrition
+import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
 
 /** Single access point for the circulation vital: blood volume, blood oxygen, terminal hypoxia
   * exposure, and totem-driven hemostasis. Everything outside this package that touches the
@@ -46,14 +47,14 @@ private[casualtiesbelow] object Circulation {
     val starvation = Nutrition.consume(player, vitals, maxBlood)
 
     if (totalBleeding > 0.0) {
-      val actualBleeding = totalBleeding * TotemHemostasis.bleedingMultiplier(vitals)
+      val actualBleeding = totalBleeding * TotemOfUndying.bleedingMultiplier(vitals)
       if (actualBleeding > 0.0) {
         BloodVolume.drain(vitals, actualBleeding, maxBlood)
       }
     }
     // The timer has no client consumer: it never requests a sync of its own and instead rides
     // along whenever a visible value syncs, while persistence always writes the live value.
-    TotemHemostasis.tick(vitals)
+    TotemOfUndying.tick(vitals)
 
     // Zero blood is fatal before oxygen can drive consciousness down to the independent knockout
     // threshold. Blood-loss death protection restores blood synchronously in the vanilla totem
