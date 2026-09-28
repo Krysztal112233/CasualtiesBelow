@@ -1,6 +1,6 @@
 package dev.krysztal.casualtiesbelow.physiology.opioid
 
-import dev.krysztal.casualtiesbelow.physiology.discomfort.Discomfort
+import dev.krysztal.casualtiesbelow.physiology.discomfort.DiscomfortCalc
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -49,7 +49,7 @@ final class OpioidTest {
     val afterWithdrawal = Iterator
       .iterate(10.0) { discomfort =>
         val gained = Opioid.nextWithdrawalDiscomfort(discomfort, 0.0025, 35.0)
-        Discomfort.nextAfterOrdinaryDecay(gained, true, 30.0, 0.5, 0.2)
+        DiscomfortCalc.nextAfterOrdinaryDecay(gained, true, 30.0, 0.5, 0.2)
       }
       .drop(400)
       .next()
@@ -57,7 +57,7 @@ final class OpioidTest {
 
     assertEquals(
       9.975,
-      Discomfort.nextAfterOrdinaryDecay(10.0, false, 30.0, 0.5, 0.2),
+      DiscomfortCalc.nextAfterOrdinaryDecay(10.0, false, 30.0, 0.5, 0.2),
       1.0e-9
     )
   }

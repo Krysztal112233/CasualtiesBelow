@@ -109,7 +109,7 @@
 	"jei.casualtiesbelow.discomfort.tier": "不适：%1$s 级（每口基础值 ≈%2$s）",
 	"jei.casualtiesbelow.discomfort.override": "不适：每口基础值 ≈%1$s（数据包覆盖）",
 	"jei.casualtiesbelow.discomfort.stew": "不适取决于炖菜的效果：有害炖菜按 2-3 级计，有益炖菜安全。",
-	"jei.casualtiesbelow.discomfort.thresholds": "效果：恶心 ≥%1$s，拒食 ≥%2$s，高于 %3$s 时可能呕吐",
+	"jei.casualtiesbelow.discomfort.thresholds": "效果：恶心概率随不适度上升，拒食 ≥%1$s，高于 %2$s 时可能呕吐",
 	"jei.casualtiesbelow.discomfort.vomiting": "呕吐：每 tick %1$s%%–%2$s%% 概率；缓解 ≈%3$s 不适（±%4$s%%）",
 	"jei.casualtiesbelow.armor.factors": "覆盖%1$s：皮肤伤口 ×%2$s，肌肉传导 ×%3$s",
 	"jei.casualtiesbelow.armor.override": "来自数据包覆盖。",

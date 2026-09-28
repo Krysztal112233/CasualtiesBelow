@@ -67,7 +67,7 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       .filter(_ != Items.SUSPICIOUS_STEW || stewOverridden)
       .flatMap { item =>
         Discomfort
-          .meanOfWithTier(new ItemStack(item), data, store)
+          .meanOfWithTier(new ItemStack(item))
           .map(mean => (mean, item))
       }
       .groupBy(_._1)
@@ -83,7 +83,6 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         pairs.map((_, item) => new ItemStack(item)).asJava,
         headline,
         "jei.casualtiesbelow.discomfort.thresholds".translatable(
-          fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
           fmt(data.vomitChanceThreshold)
         ),
@@ -101,7 +100,6 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
         List(new ItemStack(Items.SUSPICIOUS_STEW)).asJava,
         "jei.casualtiesbelow.discomfort.stew".translatable(),
         "jei.casualtiesbelow.discomfort.thresholds".translatable(
-          fmt(data.nauseaThreshold),
           fmt(data.refusalThreshold),
           fmt(data.vomitChanceThreshold)
         ),

@@ -18,6 +18,7 @@ import dev.krysztal.casualtiesbelow.api.CasualtiesBelowTags
 import dev.krysztal.casualtiesbelow.api.event.TraumaStartedCallback
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
 import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.internal.sync.GameplayDataSnapshot
@@ -99,8 +100,10 @@ object DirtinessSources {
     * discomfort and immune settlements; discomfort-free food stays clean.
     */
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
-    val store = GameplayDataStores.server(player.level().getServer)
-    Discomfort.meanOf(stack, GameplayDataSnapshot.capture(store), store).foreach { mean =>
+    given store: GameplayDataStore = GameplayDataStores.server(player.level().getServer)
+    given data: GameplayDataSnapshot = GameplayDataSnapshot.capture(store)
+
+    Discomfort.meanOf(stack).foreach { mean =>
       applyPulse(player, foodDirt(mean, Consts.Dirtiness.FoodDirtFraction))
     }
   }

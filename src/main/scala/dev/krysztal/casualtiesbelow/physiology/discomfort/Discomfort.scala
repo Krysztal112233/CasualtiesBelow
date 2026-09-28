@@ -44,8 +44,9 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
   * stomach, and eating while septic or barely conscious all multiply the dose, so the system stays
   * learnable — "don't keep eating while sick" is a rule players can discover.
   *
-  * Consequences are threshold-banded: past the nausea threshold the screen distortion effect is
-  * kept up; past the refusal threshold discomfort-bearing food can no longer be started
+  * Consequences: nausea arrives as a per-tick probability that scales with discomfort, each success
+  * holding the screen distortion briefly so queasiness comes in waves rather than a guaranteed
+  * state; past the refusal threshold discomfort-bearing food can no longer be started
   * ([[allowsEating]], enforced by the `Consumable` mixin); above the vomiting threshold each tick
   * rolls a chance that rises linearly with discomfort, and vomiting removes a fluctuating amount
   * while applying hunger and saturation penalties.
@@ -55,31 +56,31 @@ enum DiscomfortDistribution extends Enum[DiscomfortDistribution] {
   * directly (see `data.schema.FoodEffectsData`). Global means and thresholds still come from
   * [[GameplayDataSnapshot]]. Untagged food (and beneficial suspicious stew) contributes nothing.
   * Milk keeps working while nauseous: it bears no discomfort, so refusal never blocks it.
+  *
+  * Pure math (decay pacing, the chance ramp, dose sampling) lives in [[DiscomfortCalc]].
   */
 object Discomfort {
 
   /** Resolves the discomfort mean for [stack], or `None` when the food is fine. Lookup order:
     * explicit datapack entry, tier tags (most severe tier wins), suspicious-stew effect inspection.
     */
-  def meanOf(
-      stack: ItemStack,
+  def meanOf(stack: ItemStack)(using
       data: GameplayDataSnapshot,
       store: GameplayDataStore
   ): Option[Double] = {
-    meanOfWithTier(stack, data, store)
+    meanOfWithTier(stack)
       .map(_._1)
-      .orElse(suspiciousStewMean(stack, data))
+      .orElse(suspiciousStewMean(stack))
   }
 
   /** Resolves the datapack/tag-derived mean and its tier for client displays. Explicit datapack
     * entries take precedence over tier tags; among tags, the most severe tier wins.
     */
-  def meanOfWithTier(
-      stack: ItemStack,
+  def meanOfWithTier(stack: ItemStack)(using
       data: GameplayDataSnapshot,
       store: GameplayDataStore
   ): Option[(Double, Option[Int])] = {
-    explicitMean(stack, data, store).orElse(taggedMean(stack, data))
+    explicitMean(stack).orElse(taggedMean(stack))
   }
 
   /** Whether [player] may start consuming [stack]: past the refusal threshold, food that bears
@@ -89,25 +90,27 @@ object Discomfort {
   def allowsEating(player: Player, stack: ItemStack): Boolean = {
     if (player.isCreative || player.isSpectator) return true
     val (data, store) = player match {
-      case serverPlayer: ServerPlayer =>
-        val store = GameplayDataStores.server(serverPlayer.level().getServer)
-        (GameplayDataSnapshot.capture(store), store)
-      case _ =>
+      case serverPlayer: ServerPlayer => serverData(serverPlayer)
+      case _                          =>
         val snapshot = GameplayDataSnapshot.current
         (snapshot, snapshot.gameplayData)
     }
+    given GameplayDataSnapshot = data
+    given GameplayDataStore = store
     val vitals = CasualtiesBelowComponents.Vitals.get(player)
     if (vitals.discomfort < data.refusalThreshold) return true
 
-    meanOf(stack, data, store).forall(_ <= 0.0)
+    meanOf(stack).forall(_ <= 0.0)
   }
 
   /** Applies the discomfort of a just-consumed food item. Called by the `Consumable` mixin on the
     * server when a player finishes eating or drinking something with a food component.
     */
   def onFoodEaten(player: ServerPlayer, stack: ItemStack): Unit = {
-    val store = GameplayDataStores.server(player.level().getServer)
-    meanOf(stack, GameplayDataSnapshot.capture(store), store) match {
+    val (data, store) = serverData(player)
+    given GameplayDataSnapshot = data
+    given GameplayDataStore = store
+    meanOf(stack) match {
       case None                    => ()
       case Some(mean) if mean <= 0 => ()
       case Some(mean)              =>
@@ -145,17 +148,20 @@ object Discomfort {
     }
   }
 
+  /** Server-side snapshot/store pair for discomfort lookups. */
+  private def serverData(player: ServerPlayer): (GameplayDataSnapshot, GameplayDataStore) = {
+    val store = GameplayDataStores.server(player.level().getServer)
+    (GameplayDataSnapshot.capture(store), store)
+  }
+
   private def tickPlayer(player: ServerPlayer): Unit = {
     if (player.isCreative || player.isSpectator || !player.isAlive) return
 
     val vitals = player.vitals
 
-    // Decay: fast while merely queasy ("tough it out"), slow once actually sick, so high
-    // discomfort asks for active resolution (or a vomit) instead of being waited out. Withdrawal
-    // owns discomfort evolution while active, preventing ordinary decay from cancelling its gain.
     if (vitals.discomfort > 0.0) {
       vitals.setDiscomfort(
-        nextAfterOrdinaryDecay(
+        DiscomfortCalc.nextAfterOrdinaryDecay(
           vitals.discomfort,
           OpioidWithdrawal.isActive(vitals),
           Consts.Discomfort.NauseaThreshold,
@@ -165,27 +171,12 @@ object Discomfort {
       )
     }
 
-    if (vitals.discomfort >= Consts.Discomfort.NauseaThreshold) {
-      player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NauseaRefreshTicks, 0))
+    if (shouldNauseate(vitals.discomfort, player.getRandom)) {
+      player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, NauseaDurationTicks, 0))
     }
 
     if (shouldVomit(vitals.discomfort, player.getRandom)) {
       vomit(player, vitals)
-    }
-  }
-
-  private[casualtiesbelow] def nextAfterOrdinaryDecay(
-      discomfort: Double,
-      withdrawalActive: Boolean,
-      nauseaThreshold: Double,
-      lowDecayPerSecond: Double,
-      highDecayPerSecond: Double
-  ): Double = {
-    if (withdrawalActive) discomfort
-    else {
-      val rate =
-        if (discomfort < nauseaThreshold) lowDecayPerSecond else highDecayPerSecond
-      (discomfort - rate.max(0.0) / 20.0).max(0.0)
     }
   }
 
@@ -199,7 +190,13 @@ object Discomfort {
         .max(0.0f)
     )
     vitals.setDiscomfort(
-      (vitals.discomfort - sampleVomitRelief(player.getRandom)).max(0.0)
+      (
+        vitals.discomfort - DiscomfortCalc.uniformSample(
+          Consts.Discomfort.VomitRelief,
+          Consts.Randomness.DoseSpreadFraction,
+          player.getRandom.nextDouble()
+        )
+      ).max(0.0)
     )
     player.addEffect(new MobEffectInstance(MobEffects.NAUSEA, VomitNauseaTicks, 1))
     player
@@ -208,64 +205,68 @@ object Discomfort {
   }
 
   private def shouldVomit(discomfort: Double, random: RandomSource): Boolean = {
-    val threshold = Consts.Discomfort.VomitChanceThreshold
-    if (discomfort <= threshold) return false
-
-    val maxDiscomfort = Consts.Discomfort.MaxValue
-    val progress =
-      if (maxDiscomfort <= threshold) 1.0
-      else ((discomfort - threshold) / (maxDiscomfort - threshold)).max(0.0).min(1.0)
-    val minChance = Consts.Discomfort.VomitMinChancePerTick
-    val maxChance =
-      math.max(Consts.Discomfort.VomitMaxChancePerTick, minChance)
-    random.nextDouble() < minChance + (maxChance - minChance) * progress
+    discomfort > Consts.Discomfort.VomitChanceThreshold &&
+    random.nextDouble() < DiscomfortCalc.chancePerTick(
+      discomfort,
+      Consts.Discomfort.VomitChanceThreshold,
+      Consts.Discomfort.VomitMinChancePerTick,
+      Consts.Discomfort.VomitMaxChancePerTick,
+      Consts.Discomfort.MaxValue
+    )
   }
 
-  private def sampleVomitRelief(random: RandomSource): Double = {
-    val mean = Consts.Discomfort.VomitRelief
-    val spread = mean * Consts.Randomness.DoseSpreadFraction
-    mean + (random.nextDouble() * 2.0 - 1.0) * spread
+  /** Nausea comes in unpredictable waves: a per-tick roll scaled by discomfort, each success
+    * holding the screen distortion briefly. Never guaranteed at any discomfort level.
+    */
+  private def shouldNauseate(discomfort: Double, random: RandomSource): Boolean = {
+    discomfort > Consts.Discomfort.NauseaChanceThreshold &&
+    random.nextDouble() < DiscomfortCalc.chancePerTick(
+      discomfort,
+      Consts.Discomfort.NauseaChanceThreshold,
+      Consts.Discomfort.NauseaMinChancePerTick,
+      Consts.Discomfort.NauseaMaxChancePerTick,
+      Consts.Discomfort.MaxValue
+    )
   }
 
   /** Samples one dose around [mean]; the spread scales with the mean so every tier wobbles
-    * proportionally ([[Consts.Randomness.DoseSpreadFraction]]).
+    * proportionally ([[Consts.Randomness.DoseSpreadFraction]]), floored at zero.
     */
   private def sample(mean: Double, random: RandomSource): Double = {
-    val spread = mean * Consts.Randomness.DoseSpreadFraction
+    val fraction = Consts.Randomness.DoseSpreadFraction
     val sampled =
       Consts.Discomfort.Distribution match {
         case DiscomfortDistribution.Uniform =>
-          mean + (random.nextDouble() * 2.0 - 1.0) * spread
+          DiscomfortCalc.uniformSample(mean, fraction, random.nextDouble())
         case DiscomfortDistribution.Gaussian =>
-          mean + random.nextGaussian() * spread
+          DiscomfortCalc.gaussianSample(mean, fraction, random.nextGaussian())
       }
     sampled.max(0.0)
   }
 
-  private def explicitMean(
-      stack: ItemStack,
+  private def explicitMean(stack: ItemStack)(using
       data: GameplayDataSnapshot,
       store: GameplayDataStore
   ): Option[(Double, Option[Int])] = {
     GameplayDataLookup.foodEffects(stack.typeHolder(), store).flatMap { entry =>
       entry.discomfortTier.toScala
-        .map(tier => (tierMean(tier.intValue(), data.discomfortLevelMeans), Some(tier.intValue())))
+        .map(tier => tierResult(tier.intValue()))
         .orElse(entry.discomfortMean.toScala.map(mean => (mean.doubleValue(), None)))
     }
   }
 
-  private def taggedMean(
-      stack: ItemStack,
+  private def taggedMean(stack: ItemStack)(using
       data: GameplayDataSnapshot
   ): Option[(Double, Option[Int])] = {
-    if (stack.is(CasualtiesBelowTags.Items.Discomfort3Food)) {
-      Some((tierMean(3, data.discomfortLevelMeans), Some(3)))
-    } else if (stack.is(CasualtiesBelowTags.Items.Discomfort2Food)) {
-      Some((tierMean(2, data.discomfortLevelMeans), Some(2)))
-    } else if (stack.is(CasualtiesBelowTags.Items.Discomfort1Food)) {
-      Some((tierMean(1, data.discomfortLevelMeans), Some(1)))
-    } else None
+    if (stack.is(CasualtiesBelowTags.Items.Discomfort3Food)) Some(tierResult(3))
+    else if (stack.is(CasualtiesBelowTags.Items.Discomfort2Food)) Some(tierResult(2))
+    else if (stack.is(CasualtiesBelowTags.Items.Discomfort1Food)) Some(tierResult(1))
+    else None
   }
+
+  /** Tier mean paired with the tier itself, for client displays. */
+  private def tierResult(tier: Int)(using data: GameplayDataSnapshot): (Double, Option[Int]) =
+    (tierMean(tier, data.discomfortLevelMeans), Some(tier))
 
   private def tierMean(level: Int, means: List[Double]): Double = {
     means.applyOrElse(level - 1, (_: Int) => means.last)
@@ -275,13 +276,15 @@ object Discomfort {
     * and wither are revolting (tier 3), other harmful effects mildly so (tier 2), and beneficial
     * stews are fine.
     */
-  private def suspiciousStewMean(stack: ItemStack, data: GameplayDataSnapshot): Option[Double] = {
+  private def suspiciousStewMean(stack: ItemStack)(using
+      data: GameplayDataSnapshot
+  ): Option[Double] = {
     Option(stack.get(DataComponents.SUSPICIOUS_STEW_EFFECTS)).flatMap { effects =>
       val entries = effects.effects().asScala
       if (
         entries.exists { e =>
-          e.effect().value() == MobEffects.POISON.value() ||
-          e.effect().value() == MobEffects.WITHER.value()
+          val eff = e.effect().value()
+          eff == MobEffects.POISON.value() || eff == MobEffects.WITHER.value()
         }
       ) {
         Some(data.discomfortLevelMeans(2))
@@ -293,6 +296,6 @@ object Discomfort {
     }
   }
 
-  private val NauseaRefreshTicks = 100
+  private val NauseaDurationTicks = 100
   private val VomitNauseaTicks = 300
 }

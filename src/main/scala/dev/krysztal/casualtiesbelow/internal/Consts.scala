@@ -301,6 +301,9 @@ private[casualtiesbelow] object Consts {
     val Level2Mean = 15.0
     val Level3Mean = 30.0
     val NauseaThreshold = 30.0
+    val NauseaChanceThreshold = 0.0
+    val NauseaMinChancePerTick = 0.0
+    val NauseaMaxChancePerTick = 0.002
     val DecayRateLowPerSecond = 0.5
     val DecayRateHighPerSecond = 0.2
     val AlreadyNauseousMultiplier = 1.25
