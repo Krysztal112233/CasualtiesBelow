@@ -46,6 +46,12 @@ private[casualtiesbelow] object DoubleExtensions {
     def jittered(jitterFraction: Double, roll: Double): Double =
       value * (1.0 + (roll * 2.0 - 1.0) * jitterFraction)
 
+    /** Linear ramp position of the value between `start` (0) and `full` (1), clamped to [0, 1]; a
+      * ramp narrower than 1 is treated as width 1.
+      */
+    def ramp01(start: Double, full: Double): Double =
+      ((value - start) / (full - start).max(1.0)).max(0.0).min(1.0)
+
     /** Bit-level equality, distinguishing `0.0` from `-0.0` and treating NaN as equal to itself. */
     def sameBits(other: Double): Boolean = {
       java.lang.Double.doubleToLongBits(value) == java.lang.Double.doubleToLongBits(other)

@@ -12,6 +12,7 @@ import dev.krysztal.casualtiesbelow.component.MutableLimbState
 import dev.krysztal.casualtiesbelow.component.VitalsComponentImpl
 import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 import dev.krysztal.casualtiesbelow.physiology.dirtiness.Dirtiness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidEffects
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidWithdrawal
@@ -36,6 +37,14 @@ private[casualtiesbelow] object Limb {
     */
   final case class Outcome(totalBleeding: Double, infectionLoad: Double)
 
+  /** Per-pass configuration reads, hoisted out of the per-limb loop. */
+  private final case class PassConfig(
+      infectionEnabled: Boolean,
+      woundRiskMultiplier: Double,
+      clottingSpeedMultiplier: Double,
+      naturalHealingMultiplier: Double
+  )
+
   /** One evolution pass over every limb, committing changed limb states through [[BodyMutations]].
     * `syncTick` marks the throttled sync boundary: continuous changes only mark the body dirty
     * there, while discrete transitions sync immediately.
@@ -48,6 +57,16 @@ private[casualtiesbelow] object Limb {
   ): Outcome = {
 
     val walking = isWalking(player)
+
+    // Per-pass config and vitals reads, hoisted out of the per-limb loop.
+    given cfg: PassConfig = PassConfig(
+      CasualtiesBelowConfig.diseaseHygiene.infectionEnabled.get(),
+      CasualtiesBelowConfig.diseaseHygiene.woundInfectionRiskMultiplier.get(),
+      CasualtiesBelowConfig.injurySurvival.clottingSpeedMultiplier.get(),
+      CasualtiesBelowConfig.injurySurvival.naturalHealingMultiplier.get()
+    )
+    val immuneFraction = vitals.infection.immuneHealth / Consts.Vitals.MaxImmuneHealth
+
     val withdrawalPainMultiplier = OpioidWithdrawal.painGrantMultiplier(vitals)
     val opioidPainDrain =
       OpioidEffects.painDrainPerTick(vitals.opioidLevel, vitals.opioidDependence)
@@ -69,7 +88,7 @@ private[casualtiesbelow] object Limb {
         walkingStrainRate(part, current, walking),
         withdrawalPainMultiplier,
         opioidPainDrain,
-        vitals.infection.immuneHealth,
+        immuneFraction,
         vitals.dirtiness,
         fightShare,
         regenerationMultiplier,
@@ -90,7 +109,7 @@ private[casualtiesbelow] object Limb {
   /** One tick of evolution for one limb, mutating the given copy in place. `strainPainRate` is the
     * walking-strain pain rate when the limb is a fractured/dislocated leg currently bearing the
     * walking player, zero otherwise. `painGrantMultiplier` applies systemic hyperalgesia to all
-    * positive pain grants. `immuneHealth` modulates infection spread and natural skin regrowth;
+    * positive pain grants. `immuneFraction` modulates infection spread and natural skin regrowth;
     * `dirtiness` modulates infection onset and skin regrowth; `regenerationMultiplier` drives the
     * independent vanilla Regeneration micro-repair. Returns whether a discrete transition occurred
     * (fracture healed, bleeding stopped, infection started or cleared).
@@ -104,21 +123,21 @@ private[casualtiesbelow] object Limb {
       strainPainRate: Double,
       painGrantMultiplier: Double,
       opioidPainDrain: Double,
-      immuneHealth: Double,
+      immuneFraction: Double,
       dirtiness: Double,
       fightShare: Double,
       regenerationMultiplier: Double,
       random: RandomSource
-  ): Boolean = {
+  )(using cfg: PassConfig): Boolean = {
 
     given givenStats: MutableLimbState = stats
 
     val fractureHealed = tickFracture()
     val bleedingStopped = tickBleeding()
-    val infectionTransition = tickInfection(immuneHealth, dirtiness, fightShare, random)
+    val infectionTransition = tickInfection(immuneFraction, dirtiness, fightShare, random)
 
     tickInfectionEffects(painGrantMultiplier)
-    tickSkinRegen(immuneHealth, dirtiness)
+    tickSkinRegen(immuneFraction, dirtiness)
     val regenerationTransition =
       tickRegenerationSkin(regenerationMultiplier)
     tickMuscleRegen()
@@ -145,12 +164,12 @@ private[casualtiesbelow] object Limb {
   /** Clots an actively bleeding wound linearly (rate capped by the skin damage); returns true when
     * the bleeding stopped this tick.
     */
-  private def tickBleeding()(using stats: MutableLimbState): Boolean = {
+  private def tickBleeding()(using stats: MutableLimbState, cfg: PassConfig): Boolean = {
     if (stats.externalBleedingRate <= 0.0) return false
 
     val capped = stats.externalBleedingRate.min(BleedingCalc.cap(stats.skinIntegrity))
-    val clotted = (capped - Consts.Bleeding.ClottingRatePerTick *
-      CasualtiesBelowConfig.injurySurvival.clottingSpeedMultiplier.get()).max(0.0)
+    val clotted =
+      (capped - Consts.Bleeding.ClottingRatePerTick * cfg.clottingSpeedMultiplier).max(0.0)
     stats.externalBleedingRate = clotted
     clotted == 0.0
   }
@@ -166,19 +185,21 @@ private[casualtiesbelow] object Limb {
     * (onset, cleared).
     */
   private def tickInfection(
-      immuneHealth: Double,
+      immuneFraction: Double,
       dirtiness: Double,
       fightShare: Double,
       random: RandomSource
-  )(using stats: MutableLimbState): Boolean = {
-    val immuneFraction = immuneHealth / Consts.Vitals.MaxImmuneHealth
+  )(using stats: MutableLimbState, cfg: PassConfig): Boolean = {
     stats.infectionProgress match {
       case Some(progress) =>
-        val spread =
-          Consts.Infection.InfectionSpreadPerTick * (1.0 - immuneFraction)
-        val fight =
-          Consts.Infection.InfectionFightPerTick * immuneFraction * fightShare
-        val next = (progress + spread - fight).min(MutableLimbState.MaxValue)
+        val next = LimbCalc.nextInfectionProgress(
+          progress,
+          Consts.Infection.InfectionSpreadPerTick,
+          Consts.Infection.InfectionFightPerTick,
+          immuneFraction,
+          fightShare,
+          MutableLimbState.MaxValue
+        )
         if (next <= 0.0) {
           stats.infectionProgress = None
           true
@@ -187,14 +208,18 @@ private[casualtiesbelow] object Limb {
           false
         }
       case None =>
-        if (!CasualtiesBelowConfig.diseaseHygiene.infectionEnabled.get()) return false
+        if (!cfg.infectionEnabled) return false
         val skinDamage = MutableLimbState.MaxValue - stats.skinIntegrity
         if (skinDamage < InfectionSkinDamageThreshold) return false
 
-        val chance = woundOnsetChance(
+        val chance = LimbCalc.woundOnsetChance(
           skinDamage,
           dirtiness,
-          CasualtiesBelowConfig.diseaseHygiene.woundInfectionRiskMultiplier.get()
+          cfg.woundRiskMultiplier,
+          Consts.Infection.InfectionChancePerTick,
+          MutableLimbState.MaxValue,
+          Consts.Dirtiness.MaxValue,
+          Consts.Dirtiness.InfectionChanceMultiplierAtMax
         )
         if (random.nextFloat() < chance) {
           stats.infectionProgress = Some(InfectionOnsetSeed)
@@ -205,24 +230,6 @@ private[casualtiesbelow] object Limb {
     }
   }
 
-  /** Wound infection risk is independent of existing-infection progression and contagious spread.
-    * The boolean infection switch gates all new infections; this multiplier affects only wound
-    * onset, leaving dirtiness's existing contribution intact.
-    */
-  private[casualtiesbelow] def woundOnsetChance(
-      skinDamage: Double,
-      dirtiness: Double,
-      riskMultiplier: Double
-  ): Double = {
-    Consts.Infection.InfectionChancePerTick * riskMultiplier *
-      skinDamage / MutableLimbState.MaxValue *
-      Dirtiness.infectionChanceMultiplier(
-        dirtiness,
-        Consts.Dirtiness.MaxValue,
-        Consts.Dirtiness.InfectionChanceMultiplierAtMax
-      )
-  }
-
   /** Contagion: a limb whose infection progress is past the ramp start can seed an anatomically
     * adjacent, not-yet-infected limb (a star with the torso as the hub). The per-tick chance ramps
     * linearly from zero at the start progress to the configured maximum at the full progress. The
@@ -230,18 +237,19 @@ private[casualtiesbelow] object Limb {
     * contact. Seeds use the same onset value as wound infections, so a strong immune system visibly
     * suppresses the spread.
     */
-  private def tickContagion(player: ServerPlayer, body: BodyComponent): Unit = {
-    if (!CasualtiesBelowConfig.diseaseHygiene.infectionEnabled.get()) return
+  private def tickContagion(player: ServerPlayer, body: BodyComponent)(using
+      cfg: PassConfig
+  ): Unit = {
+    if (!cfg.infectionEnabled) return
     val start = Consts.Infection.InfectionContagionStartProgress
     val full = Consts.Infection.InfectionContagionFullProgress
-    val ramp = (full - start).max(1.0)
     val maxChance = Consts.Infection.InfectionContagionMaxChancePerTick
 
     BodyPart.values.foreach { part =>
       val stats = body.stats(part)
       if (stats.infectionProgress.isPresent) {
         val progress = stats.infectionProgress.getAsDouble
-        val chance = maxChance * ((progress - start) / ramp).max(0.0).min(1.0)
+        val chance = maxChance * progress.ramp01(start, full)
         if (chance > 0.0 && player.getRandom.nextFloat() < chance) {
           val targets =
             BodyTopology.Adjacent(part).filter(p => !body.stats(p).infectionProgress.isPresent)
@@ -268,53 +276,47 @@ private[casualtiesbelow] object Limb {
   ): Unit = {
     if (stats.infectionProgress.isEmpty) return
 
-    val start = Consts.Infection.InfectionEffectStartProgress
-    val full = Consts.Infection.InfectionEffectFullProgress
-    val ramp = (full - start).max(1.0)
-    val severity = ((stats.infectionProgress.get - start) / ramp).max(0.0).min(1.0)
+    val severity = stats.infectionProgress.get.ramp01(
+      Consts.Infection.InfectionEffectStartProgress,
+      Consts.Infection.InfectionEffectFullProgress
+    )
     if (severity <= 0.0) return
 
-    stats.pain = infectionPainAfterGrant(
+    stats.pain = LimbCalc.infectionPainAfterGrant(
       stats.pain,
       Consts.Infection.InfectionPainPerTick * severity,
-      painGrantMultiplier
+      painGrantMultiplier,
+      MutableLimbState.MaxValue
     )
     stats.muscleHealth =
       (stats.muscleHealth - Consts.Infection.InfectionMuscleDecayPerTick * severity)
         .max(0.0)
   }
 
-  private[casualtiesbelow] def infectionPainAfterGrant(
-      pain: Double,
-      grant: Double,
-      painGrantMultiplier: Double
-  ): Double = {
-    (pain + grant.max(0.0) * painGrantMultiplier.max(0.0)).min(MutableLimbState.MaxValue)
-  }
-
   /** Skin regrows only once the wound has clotted shut; immune health scales the rate between the
     * fixed minimum multiplier (zero immune) and the full base rate (full immune), and dirtiness
     * applies its own linear ramp on top. The player-facing natural healing multiplier applies last.
     */
-  private def tickSkinRegen(immuneHealth: Double, dirtiness: Double)(using
-      stats: MutableLimbState
+  private def tickSkinRegen(immuneFraction: Double, dirtiness: Double)(using
+      stats: MutableLimbState,
+      cfg: PassConfig
   ): Unit = {
     if (stats.externalBleedingRate > 0.0) return
     if (stats.skinIntegrity >= MutableLimbState.MaxValue) return
 
-    val minMultiplier = Consts.Regeneration.SkinRegenMinImmuneMultiplier
-    val immuneMultiplier =
-      minMultiplier +
-        (1.0 - minMultiplier) * immuneHealth / Consts.Vitals.MaxImmuneHealth
+    val immuneMultiplier = LimbCalc.immuneScaledMultiplier(
+      Consts.Regeneration.SkinRegenMinImmuneMultiplier,
+      immuneFraction
+    )
     val multiplier =
       immuneMultiplier * Dirtiness.skinRegenMultiplier(
         dirtiness,
         Consts.Dirtiness.MaxValue,
         Consts.Regeneration.SkinRegenMinDirtinessMultiplier
       )
-    stats.skinIntegrity = (stats.skinIntegrity + SkinRegenPerTick * multiplier *
-      CasualtiesBelowConfig.injurySurvival.naturalHealingMultiplier.get())
-      .min(MutableLimbState.MaxValue)
+    stats.skinIntegrity =
+      (stats.skinIntegrity + SkinRegenPerTick * multiplier * cfg.naturalHealingMultiplier)
+        .min(MutableLimbState.MaxValue)
   }
 
   /** Vanilla Regeneration provides micro skin repair on every damaged limb, even while bleeding.
@@ -341,11 +343,10 @@ private[casualtiesbelow] object Limb {
   }
 
   /** Muscle regrows regardless of bleeding (slower than skin). */
-  private def tickMuscleRegen()(using stats: MutableLimbState): Unit = {
+  private def tickMuscleRegen()(using stats: MutableLimbState, cfg: PassConfig): Unit = {
     if (stats.muscleHealth >= MutableLimbState.MaxValue) return
 
-    stats.muscleHealth = (stats.muscleHealth + MuscleRegenPerTick *
-      CasualtiesBelowConfig.injurySurvival.naturalHealingMultiplier.get())
+    stats.muscleHealth = (stats.muscleHealth + MuscleRegenPerTick * cfg.naturalHealingMultiplier)
       .min(MutableLimbState.MaxValue)
   }
 
@@ -366,9 +367,11 @@ private[casualtiesbelow] object Limb {
   private def tickWalkingStrain(strainPainRate: Double)(using stats: MutableLimbState): Unit = {
     if (strainPainRate <= 0.0) return
 
-    val tissueDamage =
-      (2.0 - stats.muscleHealth / MutableLimbState.MaxValue -
-        stats.skinIntegrity / MutableLimbState.MaxValue) / 2.0
+    val tissueDamage = LimbCalc.tissueDamageFraction(
+      stats.muscleHealth,
+      stats.skinIntegrity,
+      MutableLimbState.MaxValue
+    )
     if (tissueDamage > 0.0) {
       stats.pain = (stats.pain + strainPainRate * tissueDamage).min(MutableLimbState.MaxValue)
     }
@@ -383,17 +386,13 @@ private[casualtiesbelow] object Limb {
       stats: MutableLimbState,
       walking: Boolean
   ): Double = {
-    if (!walking || !BodyTopology.Legs.contains(part)) return 0.0
-
-    val fractureRate: Double =
-      if (stats.fractureRecoveryTicks.isDefined) {
-        Consts.Pain.FracturedWalkingPainPerTick
-      } else {
-        0.0
-      }
-    val dislocationRate: Double =
-      if (stats.dislocated) Consts.Pain.DislocatedWalkingPainPerTick else 0.0
-    fractureRate + dislocationRate
+    LimbCalc.walkingStrainRate(
+      walking && BodyTopology.Legs.contains(part),
+      stats.fractureRecoveryTicks.isDefined,
+      stats.dislocated,
+      Consts.Pain.FracturedWalkingPainPerTick,
+      Consts.Pain.DislocatedWalkingPainPerTick
+    )
   }
 
   /** Whether the player is trying to walk on the ground this tick (walking, sprinting, sneaking —

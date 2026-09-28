@@ -30,4 +30,14 @@ class DoubleExtensionsTest {
       "spread magnitude follows |mean|, so +1 sigma moves a negative mean toward zero"
     )
   }
+
+  // ---- ramp01 ----
+
+  @Test
+  def ramp01TracksLinearProgress(): Unit = {
+    assertEquals(0.0, 5.0.ramp01(10.0, 50.0), 1.0e-12, "below the start clamps to 0")
+    assertEquals(0.5, 30.0.ramp01(10.0, 50.0), 1.0e-12, "mid ramp is 0.5")
+    assertEquals(1.0, 80.0.ramp01(10.0, 50.0), 1.0e-12, "past full clamps to 1")
+    assertEquals(1.0, 4.0.ramp01(3.0, 3.0), 1.0e-12, "a zero-width ramp is treated as width 1")
+  }
 }
