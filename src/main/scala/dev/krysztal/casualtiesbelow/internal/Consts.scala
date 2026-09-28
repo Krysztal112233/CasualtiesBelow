@@ -343,6 +343,14 @@ private[casualtiesbelow] object Consts {
     val HeatOverlayMaxStrength = 0.85
   }
 
+  object Tweaks {
+    object Totem {}
+
+    object Effects {
+      val RegenerationBloodGenerationPerPulse = 50.0
+    }
+  }
+
   /** Compiled fixed EvalEx curve. Like the former configurable evaluator, expressions are reused
     * with mutable variable bindings and must be evaluated on the owning game thread.
     */

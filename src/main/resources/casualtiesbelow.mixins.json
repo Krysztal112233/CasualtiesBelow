@@ -17,6 +17,7 @@
     "LivingEntityMixin",
     "PlayerActuallyHurtMixin",
     "PlayerMixin",
+    "RegenerationMobEffectMixin",
     "ServerGamePacketListenerImplMixin",
     "ServerPlayerGameModeMixin",
     "ShelfBlockMixin",
