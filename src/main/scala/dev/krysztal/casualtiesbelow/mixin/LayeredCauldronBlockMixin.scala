@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 abstract class LayeredCauldronBlockMixin {
 
   @Inject(method = Array("entityInside"), at = Array(new At(value = "HEAD")), remap = false)
-  private def casualtiesbelow$startPoppySoak(
+  private def startPoppySoak(
       state: BlockState,
       level: Level,
       pos: BlockPos,

@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 abstract class PlayerMixin {
 
   @Inject(method = Array("isImmobile"), at = Array(new At(value = "RETURN")), cancellable = true)
-  private def casualtiesbelow$unconsciousIsImmobile(cir: CallbackInfoReturnable[Boolean]): Unit = {
+  private def unconsciousIsImmobile(cir: CallbackInfoReturnable[Boolean]): Unit = {
     if (Unconsciousness.restricts(this.asInstanceOf[Player])) {
       cir.setReturnValue(true)
     }
@@ -31,7 +31,7 @@ abstract class PlayerMixin {
     at = Array(new At(value = "RETURN")),
     cancellable = true
   )
-  private def casualtiesbelow$restrictUnconsciousBlockActions(
+  private def restrictUnconsciousBlockActions(
       level: Level,
       pos: BlockPos,
       gameType: GameType,

@@ -12,5 +12,5 @@ import org.spongepowered.asm.mixin.gen.Accessor
 @Mixin(value = Array(classOf[PostChain]), remap = false)
 trait PostChainAccessor {
   @Accessor(value = "passes", remap = false)
-  def casualtiesbelow$getPasses(): List[PostPass]
+  def getPasses(): List[PostPass]
 }

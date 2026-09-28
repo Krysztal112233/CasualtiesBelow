@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.gen.Invoker
 @Mixin(value = Array(classOf[WaterFluid]), remap = false)
 trait WaterFluidInvoker {
   @Invoker(value = "beforeDestroyingBlock", remap = false)
-  def casualtiesbelow$invokeBeforeDestroyingBlock(
+  def invokeBeforeDestroyingBlock(
       level: LevelAccessor,
       pos: BlockPos,
       state: BlockState

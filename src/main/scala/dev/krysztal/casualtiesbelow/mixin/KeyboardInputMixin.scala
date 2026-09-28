@@ -24,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo
 abstract class KeyboardInputMixin extends ClientInput {
 
   @Inject(method = Array("tick"), at = Array(new At(value = "TAIL")))
-  private def casualtiesbelow$suppressUnconsciousInput(ci: CallbackInfo): Unit = {
+  private def suppressUnconsciousInput(ci: CallbackInfo): Unit = {
     Option(Minecraft.getInstance().player).filter(Unconsciousness.restricts).foreach { _ =>
       keyPresses = Input.EMPTY
       moveVector = Vec2.ZERO

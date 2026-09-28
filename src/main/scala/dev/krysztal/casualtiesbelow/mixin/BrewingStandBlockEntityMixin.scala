@@ -20,7 +20,7 @@ abstract class BrewingStandBlockEntityMixin {
     cancellable = true,
     remap = false
   )
-  private def casualtiesbelow$allowCrudePoppyLiquid(
+  private def allowCrudePoppyLiquid(
       slot: Int,
       stack: ItemStack,
       cir: CallbackInfoReturnable[Boolean]

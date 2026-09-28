@@ -11,5 +11,5 @@ import org.spongepowered.asm.mixin.gen.Accessor
 @Mixin(value = Array(classOf[FoodData]), remap = false)
 trait FoodDataAccessor {
   @Accessor(value = "exhaustionLevel", remap = false)
-  def casualtiesbelow$getExhaustionLevel(): Float
+  def getExhaustionLevel(): Float
 }

@@ -12,5 +12,5 @@ import org.spongepowered.asm.mixin.gen.Accessor
 @Mixin(value = Array(classOf[PostPass]), remap = false)
 trait PostPassAccessor {
   @Accessor(value = "customUniforms", remap = false)
-  def casualtiesbelow$getCustomUniforms(): Map[String, GpuBuffer]
+  def getCustomUniforms(): Map[String, GpuBuffer]
 }

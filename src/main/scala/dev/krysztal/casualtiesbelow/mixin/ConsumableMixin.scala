@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable
 abstract class ConsumableMixin {
 
   @Inject(method = Array("canConsume"), at = Array(new At(value = "HEAD")), cancellable = true)
-  private def casualtiesbelow$refuseWhenSick(
+  private def refuseWhenSick(
       user: LivingEntity,
       stack: ItemStack,
       cir: CallbackInfoReturnable[Boolean]
@@ -47,7 +47,7 @@ abstract class ConsumableMixin {
   }
 
   @Inject(method = Array("onConsume"), at = Array(new At(value = "HEAD")))
-  private def casualtiesbelow$foodConsequencesOnConsume(
+  private def foodConsequencesOnConsume(
       level: Level,
       user: LivingEntity,
       stack: ItemStack,

@@ -46,7 +46,7 @@ private[fluid] abstract class PoppyFluidBase extends FlowingFluid {
   ): Unit =
     Fluids.WATER
       .asInstanceOf[WaterFluidInvoker]
-      .casualtiesbelow$invokeBeforeDestroyingBlock(level, pos, state)
+      .invokeBeforeDestroyingBlock(level, pos, state)
 
   override protected def getSlopeFindDistance(level: LevelReader): Int = 4
 

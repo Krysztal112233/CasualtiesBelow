@@ -63,10 +63,10 @@ private[ui] final class PostEffectBuffers(blocks: Vector[UniformBlock]) {
   private def installBuffers(chain: PostChain): Map[String, GpuBuffer] = {
     val uniformMap = chain
       .asInstanceOf[PostChainAccessor]
-      .casualtiesbelow$getPasses()
+      .getPasses()
       .asScala
       .iterator
-      .map(_.asInstanceOf[PostPassAccessor].casualtiesbelow$getCustomUniforms())
+      .map(_.asInstanceOf[PostPassAccessor].getCustomUniforms())
       .find(_.containsKey(blocks.head.name))
 
     uniformMap

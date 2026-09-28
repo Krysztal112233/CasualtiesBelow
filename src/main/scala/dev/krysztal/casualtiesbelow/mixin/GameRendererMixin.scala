@@ -35,7 +35,7 @@ abstract class GameRendererMixin {
     ),
     remap = false
   )
-  private def casualtiesbelow$renderVitalsEffect(
+  private def renderVitalsEffect(
       deltaTracker: DeltaTracker,
       advanceGameTime: Boolean,
       ci: CallbackInfo

@@ -27,7 +27,7 @@ abstract class LivingEntityMixin {
     at = Array(new At(value = "RETURN")),
     remap = false
   )
-  private def casualtiesbelow$calculateFallDamage(
+  private def calculateFallDamage(
       original: Int,
       fallDistance: Double,
       damageModifier: Float
@@ -50,7 +50,7 @@ abstract class LivingEntityMixin {
     at = Array(new At(value = "RETURN")),
     remap = false
   )
-  private def casualtiesbelow$afterTotemDeathProtection(
+  private def afterTotemDeathProtection(
       killingDamage: DamageSource,
       ci: CallbackInfoReturnable[Boolean]
   ): Unit = {

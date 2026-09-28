@@ -11,6 +11,6 @@ private[casualtiesbelow] object FoodDataExtensions {
 
     /** The accumulated vanilla exhaustion level; its per-tick deltas are the exercise signal. */
     def exhaustionLevel: Float =
-      foodData.asInstanceOf[FoodDataAccessor].casualtiesbelow$getExhaustionLevel()
+      foodData.asInstanceOf[FoodDataAccessor].getExhaustionLevel()
   }
 }

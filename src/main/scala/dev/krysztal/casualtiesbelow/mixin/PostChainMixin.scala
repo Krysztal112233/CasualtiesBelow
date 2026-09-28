@@ -34,7 +34,7 @@ object PostChainMixin {
     ),
     remap = false
   )
-  private def casualtiesbelow$absoluteTextureEffectPath(original: Identifier): Identifier = {
+  private def absoluteTextureEffectPath(original: Identifier): Identifier = {
     // withPath has already applied "textures/effect/" + path + ".png"; an absolute reference
     // written as "textures/..." in the JSON surfaces here with that double prefix.
     val absoluteMarker = "textures/effect/textures/"

@@ -202,7 +202,7 @@ object PoppyFluidScenarios {
     val pos = helper.absolutePos(new BlockPos(1, 1, 1))
     Fluids.WATER
       .asInstanceOf[WaterFluidInvoker]
-      .casualtiesbelow$invokeBeforeDestroyingBlock(
+      .invokeBeforeDestroyingBlock(
         helper.getLevel,
         pos,
         Blocks.CHEST.defaultBlockState()

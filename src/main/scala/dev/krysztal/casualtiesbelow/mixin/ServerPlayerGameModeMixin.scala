@@ -31,7 +31,7 @@ abstract class ServerPlayerGameModeMixin {
     at = Array(new At(value = "RETURN")),
     remap = false
   )
-  private def casualtiesbelow$reconcileLimbMovement(
+  private def reconcileLimbMovement(
       gameType: GameType,
       cir: CallbackInfoReturnable[Boolean]
   ): Unit = {

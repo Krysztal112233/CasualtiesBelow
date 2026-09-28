@@ -34,7 +34,7 @@ abstract class FoodDataMixin {
     ),
     remap = false
   )
-  private def casualtiesbelow$wrapStarvationPulse(
+  private def wrapStarvationPulse(
       player: ServerPlayer,
       level: ServerLevel,
       source: DamageSource,

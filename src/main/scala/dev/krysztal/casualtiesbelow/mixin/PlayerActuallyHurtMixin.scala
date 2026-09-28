@@ -32,7 +32,7 @@ abstract class PlayerActuallyHurtMixin {
     ),
     remap = false
   )
-  private def casualtiesbelow$wrapPlayerHealthDamage(
+  private def wrapPlayerHealthDamage(
       player: Player,
       vanillaHealth: Float,
       original: Operation[Void],

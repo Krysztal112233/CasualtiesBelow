@@ -10,5 +10,5 @@ import org.spongepowered.asm.mixin.gen.Invoker
 @Mixin(value = Array(classOf[Biome]), remap = false)
 trait BiomeInvoker {
   @Invoker(value = "getTemperature", remap = false)
-  def casualtiesbelow$invokeGetTemperature(pos: BlockPos, seaLevel: Int): Float
+  def invokeGetTemperature(pos: BlockPos, seaLevel: Int): Float
 }

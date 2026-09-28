@@ -23,7 +23,7 @@ private[casualtiesbelow] object BiomeExtensions {
     def mappedTemperature(pos: BlockPos, seaLevel: Int): Double = {
       val vanilla = biome
         .asInstanceOf[BiomeInvoker]
-        .casualtiesbelow$invokeGetTemperature(pos, seaLevel)
+        .invokeGetTemperature(pos, seaLevel)
       Consts.Temperature.BiomeMappingFormula.evaluate(vanilla.toDouble)
     }
   }

@@ -45,7 +45,7 @@ abstract class ServerGamePacketListenerImplMixin {
     ),
     cancellable = true
   )
-  private def casualtiesbelow$clearUnconsciousInput(
+  private def clearUnconsciousInput(
       packet: ServerboundPlayerInputPacket,
       ci: CallbackInfo
   ): Unit = {
@@ -70,7 +70,7 @@ abstract class ServerGamePacketListenerImplMixin {
     ),
     cancellable = true
   )
-  private def casualtiesbelow$blockUnconsciousPlayerAction(
+  private def blockUnconsciousPlayerAction(
       packet: ServerboundPlayerActionPacket,
       ci: CallbackInfo
   ): Unit = {
@@ -107,7 +107,7 @@ abstract class ServerGamePacketListenerImplMixin {
     ),
     cancellable = true
   )
-  private def casualtiesbelow$blockUnconsciousPaddling(
+  private def blockUnconsciousPaddling(
       packet: ServerboundPaddleBoatPacket,
       ci: CallbackInfo
   ): Unit = {
@@ -134,7 +134,7 @@ abstract class ServerGamePacketListenerImplMixin {
     ),
     cancellable = true
   )
-  private def casualtiesbelow$blockUnconsciousContainerClick(
+  private def blockUnconsciousContainerClick(
       packet: ServerboundContainerClickPacket,
       ci: CallbackInfo
   ): Unit = rejectContainerMutation(packet.containerId(), ci)

@@ -27,7 +27,7 @@ object BrewingStandPotionSlotMixin {
     cancellable = true,
     remap = false
   )
-  private def casualtiesbelow$allowCrudePoppyLiquid(
+  private def allowCrudePoppyLiquid(
       stack: ItemStack,
       cir: CallbackInfoReturnable[Boolean]
   ): Unit = {
