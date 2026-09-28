@@ -3,7 +3,7 @@ package dev.krysztal.casualtiesbelow.gametest
 import net.minecraft.gametest.framework.GameTestHelper
 
 import dev.krysztal.casualtiesbelow.effect.CasualtiesBelowPotionEffects
-import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
+import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 /** Behavioral validation of the totem rescue grants: both recovery effects must be present as real,
   * finite grants. Potency numbers are balance territory and deliberately unpinned.
@@ -13,7 +13,7 @@ object TotemRecoveryScenarios {
   def totemGrantsRecoveryEffects(helper: GameTestHelper): Unit = {
     val player = GameTestPlayers.createSurvivalPlayer(helper)
 
-    TotemOfUndying.grantRecoveryEffects(player)
+    Totem.grantRecoveryEffects(player)
 
     Seq(
       CasualtiesBelowPotionEffects.SkinRegeneration,

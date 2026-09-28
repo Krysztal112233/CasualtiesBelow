@@ -1,4 +1,4 @@
-package dev.krysztal.casualtiesbelow.tweaks
+package dev.krysztal.casualtiesbelow.tweaks.items
 
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.damagesource.DamageSource
@@ -25,7 +25,7 @@ import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
   * server-authoritative and freezes whenever injury progression is frozen (creative or spectator
   * mode).
   */
-private[casualtiesbelow] object TotemOfUndying {
+private[casualtiesbelow] object Totem {
 
   /** Completes the mod side of a successful vanilla death-protection rescue. */
   def onDeathProtection(player: ServerPlayer, killingDamage: DamageSource): Unit = {

@@ -6,7 +6,7 @@ import net.minecraft.world.entity.LivingEntity
 
 import dev.krysztal.casualtiesbelow.api.CasualtiesBelowDamageTypes
 import dev.krysztal.casualtiesbelow.damage.FallDamageFormula
-import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
+import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 import com.llamalad7.mixinextras.injector.ModifyReturnValue
 import org.spongepowered.asm.mixin.Mixin
@@ -54,7 +54,7 @@ abstract class LivingEntityMixin {
 
     this.asInstanceOf[LivingEntity] match {
       case player: ServerPlayer =>
-        TotemOfUndying.onDeathProtection(player, killingDamage)
+        Totem.onDeathProtection(player, killingDamage)
       case _ =>
     }
   }

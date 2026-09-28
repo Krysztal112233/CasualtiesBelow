@@ -28,7 +28,7 @@ import dev.krysztal.casualtiesbelow.physiology.circulation.HypoxiaProgression
 import dev.krysztal.casualtiesbelow.physiology.consciousness.Consciousness
 import dev.krysztal.casualtiesbelow.physiology.opioid.OpioidState
 import dev.krysztal.casualtiesbelow.physiology.pain.PainShock
-import dev.krysztal.casualtiesbelow.tweaks.TotemOfUndying
+import dev.krysztal.casualtiesbelow.tweaks.items.Totem
 
 import org.ladysnake.cca.api.v3.component.CopyableComponent
 import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent
@@ -147,7 +147,7 @@ final class VitalsComponentImpl(val player: Player)
       HypoxiaProgression.normalizeExposureTicks(source.hypoxiaExposureTicks)
     )
     applyTotemHemostasisTicks(
-      TotemOfUndying.normalizeRemainingTicks(source.totemHemostasisTicks)
+      Totem.normalizeRemainingTicks(source.totemHemostasisTicks)
     )
     setSepsis(source.infection.sepsis)
     setDiscomfort(source.discomfort)
@@ -360,7 +360,7 @@ final class VitalsComponentImpl(val player: Player)
       )
     )
     applyTotemHemostasisTicks(
-      TotemOfUndying.normalizeRemainingTicks(
+      Totem.normalizeRemainingTicks(
         in.getIntOr(VitalsComponentImpl.TotemHemostasisTicksKey, 0)
       )
     )
