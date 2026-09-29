@@ -43,6 +43,7 @@ private[casualtiesbelow] object Totem {
     player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.BoneHealing, 400, 3))
     player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.MuscleRecovery, 400, 3))
     player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.SkinRegeneration, 400, 3))
+    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.SecondWind, 100, 2))
   }
 
   /** Applies the fixed-balance rescue and immediately syncs the restored blood volume. */
