@@ -125,6 +125,9 @@ private[casualtiesbelow] object Consts {
 
     /** Duration of the brewed Bone Healing potion, in ticks. */
     val BoneHealingPotionTicks = 1800
+
+    val SecondWindAdrenalinePerTick = 5.0
+    val SecondWindAdrenalineTicks = 100
   }
 
   object Armor {

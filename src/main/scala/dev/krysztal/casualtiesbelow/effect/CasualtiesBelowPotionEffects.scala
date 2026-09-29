@@ -49,6 +49,13 @@ private[casualtiesbelow] object CasualtiesBelowPotionEffects {
     Ingredient.of(Items.BONE)
   )
 
+  val (SecondWind @ _, SecondWindPotion @ _) = register(
+    "second_wind",
+    new SecondWindEffect,
+    Consts.Regeneration.SecondWindAdrenalineTicks,
+    Ingredient.of(Items.AMETHYST_SHARD)
+  )
+
   private def register(
       name: String,
       effect: MobEffect,
