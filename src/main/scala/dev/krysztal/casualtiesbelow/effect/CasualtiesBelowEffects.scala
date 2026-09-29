@@ -25,7 +25,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val OpioidAnalgesia: Holder[MobEffect] =
     register(
       "opioid_analgesia",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.NEUTRAL,
         16646020,
         opioidAnalgesiaAmplifierFromVitals
@@ -34,7 +34,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val OpioidDependence: Holder[MobEffect] =
     register(
       "opioid_dependence",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x8f4961,
         opioidDependenceAmplifierFromVitals
@@ -43,7 +43,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Hypoxia: Holder[MobEffect] =
     register(
       "hypoxia",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x6579a8,
         hypoxiaAmplifierFromVitals
@@ -52,7 +52,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Hypovolemia: Holder[MobEffect] =
     register(
       "hypovolemia",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x9f3441,
         hypovolemiaAmplifierFromVitals
@@ -61,7 +61,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val BloodLoss: Holder[MobEffect] =
     register(
       "blood_loss",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x9c3b49,
         bloodLossAmplifierFromVitals
@@ -70,7 +70,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Sepsis: Holder[MobEffect] =
     register(
       "sepsis",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x9b587a,
         sepsisAmplifierFromVitals
@@ -79,7 +79,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Hypothermia: Holder[MobEffect] =
     register(
       "hypothermia",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x5dadd6,
         hypothermiaAmplifierFromVitals
@@ -88,7 +88,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Hyperthermia: Holder[MobEffect] =
     register(
       "hyperthermia",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0xd96b31,
         hyperthermiaAmplifierFromVitals
@@ -97,7 +97,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Unconsciousness: Holder[MobEffect] =
     register(
       "unconsciousness",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x404058,
         unconsciousnessAmplifierFromVitals
@@ -106,7 +106,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val PainShock: Holder[MobEffect] =
     register(
       "pain_shock",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x762838,
         painShockAmplifierFromVitals
@@ -115,7 +115,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Alertness: Holder[MobEffect] =
     register(
       "alertness",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.BENEFICIAL,
         0xe4c44b,
         alertnessAmplifierFromVitals
@@ -124,7 +124,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Wetness: Holder[MobEffect] =
     register(
       "wetness",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x3a8fa8,
         wetnessAmplifierFromVitals
@@ -133,7 +133,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Dirtiness: Holder[MobEffect] =
     register(
       "dirtiness",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x785638,
         dirtinessAmplifierFromVitals
@@ -142,7 +142,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Fracture: Holder[MobEffect] =
     register(
       "fracture",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0xd6d2c4,
         fractureAmplifierFromVitals
@@ -151,7 +151,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
   private[casualtiesbelow] val Dislocation: Holder[MobEffect] =
     register(
       "dislocation",
-      CasualtiesBelowCustomEffect(
+      CasualtiesBelowDisplayOnlyEffect(
         MobEffectCategory.HARMFUL,
         0x8a7fb8,
         dislocationAmplifierFromVitals
@@ -177,7 +177,7 @@ private[casualtiesbelow] object CasualtiesBelowEffects {
 
   private def register(
       name: String,
-      mobEffect: CasualtiesBelowCustomEffect,
+      mobEffect: CasualtiesBelowDisplayOnlyEffect,
       forDisplay: Boolean = true
   ): Holder[MobEffect] = {
     val holder: Holder[MobEffect] = Registry.registerForHolder(

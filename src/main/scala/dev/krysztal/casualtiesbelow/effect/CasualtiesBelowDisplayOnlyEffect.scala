@@ -7,7 +7,7 @@ import net.minecraft.world.effect.MobEffectCategory
 import net.minecraft.world.effect.MobEffectInstance
 
 /** Reconciles one player's derived vitals tier with its registered vanilla mob effect. */
-private[effect] final class CasualtiesBelowCustomEffect(
+private[effect] final class CasualtiesBelowDisplayOnlyEffect(
     category: MobEffectCategory,
     color: Int,
     amplifierFromVitals: MobEffectAmplifierResolver = _ => None
