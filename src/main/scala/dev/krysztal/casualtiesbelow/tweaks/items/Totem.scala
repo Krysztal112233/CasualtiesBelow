@@ -40,8 +40,9 @@ private[casualtiesbelow] object Totem {
     * fixed in place, mirroring vanilla's hardcoded totem grants.
     */
   def grantRecoveryEffects(player: ServerPlayer): Unit = {
-    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.SkinRegeneration, 400, 2))
-    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.MuscleRecovery, 400, 2))
+    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.BoneHealing, 400, 3))
+    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.MuscleRecovery, 400, 3))
+    player.addEffect(new MobEffectInstance(CasualtiesBelowPotionEffects.SkinRegeneration, 400, 3))
   }
 
   /** Applies the fixed-balance rescue and immediately syncs the restored blood volume. */
