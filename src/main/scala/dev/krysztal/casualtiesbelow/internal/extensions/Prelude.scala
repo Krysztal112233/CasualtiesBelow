@@ -17,4 +17,5 @@ private[casualtiesbelow] object Prelude {
   export LevelExtensions.*
   export MinecraftServerExtensions.*
   export PlayerExtensions.*
+  export TryExtensions.*
 }

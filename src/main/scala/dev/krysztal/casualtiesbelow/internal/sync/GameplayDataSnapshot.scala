@@ -1,8 +1,6 @@
 package dev.krysztal.casualtiesbelow.internal.sync
 
 import scala.jdk.CollectionConverters.*
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
 import net.minecraft.core.HolderLookup
@@ -13,6 +11,7 @@ import dev.krysztal.casualtiesbelow.config.CasualtiesBelowConfig
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStores
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
@@ -131,15 +130,12 @@ object GameplayDataSnapshot {
     * either way so [[rereceive]] can retry it against fresher tag contents.
     */
   def receive(json: String, lookup: HolderLookup.Provider): Unit = this.synchronized {
-    val previous = clientState
-    Try(fromJson(json, lookup)) match {
-      case Success(snapshot) => clientState = ClientState(Some(json), Some(snapshot))
-      case Failure(error)    =>
-        clientState = previous.copy(rawJson = Some(json))
-        CasualtiesBelow.Logger.warn(
-          "Ignoring malformed gameplay data sync; retaining the previous complete snapshot: {}",
-          error.getMessage
-        )
+    Try(fromJson(json, lookup))
+      .orLogWarn(
+        "Ignoring malformed gameplay data sync; retaining the previous complete snapshot"
+      ) match {
+      case Some(snapshot) => clientState = ClientState(Some(json), Some(snapshot))
+      case None           => clientState = clientState.copy(rawJson = Some(json))
     }
   }
 

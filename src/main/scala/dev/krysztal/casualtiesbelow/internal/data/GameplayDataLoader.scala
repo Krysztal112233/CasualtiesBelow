@@ -2,8 +2,6 @@ package dev.krysztal.casualtiesbelow.internal.data
 
 import scala.jdk.CollectionConverters.*
 import scala.jdk.OptionConverters.*
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 import scala.util.Using
 
@@ -17,6 +15,7 @@ import net.minecraft.util.StrictJsonParser
 
 import dev.krysztal.casualtiesbelow.CasualtiesBelow
 import dev.krysztal.casualtiesbelow.internal.TypeAlias.MojCodec
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 import com.google.gson.JsonElement
 
@@ -39,14 +38,9 @@ private[internal] final class GameplayDataLoader[T](
 
     converter.listMatchingResources(manager).asScala.foreach { (location, resource) =>
       val id = converter.fileToId(location)
-      Using(resource.openAsReader())(StrictJsonParser.parse(_)) match {
-        case Success(json)  => decode(id, json, ops).foreach(entry => decoded += id -> entry)
-        case Failure(error) =>
-          CasualtiesBelow.Logger.warn(
-            s"Couldn't read gameplay data file '$id' from '$location'",
-            error
-          )
-      }
+      Using(resource.openAsReader())(StrictJsonParser.parse(_))
+        .orLogWarn(s"Couldn't read gameplay data file '$id' from '$location'")
+        .foreach(json => decode(id, json, ops).foreach(entry => decoded += id -> entry))
     }
 
     decoded.result()
@@ -57,14 +51,9 @@ private[internal] final class GameplayDataLoader[T](
       json: JsonElement,
       ops: RegistryOps[JsonElement]
   ): Option[T] = {
-    Try(codec.parse(ops, json)) match {
-      case Failure(error) =>
-        CasualtiesBelow.Logger.warn(
-          s"Couldn't decode gameplay data entry '$id' from directory '$directorySegment'",
-          error
-        )
-        None
-      case Success(result) =>
+    Try(codec.parse(ops, json))
+      .orLogWarn(s"Couldn't decode gameplay data entry '$id' from directory '$directorySegment'")
+      .flatMap(result =>
         result.result().toScala.orElse {
           val reason = result.error().toScala.map(_.message()).getOrElse("unknown decode error")
           CasualtiesBelow.Logger.warn(
@@ -75,6 +64,6 @@ private[internal] final class GameplayDataLoader[T](
           )
           None
         }
-    }
+      )
   }
 }
