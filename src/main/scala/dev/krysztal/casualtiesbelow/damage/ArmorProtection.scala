@@ -11,10 +11,12 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.component.ItemAttributeModifiers
 
 import dev.krysztal.casualtiesbelow.api.body.limb.BodyPart
+import dev.krysztal.casualtiesbelow.data.schema.FormulaSource
 import dev.krysztal.casualtiesbelow.data.schema.WoundProfile
 import dev.krysztal.casualtiesbelow.internal.Consts
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataLookup
 import dev.krysztal.casualtiesbelow.internal.data.GameplayDataStore
+import dev.krysztal.casualtiesbelow.internal.extensions.Prelude.*
 
 /** Armor as a wound barrier: armor covering the struck body part transforms the wound profile —
   * skin damage and bleeding are mostly blocked (teeth, claws and blades fail to break skin), while
@@ -55,31 +57,37 @@ object ArmorProtection {
 
     // A datapack override matches by item identity and replaces the fixed formula for the factors
     // it defines — including for pieces with zero armor value, which the fallback path skips.
-    GameplayDataLookup.armorProtection(stack, gameplayData) match {
-      case Some(entry) =>
-        val skinFactor = entry.skinFactor.toScala
-          .flatMap(_.evaluate(armor, toughness))
-          .getOrElse(Consts.Armor.ArmorSkinFactorFormula.evaluate(armor, toughness))
-          .max(0.0)
-          .min(1.0)
-        val muscleFactor = entry.muscleFactor.toScala
-          .flatMap(_.evaluate(armor, toughness, skinFactor))
-          .getOrElse(Consts.Armor.ArmorMuscleFactorFormula.evaluate(armor, toughness, skinFactor))
-          .max(0.0)
-          .min(1.0)
-        applyFactors(profile, skinFactor, muscleFactor)
-      case None =>
-        if (armor <= 0.0 && toughness <= 0.0) return profile
-        val skinFactor = Consts.Armor.ArmorSkinFactorFormula
-          .evaluate(armor, toughness)
-          .max(0.0)
-          .min(1.0)
-        val muscleFactor = Consts.Armor.ArmorMuscleFactorFormula
-          .evaluate(armor, toughness, skinFactor)
-          .max(0.0)
-          .min(1.0)
-        applyFactors(profile, skinFactor, muscleFactor)
-    }
+    val entry = GameplayDataLookup.armorProtection(stack, gameplayData)
+    if (entry.isEmpty && armor <= 0.0 && toughness <= 0.0) return profile
+
+    val skinFactor = factor(
+      entry.flatMap(_.skinFactor.toScala),
+      Consts.Armor.ArmorSkinFactorFormula,
+      armor,
+      toughness
+    )
+    val muscleFactor = factor(
+      entry.flatMap(_.muscleFactor.toScala),
+      Consts.Armor.ArmorMuscleFactorFormula,
+      armor,
+      toughness,
+      skinFactor
+    )
+    applyFactors(profile, skinFactor, muscleFactor)
+  }
+
+  /** One protection factor, clamped to [0, 1]: the datapack override formula when present and
+    * evaluable, else the fixed fallback formula.
+    */
+  private def factor(
+      overrideFormula: Option[FormulaSource],
+      fallback: Consts.FixedFormula,
+      values: Double*
+  ): Double = {
+    overrideFormula
+      .flatMap(_.evaluate(values*))
+      .getOrElse(fallback.evaluate(values*))
+      .boundedFraction
   }
 
   private def applyFactors(

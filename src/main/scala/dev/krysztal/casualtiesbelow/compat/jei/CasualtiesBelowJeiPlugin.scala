@@ -215,28 +215,35 @@ object CasualtiesBelowJeiPlugin extends IModPlugin {
       toughness: Double,
       ovr: Option[ArmorProtectionData]
   )(using data: GameplayDataSnapshot): Option[(Double, Double)] = {
-    val skin = ovr
-      .flatMap(_.skinFactor.toScala)
-      .map(_.source)
-      .flatMap(evaluate(_, List("armor", "toughness"), List(armor, toughness)))
-      .orElse(evaluate(data.armorSkinFormula, List("armor", "toughness"), List(armor, toughness)))
-      .map(v => v.max(0.0).min(1.0))
-    skin.flatMap { s =>
-      ovr
-        .flatMap(_.muscleFactor.toScala)
-        .map(_.source)
-        .flatMap(
-          evaluate(_, List("armor", "toughness", "skinFactor"), List(armor, toughness, s))
-        )
-        .orElse(
-          evaluate(
-            data.armorMuscleFormula,
-            List("armor", "toughness", "skinFactor"),
-            List(armor, toughness, s)
-          )
-        )
-        .map(v => (s, v.max(0.0).min(1.0)))
-    }
+    for (
+      skin <- factor(
+        ovr.flatMap(_.skinFactor.toScala).map(_.source),
+        data.armorSkinFormula,
+        List("armor", "toughness"),
+        List(armor, toughness)
+      );
+      muscle <- factor(
+        ovr.flatMap(_.muscleFactor.toScala).map(_.source),
+        data.armorMuscleFormula,
+        List("armor", "toughness", "skinFactor"),
+        List(armor, toughness, skin)
+      )
+    ) yield (skin, muscle)
+  }
+
+  /** One armor factor: the datapack override source is tried first, the config formula is the
+    * fallback when the override is absent or fails to evaluate; the result is clamped to [0, 1].
+    */
+  private def factor(
+      overrideSource: Option[String],
+      fallback: String,
+      variables: List[String],
+      values: List[Double]
+  ): Option[Double] = {
+    overrideSource
+      .flatMap(evaluate(_, variables, values))
+      .orElse(evaluate(fallback, variables, values))
+      .map(_.boundedFraction)
   }
 
   /** Compiles and evaluates one formula source on the calling thread (expressions are not
